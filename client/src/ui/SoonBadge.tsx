@@ -1,0 +1,11 @@
+/** Signale une fonction annoncée mais pas encore livrée. */
+export function SoonBadge({ className = "" }: { className?: string }) {
+  return (
+    <span
+      className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-secondary-fixed text-on-secondary-fixed font-label-sm text-label-sm font-semibold whitespace-nowrap ${className}`}
+    >
+      <span className="material-symbols-outlined text-[14px]" aria-hidden="true">schedule</span>
+      Bientôt disponible
+    </span>
+  );
+}

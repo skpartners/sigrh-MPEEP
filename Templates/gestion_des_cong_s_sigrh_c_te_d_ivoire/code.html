@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+
+<html lang="fr"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{colors:{"on-tertiary-container":"#bdc4de","on-surface-variant":"#3f4942","tertiary-fixed-dim":"#bec6e0","on-background":"#0b1c30","on-tertiary-fixed":"#131b2e","surface-dim":"#cbdbf5","on-secondary-fixed-variant":"#783100","on-tertiary-fixed-variant":"#3f465c","primary-container":"#0a5e3a","on-surface":"#0b1c30","surface-tint":"#1e6b46","primary-fixed-dim":"#8cd6a9","surface-container":"#e5eeff","on-primary-fixed-variant":"#005231","tertiary-container":"#495167","on-error-container":"#93000a","outline-variant":"#bfc9c0","inverse-primary":"#8cd6a9","surface-variant":"#d3e4fe","surface-container-lowest":"#ffffff","inverse-on-surface":"#eaf1ff","on-primary-container":"#8ad5a7","primary":"#004428","on-primary-fixed":"#002111","surface-bright":"#f8f9ff","surface-container-highest":"#d3e4fe","primary-fixed":"#a7f3c3","inverse-surface":"#213145","on-primary":"#ffffff","error-container":"#ffdad6","error":"#ba1a1a","secondary-fixed-dim":"#ffb691","tertiary-fixed":"#dae2fd","on-secondary":"#ffffff","tertiary":"#333a4f","surface-container-low":"#eff4ff","on-secondary-container":"#602600","secondary-fixed":"#ffdbcb","background":"#f8f9ff","surface":"#f8f9ff","secondary":"#9e4300","on-secondary-fixed":"#341100","on-tertiary":"#ffffff","outline":"#707a71","on-error":"#ffffff","surface-container-high":"#dce9ff","secondary-container":"#fe7b28"},borderRadius:{DEFAULT:"0.125rem",lg:"0.25rem",xl:"0.5rem",full:"0.75rem"},spacing:{"gutter-desktop":"1.5rem","space-sm":"0.5rem","margin-desktop":"2rem",gutter:"1.25rem","space-md":"1rem","space-lg":"1.5rem",margin:"1rem","space-xs":"0.25rem","space-xl":"2rem","margin-tablet":"1.5rem"},fontFamily:{"headline-lg":["Public Sans"],"label-lg":["Public Sans"],"body-lg":["Public Sans"],"headline-sm":["Public Sans"],"label-sm":["Public Sans"],"headline-lg-mobile":["Public Sans"],"body-md":["Public Sans"],"headline-xl":["Public Sans"],"label-md":["Public Sans"],"code-num":["Public Sans"],"body-sm":["Public Sans"],"headline-md":["Public Sans"],"headline-xl-mobile":["Public Sans"]},fontSize:{"headline-lg":["30px",{lineHeight:"38px",fontWeight:"700"}],"label-lg":["14px",{lineHeight:"20px",fontWeight:"600"}],"body-lg":["16px",{lineHeight:"24px",fontWeight:"400"}],"headline-sm":["18px",{lineHeight:"24px",fontWeight:"600"}],"label-sm":["11px",{lineHeight:"14px",fontWeight:"500"}],"headline-lg-mobile":["24px",{lineHeight:"32px",fontWeight:"700"}],"body-md":["14px",{lineHeight:"20px",fontWeight:"400"}],"headline-xl":["36px",{lineHeight:"44px",fontWeight:"700"}],"label-md":["12px",{lineHeight:"16px",fontWeight:"600"}],"code-num":["13px",{lineHeight:"18px",fontWeight:"600"}],"body-sm":["13px",{lineHeight:"18px",fontWeight:"400"}],"headline-md":["22px",{lineHeight:"28px",fontWeight:"600"}],"headline-xl-mobile":["28px",{lineHeight:"36px",fontWeight:"700"}]}}}};</script></head><body class="bg-background font-body-md text-on-surface antialiased"><header class="fixed top-0 left-0 right-0 z-50 bg-surface-container-lowest/95 backdrop-blur-md shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-1 flex w-full"><div class="w-1/3 bg-secondary-container"></div><div class="w-1/3 bg-surface-container-lowest"></div><div class="w-1/3 bg-primary-container"></div></div><div class="h-16 px-6 flex items-center justify-between gap-4"><div class="flex items-center gap-3 min-w-0"><div class="flex items-center justify-center p-1 bg-surface-container-low rounded"><img alt="Armoiries Côte d'Ivoire" class="h-8 w-8 object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDSw7RDrfkH23MP3vRslBhyhcQ6PqxQeuiVBV7MhHMXUkdzQM8SNRahCoiGGz1l5k1jUSBih-nf9uW_I71ODxn4J5xl3WEQZYjsmOSRmouGBn9rBCchF74LeMhfY7v8iSjUxasJDn7PMrzb8Wxus96k4G5ejvdWIDnJmwVPgePID7gdosimtJG8TXG5O64V9oFoQ56kMdMTT0SYsIBHwUU7TwPvci4Dj8x5o_gMdtcJpazXOC3hKx4"/></div><div class="flex flex-col min-w-0"><span class="font-label-md text-label-md text-primary uppercase tracking-wider font-bold truncate">SIGRH | RÉPUBLIQUE DE CÔTE D'IVOIRE</span><span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-tight truncate">Ministère du Portefeuille de l'État et des Entreprises Publiques</span></div></div><div class="flex-1 max-w-md mx-4 hidden lg:block"><div class="relative flex items-center"><span class="material-symbols-outlined absolute left-3 text-on-surface-variant text-lg pointer-events-none">search</span><input class="w-full pl-9 pr-4 py-1.5 bg-surface-container-low text-on-surface placeholder:text-on-surface-variant/70 font-body-sm text-body-sm rounded border-0 focus:outline-none focus:ring-1 focus:ring-primary" placeholder="Rechercher un agent par matricule civil, nom ou direction..." type="text"/></div></div><div class="flex items-center gap-3 shrink-0"><div class="hidden sm:flex items-center gap-1.5 px-2.5 py-1 bg-surface-container-low rounded"><span class="font-label-sm text-label-sm text-on-surface-variant font-medium">Exercice</span><span class="font-code-num text-code-num text-primary font-bold px-1.5 py-0.5 bg-surface-container-lowest rounded">2026</span></div><div class="relative flex items-center"><button aria-label="Notifications de validation" class="p-2 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high rounded transition-colors relative" type="button"><span class="material-symbols-outlined text-xl">notifications</span><span class="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-secondary-container rounded-full"></span></button></div><div class="flex items-center gap-2 pl-2"><img alt="Profile" class="w-8 h-8 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDSw7RDrfkH23MP3vRslBhyhcQ6PqxQeuiVBV7MhHMXUkdzQM8SNRahCoiGGz1l5k1jUSBih-nf9uW_I71ODxn4J5xl3WEQZYjsmOSRmouGBn9rBCchF74LeMhfY7v8iSjUxasJDn7PMrzb8Wxus96k4G5ejvdWIDnJmwVPgePID7gdosimtJG8TXG5O64V9oFoQ56kMdMTT0SYsIBHwUU7TwPvci4Dj8x5o_gMdtcJpazXOC3hKx4"/><div class="hidden md:flex flex-col text-left"><span class="font-label-md text-label-md text-on-surface font-semibold leading-tight">Kouamé N'Dri</span><span class="font-label-sm text-label-sm text-on-surface-variant">Directeur DRH</span></div></div></div></div></header><aside class="fixed left-0 top-0 h-full w-72 bg-surface-container-lowest z-40 flex flex-col pt-20 pb-4 shadow-[1px_0_8px_rgba(0,0,0,0.03)] overflow-y-auto"><div class="px-5 pb-3"><div class="p-3 bg-surface-container-low rounded flex items-center gap-3"><div class="w-8 h-8 rounded bg-primary text-on-primary flex items-center justify-center font-headline-sm text-headline-sm"><span class="material-symbols-outlined text-lg">account_balance</span></div><div class="min-w-0"><p class="font-label-sm text-label-sm text-on-surface-variant uppercase font-medium">Portefeuille Étatique</p><p class="font-label-md text-label-md text-on-surface font-bold truncate">DGPE &amp; Sociétés d'État</p></div></div></div><nav class="flex-1 px-3 space-y-1 font-body-sm text-body-sm" data-active-classes="bg-primary text-on-primary font-semibold shadow-sm"><div class="px-3 pt-2 pb-1"><span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider font-bold">Pilotage Central</span></div><a class="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="dashboard" href="#"><span class="material-symbols-outlined text-lg">dashboard</span><span>Vue d'ensemble DRH</span></a><a class="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="dossier-agent" href="#"><span class="material-symbols-outlined text-lg">badge</span><span>Dossier Agent Numérique</span></a><div class="px-3 pt-3 pb-1"><span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider font-bold">Sous-Directions Métier</span></div><a class="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="carrieres-mutations" href="#"><span class="material-symbols-outlined text-lg">assignment</span><span>SD Carrières &amp; Actes</span></a><a class="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="action-sociale" href="#"><span class="material-symbols-outlined text-lg">volunteer_activism</span><span>SD Action Sociale</span></a><a class="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="formation-continue" href="#"><span class="material-symbols-outlined text-lg">school</span><span>SD Formation Continue</span></a><div class="px-3 pt-3 pb-1"><span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider font-bold">Gouvernance &amp; Conformité</span></div><a class="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="circuits-validation" href="#"><span class="material-symbols-outlined text-lg">approval_delegation</span><span>Circuits de Validation</span></a><a class="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="statistiques-rbac" href="#"><span class="material-symbols-outlined text-lg">admin_panel_settings</span><span>Statistiques &amp; RBAC</span></a></nav><div class="px-4 pt-3 mt-auto"><div class="p-3 bg-surface-container-low rounded text-center"><span class="font-label-sm text-label-sm text-on-surface-variant block font-medium">Sécurisation Régalienne</span><span class="font-code-num text-code-num text-primary block mt-0.5">ANSSI-CI • SIGRH-v2.6</span></div></div></aside><div class="pl-72"><main class="relative pt-16 min-h-screen bg-background flex flex-col justify-between"><div class="flex flex-col w-full">
+<div class="px-6 py-6 md:px-8 max-w-[1600px] w-full mx-auto space-y-6">
+<!-- Fil d'Ariane & Titre Régalien -->
+<div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+<div class="space-y-1.5">
+<nav class="flex items-center gap-2 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">
+<span>SD GESTION DES CARRIÈRES</span>
+<span class="material-symbols-outlined text-xs">chevron_right</span>
+<span>TEMPS DE SERVICE &amp; CONGÉS</span>
+<span class="material-symbols-outlined text-xs">chevron_right</span>
+<span class="text-primary font-bold">PLANIFICATION ANNUELLE DES CONGÉS</span>
+</nav>
+<div class="flex flex-wrap items-baseline gap-3">
+<h1 class="font-headline-lg text-headline-lg text-on-surface tracking-tight">Supervision Régionale &amp; Planification des Congés Annuels</h1>
+<span class="px-2.5 py-0.5 rounded bg-primary-container text-on-primary font-label-sm text-label-sm uppercase font-semibold tracking-wider">
+            Exercice 2026 Actif
+          </span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-4xl">
+          Consolidation des plans de congés, arbitrage des départs massifs, suivi des reliquats et maintien du quorum opérationnel de continuité du service public (seuil min. 65% garanti).
+        </p>
+</div>
+<!-- Actions de tête -->
+<div class="flex flex-wrap items-center gap-2.5 shrink-0">
+<button class="flex items-center gap-2 px-3.5 py-2 rounded bg-surface-container-high hover:bg-surface-container text-on-surface font-label-lg text-label-lg transition-colors shadow-sm" type="button">
+<span class="material-symbols-outlined text-lg">download</span>
+<span>Exporter le Calendrier Trimestriel</span>
+</button>
+<button class="flex items-center gap-2 px-4 py-2 rounded bg-primary hover:bg-primary/90 text-on-primary font-label-lg text-label-lg transition-colors shadow-sm" type="button">
+<span class="material-symbols-outlined text-lg">post_add</span>
+<span>Nouvel Arrêté Collectif de Congés</span>
+</button>
+</div>
+</div>
+<!-- Ruban de certification régalienne -->
+<div class="p-3 bg-surface-container-lowest rounded-lg shadow-sm flex flex-wrap items-center justify-between gap-4">
+<div class="flex items-center gap-4 flex-wrap">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-primary animate-pulse"></span>
+<span class="font-label-sm text-label-sm text-on-surface font-semibold uppercase tracking-wide">Campagne 2026 Active</span>
+</div>
+<div class="hidden sm:block w-px h-4 bg-outline-variant"></div>
+<div class="flex items-center gap-2 text-on-surface-variant font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-base text-primary">sync</span>
+<span>Synchronisation DGBF &amp; Trésor Public : <strong class="text-on-surface">Validée à 08:30 GMT</strong></span>
+</div>
+<div class="hidden md:block w-px h-4 bg-outline-variant"></div>
+<div class="flex items-center gap-2 text-on-surface-variant font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-base text-secondary">verified_user</span>
+<span>Garantie Continuité de Service : <strong class="text-primary font-bold">Quorum Global 81.6%</strong></span>
+</div>
+</div>
+<div class="flex items-center gap-2 text-on-surface-variant font-code-num text-code-num bg-surface-container-low px-2 py-1 rounded">
+<span>REF : ARRET-MPEEP/DRH/2026-T1</span>
+</div>
+</div>
+<!-- Grille KPI Ministériels -->
+<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+<!-- KPI 1 -->
+<div class="p-4 bg-surface-container-lowest rounded-lg shadow-sm flex flex-col justify-between space-y-3">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase font-semibold">Volume Global Acquis 2026</span>
+<div class="w-8 h-8 rounded bg-surface-container-low text-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-lg">calendar_month</span>
+</div>
+</div>
+<div>
+<div class="font-headline-lg text-headline-lg text-on-surface tracking-tight">144 780 <span class="font-label-md text-label-md text-on-surface-variant">jours</span></div>
+<div class="font-body-sm text-body-sm text-on-surface-variant mt-1">
+            30 jours ouvrables par agent • <strong>4 826</strong> effectifs actifs
+          </div>
+</div>
+<div class="h-1.5 w-full bg-surface-container-high rounded-full overflow-hidden">
+<div class="h-full bg-primary w-full"></div>
+</div>
+</div>
+<!-- KPI 2 -->
+<div class="p-4 bg-surface-container-lowest rounded-lg shadow-sm flex flex-col justify-between space-y-3">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase font-semibold">Jours Consommés au T1 2026</span>
+<div class="w-8 h-8 rounded bg-surface-container-low text-secondary flex items-center justify-center">
+<span class="material-symbols-outlined text-lg">event_available</span>
+</div>
+</div>
+<div>
+<div class="font-headline-lg text-headline-lg text-on-surface tracking-tight">32 450 <span class="font-label-md text-label-md text-on-surface-variant">jours</span></div>
+<div class="font-body-sm text-body-sm text-on-surface-variant mt-1">
+<strong>22.4%</strong> du volume annuel • Rythme prévisionnel régulier
+          </div>
+</div>
+<div class="h-1.5 w-full bg-surface-container-high rounded-full overflow-hidden">
+<div class="h-full bg-secondary-container rounded-full" style="width: 22.4%"></div>
+</div>
+</div>
+<!-- KPI 3 -->
+<div class="p-4 bg-surface-container-lowest rounded-lg shadow-sm flex flex-col justify-between space-y-3 relative overflow-hidden">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-secondary uppercase font-semibold">Reliquats N-1 en Sursis</span>
+<div class="w-8 h-8 rounded bg-secondary-fixed text-on-secondary-fixed flex items-center justify-center">
+<span class="material-symbols-outlined text-lg">history_toggle_off</span>
+</div>
+</div>
+<div>
+<div class="font-headline-lg text-headline-lg text-secondary tracking-tight">4 120 <span class="font-label-md text-label-md text-on-surface-variant">jours</span></div>
+<div class="font-body-sm text-body-sm text-secondary mt-1 font-medium">
+            À apurer avant le 30 Avril • 18 alertes de forclusion
+          </div>
+</div>
+<div class="flex items-center justify-between font-label-sm text-label-sm pt-1">
+<span class="text-on-surface-variant">Directeurs notifiés</span>
+<span class="text-secondary font-bold">Action requise</span>
+</div>
+</div>
+<!-- KPI 4 -->
+<div class="p-4 bg-surface-container-lowest rounded-lg shadow-sm flex flex-col justify-between space-y-3">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase font-semibold">Taux de Présence de Service</span>
+<div class="w-8 h-8 rounded bg-surface-container-low text-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-lg">groups</span>
+</div>
+</div>
+<div>
+<div class="font-headline-lg text-headline-lg text-primary tracking-tight">81.6%</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant mt-1">
+            Seuil légal garanti (<strong>≥ 65.0%</strong>) sur l'ensemble du portefeuille
+          </div>
+</div>
+<div class="h-1.5 w-full bg-surface-container-high rounded-full overflow-hidden flex">
+<div class="h-full bg-primary rounded-full" style="width: 81.6%"></div>
+</div>
+</div>
+</div>
+<!-- Section 2 Colonnes: Matrice Trimestrielle / Quorums Sociétés -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+<!-- Colonne Gauche: Radar & Périodes de Pointe (8 cols) -->
+<div class="lg:col-span-8 p-5 bg-surface-container-lowest rounded-lg shadow-sm space-y-4">
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pb-2">
+<div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Radar Annuel des Départs &amp; Périodes Critiques</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Modélisation prévisionnelle des flux de départs simultanés pour l'exercice 2026</p>
+</div>
+<span class="px-2 py-1 rounded bg-surface-container-low text-on-surface font-label-sm text-label-sm">
+            Mise à jour temps réel
+          </span>
+</div>
+<!-- Timeline / Matrice des 4 Trimestres -->
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+<div class="p-3 rounded bg-surface-container-low flex flex-col justify-between space-y-2">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md text-on-surface font-bold">T2 • Pâques / Avril</span>
+<span class="px-2 py-0.5 rounded bg-primary-fixed text-on-primary-fixed font-code-num text-code-num font-semibold">18% départs</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Congés courts &amp; reliquats N-1. Impact opérationnel maîtrisé.</p>
+<div class="flex items-center gap-2 pt-1 font-label-sm text-label-sm text-primary font-medium">
+<span class="material-symbols-outlined text-sm">check_circle</span>
+<span>Continuité assurée (82% présence)</span>
+</div>
+</div>
+<div class="p-3 rounded bg-surface-container-low flex flex-col justify-between space-y-2">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md text-secondary font-bold">T3 • Trêve Estivale (Juil-Août)</span>
+<span class="px-2 py-0.5 rounded bg-secondary-fixed text-on-secondary-fixed font-code-num text-code-num font-semibold">34% départs</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Pic majeur de l'année. Arbitrage des binômes stratégiques requis.</p>
+<div class="flex items-center gap-2 pt-1 font-label-sm text-label-sm text-secondary font-medium">
+<span class="material-symbols-outlined text-sm">warning</span>
+<span>Optimisation des intérims en cours</span>
+</div>
+</div>
+<div class="p-3 rounded bg-surface-container-low flex flex-col justify-between space-y-2">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md text-on-surface font-bold">T4 • Fin d'Année (Décembre)</span>
+<span class="px-2 py-0.5 rounded bg-surface-container-highest text-on-surface font-code-num text-code-num font-semibold">28% départs</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Clôture budgétaire et arrêtés collectifs programmés.</p>
+<div class="flex items-center gap-2 pt-1 font-label-sm text-label-sm text-primary font-medium">
+<span class="material-symbols-outlined text-sm">schedule</span>
+<span>Quorum prévu à 72% (Conforme)</span>
+</div>
+</div>
+</div>
+<!-- Visualisation synthétique du taux de présence par mois (SVG minimaliste & responsive) -->
+<div class="p-4 rounded bg-surface-container-lowest shadow-sm space-y-3">
+<div class="flex items-center justify-between text-on-surface">
+<span class="font-label-md text-label-md font-semibold">Taux de présence ministériel mensuel projeté (%)</span>
+<div class="flex items-center gap-4 font-label-sm text-label-sm">
+<span class="flex items-center gap-1.5"><span class="w-3 h-1.5 bg-primary rounded-full"></span>Présence prévue</span>
+<span class="flex items-center gap-1.5"><span class="w-3 h-0.5 bg-secondary rounded-full"></span>Seuil légal 65%</span>
+</div>
+</div>
+<div class="w-full h-36 flex items-end gap-2 pt-4 px-2">
+<!-- Jan -->
+<div class="flex-1 flex flex-col items-center gap-1 h-full justify-end">
+<span class="font-code-num text-code-num text-on-surface-variant">88%</span>
+<div class="w-full bg-primary/20 rounded-t h-[88%] hover:bg-primary transition-colors"></div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Jan</span>
+</div>
+<!-- Fév -->
+<div class="flex-1 flex flex-col items-center gap-1 h-full justify-end">
+<span class="font-code-num text-code-num text-on-surface-variant">86%</span>
+<div class="w-full bg-primary/20 rounded-t h-[86%] hover:bg-primary transition-colors"></div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Fév</span>
+</div>
+<!-- Mar -->
+<div class="flex-1 flex flex-col items-center gap-1 h-full justify-end">
+<span class="font-code-num text-code-num text-primary font-bold">81%</span>
+<div class="w-full bg-primary rounded-t h-[81%] shadow-sm"></div>
+<span class="font-label-sm text-label-sm text-primary font-bold">Mar</span>
+</div>
+<!-- Avr -->
+<div class="flex-1 flex flex-col items-center gap-1 h-full justify-end">
+<span class="font-code-num text-code-num text-on-surface-variant">82%</span>
+<div class="w-full bg-primary/20 rounded-t h-[82%] hover:bg-primary transition-colors"></div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Avr</span>
+</div>
+<!-- Mai -->
+<div class="flex-1 flex flex-col items-center gap-1 h-full justify-end">
+<span class="font-code-num text-code-num text-on-surface-variant">89%</span>
+<div class="w-full bg-primary/20 rounded-t h-[89%] hover:bg-primary transition-colors"></div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Mai</span>
+</div>
+<!-- Jun -->
+<div class="flex-1 flex flex-col items-center gap-1 h-full justify-end">
+<span class="font-code-num text-code-num text-on-surface-variant">84%</span>
+<div class="w-full bg-primary/20 rounded-t h-[84%] hover:bg-primary transition-colors"></div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Jun</span>
+</div>
+<!-- Jul -->
+<div class="flex-1 flex flex-col items-center gap-1 h-full justify-end">
+<span class="font-code-num text-code-num text-secondary font-bold">66%</span>
+<div class="w-full bg-secondary rounded-t h-[66%] shadow-sm"></div>
+<span class="font-label-sm text-label-sm text-secondary font-bold">Jul</span>
+</div>
+<!-- Aou -->
+<div class="flex-1 flex flex-col items-center gap-1 h-full justify-end">
+<span class="font-code-num text-code-num text-secondary font-bold">67%</span>
+<div class="w-full bg-secondary rounded-t h-[67%] shadow-sm"></div>
+<span class="font-label-sm text-label-sm text-secondary font-bold">Aoû</span>
+</div>
+<!-- Sep -->
+<div class="flex-1 flex flex-col items-center gap-1 h-full justify-end">
+<span class="font-code-num text-code-num text-on-surface-variant">85%</span>
+<div class="w-full bg-primary/20 rounded-t h-[85%] hover:bg-primary transition-colors"></div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Sep</span>
+</div>
+<!-- Oct -->
+<div class="flex-1 flex flex-col items-center gap-1 h-full justify-end">
+<span class="font-code-num text-code-num text-on-surface-variant">87%</span>
+<div class="w-full bg-primary/20 rounded-t h-[87%] hover:bg-primary transition-colors"></div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Oct</span>
+</div>
+<!-- Nov -->
+<div class="flex-1 flex flex-col items-center gap-1 h-full justify-end">
+<span class="font-code-num text-code-num text-on-surface-variant">88%</span>
+<div class="w-full bg-primary/20 rounded-t h-[88%] hover:bg-primary transition-colors"></div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Nov</span>
+</div>
+<!-- Dec -->
+<div class="flex-1 flex flex-col items-center gap-1 h-full justify-end">
+<span class="font-code-num text-code-num text-on-surface-variant">72%</span>
+<div class="w-full bg-primary/20 rounded-t h-[72%] hover:bg-primary transition-colors"></div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Déc</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Colonne Droite: Baromètre des Quorums par Entreprise (4 cols) -->
+<div class="lg:col-span-4 p-5 bg-surface-container-lowest rounded-lg shadow-sm space-y-4 flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between pb-2">
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Quorums par Société</h2>
+<span class="font-label-sm text-label-sm text-on-surface-variant font-medium">Seuil : 65%</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant pb-3">Contrôle de conformité de permanence des services publics sous tutelle.</p>
+<div class="space-y-3">
+<!-- PETROCI -->
+<div class="p-2.5 rounded bg-surface-container-low flex items-center justify-between">
+<div class="min-w-0">
+<p class="font-label-md text-label-md text-on-surface font-bold truncate">PETROCI HOLDING</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">84% présence • 48 départs T1</p>
+</div>
+<span class="px-2 py-0.5 rounded bg-primary-fixed text-on-primary-fixed font-label-sm text-label-sm font-semibold">Conforme</span>
+</div>
+<!-- CI-ENERGIES -->
+<div class="p-2.5 rounded bg-surface-container-low flex items-center justify-between">
+<div class="min-w-0">
+<p class="font-label-md text-label-md text-on-surface font-bold truncate">CI-ENERGIES</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">79% présence • 72 départs T1</p>
+</div>
+<span class="px-2 py-0.5 rounded bg-primary-fixed text-on-primary-fixed font-label-sm text-label-sm font-semibold">Conforme</span>
+</div>
+<!-- BNI -->
+<div class="p-2.5 rounded bg-surface-container-low flex items-center justify-between">
+<div class="min-w-0">
+<p class="font-label-md text-label-md text-on-surface font-bold truncate">BNI (Banque Nationale)</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">88% présence • 24 départs T1</p>
+</div>
+<span class="px-2 py-0.5 rounded bg-primary-fixed text-on-primary-fixed font-label-sm text-label-sm font-semibold">Conforme</span>
+</div>
+<!-- SOGEPIE -->
+<div class="p-2.5 rounded bg-surface-container-low flex items-center justify-between">
+<div class="min-w-0">
+<p class="font-label-md text-label-md text-secondary font-bold truncate">SOGEPIE</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">68% présence • Seuil critique approché</p>
+</div>
+<span class="px-2 py-0.5 rounded bg-secondary-fixed text-on-secondary-fixed font-label-sm text-label-sm font-semibold">Attention</span>
+</div>
+<!-- PAA -->
+<div class="p-2.5 rounded bg-surface-container-low flex items-center justify-between">
+<div class="min-w-0">
+<p class="font-label-md text-label-md text-on-surface font-bold truncate">Port Autonome d'Abidjan</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">82% présence • 115 départs T1</p>
+</div>
+<span class="px-2 py-0.5 rounded bg-primary-fixed text-on-primary-fixed font-label-sm text-label-sm font-semibold">Conforme</span>
+</div>
+</div>
+</div>
+<div class="pt-3">
+<a class="flex items-center justify-center gap-2 p-2 rounded bg-surface-container hover:bg-surface-container-high text-primary font-label-md text-label-md font-bold transition-colors" href="#">
+<span class="material-symbols-outlined text-base">assessment</span>
+<span>Auditer les 14 Sociétés du Portefeuille</span>
+</a>
+</div>
+</div>
+</div>
+<!-- Registre d'Arbitrage et de Visa des Demandes (Filtres & Table) -->
+<div class="p-5 bg-surface-container-lowest rounded-lg shadow-sm space-y-4">
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-2">
+<div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Registre d'Arbitrage &amp; Visa des Demandes de Congé</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Instructions soumises à la validation de la Sous-Direction Carrières &amp; Arrêtés Ministériels</p>
+</div>
+<div class="flex items-center gap-2">
+<span class="font-label-sm text-label-sm text-on-surface-variant font-medium">Affichage :</span>
+<span class="font-code-num text-code-num font-bold text-primary px-2 py-0.5 bg-surface-container rounded">4 dossiers en attente d'arbitrage</span>
+</div>
+</div>
+<!-- Filtres multicritères -->
+<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 p-3 bg-surface-container-low rounded">
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface font-semibold mb-1">Société d'État</label>
+<select class="w-full h-9 px-2.5 bg-surface-container-lowest text-on-surface font-body-sm text-body-sm rounded focus:outline-none focus:ring-1 focus:ring-primary">
+<option>Toutes les entreprises publiques</option>
+<option>PETROCI HOLDING</option>
+<option>CI-ENERGIES</option>
+<option>SOGEPIE</option>
+<option>Port Autonome San Pedro</option>
+</select>
+</div>
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface font-semibold mb-1">Type de Congé</label>
+<select class="w-full h-9 px-2.5 bg-surface-container-lowest text-on-surface font-body-sm text-body-sm rounded focus:outline-none focus:ring-1 focus:ring-primary">
+<option>Tous les régimes de congé</option>
+<option>Congé Annuel Régulier (30j)</option>
+<option>Congé Maternité (14 sem.)</option>
+<option>Congé Paternité / Naissance (3j)</option>
+<option>Reliquats N-1</option>
+</select>
+</div>
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface font-semibold mb-1">Statut d'Instruction</label>
+<select class="w-full h-9 px-2.5 bg-surface-container-lowest text-on-surface font-body-sm text-body-sm rounded focus:outline-none focus:ring-1 focus:ring-primary">
+<option>Tous les statuts</option>
+<option>Prêt pour signature Arrêté DRH</option>
+<option>Conflit Quorum de Service</option>
+<option>Remplacement temporaire acté</option>
+<option>Approbation automatique DGPE</option>
+</select>
+</div>
+<div class="flex items-end">
+<button class="w-full h-9 flex items-center justify-center gap-2 bg-surface-container-high hover:bg-surface-container text-on-surface font-label-md text-label-md font-semibold rounded transition-colors" type="button">
+<span class="material-symbols-outlined text-base">filter_alt</span>
+<span>Appliquer les Filtres</span>
+</button>
+</div>
+</div>
+<!-- Table de données -->
+<div class="overflow-x-auto">
+<table class="w-full text-left font-body-sm text-body-sm">
+<thead>
+<tr class="bg-surface-container-low text-on-surface-variant font-label-md text-label-md">
+<th class="py-3 px-4">Agent &amp; Entreprise</th>
+<th class="py-3 px-3">Type &amp; Période</th>
+<th class="py-3 px-3">Durée</th>
+<th class="py-3 px-3">Continuité / Intérim</th>
+<th class="py-3 px-3">Statut Instruction</th>
+<th class="py-3 px-4 text-right">Actions Régaliennes</th>
+</tr>
+</thead>
+<tbody class="divide-y-0">
+<!-- Ligne 1 : Bakayoko Salimata -->
+<tr class="hover:bg-surface-container-low/60 transition-colors">
+<td class="py-3.5 px-4">
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-full bg-surface-container flex items-center justify-center font-label-md text-label-md text-primary font-bold">
+                    BS
+                  </div>
+<div>
+<div class="font-label-md text-label-md font-bold text-on-surface">Mme BAKAYOKO Salimata</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant">Dir. Adjointe Audit • <strong class="text-on-surface">PETROCI</strong></div>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-3">
+<div class="font-label-md text-label-md text-on-surface">Congé Annuel Reliquat N-1</div>
+<div class="font-code-num text-code-num text-on-surface-variant">10 Mar. 2026 → 28 Mar. 2026</div>
+</td>
+<td class="py-3.5 px-3 font-code-num text-code-num font-bold text-on-surface">
+                15 jours
+              </td>
+<td class="py-3.5 px-3">
+<div class="flex items-center gap-1.5 text-on-surface font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-sm text-primary">person_check</span>
+<span>M. KOFFI Jean-Marc</span>
+</div>
+<span class="font-label-sm text-label-sm text-primary font-medium">Intérim validé CA</span>
+</td>
+<td class="py-3.5 px-3">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-primary-fixed text-on-primary-fixed font-label-sm text-label-sm font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+                  Prêt pour signature Arrêté DRH
+                </span>
+</td>
+<td class="py-3.5 px-4 text-right">
+<div class="flex items-center justify-end gap-2">
+<button class="px-2.5 py-1.5 rounded bg-primary text-on-primary hover:bg-primary/90 font-label-sm text-label-sm font-semibold transition-colors flex items-center gap-1" type="button">
+<span class="material-symbols-outlined text-sm">draw</span>
+<span>Signer K-Sign</span>
+</button>
+<button class="p-1.5 rounded hover:bg-surface-container-high text-on-surface-variant transition-colors" title="Rejeter la demande" type="button">
+<span class="material-symbols-outlined text-base">close</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Ligne 2 : Diabaté Souleymane -->
+<tr class="hover:bg-surface-container-low/60 transition-colors bg-surface-container-lowest">
+<td class="py-3.5 px-4">
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-full bg-surface-container flex items-center justify-center font-label-md text-label-md text-primary font-bold">
+                    DS
+                  </div>
+<div>
+<div class="font-label-md text-label-md font-bold text-on-surface">M. DIABATÉ Souleymane</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant">Chef Division Informatique • <strong class="text-on-surface">SOGEPIE</strong></div>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-3">
+<div class="font-label-md text-label-md text-on-surface">Congé Paternité / Naissance</div>
+<div class="font-code-num text-code-num text-on-surface-variant">12 Mar. 2026 → 16 Mar. 2026</div>
+</td>
+<td class="py-3.5 px-3 font-code-num text-code-num font-bold text-on-surface">
+                3 jours
+              </td>
+<td class="py-3.5 px-3">
+<div class="flex items-center gap-1.5 text-on-surface-variant font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-sm text-primary">groups</span>
+<span>Permanence DSI assurée</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Équipe d'astreinte 24/7</span>
+</td>
+<td class="py-3.5 px-3">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-surface-container-high text-on-surface font-label-sm text-label-sm font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+                  Approbation automatique DGPE
+                </span>
+</td>
+<td class="py-3.5 px-4 text-right">
+<div class="flex items-center justify-end gap-2">
+<span class="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-sm text-primary">mark_email_read</span>
+                    Notification émise
+                  </span>
+</div>
+</td>
+</tr>
+<!-- Ligne 3 : N'Guessan Patricia -->
+<tr class="hover:bg-surface-container-low/60 transition-colors">
+<td class="py-3.5 px-4">
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-full bg-surface-container flex items-center justify-center font-label-md text-label-md text-primary font-bold">
+                    NP
+                  </div>
+<div>
+<div class="font-label-md text-label-md font-bold text-on-surface">Mme N'GUESSAN Patricia</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant">Responsable Financements • <strong class="text-on-surface">CI-ENERGIES</strong></div>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-3">
+<div class="font-label-md text-label-md text-on-surface">Congé Maternité Réglementaire</div>
+<div class="font-code-num text-code-num text-on-surface-variant">01 Avr. 2026 → 08 Juil. 2026</div>
+</td>
+<td class="py-3.5 px-3 font-code-num text-code-num font-bold text-on-surface">
+                14 semaines
+              </td>
+<td class="py-3.5 px-3">
+<div class="flex items-center gap-1.5 text-on-surface font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-sm text-primary">verified</span>
+<span>Certificat Médical Homologué</span>
+</div>
+<span class="font-label-sm text-label-sm text-primary font-medium">Contrat d'intérim acté</span>
+</td>
+<td class="py-3.5 px-3">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-primary-fixed text-on-primary-fixed font-label-sm text-label-sm font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+                  Remplacement temporaire acté
+                </span>
+</td>
+<td class="py-3.5 px-4 text-right">
+<div class="flex items-center justify-end gap-2">
+<button class="px-2.5 py-1.5 rounded bg-surface-container hover:bg-surface-container-high text-primary font-label-sm text-label-sm font-bold transition-colors flex items-center gap-1" type="button">
+<span class="material-symbols-outlined text-sm">description</span>
+<span>Générer Arrêté DRH</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Ligne 4 : Touré Ibrahim -->
+<tr class="hover:bg-surface-container-low/60 transition-colors bg-secondary-fixed/10">
+<td class="py-3.5 px-4">
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-full bg-secondary-fixed text-on-secondary-fixed flex items-center justify-center font-label-md text-label-md font-bold">
+                    TI
+                  </div>
+<div>
+<div class="font-label-md text-label-md font-bold text-on-surface">M. TOURE Ibrahim</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant">Juriste Contentieux • <strong class="text-on-surface">Port Autonome San Pedro</strong></div>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-3">
+<div class="font-label-md text-label-md text-secondary font-bold">Congé Annuel Principal</div>
+<div class="font-code-num text-code-num text-on-surface-variant">15 Mar. 2026 → 14 Avr. 2026</div>
+</td>
+<td class="py-3.5 px-3 font-code-num text-code-num font-bold text-on-surface">
+                22 jours
+              </td>
+<td class="py-3.5 px-3">
+<div class="flex items-center gap-1.5 text-secondary font-label-sm text-label-sm font-medium">
+<span class="material-symbols-outlined text-sm">warning</span>
+<span>Quorum Direction Juridique &lt; 60%</span>
+</div>
+<span class="font-label-sm text-label-sm text-secondary">3 juristes déjà en congé</span>
+</td>
+<td class="py-3.5 px-3">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-secondary-fixed text-on-secondary-fixed font-label-sm text-label-sm font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+                  Conflit Quorum de Service
+                </span>
+</td>
+<td class="py-3.5 px-4 text-right">
+<div class="flex items-center justify-end gap-2">
+<button class="px-2.5 py-1.5 rounded bg-secondary text-on-secondary hover:bg-secondary/90 font-label-sm text-label-sm font-bold transition-colors flex items-center gap-1" type="button">
+<span class="material-symbols-outlined text-sm">event_repeat</span>
+<span>Avis Défavorable / Décaler</span>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<!-- Volet Clôture & Dispositif Réglementaire des Reliquats -->
+<div class="p-5 bg-surface-container-lowest rounded-lg shadow-sm space-y-4">
+<div class="flex items-center justify-between pb-1">
+<div class="flex items-center gap-2.5">
+<span class="material-symbols-outlined text-secondary text-xl">gavel</span>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Dispositif Réglementaire d'Apurement des Reliquats N-1</h2>
+</div>
+<span class="font-label-sm text-label-sm px-2.5 py-0.5 rounded bg-secondary-fixed text-on-secondary-fixed font-bold">
+          Échéance Immuable : 30 Avril 2026
+        </span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+<!-- Option 1 -->
+<div class="p-3.5 rounded bg-surface-container-low flex flex-col justify-between space-y-2">
+<div>
+<div class="font-label-md text-label-md text-on-surface font-bold">1. Consommation Immédiate</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Départ programmé avant le 30 Avril avec accord exprès du supérieur hiérarchique.</p>
+</div>
+<div class="font-code-num text-code-num text-primary font-bold">2 480 jours planifiés (60%)</div>
+</div>
+<!-- Option 2 -->
+<div class="p-3.5 rounded bg-surface-container-low flex flex-col justify-between space-y-2">
+<div>
+<div class="font-label-md text-label-md text-on-surface font-bold">2. Compte Épargne-Temps (CET)</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Versement automatique sous réserve du plafond maximal réglementaire de 10 jours.</p>
+</div>
+<div class="font-code-num text-code-num text-on-surface font-bold">1 140 jours reversés (28%)</div>
+</div>
+<!-- Option 3 -->
+<div class="p-3.5 rounded bg-surface-container-low flex flex-col justify-between space-y-2">
+<div>
+<div class="font-label-md text-label-md text-secondary font-bold">3. Indemnisation Dérogatoire</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Nécessité impérieuse de service attestée par arrêté du Ministre de Tutelle.</p>
+</div>
+<div class="font-code-num text-code-num text-secondary font-bold">500 jours sous réserve ministérielle (12%)</div>
+</div>
+</div>
+<div class="pt-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-on-surface-variant font-label-sm text-label-sm">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-base text-primary">security</span>
+<span>Traçabilité ANSSI-CI • Horodatage certifié sur Registre National de la Fonction Publique</span>
+</div>
+<div class="flex items-center gap-3">
+<button class="text-primary hover:underline font-semibold" type="button">Télécharger la Circulaire Ministérielle N° 0042/MPEEP/DRH</button>
+</div>
+</div>
+</div>
+</div>
+</div></main></div></body></html>

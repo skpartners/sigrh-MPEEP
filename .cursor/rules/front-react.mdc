@@ -1,0 +1,12 @@
+---
+description: Le front SIGRH est entièrement en React
+alwaysApply: true
+---
+
+# Front React
+
+Tout l'interface utilisateur vit dans `client/` (React, Vite, react-router). Les fichiers `Templates/*.html` sont des maquettes : en reprendre le contenu dans un écran React, jamais les servir comme pages.
+
+- Brancher la maquette dans un composant sous `client/src/screens/`, rendu par `AppChrome` et une route de `client/src/App.tsx`.
+- Ne pas recopier le chrome HTML (barre latérale, en-tête) : `AppChrome` le fournit déjà.
+- Les chiffres, boutons, modales et exports appellent l'API Django. Pas de page statique, pas de second front.

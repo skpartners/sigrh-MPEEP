@@ -1,0 +1,1194 @@
+<!DOCTYPE html>
+
+<html lang="fr"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{colors:{"on-tertiary-container":"#bdc4de","on-surface-variant":"#3f4942","tertiary-fixed-dim":"#bec6e0","on-background":"#0b1c30","on-tertiary-fixed":"#131b2e","surface-dim":"#cbdbf5","on-secondary-fixed-variant":"#783100","on-tertiary-fixed-variant":"#3f465c","primary-container":"#0a5e3a","on-surface":"#0b1c30","surface-tint":"#1e6b46","primary-fixed-dim":"#8cd6a9","surface-container":"#e5eeff","on-primary-fixed-variant":"#005231","tertiary-container":"#495167","on-error-container":"#93000a","outline-variant":"#bfc9c0","inverse-primary":"#8cd6a9","surface-variant":"#d3e4fe","surface-container-lowest":"#ffffff","inverse-on-surface":"#eaf1ff","on-primary-container":"#8ad5a7","primary":"#004428","on-primary-fixed":"#002111","surface-bright":"#f8f9ff","surface-container-highest":"#d3e4fe","primary-fixed":"#a7f3c3","inverse-surface":"#213145","on-primary":"#ffffff","error-container":"#ffdad6","error":"#ba1a1a","secondary-fixed-dim":"#ffb691","tertiary-fixed":"#dae2fd","on-secondary":"#ffffff","tertiary":"#333a4f","surface-container-low":"#eff4ff","on-secondary-container":"#602600","secondary-fixed":"#ffdbcb","background":"#f8f9ff","surface":"#f8f9ff","secondary":"#9e4300","on-secondary-fixed":"#341100","on-tertiary":"#ffffff","outline":"#707a71","on-error":"#ffffff","surface-container-high":"#dce9ff","secondary-container":"#fe7b28"},borderRadius:{DEFAULT:"0.125rem",lg:"0.25rem",xl:"0.5rem",full:"0.75rem"},spacing:{"gutter-desktop":"1.5rem","space-sm":"0.5rem","margin-desktop":"2rem",gutter:"1.25rem","space-md":"1rem","space-lg":"1.5rem",margin:"1rem","space-xs":"0.25rem","space-xl":"2rem","margin-tablet":"1.5rem"},fontFamily:{"headline-lg":["Public Sans"],"label-lg":["Public Sans"],"body-lg":["Public Sans"],"headline-sm":["Public Sans"],"label-sm":["Public Sans"],"headline-lg-mobile":["Public Sans"],"body-md":["Public Sans"],"headline-xl":["Public Sans"],"label-md":["Public Sans"],"code-num":["Public Sans"],"body-sm":["Public Sans"],"headline-md":["Public Sans"],"headline-xl-mobile":["Public Sans"]},fontSize:{"headline-lg":["30px",{lineHeight:"38px",fontWeight:"700"}],"label-lg":["14px",{lineHeight:"20px",fontWeight:"600"}],"body-lg":["16px",{lineHeight:"24px",fontWeight:"400"}],"headline-sm":["18px",{lineHeight:"24px",fontWeight:"600"}],"label-sm":["11px",{lineHeight:"14px",fontWeight:"500"}],"headline-lg-mobile":["24px",{lineHeight:"32px",fontWeight:"700"}],"body-md":["14px",{lineHeight:"20px",fontWeight:"400"}],"headline-xl":["36px",{lineHeight:"44px",fontWeight:"700"}],"label-md":["12px",{lineHeight:"16px",fontWeight:"600"}],"code-num":["13px",{lineHeight:"18px",fontWeight:"600"}],"body-sm":["13px",{lineHeight:"18px",fontWeight:"400"}],"headline-md":["22px",{lineHeight:"28px",fontWeight:"600"}],"headline-xl-mobile":["28px",{lineHeight:"36px",fontWeight:"700"}]}}}};</script></head><body class="bg-background font-body-md text-on-surface antialiased"><header class="fixed top-0 left-0 right-0 z-50 bg-surface-container-lowest/95 backdrop-blur-md shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-1 flex w-full"><div class="w-1/3 bg-secondary-container"></div><div class="w-1/3 bg-surface-container-lowest"></div><div class="w-1/3 bg-primary-container"></div></div><div class="h-16 px-6 flex items-center justify-between gap-4"><div class="flex items-center gap-3 min-w-0"><div class="flex items-center justify-center p-1 bg-surface-container-low rounded"><img alt="Armoiries Côte d'Ivoire" class="h-8 w-8 object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDSw7RDrfkH23MP3vRslBhyhcQ6PqxQeuiVBV7MhHMXUkdzQM8SNRahCoiGGz1l5k1jUSBih-nf9uW_I71ODxn4J5xl3WEQZYjsmOSRmouGBn9rBCchF74LeMhfY7v8iSjUxasJDn7PMrzb8Wxus96k4G5ejvdWIDnJmwVPgePID7gdosimtJG8TXG5O64V9oFoQ56kMdMTT0SYsIBHwUU7TwPvci4Dj8x5o_gMdtcJpazXOC3hKx4"/></div><div class="flex flex-col min-w-0"><span class="font-label-md text-label-md text-primary uppercase tracking-wider font-bold truncate">SIGRH | RÉPUBLIQUE DE CÔTE D'IVOIRE</span><span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-tight truncate">Ministère du Portefeuille de l'État et des Entreprises Publiques</span></div></div><div class="flex-1 max-w-md mx-4 hidden lg:block"><div class="relative flex items-center"><span class="material-symbols-outlined absolute left-3 text-on-surface-variant text-lg pointer-events-none">search</span><input class="w-full pl-9 pr-4 py-1.5 bg-surface-container-low text-on-surface placeholder:text-on-surface-variant/70 font-body-sm text-body-sm rounded border-0 focus:outline-none focus:ring-1 focus:ring-primary" placeholder="Rechercher un agent par matricule civil, nom ou direction..." type="text"/></div></div><div class="flex items-center gap-3 shrink-0"><div class="hidden sm:flex items-center gap-1.5 px-2.5 py-1 bg-surface-container-low rounded"><span class="font-label-sm text-label-sm text-on-surface-variant font-medium">Exercice</span><span class="font-code-num text-code-num text-primary font-bold px-1.5 py-0.5 bg-surface-container-lowest rounded">2026</span></div><div class="relative flex items-center"><button aria-label="Notifications de validation" class="p-2 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high rounded transition-colors relative" type="button"><span class="material-symbols-outlined text-xl">notifications</span><span class="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-secondary-container rounded-full"></span></button></div><div class="flex items-center gap-2 pl-2"><img alt="Profile" class="w-8 h-8 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDSw7RDrfkH23MP3vRslBhyhcQ6PqxQeuiVBV7MhHMXUkdzQM8SNRahCoiGGz1l5k1jUSBih-nf9uW_I71ODxn4J5xl3WEQZYjsmOSRmouGBn9rBCchF74LeMhfY7v8iSjUxasJDn7PMrzb8Wxus96k4G5ejvdWIDnJmwVPgePID7gdosimtJG8TXG5O64V9oFoQ56kMdMTT0SYsIBHwUU7TwPvci4Dj8x5o_gMdtcJpazXOC3hKx4"/><div class="hidden md:flex flex-col text-left"><span class="font-label-md text-label-md text-on-surface font-semibold leading-tight">Kouamé N'Dri</span><span class="font-label-sm text-label-sm text-on-surface-variant">Directeur DRH</span></div></div></div></div></header><aside class="fixed left-0 top-0 h-full w-72 bg-surface-container-lowest z-40 flex flex-col pt-20 pb-4 shadow-[1px_0_8px_rgba(0,0,0,0.03)] overflow-y-auto"><div class="px-5 pb-3"><div class="p-3 bg-surface-container-low rounded flex items-center gap-3"><div class="w-8 h-8 rounded bg-primary text-on-primary flex items-center justify-center font-headline-sm text-headline-sm"><span class="material-symbols-outlined text-lg">account_balance</span></div><div class="min-w-0"><p class="font-label-sm text-label-sm text-on-surface-variant uppercase font-medium">Portefeuille Étatique</p><p class="font-label-md text-label-md text-on-surface font-bold truncate">DGPE &amp; Sociétés d'État</p></div></div></div><nav class="flex-1 px-3 space-y-1 font-body-sm text-body-sm" data-active-classes="bg-primary text-on-primary font-semibold shadow-sm"><div class="px-3 pt-2 pb-1"><span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider font-bold">Pilotage Central</span></div><a class="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="dashboard" href="#"><span class="material-symbols-outlined text-lg">dashboard</span><span>Vue d'ensemble DRH</span></a><a class="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="dossier-agent" href="#"><span class="material-symbols-outlined text-lg">badge</span><span>Dossier Agent Numérique</span></a><div class="px-3 pt-3 pb-1"><span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider font-bold">Sous-Directions Métier</span></div><a class="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="carrieres-mutations" href="#"><span class="material-symbols-outlined text-lg">assignment</span><span>SD Carrières &amp; Actes</span></a><a class="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="action-sociale" href="#"><span class="material-symbols-outlined text-lg">volunteer_activism</span><span>SD Action Sociale</span></a><a class="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="formation-continue" href="#"><span class="material-symbols-outlined text-lg">school</span><span>SD Formation Continue</span></a><div class="px-3 pt-3 pb-1"><span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider font-bold">Gouvernance &amp; Conformité</span></div><a class="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="circuits-validation" href="#"><span class="material-symbols-outlined text-lg">approval_delegation</span><span>Circuits de Validation</span></a><a class="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="statistiques-rbac" href="#"><span class="material-symbols-outlined text-lg">admin_panel_settings</span><span>Statistiques &amp; RBAC</span></a></nav><div class="px-4 pt-3 mt-auto"><div class="p-3 bg-surface-container-low rounded text-center"><span class="font-label-sm text-label-sm text-on-surface-variant block font-medium">Sécurisation Régalienne</span><span class="font-code-num text-code-num text-primary block mt-0.5">ANSSI-CI • SIGRH-v2.6</span></div></div></aside><div class="pl-72"><main class="relative pt-16 min-h-screen bg-background flex flex-col justify-between"><div class="flex flex-col w-full font-body-md text-on-surface">
+<!-- ======================== BANDEAU SUPÉRIEUR STATUTAIRE ======================== -->
+<section class="w-full px-6 py-5 bg-surface-container-lowest shadow-sm flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
+<div class="flex items-start gap-4">
+<div class="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-2xl" style="font-variation-settings: 'FILL' 1;">volunteer_activism</span>
+</div>
+<div>
+<div class="flex flex-wrap items-center gap-2 mb-1">
+<span class="px-2 py-0.5 rounded text-[10px] font-label-sm uppercase tracking-widest font-bold bg-primary text-on-primary">
+            RÉGIE SOCIALE MINISTÉRIELLE
+          </span>
+<span class="px-2 py-0.5 rounded text-[10px] font-label-sm font-semibold bg-surface-container-high text-on-surface-variant flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary-container"></span>
+            Exercice Budgétaire 2026 • Arrêté MPEEP/CAB/SDAS-019
+          </span>
+<span class="px-2 py-0.5 rounded text-[10px] font-label-sm font-bold bg-primary-fixed text-on-primary-fixed">
+            CNAM-CI / CGRAE Synchronisés
+          </span>
+</div>
+<h1 class="font-headline-md text-headline-md text-on-surface font-bold tracking-tight">
+          Sous-Direction de l'Action Sociale (SDAS)
+        </h1>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">
+          Prévoyance régalienne, secours d'urgence, appui au logement et médecine préventive du Portefeuille de l'État
+        </p>
+</div>
+</div>
+<!-- Actions Supérieures Solennelles -->
+<div class="flex flex-wrap items-center gap-2 self-start xl:self-auto shrink-0">
+<button class="px-3.5 py-2 rounded bg-surface-container-low hover:bg-surface-container-high text-on-surface text-label-md font-label-md transition-colors flex items-center gap-2" id="btn-export-rapport">
+<span class="material-symbols-outlined text-base">picture_as_pdf</span>
+<span>Rapport Social Annuel</span>
+</button>
+<button class="px-3.5 py-2 rounded bg-surface-container-low hover:bg-surface-container-high text-primary text-label-md font-label-md transition-colors flex items-center gap-2" id="btn-commission-modal">
+<span class="material-symbols-outlined text-base">gavel</span>
+<span>Commission d'Arbitrage</span>
+<span class="px-1.5 py-0.2 rounded-full bg-secondary text-on-secondary text-[10px] font-bold">5</span>
+</button>
+<button class="px-4 py-2 rounded bg-primary hover:bg-primary-container text-on-primary text-label-md font-label-md transition-all shadow-sm flex items-center gap-2" id="btn-open-nouvelle-demande">
+<span class="material-symbols-outlined text-base">add_circle</span>
+<span>Nouvelle Demande de Secours</span>
+</button>
+</div>
+</section>
+<!-- ======================== CORPS PRINCIPAL DE TRAVAIL ======================== -->
+<div class="w-full px-6 py-6 space-y-6">
+<!-- KPI STRATÉGIQUES BUDGET ET IMPACT SOCIAL -->
+<section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+<!-- KPI 1 : Budget Alloué -->
+<div class="p-4 rounded-xl bg-surface-container-lowest shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase font-semibold">Dotation Sociale Annuelle</span>
+<span class="p-1.5 rounded-lg bg-surface-container-low text-primary material-symbols-outlined text-lg">account_balance_wallet</span>
+</div>
+<div class="mt-3">
+<span class="font-headline-lg text-headline-lg font-bold text-on-surface tracking-tight">120 000 000</span>
+<span class="font-label-md text-label-md text-on-surface-variant ml-1">FCFA</span>
+</div>
+<div class="mt-3 pt-2 bg-surface-container-low/40 rounded flex items-center justify-between px-2 py-1 text-[11px] font-label-sm text-on-surface-variant">
+<span>Loi de Finances MPEEP</span>
+<span class="font-bold text-primary">Exercice régulier</span>
+</div>
+</div>
+<!-- KPI 2 : Engagé / Liquidé -->
+<div class="p-4 rounded-xl bg-surface-container-lowest shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase font-semibold">Engagé &amp; Liquidé (60.7%)</span>
+<span class="p-1.5 rounded-lg bg-surface-container-low text-secondary material-symbols-outlined text-lg">payments</span>
+</div>
+<div class="mt-3">
+<span class="font-headline-lg text-headline-lg font-bold text-secondary tracking-tight">72 800 000</span>
+<span class="font-label-md text-label-md text-on-surface-variant ml-1">FCFA</span>
+</div>
+<div class="mt-3">
+<div class="w-full h-1.5 bg-surface-container-high rounded-full overflow-hidden">
+<div class="h-full bg-secondary-container rounded-full" style="width: 60.7%;"></div>
+</div>
+</div>
+</div>
+<!-- KPI 3 : Reliquat Prévoyance -->
+<div class="p-4 rounded-xl bg-surface-container-lowest shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase font-semibold">Solde Disponible Immédiat</span>
+<span class="p-1.5 rounded-lg bg-surface-container-low text-primary material-symbols-outlined text-lg">savings</span>
+</div>
+<div class="mt-3">
+<span class="font-headline-lg text-headline-lg font-bold text-primary tracking-tight">47 200 000</span>
+<span class="font-label-md text-label-md text-on-surface-variant ml-1">FCFA</span>
+</div>
+<div class="mt-3 pt-2 bg-primary/5 rounded flex items-center justify-between px-2 py-1 text-[11px] font-label-sm">
+<span class="text-on-surface-variant">Trésorerie DAAF</span>
+<span class="font-bold text-primary">Réserve certifiée</span>
+</div>
+</div>
+<!-- KPI 4 : Requêtes traitées & Ayants droit -->
+<div class="p-4 rounded-xl bg-surface-container-lowest shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase font-semibold">Dossiers Instruits (2026)</span>
+<span class="p-1.5 rounded-lg bg-surface-container-low text-tertiary material-symbols-outlined text-lg">diversity_1</span>
+</div>
+<div class="mt-3 flex items-baseline gap-2">
+<span class="font-headline-lg text-headline-lg font-bold text-on-surface tracking-tight">248</span>
+<span class="font-label-sm text-label-sm text-primary font-bold">+18 ce mois</span>
+</div>
+<div class="mt-3 pt-2 bg-surface-container-low/40 rounded flex items-center justify-between px-2 py-1 text-[11px] font-label-sm text-on-surface-variant">
+<span>Taux de satisfaction</span>
+<span class="font-bold text-on-surface">94.2% conformité</span>
+</div>
+</div>
+</section>
+<!-- ==================== VOLET 1 : LES 4 GUICHETS DE SECOURS RÉGALIENS ==================== -->
+<section class="space-y-3">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+<div>
+<h2 class="font-headline-sm text-headline-sm font-bold text-on-surface flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-primary"></span>
+            Guichets d'Aides, Prévoyance &amp; Secours Spéciaux
+          </h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+            Dispositif d'urgence sociale selon les dispositions du statut général et des conventions d'entreprises d'État
+          </p>
+</div>
+<span class="px-2.5 py-1 rounded bg-surface-container-high text-on-surface text-label-sm font-semibold flex items-center gap-1 self-start sm:self-auto">
+<span class="material-symbols-outlined text-sm text-primary">verified_user</span>
+          Protocole de mandatement sous 48h
+        </span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+<!-- Guichet 1 : Décès & Obsèques -->
+<div class="bg-surface-container-lowest rounded-xl p-4 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
+<div>
+<div class="flex items-center justify-between mb-3">
+<span class="w-9 h-9 rounded-lg bg-surface-container-high text-on-surface flex items-center justify-center">
+<span class="material-symbols-outlined text-xl text-primary">church</span>
+</span>
+<span class="px-2 py-0.5 rounded text-[10px] font-label-sm font-bold bg-primary-fixed text-on-primary-fixed">
+                Plafond 1 500 000 F
+              </span>
+</div>
+<h3 class="font-label-lg text-label-lg font-bold text-on-surface">Secours Décès &amp; Obsèques</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">
+              Prise en charge frais mortuaires pour agents, conjoints et enfants légaux. Décaissement express.
+            </p>
+<div class="mt-4 space-y-1.5">
+<div class="flex justify-between font-label-sm text-label-sm">
+<span class="text-on-surface-variant">Consommation guichet</span>
+<span class="font-bold text-on-surface">18 500 000 / 30 000 000 F</span>
+</div>
+<div class="w-full h-1.5 bg-surface-container-high rounded-full overflow-hidden">
+<div class="h-full bg-primary rounded-full" style="width: 61.6%;"></div>
+</div>
+</div>
+</div>
+<div class="mt-4 pt-3 flex items-center justify-between text-[11px] font-label-sm text-on-surface-variant bg-surface-container-low/50 px-2 py-1.5 rounded">
+<span>Délai moyen de virement</span>
+<span class="font-bold text-primary">36 heures</span>
+</div>
+</div>
+<!-- Guichet 2 : Évacuation & Hospitalisation -->
+<div class="bg-surface-container-lowest rounded-xl p-4 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
+<div>
+<div class="flex items-center justify-between mb-3">
+<span class="w-9 h-9 rounded-lg bg-error-container text-error flex items-center justify-center">
+<span class="material-symbols-outlined text-xl">emergency</span>
+</span>
+<span class="px-2 py-0.5 rounded text-[10px] font-label-sm font-bold bg-secondary-fixed text-on-secondary-fixed">
+                Plafond 2 500 000 F
+              </span>
+</div>
+<h3 class="font-label-lg text-label-lg font-bold text-on-surface">Hospitalisation &amp; Évacuation</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">
+              Accompagnement plateaux techniques (CHU Angré, PISAM, Polyclinique Internationale Sainte Anne-Marie).
+            </p>
+<div class="mt-4 space-y-1.5">
+<div class="flex justify-between font-label-sm text-label-sm">
+<span class="text-on-surface-variant">Consommation guichet</span>
+<span class="font-bold text-secondary">24 800 000 / 35 000 000 F</span>
+</div>
+<div class="w-full h-1.5 bg-surface-container-high rounded-full overflow-hidden">
+<div class="h-full bg-secondary-container rounded-full" style="width: 70.8%;"></div>
+</div>
+</div>
+</div>
+<div class="mt-4 pt-3 flex items-center justify-between text-[11px] font-label-sm text-on-surface-variant bg-surface-container-low/50 px-2 py-1.5 rounded">
+<span>Réseau conventionné</span>
+<span class="font-bold text-on-surface">14 cliniques / PISAM</span>
+</div>
+</div>
+<!-- Guichet 3 : Pupilles & Rentrée Scolaire -->
+<div class="bg-surface-container-lowest rounded-xl p-4 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
+<div>
+<div class="flex items-center justify-between mb-3">
+<span class="w-9 h-9 rounded-lg bg-surface-container-high text-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-xl">backpack</span>
+</span>
+<span class="px-2 py-0.5 rounded text-[10px] font-label-sm font-bold bg-surface-container-high text-on-surface-variant">
+                150 000 F / enfant
+              </span>
+</div>
+<h3 class="font-label-lg text-label-lg font-bold text-on-surface">Rentrée Scolaire des Pupilles</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">
+              Allocation directe aux orphelins de fonctionnaires et personnels décédés en activité au portefeuille.
+            </p>
+<div class="mt-4 space-y-1.5">
+<div class="flex justify-between font-label-sm text-label-sm">
+<span class="text-on-surface-variant">Consommation guichet</span>
+<span class="font-bold text-on-surface">16 200 000 / 25 000 000 F</span>
+</div>
+<div class="w-full h-1.5 bg-surface-container-high rounded-full overflow-hidden">
+<div class="h-full bg-primary rounded-full" style="width: 64.8%;"></div>
+</div>
+</div>
+</div>
+<div class="mt-4 pt-3 flex items-center justify-between text-[11px] font-label-sm text-on-surface-variant bg-surface-container-low/50 px-2 py-1.5 rounded">
+<span>Pupilles indemnisés</span>
+<span class="font-bold text-on-surface">108 bénéficiaires</span>
+</div>
+</div>
+<!-- Guichet 4 : Solidarité & Sinistres Exceptionnels -->
+<div class="bg-surface-container-lowest rounded-xl p-4 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
+<div>
+<div class="flex items-center justify-between mb-3">
+<span class="w-9 h-9 rounded-lg bg-surface-container-high text-secondary flex items-center justify-center">
+<span class="material-symbols-outlined text-xl">handshake</span>
+</span>
+<span class="px-2 py-0.5 rounded text-[10px] font-label-sm font-bold bg-secondary-fixed text-on-secondary-fixed">
+                Commission MPEEP
+              </span>
+</div>
+<h3 class="font-label-lg text-label-lg font-bold text-on-surface">Secours Sinistres &amp; Cas Sociaux</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">
+              Incendies, inondations, invalidité temporaire majeure non couverte par la prévoyance de base.
+            </p>
+<div class="mt-4 space-y-1.5">
+<div class="flex justify-between font-label-sm text-label-sm">
+<span class="text-on-surface-variant">Consommation guichet</span>
+<span class="font-bold text-on-surface">13 300 000 / 30 000 000 F</span>
+</div>
+<div class="w-full h-1.5 bg-surface-container-high rounded-full overflow-hidden">
+<div class="h-full bg-primary rounded-full" style="width: 44.3%;"></div>
+</div>
+</div>
+</div>
+<div class="mt-4 pt-3 flex items-center justify-between text-[11px] font-label-sm text-on-surface-variant bg-surface-container-low/50 px-2 py-1.5 rounded">
+<span>Avis consultatif</span>
+<span class="font-bold text-secondary">Visa DRH Requis</span>
+</div>
+</div>
+</div>
+</section>
+<!-- ==================== VOLET 2 : PRÊTS, QUOTITÉ CESSIBLE & HABITAT (BENTO DOUBLE) ==================== -->
+<section class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+<!-- Simulateur Quotité Cessible (Calculateur 33%) -->
+<div class="lg:col-span-5 bg-surface-container-lowest rounded-xl p-5 shadow-sm flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between pb-3">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-xl">calculate</span>
+<h3 class="font-headline-sm text-headline-sm font-bold text-on-surface">Calculateur de Quotité Cessible (33%)</h3>
+</div>
+<span class="px-2 py-0.5 rounded text-[10px] font-code-num font-bold bg-surface-container-low text-on-surface-variant">
+              Règle Trésor CI
+            </span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-4">
+            Contrôle d'éligibilité pour les avances sur salaire, prêts BNI / Versus Bank et conventions d'équipement.
+          </p>
+<div class="space-y-3">
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant font-medium mb-1">
+                Traitement Brut Mensuel (FCFA) *
+              </label>
+<div class="relative">
+<input class="w-full px-3 py-2 bg-surface-container-low rounded font-code-num text-code-num text-on-surface focus:outline-none focus:ring-1 focus:ring-primary" id="input-salaire-brut" type="number" value="780000"/>
+<span class="absolute right-3 top-2.5 font-label-sm text-on-surface-variant">FCFA</span>
+</div>
+</div>
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant font-medium mb-1">
+                Retenues existantes (Crédits en cours, mutuelle)
+              </label>
+<div class="relative">
+<input class="w-full px-3 py-2 bg-surface-container-low rounded font-code-num text-code-num text-on-surface focus:outline-none focus:ring-1 focus:ring-primary" id="input-retenues" type="number" value="95000"/>
+<span class="absolute right-3 top-2.5 font-label-sm text-on-surface-variant">FCFA</span>
+</div>
+</div>
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant font-medium mb-1">
+                Nature du financement sollicité
+              </label>
+<select class="w-full px-3 py-2 bg-surface-container-low rounded font-body-sm text-body-sm text-on-surface focus:outline-none focus:ring-1 focus:ring-primary" id="select-type-pret">
+<option value="habitat">Prêt Accession Propriété Immobilière (BNI)</option>
+<option value="avance">Avance sur solde à taux 0% (Régie MPEEP)</option>
+<option value="confort">Crédit Équipement Informatique / Véhicule</option>
+</select>
+</div>
+</div>
+<!-- Résultat du Calcul Dynamique -->
+<div class="mt-5 p-4 rounded-lg bg-surface-container-low flex flex-col gap-2">
+<div class="flex items-center justify-between text-body-sm">
+<span class="text-on-surface-variant">Plafond légal 1/3 (33.33%) :</span>
+<span class="font-code-num font-bold text-on-surface" id="res-plafond">260 000 FCFA / mois</span>
+</div>
+<div class="flex items-center justify-between text-body-sm">
+<span class="text-on-surface-variant">Capacité d'endettement résiduelle :</span>
+<span class="font-code-num font-bold text-primary" id="res-residuelle">165 000 FCFA / mois</span>
+</div>
+<div class="pt-2 flex items-center justify-between text-label-sm font-semibold">
+<span class="text-on-surface">Avis d'éligibilité automatique :</span>
+<span class="px-2 py-0.5 rounded text-[11px] bg-primary text-on-primary font-bold" id="res-badge">
+                FAVORABLE (Quotité préservée)
+              </span>
+</div>
+</div>
+</div>
+<div class="mt-4 pt-3 flex items-center justify-between">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Formulaire cerfa n°SDAS-2026-F4</span>
+<button class="px-3.5 py-1.5 rounded bg-primary text-on-primary font-label-sm text-label-sm hover:bg-primary-container transition-colors flex items-center gap-1.5" id="btn-generer-attestation">
+<span class="material-symbols-outlined text-base">verified</span>
+<span>Éditer Attestation de Quotité</span>
+</button>
+</div>
+</div>
+<!-- Conventions Bancaires, Habitat & Organismes Sociaux Partenaires -->
+<div class="lg:col-span-7 bg-surface-container-lowest rounded-xl p-5 shadow-sm flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between pb-3">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-xl">apartment</span>
+<h3 class="font-headline-sm text-headline-sm font-bold text-on-surface">Conventions Partenariales &amp; Protection Sociale</h3>
+</div>
+<span class="text-label-sm font-semibold text-primary">4 Protocoles Actifs</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-4">
+            Réseaux institutionnels officiels pour l'octroi d'avantages préférentiels aux agents des entreprises publiques.
+          </p>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+<!-- Partenaire 1 : BNI -->
+<div class="p-3.5 rounded-lg bg-surface-container-low flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between mb-2">
+<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-primary text-on-primary">BNI BANQUE</span>
+<span class="font-code-num text-label-sm font-bold text-primary">Taux bonifié 4.8%</span>
+</div>
+<h4 class="font-label-md text-label-md font-bold text-on-surface">Prêt Accession Logement</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">
+                  Financement jusqu'à 45 000 000 FCFA sur 20 ans pour résidence principale à Abidjan &amp; villes de l'intérieur.
+                </p>
+</div>
+<div class="mt-3 pt-2 flex items-center justify-between font-label-sm text-label-sm">
+<span class="text-on-surface-variant">74 agents bénéficiaires</span>
+<span class="text-primary font-bold">Convention 2024-2027</span>
+</div>
+</div>
+<!-- Partenaire 2 : CMU / CNAM-CI -->
+<div class="p-3.5 rounded-lg bg-surface-container-low flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between mb-2">
+<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-secondary-container text-on-secondary-container">CMU / CNAM-CI</span>
+<span class="font-code-num text-label-sm font-bold text-on-surface">100% Immatriculés</span>
+</div>
+<h4 class="font-label-md text-label-md font-bold text-on-surface">Couverture Maladie Universelle</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">
+                  Enrôlement biométrique obligatoire. Gestion de la liaison des ayants droit (conjoints et enfants jusqu'à 21 ans).
+                </p>
+</div>
+<div class="mt-3 pt-2 flex items-center justify-between font-label-sm text-label-sm">
+<span class="text-on-surface-variant">3 890 cartes distribuées</span>
+<span class="text-primary font-bold">Flux mensuel actif</span>
+</div>
+</div>
+<!-- Partenaire 3 : CGRAE -->
+<div class="p-3.5 rounded-lg bg-surface-container-low flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between mb-2">
+<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-surface-container-high text-on-surface">IPS-CGRAE</span>
+<span class="font-code-num text-label-sm font-bold text-secondary">Anticipation 12 mois</span>
+</div>
+<h4 class="font-label-md text-label-md font-bold text-on-surface">Passerelle Retraite &amp; Droits</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">
+                  Constitution anticipée des dossiers de pension pour liquidation du premier mois sans rupture de traitement.
+                </p>
+</div>
+<div class="mt-3 pt-2 flex items-center justify-between font-label-sm text-label-sm">
+<span class="text-on-surface-variant">52 départs 2026</span>
+<span class="text-primary font-bold">100% pré-validés</span>
+</div>
+</div>
+<!-- Partenaire 4 : Versus Bank & Équipement -->
+<div class="p-3.5 rounded-lg bg-surface-container-low flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between mb-2">
+<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-surface-container-high text-on-surface">VERSUS BANK</span>
+<span class="font-code-num text-label-sm font-bold text-primary">Taux 0% MPEEP</span>
+</div>
+<h4 class="font-label-md text-label-md font-bold text-on-surface">Avances &amp; Micro-équipements</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">
+                  Équipements informatiques et motocycles pour cadres itinérants. Remboursement direct sur solde sur 12 à 24 mois.
+                </p>
+</div>
+<div class="mt-3 pt-2 flex items-center justify-between font-label-sm text-label-sm">
+<span class="text-on-surface-variant">88 dossiers en cours</span>
+<span class="text-primary font-bold">Disponibilité immédiate</span>
+</div>
+</div>
+</div>
+</div>
+<div class="mt-4 pt-3 flex items-center justify-between text-body-sm">
+<span class="text-on-surface-variant">Lien sécurisé aux bases IPS-CGRAE &amp; CNAM par connecteur ANSSI-CI</span>
+<span class="text-label-sm font-bold text-primary flex items-center gap-1">
+<span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span> Synchronisation en temps réel
+          </span>
+</div>
+</div>
+</section>
+<!-- ==================== VOLET 3 : MÉDECINE DU TRAVAIL & ACCOMPAGNEMENT SPÉCIFIQUE ==================== -->
+<section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+<!-- Santé au travail : Campagne Médicale 2026 -->
+<div class="bg-surface-container-lowest rounded-xl p-5 shadow-sm flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between pb-3">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-xl">medical_services</span>
+<h3 class="font-headline-sm text-headline-sm font-bold text-on-surface">Médecine du Travail</h3>
+</div>
+<span class="px-2 py-0.5 rounded text-[10px] font-label-sm font-bold bg-primary-fixed text-on-primary-fixed">86% Couverture</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-3">
+            Bilan de santé annuel obligatoire des agents des sociétés d'État et de la DGPE.
+          </p>
+<!-- SVG Visualisation Circulaire Progress -->
+<div class="flex items-center gap-5 my-2 p-3 bg-surface-container-low rounded-lg">
+<div class="relative w-20 h-20 shrink-0 flex items-center justify-center">
+<svg class="w-full h-full transform -rotate-90" viewbox="0 0 36 36">
+<path class="text-surface-container-high" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="3.5"></path>
+<path class="text-primary" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-dasharray="86, 100" stroke-linecap="round" stroke-width="3.5"></path>
+</svg>
+<div class="absolute inset-0 flex flex-col items-center justify-center text-center">
+<span class="font-code-num text-sm font-bold text-on-surface">86%</span>
+</div>
+</div>
+<div class="space-y-1">
+<div class="text-label-md font-bold text-on-surface">4 150 / 4 820 Agents</div>
+<div class="text-body-sm text-on-surface-variant">Visites d'aptitude validées</div>
+<div class="text-[11px] font-semibold text-secondary">670 relances programmées</div>
+</div>
+</div>
+<div class="space-y-2 mt-3">
+<div class="flex justify-between items-center text-body-sm">
+<span class="text-on-surface-variant">Aptitudes sans restriction :</span>
+<span class="font-code-num font-bold text-primary">3 912</span>
+</div>
+<div class="flex justify-between items-center text-body-sm">
+<span class="text-on-surface-variant">Aptitudes avec aménagement :</span>
+<span class="font-code-num font-bold text-secondary">198</span>
+</div>
+<div class="flex justify-between items-center text-body-sm">
+<span class="text-on-surface-variant">Inaptitudes temporaires suivies :</span>
+<span class="font-code-num font-bold text-error">40</span>
+</div>
+</div>
+</div>
+<div class="mt-4 pt-3">
+<button class="w-full py-2 bg-surface-container-low hover:bg-surface-container-high rounded text-on-surface font-label-sm text-label-sm transition-colors flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-base">calendar_month</span>
+<span>Programmer Sessions Médicales</span>
+</button>
+</div>
+</div>
+<!-- Inclusion & Agents en Situation de Handicap -->
+<div class="bg-surface-container-lowest rounded-xl p-5 shadow-sm flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between pb-3">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-xl">accessible_forward</span>
+<h3 class="font-headline-sm text-headline-sm font-bold text-on-surface">Agents en Situation de Handicap</h3>
+</div>
+<span class="px-2 py-0.5 rounded text-[10px] font-label-sm font-bold bg-surface-container-high text-on-surface">34 Agents Reconnus</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-4">
+            Suivi des aménagements ergonomiques de postes de travail et dotations spécifiques selon la directive ministérielle.
+          </p>
+<div class="space-y-3">
+<div class="p-3 bg-surface-container-low rounded-lg flex items-start gap-3">
+<span class="material-symbols-outlined text-primary mt-0.5">chair</span>
+<div>
+<p class="font-label-md text-label-md font-bold text-on-surface">Postes Ergonomiques Aménagés</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">28 postes adaptés (fauteuils orthopédiques, logiciels vocaux pour malvoyants).</p>
+<span class="inline-block mt-1 text-[11px] font-bold text-primary">100% livrés T1 2026</span>
+</div>
+</div>
+<div class="p-3 bg-surface-container-low rounded-lg flex items-start gap-3">
+<span class="material-symbols-outlined text-secondary mt-0.5">directions_car</span>
+<div>
+<p class="font-label-md text-label-md font-bold text-on-surface">Accessibilité &amp; Transports Dévoués</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Navette adaptée Immeuble Postel 2001 - Tour B - Plateau pour agents à mobilité réduite.</p>
+<span class="inline-block mt-1 text-[11px] font-bold text-on-surface-variant">Service quotidien actif</span>
+</div>
+</div>
+</div>
+</div>
+<div class="mt-4 pt-3 flex items-center justify-between text-body-sm">
+<span class="text-on-surface-variant">Référent Handicap : Dr. Koffi Marc</span>
+<button class="font-label-sm text-label-sm font-bold text-primary hover:underline">
+            Consulter Registre
+          </button>
+</div>
+</div>
+<!-- Accompagnement des Nouveaux Retraités & Vétérans -->
+<div class="bg-surface-container-lowest rounded-xl p-5 shadow-sm flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between pb-3">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-xl">elderly</span>
+<h3 class="font-headline-sm text-headline-sm font-bold text-on-surface">Suivi des Retraités</h3>
+</div>
+<span class="px-2 py-0.5 rounded text-[10px] font-label-sm font-bold bg-surface-container-high text-on-surface">Promo 2026 : 52 Départs</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-4">
+            Cellule d'écoute, remise des livrets de fin de carrière et préparation psychologique à la cessation de service.
+          </p>
+<div class="space-y-3">
+<div class="p-3 bg-surface-container-low rounded-lg">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md font-bold text-on-surface">Séminaire "Nouvelle Vie &amp; Retraite Active"</span>
+<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-primary text-on-primary">18 Avril 2026</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">
+                Ateliers de gestion patrimoniale, santé des seniors et mutuelle complémentaire des retraités.
+              </p>
+</div>
+<div class="p-3 bg-surface-container-low rounded-lg flex items-center justify-between">
+<div>
+<span class="font-label-md text-label-md font-bold text-on-surface">Prime de Départ à la Retraite (IDR)</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Mandatement Trésor Public consolidé</p>
+</div>
+<span class="font-code-num text-sm font-bold text-primary">52/52 visés</span>
+</div>
+</div>
+</div>
+<div class="mt-4 pt-3 flex items-center justify-between">
+<span class="text-body-sm text-on-surface-variant">Lien Association des Retraités MPEEP</span>
+<button class="px-3 py-1.5 rounded bg-surface-container-low hover:bg-surface-container-high text-on-surface font-label-sm text-label-sm transition-colors">
+            Voir Planning
+          </button>
+</div>
+</div>
+</section>
+<!-- ==================== VOLET 4 : REGISTRE D'INSTRUCTION DES REQUÊTES EN COURS ==================== -->
+<section class="bg-surface-container-lowest rounded-xl p-5 shadow-sm space-y-4">
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
+<div>
+<h2 class="font-headline-sm text-headline-sm font-bold text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">rule</span>
+            Registre des Requêtes Sociales en Instance d'Arbitrage
+          </h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+            Tableau décisionnel des demandes d'aides, avances statutaires et secours médicaux
+          </p>
+</div>
+<!-- Filtres rapides -->
+<div class="flex flex-wrap items-center gap-2">
+<div class="flex items-center gap-1 bg-surface-container-low px-2.5 py-1.5 rounded text-body-sm text-on-surface">
+<span class="material-symbols-outlined text-sm text-on-surface-variant">filter_list</span>
+<select class="bg-transparent border-0 font-body-sm text-on-surface focus:outline-none" id="filter-entite">
+<option value="all">Toutes Sociétés d'État</option>
+<option value="PETROCI">PETROCI Holding</option>
+<option value="CI-ENERGIES">CI-ENERGIES</option>
+<option value="SOGEPIE">SOGEPIE</option>
+<option value="DGPE">DGPE Centrale</option>
+<option value="PORT_ABIDJAN">Port Autonome d'Abidjan</option>
+</select>
+</div>
+<div class="flex items-center gap-1 bg-surface-container-low px-2.5 py-1.5 rounded text-body-sm text-on-surface">
+<select class="bg-transparent border-0 font-body-sm text-on-surface focus:outline-none" id="filter-statut">
+<option value="all">Tous statuts</option>
+<option value="urgent">Urgence Médicale</option>
+<option value="commission">Avis Commission Attendu</option>
+<option value="conforme">Conforme pour Ordonnancement</option>
+</select>
+</div>
+</div>
+</div>
+<!-- Table Réactive des Dossiers -->
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low text-on-surface-variant font-label-md text-label-md">
+<th class="py-3 px-4 rounded-l">Agent Bénéficiaire</th>
+<th class="py-3 px-4">Société / Entité</th>
+<th class="py-3 px-4">Nature de la Prestation</th>
+<th class="py-3 px-4">Montant Sollicité</th>
+<th class="py-3 px-4">Pièces Justificatives</th>
+<th class="py-3 px-4">Avis Commission SDAS</th>
+<th class="py-3 px-4 text-right rounded-r">Décision Métier</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-surface-container font-body-sm text-body-sm">
+<!-- Dossier 1 : Urgent CHU Evacuation -->
+<tr class="hover:bg-surface-container-low/50 transition-colors">
+<td class="py-3.5 px-4">
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-full bg-surface-container-high flex items-center justify-center font-bold text-on-surface text-label-md shrink-0">
+                    KA
+                  </div>
+<div>
+<span class="font-label-md text-label-md font-bold text-on-surface block">KOUASSI Affoué Laure</span>
+<span class="font-code-num text-xs text-on-surface-variant">Mle CI-002941-A • Chef Comptable</span>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-4 font-semibold text-on-surface">
+                CI-ENERGIES
+              </td>
+<td class="py-3.5 px-4">
+<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-error-container text-error flex items-center gap-1 w-max">
+<span class="w-1.5 h-1.5 rounded-full bg-error animate-ping"></span>
+                  Évacuation Sanitaire Clinique
+                </span>
+<span class="block text-[11px] text-on-surface-variant mt-0.5">Ayant-droit : Enfant (8 ans)</span>
+</td>
+<td class="py-3.5 px-4 font-code-num font-bold text-on-surface">
+                1 850 000 FCFA
+              </td>
+<td class="py-3.5 px-4">
+<span class="px-2 py-0.5 rounded bg-surface-container-low text-primary text-[11px] font-semibold flex items-center gap-1 w-max">
+<span class="material-symbols-outlined text-xs">task</span>
+                  Certificat Médical PISAM (Conforme)
+                </span>
+</td>
+<td class="py-3.5 px-4">
+<span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-primary text-on-primary">
+                  Accord favorable sous 24h
+                </span>
+</td>
+<td class="py-3.5 px-4 text-right">
+<div class="flex items-center justify-end gap-1.5">
+<button class="px-2.5 py-1 rounded bg-primary text-on-primary font-label-sm text-[11px] hover:bg-primary-container transition-colors flex items-center gap-1" onclick="validerMandat(this, 'KOUASSI Affoué', '1 850 000')">
+<span class="material-symbols-outlined text-sm">check</span>
+<span>Mandater</span>
+</button>
+<button class="p-1 rounded text-on-surface-variant hover:bg-surface-container-high transition-colors" title="Consulter le dossier numérisé">
+<span class="material-symbols-outlined text-base">visibility</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Dossier 2 : Obsèques / Décès 1er degré -->
+<tr class="hover:bg-surface-container-low/50 transition-colors">
+<td class="py-3.5 px-4">
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-full bg-surface-container-high flex items-center justify-center font-bold text-on-surface text-label-md shrink-0">
+                    TM
+                  </div>
+<div>
+<span class="font-label-md text-label-md font-bold text-on-surface block">TRAORÉ Moussa Bakary</span>
+<span class="font-code-num text-xs text-on-surface-variant">Mle CI-008122-F • Ingénieur Forage</span>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-4 font-semibold text-on-surface">
+                PETROCI Holding
+              </td>
+<td class="py-3.5 px-4">
+<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-surface-container-high text-on-surface flex items-center gap-1 w-max">
+                  Frais Obsèques (Père)
+                </span>
+<span class="block text-[11px] text-on-surface-variant mt-0.5">Acte de notoriété légalisé</span>
+</td>
+<td class="py-3.5 px-4 font-code-num font-bold text-on-surface">
+                1 200 000 FCFA
+              </td>
+<td class="py-3.5 px-4">
+<span class="px-2 py-0.5 rounded bg-surface-container-low text-primary text-[11px] font-semibold flex items-center gap-1 w-max">
+<span class="material-symbols-outlined text-xs">task</span>
+                  Extrait d'acte de décès certifié
+                </span>
+</td>
+<td class="py-3.5 px-4">
+<span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-surface-container-high text-on-surface">
+                  Vérification DAAF en cours
+                </span>
+</td>
+<td class="py-3.5 px-4 text-right">
+<div class="flex items-center justify-end gap-1.5">
+<button class="px-2.5 py-1 rounded bg-primary text-on-primary font-label-sm text-[11px] hover:bg-primary-container transition-colors flex items-center gap-1" onclick="validerMandat(this, 'TRAORÉ Moussa', '1 200 000')">
+<span class="material-symbols-outlined text-sm">check</span>
+<span>Mandater</span>
+</button>
+<button class="p-1 rounded text-on-surface-variant hover:bg-surface-container-high transition-colors" title="Consulter le dossier numérisé">
+<span class="material-symbols-outlined text-base">visibility</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Dossier 3 : Avance sur solde Rentrée Scolaire -->
+<tr class="hover:bg-surface-container-low/50 transition-colors">
+<td class="py-3.5 px-4">
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-full bg-surface-container-high flex items-center justify-center font-bold text-on-surface text-label-md shrink-0">
+                    BN
+                  </div>
+<div>
+<span class="font-label-md text-label-md font-bold text-on-surface block">BAMBA Naminata</span>
+<span class="font-code-num text-xs text-on-surface-variant">Mle CI-014902-C • Assistante RH</span>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-4 font-semibold text-on-surface">
+                SOGEPIE
+              </td>
+<td class="py-3.5 px-4">
+<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-surface-container-high text-on-surface flex items-center gap-1 w-max">
+                  Avance 0% Rentrée Scolaire
+                </span>
+<span class="block text-[11px] text-on-surface-variant mt-0.5">3 enfants inscrits en lycée d'excellence</span>
+</td>
+<td class="py-3.5 px-4 font-code-num font-bold text-on-surface">
+                600 000 FCFA
+              </td>
+<td class="py-3.5 px-4">
+<span class="px-2 py-0.5 rounded bg-surface-container-low text-primary text-[11px] font-semibold flex items-center gap-1 w-max">
+<span class="material-symbols-outlined text-xs">task</span>
+                  Certificats de scolarité (3)
+                </span>
+</td>
+<td class="py-3.5 px-4">
+<span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-primary text-on-primary">
+                  Quotité cessible vérifiée (18%)
+                </span>
+</td>
+<td class="py-3.5 px-4 text-right">
+<div class="flex items-center justify-end gap-1.5">
+<button class="px-2.5 py-1 rounded bg-primary text-on-primary font-label-sm text-[11px] hover:bg-primary-container transition-colors flex items-center gap-1" onclick="validerMandat(this, 'BAMBA Naminata', '600 000')">
+<span class="material-symbols-outlined text-sm">check</span>
+<span>Mandater</span>
+</button>
+<button class="p-1 rounded text-on-surface-variant hover:bg-surface-container-high transition-colors" title="Consulter le dossier numérisé">
+<span class="material-symbols-outlined text-base">visibility</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Dossier 4 : Aménagement Poste Handicap -->
+<tr class="hover:bg-surface-container-low/50 transition-colors">
+<td class="py-3.5 px-4">
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-full bg-surface-container-high flex items-center justify-center font-bold text-on-surface text-label-md shrink-0">
+                    OY
+                  </div>
+<div>
+<span class="font-label-md text-label-md font-bold text-on-surface block">OUATTARA Yacouba</span>
+<span class="font-code-num text-xs text-on-surface-variant">Mle CI-005611-L • Juriste Contentieux</span>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-4 font-semibold text-on-surface">
+                DGPE Centrale
+              </td>
+<td class="py-3.5 px-4">
+<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-secondary-fixed text-on-secondary-fixed flex items-center gap-1 w-max">
+                  Dotation Matériel Inclusif
+                </span>
+<span class="block text-[11px] text-on-surface-variant mt-0.5">Écran 32" grossissant &amp; clavier braille</span>
+</td>
+<td class="py-3.5 px-4 font-code-num font-bold text-on-surface">
+                920 000 FCFA
+              </td>
+<td class="py-3.5 px-4">
+<span class="px-2 py-0.5 rounded bg-surface-container-low text-primary text-[11px] font-semibold flex items-center gap-1 w-max">
+<span class="material-symbols-outlined text-xs">task</span>
+                  Avis Médecin du Travail CI
+                </span>
+</td>
+<td class="py-3.5 px-4">
+<span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-primary text-on-primary">
+                  Approuvé Commission Handicap
+                </span>
+</td>
+<td class="py-3.5 px-4 text-right">
+<div class="flex items-center justify-end gap-1.5">
+<button class="px-2.5 py-1 rounded bg-primary text-on-primary font-label-sm text-[11px] hover:bg-primary-container transition-colors flex items-center gap-1" onclick="validerMandat(this, 'OUATTARA Yacouba', '920 000')">
+<span class="material-symbols-outlined text-sm">check</span>
+<span>Commander</span>
+</button>
+<button class="p-1 rounded text-on-surface-variant hover:bg-surface-container-high transition-colors" title="Consulter le dossier numérisé">
+<span class="material-symbols-outlined text-base">visibility</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Dossier 5 : Secours Sinistre Exceptionnel Inondation -->
+<tr class="hover:bg-surface-container-low/50 transition-colors">
+<td class="py-3.5 px-4">
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-full bg-surface-container-high flex items-center justify-center font-bold text-on-surface text-label-md shrink-0">
+                    GD
+                  </div>
+<div>
+<span class="font-label-md text-label-md font-bold text-on-surface block">GNAHOUÉ Didier</span>
+<span class="font-code-num text-xs text-on-surface-variant">Mle CI-011380-M • Responsable Logistique</span>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-4 font-semibold text-on-surface">
+                Port Autonome d'Abidjan
+              </td>
+<td class="py-3.5 px-4">
+<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-secondary-container text-on-secondary-container flex items-center gap-1 w-max">
+                  Sinistre Majeur (Inondation Grand-Bassam)
+                </span>
+<span class="block text-[11px] text-on-surface-variant mt-0.5">Relogement provisoire urgent</span>
+</td>
+<td class="py-3.5 px-4 font-code-num font-bold text-on-surface">
+                1 500 000 FCFA
+              </td>
+<td class="py-3.5 px-4">
+<span class="px-2 py-0.5 rounded bg-surface-container-low text-secondary text-[11px] font-semibold flex items-center gap-1 w-max">
+<span class="material-symbols-outlined text-xs">warning</span>
+                  Constat Huissier en attente
+                </span>
+</td>
+<td class="py-3.5 px-4">
+<span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-surface-container-high text-on-surface">
+                  Sous réserve de constat
+                </span>
+</td>
+<td class="py-3.5 px-4 text-right">
+<div class="flex items-center justify-end gap-1.5">
+<button class="px-2.5 py-1 rounded bg-surface-container-high text-on-surface font-label-sm text-[11px] hover:bg-surface-container transition-colors flex items-center gap-1" onclick="demanderPiece(this, 'GNAHOUÉ Didier')">
+<span class="material-symbols-outlined text-sm">attachment</span>
+<span>Relancer</span>
+</button>
+<button class="p-1 rounded text-on-surface-variant hover:bg-surface-container-high transition-colors" title="Consulter le dossier numérisé">
+<span class="material-symbols-outlined text-base">visibility</span>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination & Synthèse -->
+<div class="pt-3 flex flex-col sm:flex-row items-center justify-between text-body-sm text-on-surface-variant gap-2">
+<span>Affichage de 5 requêtes sur 32 dossiers actifs en sous-direction</span>
+<div class="flex items-center gap-1">
+<button class="px-3 py-1 rounded bg-surface-container-low hover:bg-surface-container-high text-on-surface font-label-sm text-label-sm">Précédent</button>
+<button class="px-3 py-1 rounded bg-primary text-on-primary font-label-sm text-label-sm font-bold">1</button>
+<button class="px-3 py-1 rounded bg-surface-container-low hover:bg-surface-container-high text-on-surface font-label-sm text-label-sm">2</button>
+<button class="px-3 py-1 rounded bg-surface-container-low hover:bg-surface-container-high text-on-surface font-label-sm text-label-sm">3</button>
+<button class="px-3 py-1 rounded bg-surface-container-low hover:bg-surface-container-high text-on-surface font-label-sm text-label-sm">Suivant</button>
+</div>
+</div>
+</section>
+<!-- ==================== VOLET 5 : ACTIVITÉS SOCIALES, CULTURELLES & PROTOCOLE D'ÉCOUTE ==================== -->
+<section class="grid grid-cols-1 lg:grid-cols-12 gap-6 pb-6">
+<!-- Calendrier des Activités Annuelles MPEEP -->
+<div class="lg:col-span-8 bg-surface-container-lowest rounded-xl p-5 shadow-sm space-y-4">
+<div class="flex items-center justify-between pb-2">
+<div>
+<h3 class="font-headline-sm text-headline-sm font-bold text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">celebration</span>
+              Activités Sociales, Éducatives &amp; Culturelles 2026
+            </h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+              Renforcement de la cohésion, arbre de Noël, colonies de vacances des enfants et tournoi inter-entreprises
+            </p>
+</div>
+<button class="px-3 py-1.5 rounded bg-surface-container-low hover:bg-surface-container-high text-primary font-label-sm text-label-sm flex items-center gap-1.5">
+<span class="material-symbols-outlined text-base">event_note</span>
+<span>Ajouter Action</span>
+</button>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+<!-- Carte Événement 1 : Colonie Pupilles -->
+<div class="p-4 rounded-lg bg-surface-container-low flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between mb-2">
+<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-primary text-on-primary">Août 2026</span>
+<span class="font-label-sm text-primary font-bold">Assinie &amp; Yamoussoukro</span>
+</div>
+<h4 class="font-label-lg text-label-lg font-bold text-on-surface">Colonie de Vacances des Pupilles d'État</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-2">
+                Séjour éducatif et civique pour 120 orphelins du ministère et des sociétés d'État partenaires.
+              </p>
+</div>
+<div class="mt-4 pt-2">
+<span class="text-[11px] text-on-surface-variant block mb-1">Budget mobilisé : 18 000 000 F</span>
+<div class="w-full h-1.5 bg-surface-container-high rounded-full overflow-hidden">
+<div class="h-full bg-primary rounded-full" style="width: 85%;"></div>
+</div>
+</div>
+</div>
+<!-- Carte Événement 2 : Tournoi de la Fraternité Inter-Entreprises -->
+<div class="p-4 rounded-lg bg-surface-container-low flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between mb-2">
+<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-secondary-container text-on-secondary-container">Mai - Juin 2026</span>
+<span class="font-label-sm text-secondary font-bold">Stade Robert Champroux</span>
+</div>
+<h4 class="font-label-lg text-label-lg font-bold text-on-surface">Olympiades &amp; Tournoi de la Fraternité</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-2">
+                Compétitions sportives (football, basket, cross) réunissant les 16 sociétés d'État du portefeuille.
+              </p>
+</div>
+<div class="mt-4 pt-2">
+<span class="text-[11px] text-on-surface-variant block mb-1">Inscriptions : 14/16 Sociétés</span>
+<div class="w-full h-1.5 bg-surface-container-high rounded-full overflow-hidden">
+<div class="h-full bg-secondary-container rounded-full" style="width: 90%;"></div>
+</div>
+</div>
+</div>
+<!-- Carte Événement 3 : Arbre de Noël Républicain -->
+<div class="p-4 rounded-lg bg-surface-container-low flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between mb-2">
+<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-surface-container-high text-on-surface">Décembre 2026</span>
+<span class="font-label-sm text-on-surface-variant font-bold">Palais des Congrès</span>
+</div>
+<h4 class="font-label-lg text-label-lg font-bold text-on-surface">Arbre de Noël Ministériel MPEEP</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-2">
+                Distribution de cadeaux certifiés et spectacles pour 1 800 enfants d'agents répertoriés.
+              </p>
+</div>
+<div class="mt-4 pt-2">
+<span class="text-[11px] text-on-surface-variant block mb-1">Recensement des enfants : 1 640 saisis</span>
+<div class="w-full h-1.5 bg-surface-container-high rounded-full overflow-hidden">
+<div class="h-full bg-primary rounded-full" style="width: 91%;"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Cellule d'Écoute Psychologique & Permanence Sociale -->
+<div class="lg:col-span-4 bg-surface-container-lowest rounded-xl p-5 shadow-sm flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between pb-3">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-xl">support_agent</span>
+<h3 class="font-headline-sm text-headline-sm font-bold text-on-surface">Permanence d'Écoute Sociale</h3>
+</div>
+<span class="w-2.5 h-2.5 rounded-full bg-primary"></span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-3">
+            Assistance confidentielle et soutien psychosocial pour les agents en difficulté personnelle, deuil ou surendettement.
+          </p>
+<div class="p-3 bg-surface-container-low rounded-lg space-y-2">
+<div class="flex items-center justify-between font-label-sm text-label-sm">
+<span class="text-on-surface-variant">Ligne Verte Institutionnelle :</span>
+<span class="font-code-num font-bold text-primary">800 00 225 (Gratuit)</span>
+</div>
+<div class="flex items-center justify-between font-label-sm text-label-sm">
+<span class="text-on-surface-variant">Assistante Sociale en Chef :</span>
+<span class="font-bold text-on-surface">Mme Yao Florence</span>
+</div>
+<div class="flex items-center justify-between font-label-sm text-label-sm">
+<span class="text-on-surface-variant">Horaires Permanence :</span>
+<span class="font-bold text-on-surface">Lundi au Vendredi (8h - 17h)</span>
+</div>
+</div>
+<div class="mt-4 p-3 bg-surface-container-low/60 rounded-lg">
+<span class="font-label-md text-label-md font-bold text-on-surface block mb-1">Garantie du Secret Professionnel</span>
+<p class="text-[12px] text-on-surface-variant">
+              Tout entretien est protégé par les dispositions du secret médical et déontologique de la fonction publique ivoirienne.
+            </p>
+</div>
+</div>
+<div class="mt-4 pt-3">
+<button class="w-full py-2 bg-primary text-on-primary rounded font-label-sm text-label-sm hover:bg-primary-container transition-colors flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-base">lock_clock</span>
+<span>Prendre Rendez-vous Confidentiel</span>
+</button>
+</div>
+</div>
+</section>
+</div>
+<!-- ======================== MODALE : NOUVELLE DEMANDE D'AIDE SOCIALE ======================== -->
+<div class="fixed inset-0 z-50 bg-inverse-surface/40 backdrop-blur-sm hidden flex items-center justify-center p-4" id="modal-nouvelle-demande">
+<div class="bg-surface-container-lowest rounded-xl shadow-xl max-w-2xl w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+<div class="flex items-center justify-between pb-3">
+<div class="flex items-center gap-3">
+<span class="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+<span class="material-symbols-outlined">post_add</span>
+</span>
+<div>
+<h3 class="font-headline-sm text-headline-sm font-bold text-on-surface">Nouvelle Requête d'Assistance Sociale</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Enregistrement au registre officiel SDAS / DGPE</p>
+</div>
+</div>
+<button class="p-1 rounded text-on-surface-variant hover:bg-surface-container-high transition-colors" id="btn-close-modal">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<form class="space-y-4" id="form-nouvelle-requete" onsubmit="soumettreRequete(event)">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant font-medium mb-1">
+              Matricule Civil ou Identifiant Agent *
+            </label>
+<input class="w-full px-3 py-2 bg-surface-container-low rounded font-code-num text-code-num text-on-surface focus:outline-none focus:ring-1 focus:ring-primary" placeholder="Ex: CI-004519-Z" required="" type="text"/>
+</div>
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant font-medium mb-1">
+              Nom complet de l'agent *
+            </label>
+<input class="w-full px-3 py-2 bg-surface-container-low rounded font-body-sm text-body-sm text-on-surface focus:outline-none focus:ring-1 focus:ring-primary" placeholder="Nom et Prénoms" required="" type="text"/>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant font-medium mb-1">
+              Société d'État ou Direction d'affectation *
+            </label>
+<select class="w-full px-3 py-2 bg-surface-container-low rounded font-body-sm text-body-sm text-on-surface focus:outline-none focus:ring-1 focus:ring-primary">
+<option>PETROCI Holding</option>
+<option>CI-ENERGIES</option>
+<option>SOGEPIE</option>
+<option>Port Autonome d'Abidjan</option>
+<option>Port Autonome de San Pedro</option>
+<option>DGPE Centrale</option>
+</select>
+</div>
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant font-medium mb-1">
+              Typologie de Secours / Aide *
+            </label>
+<select class="w-full px-3 py-2 bg-surface-container-low rounded font-body-sm text-body-sm text-on-surface focus:outline-none focus:ring-1 focus:ring-primary">
+<option>Secours Décès &amp; Frais d'Obsèques (1er degré)</option>
+<option>Hospitalisation d'Urgence &amp; Évacuation</option>
+<option>Allocation Pupilles &amp; Rentrée Scolaire</option>
+<option>Prêt / Avance sur salaire taux 0%</option>
+<option>Aménagement Handicap &amp; Matériel Inclusif</option>
+<option>Secours Sinistre Exceptionnel</option>
+</select>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant font-medium mb-1">
+              Montant Sollicité (FCFA) *
+            </label>
+<input class="w-full px-3 py-2 bg-surface-container-low rounded font-code-num text-code-num text-on-surface focus:outline-none focus:ring-1 focus:ring-primary" placeholder="Ex: 850000" required="" type="number"/>
+</div>
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant font-medium mb-1">
+              Ayant-droit concerné
+            </label>
+<input class="w-full px-3 py-2 bg-surface-container-low rounded font-body-sm text-body-sm text-on-surface focus:outline-none focus:ring-1 focus:ring-primary" placeholder="Ex: Enfant mineur, Conjoint légal, Agent direct" type="text"/>
+</div>
+</div>
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant font-medium mb-1">
+            Pièces Justificatives Numérisées (.PDF, .JPG certifiés) *
+          </label>
+<div class="p-4 rounded-lg bg-surface-container-low text-center flex flex-col items-center justify-center cursor-pointer hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined text-primary text-2xl mb-1">cloud_upload</span>
+<span class="font-label-sm text-label-sm font-semibold text-on-surface">Déposez l'acte ou le bulletin médical scanné</span>
+<span class="text-[11px] text-on-surface-variant">Signature électronique KSign ou sceau légalisé requis</span>
+</div>
+</div>
+<div class="flex items-center justify-end gap-3 pt-3">
+<button class="px-4 py-2 rounded bg-surface-container-low hover:bg-surface-container-high text-on-surface font-label-sm text-label-sm transition-colors" id="btn-cancel-modal" type="button">
+            Annuler
+          </button>
+<button class="px-4 py-2 rounded bg-primary text-on-primary font-label-sm text-label-sm hover:bg-primary-container transition-all shadow-sm flex items-center gap-1.5" type="submit">
+<span class="material-symbols-outlined text-base">verified</span>
+<span>Enregistrer la Requête</span>
+</button>
+</div>
+</form>
+</div>
+</div>
+<!-- Notification Toast Dynamique -->
+<div class="fixed bottom-6 right-6 z-50 bg-inverse-surface text-inverse-on-surface px-4 py-3 rounded-lg shadow-xl hidden flex items-center gap-3" id="toast-action">
+<span class="material-symbols-outlined text-primary-fixed" id="toast-icon">check_circle</span>
+<div>
+<span class="font-label-md font-bold block text-inverse-on-surface" id="toast-title">Opération Réussie</span>
+<span class="text-xs text-inverse-on-surface/80" id="toast-message">L'acte a été certifié par le système.</span>
+</div>
+</div>
+<!-- Micro-interactions et Logique de Calcul Quotité -->
+<script>
+    // Éléments du simulateur de quotité
+    const inputBrut = document.getElementById('input-salaire-brut');
+    const inputRetenues = document.getElementById('input-retenues');
+    const resPlafond = document.getElementById('res-plafond');
+    const resResiduelle = document.getElementById('res-residuelle');
+    const resBadge = document.getElementById('res-badge');
+
+    function recalculerQuotite() {
+      if (!inputBrut || !inputRetenues) return;
+      const brut = parseFloat(inputBrut.value) || 0;
+      const retenues = parseFloat(inputRetenues.value) || 0;
+      
+      const quotiteMax = Math.round(brut * 0.3333);
+      const capaciteRestante = Math.max(0, quotiteMax - retenues);
+
+      resPlafond.textContent = quotiteMax.toLocaleString('fr-FR') + ' FCFA / mois';
+      resResiduelle.textContent = capaciteRestante.toLocaleString('fr-FR') + ' FCFA / mois';
+
+      if (retenues > quotiteMax) {
+        resBadge.textContent = 'DÉPASSEMENT (Quotité saturée)';
+        resBadge.className = 'px-2 py-0.5 rounded text-[11px] bg-error text-on-error font-bold';
+      } else if (capaciteRestante < 30000) {
+        resBadge.textContent = 'RESTREINT (Capacité résiduelle faible)';
+        resBadge.className = 'px-2 py-0.5 rounded text-[11px] bg-secondary-container text-on-secondary-container font-bold';
+      } else {
+        resBadge.textContent = 'FAVORABLE (Quotité préservée)';
+        resBadge.className = 'px-2 py-0.5 rounded text-[11px] bg-primary text-on-primary font-bold';
+      }
+    }
+
+    if (inputBrut && inputRetenues) {
+      inputBrut.addEventListener('input', recalculerQuotite);
+      inputRetenues.addEventListener('input', recalculerQuotite);
+    }
+
+    // Gestion du Toast
+    function showToast(title, message, isSuccess = true) {
+      const toast = document.getElementById('toast-action');
+      const toastTitle = document.getElementById('toast-title');
+      const toastMsg = document.getElementById('toast-message');
+      const toastIcon = document.getElementById('toast-icon');
+
+      if (!toast) return;
+
+      toastTitle.textContent = title;
+      toastMsg.textContent = message;
+      toastIcon.textContent = isSuccess ? 'check_circle' : 'info';
+      toastIcon.className = isSuccess ? 'material-symbols-outlined text-primary-fixed' : 'material-symbols-outlined text-secondary-container';
+
+      toast.classList.remove('hidden');
+      setTimeout(() => {
+        toast.classList.add('hidden');
+      }, 4000);
+    }
+
+    // Modal Nouvelle Requête
+    const modalDemande = document.getElementById('modal-nouvelle-demande');
+    const btnOpenModal = document.getElementById('btn-open-nouvelle-demande');
+    const btnCloseModal = document.getElementById('btn-close-modal');
+    const btnCancelModal = document.getElementById('btn-cancel-modal');
+
+    if (btnOpenModal && modalDemande) {
+      btnOpenModal.addEventListener('click', () => {
+        modalDemande.classList.remove('hidden');
+      });
+    }
+
+    [btnCloseModal, btnCancelModal].forEach(btn => {
+      if (btn && modalDemande) {
+        btn.addEventListener('click', () => {
+          modalDemande.classList.add('hidden');
+        });
+      }
+    });
+
+    function soumettreRequete(e) {
+      e.preventDefault();
+      modalDemande.classList.add('hidden');
+      showToast('Requête Enregistrée', 'Le dossier a été transmis à la commission sociale avec scellement chrono SDAS-2026.', true);
+    }
+
+    function validerMandat(btn, agent, montant) {
+      btn.disabled = true;
+      btn.classList.add('opacity-50', 'cursor-not-allowed');
+      btn.innerHTML = '<span class="material-symbols-outlined text-sm">done_all</span><span>Mandaté</span>';
+      showToast('Mandatement Validé', 'Virement de ' + montant + ' FCFA autorisé pour ' + agent + '. Transmis à la Trésorerie DAAF.', true);
+    }
+
+    function demanderPiece(btn, agent) {
+      showToast('Relance Transmise', 'Notification SMS & portail agent envoyée à ' + agent + ' pour pièces manquantes.', false);
+    }
+
+    const btnGenAttestation = document.getElementById('btn-generer-attestation');
+    if (btnGenAttestation) {
+      btnGenAttestation.addEventListener('click', () => {
+        showToast('Attestation Générée', 'Certificat officiel de quotité cessible téléchargé au format PDF certifié KSign.', true);
+      });
+    }
+
+    const btnExportRapport = document.getElementById('btn-export-rapport');
+    if (btnExportRapport) {
+      btnExportRapport.addEventListener('click', () => {
+        showToast('Rapport Social 2026', 'Génération du bilan social consolidé des 16 entreprises publiques en cours...', true);
+      });
+    }
+  </script>
+</div></main></div></body></html>

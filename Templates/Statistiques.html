@@ -1,0 +1,680 @@
+<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0" name="viewport"><meta content="web_dashboard" name="shell-type"><link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{colors:{"on-tertiary-container":"#bdc4de","on-surface-variant":"#3f4942","tertiary-fixed-dim":"#bec6e0","on-background":"#0b1c30","on-tertiary-fixed":"#131b2e","surface-dim":"#cbdbf5","on-secondary-fixed-variant":"#783100","on-tertiary-fixed-variant":"#3f465c","primary-container":"#0a5e3a","on-surface":"#0b1c30","surface-tint":"#1e6b46","primary-fixed-dim":"#8cd6a9","surface-container":"#e5eeff","on-primary-fixed-variant":"#005231","tertiary-container":"#495167","on-error-container":"#93000a","outline-variant":"#bfc9c0","inverse-primary":"#8cd6a9","surface-variant":"#d3e4fe","surface-container-lowest":"#ffffff","inverse-on-surface":"#eaf1ff","on-primary-container":"#8ad5a7","primary":"#004428","on-primary-fixed":"#002111","surface-bright":"#f8f9ff","surface-container-highest":"#d3e4fe","primary-fixed":"#a7f3c3","inverse-surface":"#213145","on-primary":"#ffffff","error-container":"#ffdad6","error":"#ba1a1a","secondary-fixed-dim":"#ffb691","tertiary-fixed":"#dae2fd","on-secondary":"#ffffff","tertiary":"#333a4f","surface-container-low":"#eff4ff","on-secondary-container":"#602600","secondary-fixed":"#ffdbcb","background":"#f8f9ff","surface":"#f8f9ff","secondary":"#9e4300","on-secondary-fixed":"#341100","on-tertiary":"#ffffff","outline":"#707a71","on-error":"#ffffff","surface-container-high":"#dce9ff","secondary-container":"#fe7b28"},borderRadius:{DEFAULT:"0.125rem",lg:"0.25rem",xl:"0.5rem",full:"0.75rem"},spacing:{"gutter-desktop":"1.5rem","space-sm":"0.5rem","margin-desktop":"2rem",gutter:"1.25rem","space-md":"1rem","space-lg":"1.5rem",margin:"1rem","space-xs":"0.25rem","space-xl":"2rem","margin-tablet":"1.5rem"},fontFamily:{"headline-lg":["Public Sans"],"label-lg":["Public Sans"],"body-lg":["Public Sans"],"headline-sm":["Public Sans"],"label-sm":["Public Sans"],"headline-lg-mobile":["Public Sans"],"body-md":["Public Sans"],"headline-xl":["Public Sans"],"label-md":["Public Sans"],"code-num":["Public Sans"],"body-sm":["Public Sans"],"headline-md":["Public Sans"],"headline-xl-mobile":["Public Sans"]},fontSize:{"headline-lg":["30px",{lineHeight:"38px",fontWeight:"700"}],"label-lg":["14px",{lineHeight:"20px",fontWeight:"600"}],"body-lg":["16px",{lineHeight:"24px",fontWeight:"400"}],"headline-sm":["18px",{lineHeight:"24px",fontWeight:"600"}],"label-sm":["11px",{lineHeight:"14px",fontWeight:"500"}],"headline-lg-mobile":["24px",{lineHeight:"32px",fontWeight:"700"}],"body-md":["14px",{lineHeight:"20px",fontWeight:"400"}],"headline-xl":["36px",{lineHeight:"44px",fontWeight:"700"}],"label-md":["12px",{lineHeight:"16px",fontWeight:"600"}],"code-num":["13px",{lineHeight:"18px",fontWeight:"600"}],"body-sm":["13px",{lineHeight:"18px",fontWeight:"400"}],"headline-md":["22px",{lineHeight:"28px",fontWeight:"600"}],"headline-xl-mobile":["28px",{lineHeight:"36px",fontWeight:"700"}]}}}};</script></head><body class="bg-background font-body-md text-on-surface antialiased"><header class="fixed top-0 left-0 right-0 z-50 bg-surface-container-lowest/95 backdrop-blur-md shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-1 flex w-full"><div class="w-1/3 bg-secondary-container"></div><div class="w-1/3 bg-surface-container-lowest"></div><div class="w-1/3 bg-primary-container"></div></div><div class="h-16 px-6 flex items-center justify-between gap-4"><div class="flex items-center gap-3 min-w-0"><div class="flex items-center justify-center p-1 bg-surface-container-low rounded"><img alt="Armoiries Côte d'Ivoire" class="h-8 w-8 object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDSw7RDrfkH23MP3vRslBhyhcQ6PqxQeuiVBV7MhHMXUkdzQM8SNRahCoiGGz1l5k1jUSBih-nf9uW_I71ODxn4J5xl3WEQZYjsmOSRmouGBn9rBCchF74LeMhfY7v8iSjUxasJDn7PMrzb8Wxus96k4G5ejvdWIDnJmwVPgePID7gdosimtJG8TXG5O64V9oFoQ56kMdMTT0SYsIBHwUU7TwPvci4Dj8x5o_gMdtcJpazXOC3hKx4"></div><div class="flex flex-col min-w-0"><span class="font-label-md text-label-md text-primary uppercase tracking-wider font-bold truncate">SIGRH | RÉPUBLIQUE DE CÔTE D'IVOIRE</span><span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-tight truncate">Ministère du Portefeuille de l'État et des Entreprises Publiques</span></div></div><div class="flex-1 max-w-md mx-4 hidden lg:block"><div class="relative flex items-center"><span class="material-symbols-outlined absolute left-3 text-on-surface-variant text-lg pointer-events-none">search</span><input class="w-full pl-9 pr-4 py-1.5 bg-surface-container-low text-on-surface placeholder:text-on-surface-variant/70 font-body-sm text-body-sm rounded border-0 focus:outline-none focus:ring-1 focus:ring-primary" placeholder="Rechercher un agent par matricule civil, nom ou direction..." type="text"></div></div><div class="flex items-center gap-3 shrink-0"><div class="hidden sm:flex items-center gap-1.5 px-2.5 py-1 bg-surface-container-low rounded"><span class="font-label-sm text-label-sm text-on-surface-variant font-medium">Exercice</span><span class="font-code-num text-code-num text-primary font-bold px-1.5 py-0.5 bg-surface-container-lowest rounded">2026</span></div><div class="relative flex items-center"><button aria-label="Notifications de validation" class="p-2 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high rounded transition-colors relative" type="button"><span class="material-symbols-outlined text-xl">notifications</span><span class="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-secondary-container rounded-full"></span></button></div><div class="flex items-center gap-2 pl-2"><img alt="Profile" class="w-8 h-8 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDSw7RDrfkH23MP3vRslBhyhcQ6PqxQeuiVBV7MhHMXUkdzQM8SNRahCoiGGz1l5k1jUSBih-nf9uW_I71ODxn4J5xl3WEQZYjsmOSRmouGBn9rBCchF74LeMhfY7v8iSjUxasJDn7PMrzb8Wxus96k4G5ejvdWIDnJmwVPgePID7gdosimtJG8TXG5O64V9oFoQ56kMdMTT0SYsIBHwUU7TwPvci4Dj8x5o_gMdtcJpazXOC3hKx4"><div class="hidden md:flex flex-col text-left"><span class="font-label-md text-label-md text-on-surface font-semibold leading-tight">Kouamé N'Dri</span><span class="font-label-sm text-label-sm text-on-surface-variant">Directeur DRH</span></div></div></div></div></header><aside class="fixed left-0 top-0 h-full w-72 bg-surface-container-lowest z-40 flex flex-col pt-20 pb-4 shadow-[1px_0_8px_rgba(0,0,0,0.03)] overflow-y-auto"><div class="px-5 pb-3"><div class="p-3 bg-surface-container-low rounded flex items-center gap-3"><div class="w-8 h-8 rounded bg-primary text-on-primary flex items-center justify-center font-headline-sm text-headline-sm"><span class="material-symbols-outlined text-lg">account_balance</span></div><div class="min-w-0"><p class="font-label-sm text-label-sm text-on-surface-variant uppercase font-medium">Portefeuille Étatique</p><p class="font-label-md text-label-md text-on-surface font-bold truncate">DGPE &amp; Sociétés d'État</p></div></div></div><nav class="flex-1 px-3 space-y-1 font-body-sm text-body-sm" data-active-classes="bg-primary text-on-primary font-semibold shadow-sm"><div class="px-3 pt-2 pb-1"><span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider font-bold">Pilotage Central</span></div><a class="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="dashboard" href="#"><span class="material-symbols-outlined text-lg">dashboard</span><span class="">Vue d'ensemble DRH</span></a><a class="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="dossier-agent" href="#"><span class="material-symbols-outlined text-lg">badge</span><span class="">Dossier Agent Numérique</span></a><div class="px-3 pt-3 pb-1"><span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider font-bold">Sous-Directions Métier</span></div><a class="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="carrieres-mutations" href="#"><span class="material-symbols-outlined text-lg">assignment</span><span class="">SD Carrières &amp; Actes</span></a><a class="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="action-sociale" href="#"><span class="material-symbols-outlined text-lg">volunteer_activism</span><span class="">SD Action Sociale</span></a><a class="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="formation-continue" href="#"><span class="material-symbols-outlined text-lg">school</span><span class="">SD Formation Continue</span></a><div class="px-3 pt-3 pb-1"><span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider font-bold">Gouvernance &amp; Conformité</span></div><a class="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="circuits-validation" href="#"><span class="material-symbols-outlined text-lg">approval_delegation</span><span class="">Circuits de Validation</span></a><a class="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="statistiques-rbac" href="#"><span class="material-symbols-outlined text-lg">admin_panel_settings</span><span class="">Statistiques &amp; RBAC</span></a></nav><div class="px-4 pt-3 mt-auto"><div class="p-3 bg-surface-container-low rounded text-center"><span class="font-label-sm text-label-sm text-on-surface-variant block font-medium">Sécurisation Régalienne</span><span class="font-code-num text-code-num text-primary block mt-0.5">ANSSI-CI • SIGRH-v2.6</span></div></div></aside><div class="pl-72"><main class="relative pt-16 min-h-screen bg-background flex flex-col justify-between"><div class="flex flex-col w-full">
+<div class="p-6 md:p-8 space-y-8 max-w-[1600px] mx-auto w-full">
+<!-- 1. EN-TÊTE STRATÉGIQUE & BANDEAU D'EXPORT MULTI-FORMATS -->
+<div class="bg-surface-container-lowest rounded-xl shadow-sm p-6 lg:p-8 relative overflow-hidden">
+<div class="absolute top-0 left-0 right-0 h-1.5 flex w-full">
+<div class="w-1/3 bg-secondary-container"></div>
+<div class="w-1/3 bg-surface-container-lowest"></div>
+<div class="w-1/3 bg-primary-container"></div>
+</div>
+<div class="flex flex-col xl:flex-row xl:items-start justify-between gap-6 pt-2">
+<div class="space-y-2 max-w-4xl">
+<div class="inline-flex items-center gap-2 px-3 py-1 bg-surface-container-low rounded text-primary">
+<span class="material-symbols-outlined text-sm">analytics</span>
+<span class="font-label-sm text-label-sm uppercase tracking-wider font-bold">Observatoire Ministériel • Direction Générale du Portefeuille de l'État</span>
+</div>
+<h1 class="font-headline-lg text-headline-lg text-on-surface text-balance">
+            Observatoire Statistique &amp; Décisionnel Stratégique - Pilotage Haute Hiérarchie
+          </h1>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-3xl">Consolidation analytique en temps réel des effectifs, titularisations, avancements, mobilités, compétences et conformité du portefeuille des 28 Sociétés d'État et Établissements Publics Nationaux sous tutelle.</p>
+</div>
+<!-- État certification rapide -->
+<div class="flex items-center gap-3 bg-surface-container-low p-3 rounded-lg shrink-0">
+<span class="material-symbols-outlined text-primary-container text-2xl">verified_user</span>
+<div>
+<div class="font-label-sm text-label-sm text-on-surface-variant uppercase">Sceau Cryptographique</div>
+<div class="font-code-num text-code-num text-on-surface font-bold">SHA256 • DGPE-CERT-2026</div>
+</div>
+</div>
+</div>
+<!-- Filtres analytiques globaux -->
+<div class="mt-6 pt-6 bg-surface-container-low/60 -mx-6 -mb-6 p-6 flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-3 flex-1 max-w-4xl">
+<!-- Filtre Exercice -->
+<div class="flex flex-col gap-1">
+<label class="font-label-sm text-label-sm text-on-surface-variant font-semibold">Exercice Budgétaire</label>
+<div class="relative">
+<select class="w-full h-10 pl-3 pr-8 bg-surface-container-lowest text-on-surface font-body-sm text-body-sm rounded shadow-sm focus:outline-none focus:ring-1 focus:ring-primary appearance-none cursor-pointer">
+<option selected="" value="2026">Exercice 2026 (En cours)</option>
+<option value="triennal">Comparatif Triennal 2024-2026</option>
+<option value="2025">Exercice Clôturé 2025</option>
+<option value="projection">Projection Quadriennale 2027-2030</option>
+</select>
+<span class="material-symbols-outlined absolute right-2.5 top-2.5 text-on-surface-variant pointer-events-none text-base">expand_more</span>
+</div>
+</div>
+<!-- Filtre Périmètre -->
+<div class="flex flex-col gap-1">
+<label class="font-label-sm text-label-sm text-on-surface-variant font-semibold">Périmètre Portefeuille</label>
+<div class="relative">
+<select class="w-full h-10 pl-3 pr-8 bg-surface-container-lowest text-on-surface font-body-sm text-body-sm rounded shadow-sm focus:outline-none focus:ring-1 focus:ring-primary appearance-none cursor-pointer">
+<option selected="" value="all">Toutes Sociétés d'État (28 entités)</option>
+<option value="energie">Énergie, Mines &amp; Hydrocarbures (PETROCI, CI-ENERGIES)</option>
+<option value="banque">Banques, Finances &amp; Assurances (BNI, BIDC-CI)</option>
+<option value="transport">Ports, Transport &amp; Logistique (PAA, PASP, SOTRA)</option>
+<option value="infra">Infrastructures &amp; Patrimoine (SOGEPIE, AGEROUTE)</option>
+</select>
+<span class="material-symbols-outlined absolute right-2.5 top-2.5 text-on-surface-variant pointer-events-none text-base">expand_more</span>
+</div>
+</div>
+<!-- Filtre Segment Statutaire -->
+<div class="flex flex-col gap-1">
+<label class="font-label-sm text-label-sm text-on-surface-variant font-semibold">Segment Statutaire</label>
+<div class="relative">
+<select class="w-full h-10 pl-3 pr-8 bg-surface-container-lowest text-on-surface font-body-sm text-body-sm rounded shadow-sm focus:outline-none focus:ring-1 focus:ring-primary appearance-none cursor-pointer">
+<option selected="" value="all">Tous grades et catégories statutaires</option>
+<option value="cadres_sup">Cadres Dirigeants &amp; Hors-Cadre</option>
+<option value="maitrise">Personnel d'Encadrement &amp; Maîtrise</option>
+<option value="execution">Personnel d'Exécution Opérationnelle</option>
+</select>
+<span class="material-symbols-outlined absolute right-2.5 top-2.5 text-on-surface-variant pointer-events-none text-base">expand_more</span>
+</div>
+</div>
+</div>
+<div class="flex items-end">
+<button class="w-full lg:w-auto h-10 px-4 bg-primary hover:bg-primary-container text-on-primary font-label-lg text-label-lg rounded transition-colors flex items-center justify-center gap-2 shadow-sm">
+<span class="material-symbols-outlined text-lg">filter_alt</span>
+<span class="">Actualiser la Synthèse</span>
+</button>
+</div>
+</div>
+<!-- Hub d'Exportation Hiérarchique -->
+<div class="mt-6 pt-6 bg-surface-container-highest/30 rounded-lg p-4">
+<div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary-container text-xl">ios_share</span>
+<span class="font-label-md text-label-md text-on-surface uppercase font-bold tracking-wider">Hub d'Exportation Officiel &amp; Données Décisionnelles :</span>
+</div>
+<div class="flex flex-wrap items-center gap-2">
+<!-- Bouton Excel -->
+<button class="h-9 px-3.5 bg-primary-container hover:bg-primary text-on-primary font-label-md text-label-md rounded flex items-center gap-2 shadow-sm transition-colors" title="Télécharger matrice XLS complète avec TCD">
+<span class="material-symbols-outlined text-lg text-primary-fixed">table_view</span>
+<span class="">Données Brutes &amp; TCD (XLSX)</span>
+</button>
+<!-- Bouton PDF Exécutif -->
+<button class="h-9 px-3.5 bg-error text-on-error hover:bg-on-error-container font-label-md text-label-md rounded flex items-center gap-2 shadow-sm transition-colors" title="Rapport de synthèse pour Conseil des Ministres">
+<span class="material-symbols-outlined text-lg">picture_as_pdf</span>
+<span class="">Synthèse Conseil des Ministres (PDF)</span>
+</button>
+<!-- Bouton Slides / PPTX -->
+<button class="h-9 px-3.5 bg-secondary hover:bg-on-secondary-container text-on-secondary font-label-md text-label-md rounded flex items-center gap-2 shadow-sm transition-colors" title="Format Présentation Stratégique 16:9">
+<span class="material-symbols-outlined text-lg">slideshow</span>
+<span class="">Deck Stratégique 16:9 (PPTX)</span>
+</button>
+<!-- Bouton Rapport K-Sign -->
+<button class="h-9 px-3.5 bg-surface-container-lowest text-primary hover:bg-surface-container-high font-label-md text-label-md rounded flex items-center gap-2 shadow-sm transition-colors" title="Audit certifié K-Sign pour la Cour des Comptes et IGF">
+<span class="material-symbols-outlined text-lg text-primary-container">verified</span>
+<span class="">Audit K-Sign</span>
+</button>
+<!-- Menu récurrent -->
+<button class="h-9 px-3 bg-surface-container-low text-on-surface hover:bg-surface-container-high font-label-sm text-label-sm rounded flex items-center gap-1.5 transition-colors">
+<span class="material-symbols-outlined text-base">schedule_send</span>
+<span class="hidden sm:inline">Planifier au Cabinet</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- 2. MACRO-INDICATEURS CLÉS HIÉRARCHIQUES (KPI Cards de haut niveau) -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+<!-- KPI 1 : Effectif Global -->
+<div class="bg-surface-container-lowest p-5 rounded-xl shadow-sm relative overflow-hidden flex flex-col justify-between">
+<div class="absolute top-0 left-0 bottom-0 w-1 bg-primary-container"></div>
+<div>
+<div class="flex items-center justify-between text-on-surface-variant">
+<span class="font-label-sm text-label-sm uppercase font-bold tracking-wider">Effectif Consolidé</span>
+<span class="material-symbols-outlined text-primary-container">groups</span>
+</div>
+<div class="mt-3 flex items-baseline gap-2">
+<span class="font-headline-lg text-headline-lg text-on-surface">4 826</span>
+<span class="font-label-sm text-label-sm text-primary-container font-bold">+3.2%</span>
+</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant mt-1">Agents sous tutelle active</div>
+</div>
+<div class="mt-4 pt-3 bg-surface-container-low/50 -mx-5 -mb-5 px-5 py-2.5 flex items-center justify-between font-label-sm text-label-sm">
+<span class="text-on-surface-variant">Plafond PEA : 5 050</span>
+<span class="font-code-num text-code-num text-primary font-bold">95.5% occ.</span>
+</div>
+</div>
+<!-- KPI 2 : Masse Salariale Consolidée -->
+<div class="bg-surface-container-lowest p-5 rounded-xl shadow-sm relative overflow-hidden flex flex-col justify-between"><div class="absolute top-0 left-0 bottom-0 w-1 bg-secondary-container"></div><div><div class="flex items-center justify-between text-on-surface-variant"><span class="font-label-sm text-label-sm uppercase font-bold tracking-wider">Titularisations &amp; Avancements</span><span class="material-symbols-outlined text-secondary">military_tech</span></div><div class="mt-3 flex items-baseline gap-2"><span class="font-headline-lg text-headline-lg text-on-surface">842</span><span class="font-headline-sm text-headline-sm text-on-surface font-normal">actes</span></div><div class="font-body-sm text-body-sm text-on-surface-variant mt-1">Actes homologués en 2026</div></div><div class="mt-4 pt-3 bg-surface-container-low/50 -mx-5 -mb-5 px-5 py-2.5 flex items-center justify-between font-label-sm text-label-sm"><span class="text-on-surface-variant">Taux de promotion : 17.4%</span><span class="font-code-num text-code-num text-primary-container font-bold">+38 régularisés</span></div></div>
+<!-- KPI 3 : Féminisation & Parité -->
+<div class="bg-surface-container-lowest p-5 rounded-xl shadow-sm relative overflow-hidden flex flex-col justify-between">
+<div class="absolute top-0 left-0 bottom-0 w-1 bg-primary"></div>
+<div>
+<div class="flex items-center justify-between text-on-surface-variant">
+<span class="font-label-sm text-label-sm uppercase font-bold tracking-wider">Parité Décisionnelle</span>
+<span class="material-symbols-outlined text-primary">diversity_3</span>
+</div>
+<div class="mt-3 flex items-baseline gap-2">
+<span class="font-headline-lg text-headline-lg text-on-surface">34.2%</span>
+<span class="font-label-sm text-label-sm text-primary-container font-bold">+4.1 pts</span>
+</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant mt-1">28.6% en CA &amp; Dir. Générales</div>
+</div>
+<div class="mt-4 pt-3 bg-surface-container-low/50 -mx-5 -mb-5 px-5 py-2.5 flex items-center justify-between font-label-sm text-label-sm">
+<span class="text-on-surface-variant">Cible 2030 : 40%</span>
+<span class="font-code-num text-code-num text-on-surface font-semibold">Trajectoire A+</span>
+</div>
+</div>
+<!-- KPI 4 : Risque Compétences -->
+<div class="bg-surface-container-lowest p-5 rounded-xl shadow-sm relative overflow-hidden flex flex-col justify-between">
+<div class="absolute top-0 left-0 bottom-0 w-1 bg-secondary"></div>
+<div>
+<div class="flex items-center justify-between text-on-surface-variant">
+<span class="font-label-sm text-label-sm uppercase font-bold tracking-wider">Tension Compétences</span>
+<span class="material-symbols-outlined text-secondary">warning</span>
+</div>
+<div class="mt-3 flex items-baseline gap-2">
+<span class="font-headline-lg text-headline-lg text-on-surface">18.4%</span>
+<span class="font-label-sm text-label-sm text-secondary font-bold">14 postes</span>
+</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant mt-1">Alerte relève stratégique</div>
+</div>
+<div class="mt-4 pt-3 bg-surface-container-low/50 -mx-5 -mb-5 px-5 py-2.5 flex items-center justify-between font-label-sm text-label-sm">
+<span class="text-on-surface-variant">Vacance : 4.46%</span>
+<span class="font-code-num text-code-num text-secondary-container font-bold">Planifié</span>
+</div>
+</div>
+<!-- KPI 5 : Disponibilité Opérationnelle -->
+<div class="bg-surface-container-lowest p-5 rounded-xl shadow-sm relative overflow-hidden flex flex-col justify-between">
+<div class="absolute top-0 left-0 bottom-0 w-1 bg-primary-container"></div>
+<div>
+<div class="flex items-center justify-between text-on-surface-variant">
+<span class="font-label-sm text-label-sm uppercase font-bold tracking-wider">Disponibilité</span>
+<span class="material-symbols-outlined text-primary-container">task_alt</span>
+</div>
+<div class="mt-3 flex items-baseline gap-2">
+<span class="font-headline-lg text-headline-lg text-on-surface">97.4%</span>
+<span class="font-label-sm text-label-sm text-primary-container font-bold">Optimal</span>
+</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant mt-1">Présentéisme garanti</div>
+</div>
+<div class="mt-4 pt-3 bg-surface-container-low/50 -mx-5 -mb-5 px-5 py-2.5 flex items-center justify-between font-label-sm text-label-sm">
+<span class="text-on-surface-variant">Absentéisme : 2.6%</span>
+<span class="font-code-num text-code-num text-primary font-bold">Seuil régalien</span>
+</div>
+</div>
+</div>
+<!-- 3. BLOCS VISUELS DE STATISTIQUES & DATA ANALYTICS (Charts & Ratios) -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+<!-- Section A : Masse Salariale & Ratios Triennaux (Col 7) -->
+<div class="lg:col-span-7 bg-surface-container-lowest rounded-xl shadow-sm p-6 flex flex-col justify-between"><div><div class="flex items-center justify-between pb-4"><div><div class="flex items-center gap-2"><span class="material-symbols-outlined text-primary-container">badge</span><h2 class="font-headline-sm text-headline-sm text-on-surface">Répartition Statutaire par Corps &amp; Catégories (A, B, C, D)</h2></div><p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Pyramide statutaire, hiérarchie administrative et gestion prévisionnelle des carrières</p></div><div class="flex items-center gap-1.5 bg-surface-container-low px-2 py-1 rounded"><span class="font-label-sm text-label-sm text-on-surface-variant">Effectif Total :</span><span class="font-code-num text-code-num text-primary font-bold">4 826 Agents</span></div></div><div class="space-y-4 my-4"><div class="space-y-1.5"><div class="flex justify-between items-center font-label-sm text-label-sm"><span class="text-on-surface font-semibold">Cadres Supérieurs &amp; Dirigeants (Catégorie A - Grade A4 à A7)</span><div class="flex items-center gap-2"><span class="font-code-num text-code-num text-on-surface font-bold">1 688 agents</span><span class="text-on-surface-variant">(35.0%)</span></div></div><div class="h-3 w-full bg-surface-container rounded-full overflow-hidden"><div class="h-full bg-primary-container rounded-full" style="width: 35.0%;"></div></div></div><div class="space-y-1.5"><div class="flex justify-between items-center font-label-sm text-label-sm"><span class="text-on-surface font-semibold">Cadres Moyens &amp; Spécialistes (Catégorie A - Grade A1 à A3)</span><div class="flex items-center gap-2"><span class="font-code-num text-code-num text-on-surface font-bold">1 450 agents</span><span class="text-on-surface-variant">(30.0%)</span></div></div><div class="h-3 w-full bg-surface-container rounded-full overflow-hidden"><div class="h-full bg-primary rounded-full" style="width: 30.0%;"></div></div></div><div class="space-y-1.5"><div class="flex justify-between items-center font-label-sm text-label-sm"><span class="text-on-surface font-semibold">Maîtrise &amp; Techniciens d'Application (Catégorie B)</span><div class="flex items-center gap-2"><span class="font-code-num text-code-num text-on-surface font-bold">1 158 agents</span><span class="text-on-surface-variant">(24.0%)</span></div></div><div class="h-3 w-full bg-surface-container rounded-full overflow-hidden"><div class="h-full bg-secondary-container rounded-full" style="width: 24.0%;"></div></div></div><div class="space-y-1.5"><div class="flex justify-between items-center font-label-sm text-label-sm"><span class="text-on-surface font-semibold">Employés d'Exécution &amp; Soutien (Catégories C &amp; D)</span><div class="flex items-center gap-2"><span class="font-code-num text-code-num text-on-surface font-bold">530 agents</span><span class="text-on-surface-variant">(11.0%)</span></div></div><div class="h-3 w-full bg-surface-container rounded-full overflow-hidden"><div class="h-full bg-tertiary-container rounded-full" style="width: 11.0%;"></div></div></div></div></div><div class="grid grid-cols-3 gap-3 pt-4 bg-surface-container-low p-3.5 rounded-lg mt-4"><div><span class="font-label-sm text-label-sm text-on-surface-variant block">Taux d'Encadrement Supérieur</span><span class="font-headline-sm text-headline-sm text-primary font-bold">35.0%</span><span class="font-label-sm text-label-sm text-primary-container block mt-0.5">Cadres Dirigeants &amp; A</span></div><div><span class="font-label-sm text-label-sm text-on-surface-variant block">Actes d'Avancement N-1</span><span class="font-headline-sm text-headline-sm text-on-surface font-bold">98.6%</span><span class="font-label-sm text-label-sm text-primary-container block mt-0.5">Exécutés et homologués</span></div><div><span class="font-label-sm text-label-sm text-on-surface-variant block">Mobilités Inter-Corps</span><span class="font-headline-sm text-headline-sm text-secondary font-bold">+142 agents</span><span class="font-label-sm text-label-sm text-on-surface-variant block mt-0.5">Passerelles B vers A</span></div></div></div>
+<!-- Section B : Pyramide des Âges & Départs Retraite (Col 5) -->
+<div class="lg:col-span-5 bg-surface-container-lowest rounded-xl shadow-sm p-6 flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between pb-3">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary">hourglass_top</span>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Pyramide &amp; Départs Retraite</h2>
+</div>
+<span class="font-label-sm text-label-sm bg-surface-container-low px-2 py-0.5 rounded text-on-surface-variant">GPEEC 2026-2030</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+            Projection démographique et taux de remplacement prévisionnel ciblé (1 entrant pour 1.15 sortants).
+          </p>
+<!-- SVG Donut Chart Minimaliste pour les classes d'âge -->
+<div class="my-5 flex items-center justify-around gap-4">
+<div class="relative w-36 h-36 shrink-0 flex items-center justify-center">
+<svg class="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+<!-- Background circle -->
+<path class="text-surface-container" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="3.5"></path>
+<!-- Segment 1: < 35 ans (29.3%) -->
+<path class="text-primary-container" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-dasharray="29.3, 100" stroke-linecap="round" stroke-width="3.5"></path>
+<!-- Segment 2: 35-45 ans (44.0%) -->
+<path class="text-primary" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-dasharray="44.0, 100" stroke-dashoffset="-29.3" stroke-width="3.5"></path>
+<!-- Segment 3: 46-55 ans (20.0%) -->
+<path class="text-secondary-container" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-dasharray="20.0, 100" stroke-dashoffset="-73.3" stroke-width="3.5"></path>
+<!-- Segment 4: > 55 ans (6.7%) -->
+<path class="text-secondary" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-dasharray="6.7, 100" stroke-dashoffset="-93.3" stroke-width="3.5"></path>
+</svg>
+<div class="absolute flex flex-col items-center">
+<span class="font-headline-sm text-headline-sm font-bold text-on-surface">42 ans</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Âge Moyen</span>
+</div>
+</div>
+<!-- Légende détaillée -->
+<div class="space-y-2 text-label-sm">
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded-full bg-primary-container"></span>
+<span class="text-on-surface-variant">&lt; 35 ans :</span>
+<span class="font-code-num text-code-num font-bold text-on-surface">29.3%</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded-full bg-primary"></span>
+<span class="text-on-surface-variant">35 à 45 ans :</span>
+<span class="font-code-num text-code-num font-bold text-on-surface">44.0%</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded-full bg-secondary-container"></span>
+<span class="text-on-surface-variant">46 à 55 ans :</span>
+<span class="font-code-num text-code-num font-bold text-on-surface">20.0%</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded-full bg-secondary"></span>
+<span class="text-on-surface-variant">&gt; 55 ans (Retraite imminente) :</span>
+<span class="font-code-num text-code-num font-bold text-error">6.7%</span>
+</div>
+</div>
+</div>
+</div>
+<div class="pt-3 bg-surface-container-low p-3.5 rounded-lg">
+<div class="flex justify-between items-center font-label-sm text-label-sm">
+<span class="text-on-surface font-semibold">Départs 2026-2028 (323 agents) :</span>
+<span class="font-code-num text-code-num text-primary font-bold">1 entrant / 1.15 sortants</span>
+</div>
+<div class="mt-1 font-body-sm text-body-sm text-on-surface-variant">
+            Rationalisation automatique des effectifs via le non-remplacement systématique sur fonctions supports.
+          </div>
+</div>
+</div>
+</div>
+<!-- 3. SUITE BLOCS STATISTIQUES (Matrice PEA, Mobilités, Climat Social) -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+<!-- Section C : Répartition Effectifs & Tension PEA -->
+<div class="bg-surface-container-lowest rounded-xl shadow-sm p-6 flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between pb-3">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary-container">domain</span>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Tension Plafond PEA</h2>
+</div>
+<span class="font-label-sm text-label-sm bg-primary-fixed text-on-primary-fixed px-2 py-0.5 rounded font-bold">Sous Contrôle</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-4">
+            Consommation du Plafond d'Emplois Autorisé (PEA) par Société d'État majeure.
+          </p>
+<div class="space-y-3 font-label-sm text-label-sm">
+<!-- PETROCI -->
+<div>
+<div class="flex justify-between">
+<span class="text-on-surface font-semibold">PETROCI Holding</span>
+<span class="font-code-num text-code-num text-on-surface">1 420 / 1 450 (97.9%)</span>
+</div>
+<div class="h-2 w-full bg-surface-container rounded-full overflow-hidden mt-1">
+<div class="h-full bg-secondary-container rounded-full" style="width: 97.9%;"></div>
+</div>
+</div>
+<!-- CI-ENERGIES -->
+<div>
+<div class="flex justify-between">
+<span class="text-on-surface font-semibold">CI-ENERGIES</span>
+<span class="font-code-num text-code-num text-on-surface">1 180 / 1 200 (98.3%)</span>
+</div>
+<div class="h-2 w-full bg-surface-container rounded-full overflow-hidden mt-1">
+<div class="h-full bg-secondary-container rounded-full" style="width: 98.3%;"></div>
+</div>
+</div>
+<!-- PAA -->
+<div>
+<div class="flex justify-between">
+<span class="text-on-surface font-semibold">Port Autonome d'Abidjan</span>
+<span class="font-code-num text-code-num text-on-surface">1 050 / 1 120 (93.7%)</span>
+</div>
+<div class="h-2 w-full bg-surface-container rounded-full overflow-hidden mt-1">
+<div class="h-full bg-primary-container rounded-full" style="width: 93.7%;"></div>
+</div>
+</div>
+<!-- SOGEPIE -->
+<div>
+<div class="flex justify-between">
+<span class="text-on-surface font-semibold">SOGEPIE</span>
+<span class="font-code-num text-code-num text-on-surface">780 / 830 (94.0%)</span>
+</div>
+<div class="h-2 w-full bg-surface-container rounded-full overflow-hidden mt-1">
+<div class="h-full bg-primary-container rounded-full" style="width: 94.0%;"></div>
+</div>
+</div>
+<!-- BNI -->
+<div>
+<div class="flex justify-between">
+<span class="text-on-surface font-semibold">Banque Nationale d'Investissement</span>
+<span class="font-code-num text-code-num text-on-surface">396 / 450 (88.0%)</span>
+</div>
+<div class="h-2 w-full bg-surface-container rounded-full overflow-hidden mt-1">
+<div class="h-full bg-primary-container rounded-full" style="width: 88.0%;"></div>
+</div>
+</div>
+</div>
+</div>
+<div class="mt-4 pt-3 bg-surface-container-low p-3 rounded-lg flex items-center justify-between font-label-sm text-label-sm">
+<span class="text-on-surface-variant">Capacité d'embauche résiduelle :</span>
+<span class="font-code-num text-code-num text-primary font-bold">224 postes d'État</span>
+</div>
+</div>
+<!-- Section D : Mobilité Inter-Sociétés & Arbitrages -->
+<div class="bg-surface-container-lowest rounded-xl shadow-sm p-6 flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between pb-3">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary-container">sync_alt</span>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Mobilité &amp; Réallocation</h2>
+</div>
+<span class="font-label-sm text-label-sm bg-primary-fixed text-on-primary-fixed px-2 py-0.5 rounded font-bold">Efficience DGPE</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-4">
+            Passerelles de personnel public évitant le recrutement externe et réduisant les coûts de prestation.
+          </p>
+<div class="space-y-3">
+<div class="p-3 bg-surface-container-low rounded-lg flex items-center justify-between">
+<div>
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase">Mobilités Réalisées</span>
+<div class="font-headline-md text-headline-md text-on-surface font-bold mt-0.5">68 Agents</div>
+</div>
+<span class="material-symbols-outlined text-3xl text-primary-container">transfer_within_a_station</span>
+</div>
+<div class="p-3 bg-surface-container-low rounded-lg flex items-center justify-between">
+<div>
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase">Recrutements Externes Évités</span>
+<div class="font-headline-md text-headline-md text-primary font-bold mt-0.5">100% Respecté</div>
+</div>
+<span class="material-symbols-outlined text-3xl text-primary">do_not_disturb_on</span>
+</div>
+<div class="p-3 bg-surface-container-low rounded-lg flex items-center justify-between"><div><span class="font-label-sm text-label-sm text-on-surface-variant uppercase">Gains d'Efficacité Opérationnelle</span><div class="font-headline-md text-headline-md text-secondary font-bold mt-0.5">100% Postes</div><span class="font-label-sm text-label-sm text-on-surface-variant block">Comblés sans vacance critique</span></div><span class="material-symbols-outlined text-3xl text-secondary">verified</span></div>
+</div>
+</div>
+<div class="mt-4 pt-3 font-label-sm text-label-sm text-on-surface-variant flex items-center gap-1.5">
+<span class="material-symbols-outlined text-base text-primary-container">check_circle</span>
+<span class="">Bourse de l'emploi étatique validée par arrêté interministériel.</span>
+</div>
+</div>
+<!-- Section E : Climat Social & Discipline -->
+<div class="bg-surface-container-lowest rounded-xl shadow-sm p-6 flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between pb-3">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary-container">gavel</span>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Climat Social &amp; Éthique</h2>
+</div>
+<span class="font-label-sm text-label-sm bg-surface-container-low px-2 py-0.5 rounded text-on-surface-variant">Conformité IGF</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-4">
+            Indice de conflictualité, dossiers disciplinaires instruits et baromètre de bien-être au travail.
+          </p>
+<div class="space-y-4">
+<!-- Conflictualité -->
+<div>
+<div class="flex justify-between items-center font-label-sm text-label-sm">
+<span class="text-on-surface font-semibold">Taux de conflictualité (Grèves, préavis)</span>
+<span class="font-code-num text-code-num text-primary-container font-bold">0.12% (Quasi-nul)</span>
+</div>
+<div class="h-2 w-full bg-surface-container rounded-full overflow-hidden mt-1">
+<div class="h-full bg-primary-container rounded-full" style="width: 2%;"></div>
+</div>
+</div>
+<!-- Baromètre Bien-être -->
+<div>
+<div class="flex justify-between items-center font-label-sm text-label-sm">
+<span class="text-on-surface font-semibold">Baromètre de Sérénité Sociale</span>
+<span class="font-code-num text-code-num text-primary font-bold">86 / 100</span>
+</div>
+<div class="h-2 w-full bg-surface-container rounded-full overflow-hidden mt-1">
+<div class="h-full bg-primary-container rounded-full" style="width: 86%;"></div>
+</div>
+</div>
+<!-- Dossiers disciplinaires -->
+<div class="grid grid-cols-2 gap-2 pt-2">
+<div class="p-2.5 bg-surface-container-low rounded">
+<span class="font-label-sm text-label-sm text-on-surface-variant block">Dossiers en Conseil</span>
+<span class="font-headline-sm text-headline-sm text-on-surface font-bold">7 cas</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant block mt-0.5">Sur 4 826 agents</span>
+</div>
+<div class="p-2.5 bg-surface-container-low rounded">
+<span class="font-label-sm text-label-sm text-on-surface-variant block">Respect Contradictoire</span>
+<span class="font-headline-sm text-headline-sm text-primary-container font-bold">100%</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant block mt-0.5">Zéro contentieux perdu</span>
+</div>
+</div>
+</div>
+</div>
+<div class="mt-4 pt-3 font-label-sm text-label-sm text-on-surface-variant flex items-center gap-1.5">
+<span class="material-symbols-outlined text-base text-primary">handshake</span>
+<span class="">Dialogue social actif avec les délégations syndicales sectorielles.</span>
+</div>
+</div>
+</div>
+<!-- 4. MATRICE STATISTIQUE SYNTHÉTIQUE POUR LA DÉCISION (Tableau macroscopique dynamique) -->
+<div class="bg-surface-container-lowest rounded-xl shadow-sm overflow-hidden">
+<!-- En-tête de section -->
+<div class="p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-surface-container-lowest">
+<div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary-container">table_chart</span>
+<h2 class="font-headline-md text-headline-md text-on-surface">Matrice Décisionnelle Consolidée par Société d'État</h2>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">
+            Indicateurs statutaires, ratios de solvabilité sociale et suivi des plafonds autorisés d'emplois (PEA).
+          </p>
+</div>
+<div class="flex items-center gap-2">
+<span class="font-label-sm text-label-sm text-on-surface-variant font-medium">Export matrice complète :</span>
+<button class="h-8 px-2.5 bg-surface-container-low hover:bg-surface-container-high text-on-surface font-label-sm text-label-sm rounded flex items-center gap-1 transition-colors">
+<span class="material-symbols-outlined text-base text-primary-container">file_download</span>
+<span class="">Excel (.xlsx)</span>
+</button>
+<button class="h-8 px-2.5 bg-surface-container-low hover:bg-surface-container-high text-on-surface font-label-sm text-label-sm rounded flex items-center gap-1 transition-colors">
+<span class="material-symbols-outlined text-base text-error">picture_as_pdf</span>
+<span class="">PDF Formel</span>
+</button>
+</div>
+</div>
+<!-- Table responsive -->
+<div class="overflow-x-auto">
+<table class="w-full text-left font-body-sm text-body-sm">
+<thead class="bg-surface-container-low text-on-surface-variant font-label-md text-label-md uppercase tracking-wider">
+<tr>
+<th class="py-3 px-4" scope="col">Société d'État &amp; Secteur</th>
+<th class="py-3 px-4" scope="col">Effectif Réel</th>
+<th class="py-3 px-4" scope="col">Plafond PEA</th>
+<th class="py-3 px-4" scope="col">Corps A / Cadres (%)</th>
+<th class="py-3 px-4" scope="col">Départs N+1</th>
+<th class="py-3 px-4" scope="col">Parité F/H</th>
+<th class="py-3 px-4" scope="col">Niveau Risque RH</th>
+<th class="py-3 px-4 text-right" scope="col">Export Ligne</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-surface-container">
+<!-- PETROCI -->
+<tr class="hover:bg-surface-container-low/60 transition-colors">
+<td class="py-3.5 px-4">
+<div class="font-label-md text-label-md text-on-surface font-bold">PETROCI Holding</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant">Hydrocarbures &amp; Énergie</div>
+</td>
+<td class="py-3.5 px-4 font-code-num text-code-num text-on-surface font-bold">1 420</td>
+<td class="py-3.5 px-4 font-code-num text-code-num text-on-surface-variant">1 450 (97.9%)</td>
+<td class="py-3.5 px-4"><span class="font-code-num text-code-num text-primary font-bold">42.5%</span><span class="font-label-sm text-label-sm text-on-surface-variant block">Cadres A</span></td>
+<td class="py-3.5 px-4 font-code-num text-code-num text-on-surface">42 agents</td>
+<td class="py-3.5 px-4 font-code-num text-code-num text-on-surface">31.4%</td>
+<td class="py-3.5 px-4">
+<span class="inline-flex items-center gap-1.5 px-2 py-0.5 bg-primary-fixed text-on-primary-fixed rounded font-label-sm text-label-sm font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+                  Faible
+                </span>
+</td>
+<td class="py-3.5 px-4 text-right">
+<div class="inline-flex items-center gap-1">
+<button class="p-1 hover:bg-surface-container rounded text-on-surface-variant hover:text-primary" title="Export XLS">
+<span class="material-symbols-outlined text-lg">download</span>
+</button>
+<button class="p-1 hover:bg-surface-container rounded text-on-surface-variant hover:text-error" title="Fiche Synthèse">
+<span class="material-symbols-outlined text-lg">visibility</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- CI-ENERGIES -->
+<tr class="hover:bg-surface-container-low/60 transition-colors">
+<td class="py-3.5 px-4">
+<div class="font-label-md text-label-md text-on-surface font-bold">CI-ENERGIES</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant">Gestion Électrique Nationale</div>
+</td>
+<td class="py-3.5 px-4 font-code-num text-code-num text-on-surface font-bold">1 180</td>
+<td class="py-3.5 px-4 font-code-num text-code-num text-on-surface-variant">1 200 (98.3%)</td>
+<td class="py-3.5 px-4"><span class="font-code-num text-code-num text-primary font-bold">38.2%</span><span class="font-label-sm text-label-sm text-on-surface-variant block">Cadres A</span></td>
+<td class="py-3.5 px-4 font-code-num text-code-num text-on-surface">38 agents</td>
+<td class="py-3.5 px-4 font-code-num text-code-num text-on-surface">28.9%</td>
+<td class="py-3.5 px-4">
+<span class="inline-flex items-center gap-1.5 px-2 py-0.5 bg-primary-fixed text-on-primary-fixed rounded font-label-sm text-label-sm font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+                  Faible
+                </span>
+</td>
+<td class="py-3.5 px-4 text-right">
+<div class="inline-flex items-center gap-1">
+<button class="p-1 hover:bg-surface-container rounded text-on-surface-variant hover:text-primary" title="Export XLS">
+<span class="material-symbols-outlined text-lg">download</span>
+</button>
+<button class="p-1 hover:bg-surface-container rounded text-on-surface-variant hover:text-error" title="Fiche Synthèse">
+<span class="material-symbols-outlined text-lg">visibility</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Port Autonome d'Abidjan -->
+<tr class="hover:bg-surface-container-low/60 transition-colors">
+<td class="py-3.5 px-4">
+<div class="font-label-md text-label-md text-on-surface font-bold">Port Autonome d'Abidjan (PAA)</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant">Infrastructures Portuaires</div>
+</td>
+<td class="py-3.5 px-4 font-code-num text-code-num text-on-surface font-bold">1 050</td>
+<td class="py-3.5 px-4 font-code-num text-code-num text-on-surface-variant">1 120 (93.7%)</td>
+<td class="py-3.5 px-4"><span class="font-code-num text-code-num text-primary font-bold">34.0%</span><span class="font-label-sm text-label-sm text-on-surface-variant block">Cadres A</span></td>
+<td class="py-3.5 px-4 font-code-num text-code-num text-on-surface">51 agents</td>
+<td class="py-3.5 px-4 font-code-num text-code-num text-on-surface">36.8%</td>
+<td class="py-3.5 px-4">
+<span class="inline-flex items-center gap-1.5 px-2 py-0.5 bg-primary-fixed text-on-primary-fixed rounded font-label-sm text-label-sm font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+                  Faible
+                </span>
+</td>
+<td class="py-3.5 px-4 text-right">
+<div class="inline-flex items-center gap-1">
+<button class="p-1 hover:bg-surface-container rounded text-on-surface-variant hover:text-primary" title="Export XLS">
+<span class="material-symbols-outlined text-lg">download</span>
+</button>
+<button class="p-1 hover:bg-surface-container rounded text-on-surface-variant hover:text-error" title="Fiche Synthèse">
+<span class="material-symbols-outlined text-lg">visibility</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- SOGEPIE -->
+<tr class="hover:bg-surface-container-low/60 transition-colors">
+<td class="py-3.5 px-4">
+<div class="font-label-md text-label-md text-on-surface font-bold">SOGEPIE</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant">Patrimoine Immobilier de l'État</div>
+</td>
+<td class="py-3.5 px-4 font-code-num text-code-num text-on-surface font-bold">780</td>
+<td class="py-3.5 px-4 font-code-num text-code-num text-on-surface-variant">830 (94.0%)</td>
+<td class="py-3.5 px-4"><span class="font-code-num text-code-num text-on-surface font-bold">29.8%</span><span class="font-label-sm text-label-sm text-on-surface-variant block">Cadres A</span></td>
+<td class="py-3.5 px-4 font-code-num text-code-num text-on-surface">22 agents</td>
+<td class="py-3.5 px-4 font-code-num text-code-num text-on-surface">38.2%</td>
+<td class="py-3.5 px-4">
+<span class="inline-flex items-center gap-1.5 px-2 py-0.5 bg-secondary-fixed text-on-secondary-fixed rounded font-label-sm text-label-sm font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+                  Modéré
+                </span>
+</td>
+<td class="py-3.5 px-4 text-right">
+<div class="inline-flex items-center gap-1">
+<button class="p-1 hover:bg-surface-container rounded text-on-surface-variant hover:text-primary" title="Export XLS">
+<span class="material-symbols-outlined text-lg">download</span>
+</button>
+<button class="p-1 hover:bg-surface-container rounded text-on-surface-variant hover:text-error" title="Fiche Synthèse">
+<span class="material-symbols-outlined text-lg">visibility</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- BNI -->
+<tr class="hover:bg-surface-container-low/60 transition-colors">
+<td class="py-3.5 px-4">
+<div class="font-label-md text-label-md text-on-surface font-bold">Banque Nationale d'Investissement</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant">Financement &amp; Trésor</div>
+</td>
+<td class="py-3.5 px-4 font-code-num text-code-num text-on-surface font-bold">396</td>
+<td class="py-3.5 px-4 font-code-num text-code-num text-on-surface-variant">450 (88.0%)</td>
+<td class="py-3.5 px-4"><span class="font-code-num text-code-num text-primary font-bold">46.2%</span><span class="font-label-sm text-label-sm text-on-surface-variant block">Cadres A</span></td>
+<td class="py-3.5 px-4 font-code-num text-code-num text-on-surface">14 agents</td>
+<td class="py-3.5 px-4 font-code-num text-code-num text-on-surface">41.0%</td>
+<td class="py-3.5 px-4">
+<span class="inline-flex items-center gap-1.5 px-2 py-0.5 bg-primary-fixed text-on-primary-fixed rounded font-label-sm text-label-sm font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+                  Faible
+                </span>
+</td>
+<td class="py-3.5 px-4 text-right">
+<div class="inline-flex items-center gap-1">
+<button class="p-1 hover:bg-surface-container rounded text-on-surface-variant hover:text-primary" title="Export XLS">
+<span class="material-symbols-outlined text-lg">download</span>
+</button>
+<button class="p-1 hover:bg-surface-container rounded text-on-surface-variant hover:text-error" title="Fiche Synthèse">
+<span class="material-symbols-outlined text-lg">visibility</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Total consolidé -->
+<tr class="bg-surface-container-low font-bold">
+<td class="py-3.5 px-4 text-on-surface">Portefeuille Consolidé (28 Sociétés)</td>
+<td class="py-3.5 px-4 font-code-num text-code-num text-primary font-bold">4 826</td>
+<td class="py-3.5 px-4 font-code-num text-code-num text-on-surface font-bold">5 050 (95.5%)</td>
+<td class="py-3.5 px-4 font-code-num text-code-num text-primary font-bold">37.4% (Moy. Cadres A)</td>
+<td class="py-3.5 px-4 font-code-num text-code-num text-on-surface">167 agents N+1</td>
+<td class="py-3.5 px-4 font-code-num text-code-num text-primary font-bold">34.2%</td>
+<td class="py-3.5 px-4">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 bg-surface-container-lowest text-primary rounded font-label-sm text-label-sm font-bold">
+                  Souverain A+
+                </span>
+</td>
+<td class="py-3.5 px-4 text-right">
+<button class="px-2.5 py-1 bg-primary text-on-primary font-label-sm text-label-sm rounded shadow-sm hover:bg-primary-container transition-colors">
+                  Pack Global
+                </button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<!-- 5. PIED DE PAGE & CERTIFICATION RÉGALIENNE DE LA DONNÉE -->
+<div class="bg-surface-container-lowest rounded-xl shadow-sm p-6 relative overflow-hidden">
+<div class="absolute left-0 top-0 bottom-0 w-1.5 bg-primary-container"></div>
+<div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+<div class="space-y-1.5">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary-container">verified</span>
+<span class="font-label-md text-label-md text-on-surface font-bold uppercase tracking-wider">Certification Légale &amp; Traçabilité de l'Information Décisionnelle</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant max-w-4xl">
+            Ce tableau de bord consolidé est certifié conforme aux normes de reporting statistique de l'Union Économique et Monétaire Ouest-Africaine (UEMOA) et aux prescriptions de l'Inspection Générale des Finances (IGF). Toute extraction est horodatée et indexée au registre national des actes RH.
+          </p>
+<div class="flex flex-wrap items-center gap-4 pt-2 text-label-sm">
+<span class="text-on-surface-variant">Empreinte SHA-256 : <code class="font-code-num text-code-num text-on-surface font-bold">e7c8...9b12d34a</code></span>
+<span class="text-on-surface-variant">•</span>
+<span class="text-on-surface-variant">Horodatage officiel : <strong class="text-on-surface">14/05/2026 - 11:42:09 GMT</strong></span>
+<span class="text-on-surface-variant">•</span>
+<span class="text-on-surface-variant">Opérateur : <strong class="text-primary">Direction Générale du Portefeuille de l'État (DGPE)</strong></span>
+</div>
+</div>
+<!-- Visas et contrôleurs -->
+<div class="flex items-center gap-3 shrink-0">
+<div class="px-3.5 py-2 bg-surface-container-low rounded-lg text-center">
+<span class="font-label-sm text-label-sm text-on-surface-variant block uppercase">Visa Ordonnateur</span>
+<span class="font-code-num text-code-num text-primary font-bold">DGPE - VALIDE</span>
+</div>
+<div class="px-3.5 py-2 bg-surface-container-low rounded-lg text-center">
+<span class="font-label-sm text-label-sm text-on-surface-variant block uppercase">Contrôle Financier</span>
+<span class="font-code-num text-code-num text-primary-container font-bold">CF-ETAT • VISA N°884</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div></main></div>
+
+</body></html>

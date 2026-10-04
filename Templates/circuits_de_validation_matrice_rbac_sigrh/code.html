@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+
+<html lang="fr"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{colors:{"on-tertiary-container":"#bdc4de","on-surface-variant":"#3f4942","tertiary-fixed-dim":"#bec6e0","on-background":"#0b1c30","on-tertiary-fixed":"#131b2e","surface-dim":"#cbdbf5","on-secondary-fixed-variant":"#783100","on-tertiary-fixed-variant":"#3f465c","primary-container":"#0a5e3a","on-surface":"#0b1c30","surface-tint":"#1e6b46","primary-fixed-dim":"#8cd6a9","surface-container":"#e5eeff","on-primary-fixed-variant":"#005231","tertiary-container":"#495167","on-error-container":"#93000a","outline-variant":"#bfc9c0","inverse-primary":"#8cd6a9","surface-variant":"#d3e4fe","surface-container-lowest":"#ffffff","inverse-on-surface":"#eaf1ff","on-primary-container":"#8ad5a7","primary":"#004428","on-primary-fixed":"#002111","surface-bright":"#f8f9ff","surface-container-highest":"#d3e4fe","primary-fixed":"#a7f3c3","inverse-surface":"#213145","on-primary":"#ffffff","error-container":"#ffdad6","error":"#ba1a1a","secondary-fixed-dim":"#ffb691","tertiary-fixed":"#dae2fd","on-secondary":"#ffffff","tertiary":"#333a4f","surface-container-low":"#eff4ff","on-secondary-container":"#602600","secondary-fixed":"#ffdbcb","background":"#f8f9ff","surface":"#f8f9ff","secondary":"#9e4300","on-secondary-fixed":"#341100","on-tertiary":"#ffffff","outline":"#707a71","on-error":"#ffffff","surface-container-high":"#dce9ff","secondary-container":"#fe7b28"},borderRadius:{DEFAULT:"0.125rem",lg:"0.25rem",xl:"0.5rem",full:"0.75rem"},spacing:{"gutter-desktop":"1.5rem","space-sm":"0.5rem","margin-desktop":"2rem",gutter:"1.25rem","space-md":"1rem","space-lg":"1.5rem",margin:"1rem","space-xs":"0.25rem","space-xl":"2rem","margin-tablet":"1.5rem"},fontFamily:{"headline-lg":["Public Sans"],"label-lg":["Public Sans"],"body-lg":["Public Sans"],"headline-sm":["Public Sans"],"label-sm":["Public Sans"],"headline-lg-mobile":["Public Sans"],"body-md":["Public Sans"],"headline-xl":["Public Sans"],"label-md":["Public Sans"],"code-num":["Public Sans"],"body-sm":["Public Sans"],"headline-md":["Public Sans"],"headline-xl-mobile":["Public Sans"]},fontSize:{"headline-lg":["30px",{lineHeight:"38px",fontWeight:"700"}],"label-lg":["14px",{lineHeight:"20px",fontWeight:"600"}],"body-lg":["16px",{lineHeight:"24px",fontWeight:"400"}],"headline-sm":["18px",{lineHeight:"24px",fontWeight:"600"}],"label-sm":["11px",{lineHeight:"14px",fontWeight:"500"}],"headline-lg-mobile":["24px",{lineHeight:"32px",fontWeight:"700"}],"body-md":["14px",{lineHeight:"20px",fontWeight:"400"}],"headline-xl":["36px",{lineHeight:"44px",fontWeight:"700"}],"label-md":["12px",{lineHeight:"16px",fontWeight:"600"}],"code-num":["13px",{lineHeight:"18px",fontWeight:"600"}],"body-sm":["13px",{lineHeight:"18px",fontWeight:"400"}],"headline-md":["22px",{lineHeight:"28px",fontWeight:"600"}],"headline-xl-mobile":["28px",{lineHeight:"36px",fontWeight:"700"}]}}}};</script></head><body class="bg-background font-body-md text-on-surface antialiased"><header class="fixed top-0 left-0 right-0 z-50 bg-surface-container-lowest/95 backdrop-blur-md shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-1 flex w-full"><div class="w-1/3 bg-secondary-container"></div><div class="w-1/3 bg-surface-container-lowest"></div><div class="w-1/3 bg-primary-container"></div></div><div class="h-16 px-6 flex items-center justify-between gap-4"><div class="flex items-center gap-3 min-w-0"><div class="flex items-center justify-center p-1 bg-surface-container-low rounded"><img alt="Armoiries Côte d'Ivoire" class="h-8 w-8 object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDSw7RDrfkH23MP3vRslBhyhcQ6PqxQeuiVBV7MhHMXUkdzQM8SNRahCoiGGz1l5k1jUSBih-nf9uW_I71ODxn4J5xl3WEQZYjsmOSRmouGBn9rBCchF74LeMhfY7v8iSjUxasJDn7PMrzb8Wxus96k4G5ejvdWIDnJmwVPgePID7gdosimtJG8TXG5O64V9oFoQ56kMdMTT0SYsIBHwUU7TwPvci4Dj8x5o_gMdtcJpazXOC3hKx4"/></div><div class="flex flex-col min-w-0"><span class="font-label-md text-label-md text-primary uppercase tracking-wider font-bold truncate">SIGRH | RÉPUBLIQUE DE CÔTE D'IVOIRE</span><span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-tight truncate">Ministère du Portefeuille de l'État et des Entreprises Publiques</span></div></div><div class="flex-1 max-w-md mx-4 hidden lg:block"><div class="relative flex items-center"><span class="material-symbols-outlined absolute left-3 text-on-surface-variant text-lg pointer-events-none">search</span><input class="w-full pl-9 pr-4 py-1.5 bg-surface-container-low text-on-surface placeholder:text-on-surface-variant/70 font-body-sm text-body-sm rounded border-0 focus:outline-none focus:ring-1 focus:ring-primary" placeholder="Rechercher un agent par matricule civil, nom ou direction..." type="text"/></div></div><div class="flex items-center gap-3 shrink-0"><div class="hidden sm:flex items-center gap-1.5 px-2.5 py-1 bg-surface-container-low rounded"><span class="font-label-sm text-label-sm text-on-surface-variant font-medium">Exercice</span><span class="font-code-num text-code-num text-primary font-bold px-1.5 py-0.5 bg-surface-container-lowest rounded">2026</span></div><div class="relative flex items-center"><button aria-label="Notifications de validation" class="p-2 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high rounded transition-colors relative" type="button"><span class="material-symbols-outlined text-xl">notifications</span><span class="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-secondary-container rounded-full"></span></button></div><div class="flex items-center gap-2 pl-2"><img alt="Profile" class="w-8 h-8 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDSw7RDrfkH23MP3vRslBhyhcQ6PqxQeuiVBV7MhHMXUkdzQM8SNRahCoiGGz1l5k1jUSBih-nf9uW_I71ODxn4J5xl3WEQZYjsmOSRmouGBn9rBCchF74LeMhfY7v8iSjUxasJDn7PMrzb8Wxus96k4G5ejvdWIDnJmwVPgePID7gdosimtJG8TXG5O64V9oFoQ56kMdMTT0SYsIBHwUU7TwPvci4Dj8x5o_gMdtcJpazXOC3hKx4"/><div class="hidden md:flex flex-col text-left"><span class="font-label-md text-label-md text-on-surface font-semibold leading-tight">Kouamé N'Dri</span><span class="font-label-sm text-label-sm text-on-surface-variant">Directeur DRH</span></div></div></div></div></header><aside class="fixed left-0 top-0 h-full w-72 bg-surface-container-lowest z-40 flex flex-col pt-20 pb-4 shadow-[1px_0_8px_rgba(0,0,0,0.03)] overflow-y-auto"><div class="px-5 pb-3"><div class="p-3 bg-surface-container-low rounded flex items-center gap-3"><div class="w-8 h-8 rounded bg-primary text-on-primary flex items-center justify-center font-headline-sm text-headline-sm"><span class="material-symbols-outlined text-lg">account_balance</span></div><div class="min-w-0"><p class="font-label-sm text-label-sm text-on-surface-variant uppercase font-medium">Portefeuille Étatique</p><p class="font-label-md text-label-md text-on-surface font-bold truncate">DGPE &amp; Sociétés d'État</p></div></div></div><nav class="flex-1 px-3 space-y-1 font-body-sm text-body-sm" data-active-classes="bg-primary text-on-primary font-semibold shadow-sm"><div class="px-3 pt-2 pb-1"><span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider font-bold">Pilotage Central</span></div><a class="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="dashboard" href="#"><span class="material-symbols-outlined text-lg">dashboard</span><span>Vue d'ensemble DRH</span></a><a class="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="dossier-agent" href="#"><span class="material-symbols-outlined text-lg">badge</span><span>Dossier Agent Numérique</span></a><div class="px-3 pt-3 pb-1"><span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider font-bold">Sous-Directions Métier</span></div><a class="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="carrieres-mutations" href="#"><span class="material-symbols-outlined text-lg">assignment</span><span>SD Carrières &amp; Actes</span></a><a class="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="action-sociale" href="#"><span class="material-symbols-outlined text-lg">volunteer_activism</span><span>SD Action Sociale</span></a><a class="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="formation-continue" href="#"><span class="material-symbols-outlined text-lg">school</span><span>SD Formation Continue</span></a><div class="px-3 pt-3 pb-1"><span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider font-bold">Gouvernance &amp; Conformité</span></div><a aria-current="page" class="flex items-center gap-3 px-3 py-2 rounded transition-colors bg-primary text-on-primary font-semibold shadow-sm" data-path="circuits-validation" href="#"><span class="material-symbols-outlined text-lg">approval_delegation</span><span>Circuits de Validation</span></a><a class="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="statistiques-rbac" href="#"><span class="material-symbols-outlined text-lg">admin_panel_settings</span><span>Statistiques &amp; RBAC</span></a></nav><div class="px-4 pt-3 mt-auto"><div class="p-3 bg-surface-container-low rounded text-center"><span class="font-label-sm text-label-sm text-on-surface-variant block font-medium">Sécurisation Régalienne</span><span class="font-code-num text-code-num text-primary block mt-0.5">ANSSI-CI • SIGRH-v2.6</span></div></div></aside><div class="pl-72"><main class="relative pt-16 min-h-screen bg-background flex flex-col justify-between"><div class="w-full px-8 py-6 max-w-[1600px] mx-auto flex-1"><div class="flex flex-col w-full space-y-8">
+<!-- Top Sovereign Banner & Executive Metrics -->
+<div class="relative overflow-hidden rounded-xl bg-surface-container-lowest p-6 shadow-sm">
+<div class="absolute -right-16 -top-16 h-64 w-64 rounded-full bg-primary/5 blur-3xl pointer-events-none"></div>
+<div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
+<div class="space-y-1.5">
+<div class="flex items-center gap-2">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-label-sm font-label-sm uppercase tracking-wider bg-surface-container-high text-primary font-bold">
+            Gouvernance Républicaine • Décret N° 2024-412
+          </span>
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-label-sm font-label-sm bg-primary-fixed text-on-primary-fixed-variant">
+<span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+            Ordonnanceur Actif
+          </span>
+</div>
+<h1 class="font-headline-lg text-headline-lg text-on-surface tracking-tight">
+          Circuits d'Approbation Régaliens &amp; Matrice RBAC
+        </h1>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-3xl">
+          Supervision temps réel de la chaîne d'autorité statutaire, de la requête agent jusqu'au visa d'État et audit des privilèges d'accès souverains.
+        </p>
+</div>
+<!-- Action Cluster -->
+<div class="flex flex-wrap items-center gap-3 shrink-0">
+<button class="inline-flex items-center gap-2 px-4 py-2 rounded bg-surface-container-high text-on-surface font-label-lg text-label-lg hover:bg-surface-container transition-colors shadow-sm" id="btn-open-audit-modal" type="button">
+<span class="material-symbols-outlined text-lg">verified_user</span>
+<span>Audit Habilitations ANSSI</span>
+</button>
+<button class="inline-flex items-center gap-2 px-4 py-2 rounded bg-primary text-on-primary font-label-lg text-label-lg hover:bg-primary-container transition-colors shadow-sm" type="button">
+<span class="material-symbols-outlined text-lg">fact_check</span>
+<span>Signer le Lot DRH (5)</span>
+</button>
+</div>
+</div>
+<!-- Live Step Tally / Pipeline Cards -->
+<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 mt-6 pt-6 border-t-0">
+<div class="p-3.5 rounded-lg bg-surface-container-low hover:bg-surface-container transition-all cursor-pointer group" onclick="focusStage(1)">
+<div class="flex items-center justify-between text-on-surface-variant">
+<span class="font-label-sm text-label-sm uppercase tracking-wide">1. Requêtes Agents</span>
+<span class="material-symbols-outlined text-base group-hover:translate-x-0.5 transition-transform">edit_note</span>
+</div>
+<div class="mt-2 flex items-baseline justify-between">
+<span class="font-headline-lg text-headline-lg text-on-surface font-bold">34</span>
+<span class="font-code-num text-code-num text-on-surface-variant">Flux initial</span>
+</div>
+<div class="w-full bg-surface-container-high h-1 rounded-full mt-2 overflow-hidden">
+<div class="bg-tertiary-container h-full w-full"></div>
+</div>
+</div>
+<div class="p-3.5 rounded-lg bg-surface-container-low hover:bg-surface-container transition-all cursor-pointer group" onclick="focusStage(2)">
+<div class="flex items-center justify-between text-secondary">
+<span class="font-label-sm text-label-sm uppercase tracking-wide font-semibold">2. Chefs de Service</span>
+<span class="material-symbols-outlined text-base group-hover:scale-110 transition-transform">pending_actions</span>
+</div>
+<div class="mt-2 flex items-baseline justify-between">
+<span class="font-headline-lg text-headline-lg text-secondary font-bold">12</span>
+<span class="font-code-num text-code-num text-secondary-container bg-surface-container px-1 rounded font-bold">3 en J-3</span>
+</div>
+<div class="w-full bg-surface-container-high h-1 rounded-full mt-2 overflow-hidden">
+<div class="bg-secondary-container h-full w-3/4"></div>
+</div>
+</div>
+<div class="p-3.5 rounded-lg bg-surface-container-low hover:bg-surface-container transition-all cursor-pointer group" onclick="focusStage(3)">
+<div class="flex items-center justify-between text-on-surface-variant">
+<span class="font-label-sm text-label-sm uppercase tracking-wide">3. Contrôle SD Métier</span>
+<span class="material-symbols-outlined text-base group-hover:translate-x-0.5 transition-transform">balance</span>
+</div>
+<div class="mt-2 flex items-baseline justify-between">
+<span class="font-headline-lg text-headline-lg text-on-surface font-bold">08</span>
+<span class="font-code-num text-code-num text-error">2 retours</span>
+</div>
+<div class="w-full bg-surface-container-high h-1 rounded-full mt-2 overflow-hidden">
+<div class="bg-tertiary-container h-full w-1/2"></div>
+</div>
+</div>
+<div class="p-3.5 rounded-lg bg-surface-container-low hover:bg-surface-container transition-all cursor-pointer group" onclick="focusStage(4)">
+<div class="flex items-center justify-between text-primary">
+<span class="font-label-sm text-label-sm uppercase tracking-wide font-semibold">4. Bureau du DRH</span>
+<span class="material-symbols-outlined text-base group-hover:scale-110 transition-transform">draw</span>
+</div>
+<div class="mt-2 flex items-baseline justify-between">
+<span class="font-headline-lg text-headline-lg text-primary font-bold">05</span>
+<span class="font-code-num text-code-num text-primary-container font-semibold">Sceau requis</span>
+</div>
+<div class="w-full bg-surface-container-high h-1 rounded-full mt-2 overflow-hidden">
+<div class="bg-primary h-full w-2/5"></div>
+</div>
+</div>
+<div class="p-3.5 rounded-lg bg-surface-container-low hover:bg-surface-container transition-all cursor-pointer group col-span-2 md:col-span-1" onclick="focusStage(5)">
+<div class="flex items-center justify-between text-on-surface-variant">
+<span class="font-label-sm text-label-sm uppercase tracking-wide">5. Notifié / Clôturé</span>
+<span class="material-symbols-outlined text-base text-primary">mark_email_read</span>
+</div>
+<div class="mt-2 flex items-baseline justify-between">
+<span class="font-headline-lg text-headline-lg text-on-surface font-bold">142</span>
+<span class="font-code-num text-code-num text-primary">SMS &amp; KSign</span>
+</div>
+<div class="w-full bg-surface-container-high h-1 rounded-full mt-2 overflow-hidden">
+<div class="bg-primary-fixed-dim h-full w-full"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- SECTION 1 : Modélisation Interactive du Circuit Régalien (Étape 1 à Étape 5) -->
+<section class="space-y-4">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+<div class="space-y-0.5">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-primary"></span>
+<h2 class="font-headline-md text-headline-md text-on-surface">Diagramme Séquentiel d'Approbation</h2>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+          Parcours normatif d'une requête ministérielle avec points de contrôle de légalité et dérivation des rejets.
+        </p>
+</div>
+<!-- Sélecteur interactif du type de flux -->
+<div class="inline-flex p-1 bg-surface-container-low rounded-lg self-start sm:self-auto shadow-inner">
+<button class="flow-pill px-3 py-1.5 rounded font-label-md text-label-md transition-all bg-surface-container-lowest text-primary shadow-sm font-bold" data-flow="conges" type="button">
+          Demande de Congé
+        </button>
+<button class="flow-pill px-3 py-1.5 rounded font-label-md text-label-md transition-all text-on-surface-variant hover:text-on-surface" data-flow="social" type="button">
+          Prêt &amp; Aide Sociale
+        </button>
+<button class="flow-pill px-3 py-1.5 rounded font-label-md text-label-md transition-all text-on-surface-variant hover:text-on-surface" data-flow="formation" type="button">
+          Inscription Formation
+        </button>
+</div>
+</div>
+<!-- Stepper Visuel Architectural -->
+<div class="rounded-xl bg-surface-container-lowest p-6 shadow-sm">
+<div class="grid grid-cols-1 lg:grid-cols-5 gap-4 relative">
+<!-- Étape 1 : Agent Dépositaire -->
+<div class="step-card relative rounded-lg p-4 bg-surface-container-low transition-all duration-200 hover:shadow-md flex flex-col justify-between" id="step-node-1">
+<div class="space-y-3">
+<div class="flex items-center justify-between">
+<span class="w-7 h-7 rounded-full bg-primary text-on-primary font-code-num text-code-num flex items-center justify-center font-bold">1</span>
+<span class="material-symbols-outlined text-primary text-xl">person_pin</span>
+</div>
+<div>
+<p class="font-label-md text-label-md text-on-surface font-bold uppercase tracking-wider">Agent Civil</p>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mt-0.5">Dépôt Requête</h3>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
+              Téléversement des pièces certifiées et formalisation de la demande (congé régulier, aide sociale ou formation continue).
+            </p>
+</div>
+<div class="mt-4 pt-3 border-t-0 bg-surface-container-lowest/80 -mx-4 -mb-4 p-3 rounded-b-lg flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-on-surface-variant">Canal</span>
+<span class="font-code-num text-code-num text-on-surface font-semibold">Portail SIGRH v2.6</span>
+</div>
+</div>
+<!-- Connecteur Desktop 1 -> 2 -->
+<div class="hidden lg:flex absolute top-1/2 left-[19%] -translate-y-1/2 z-20 pointer-events-none">
+<span class="material-symbols-outlined text-primary text-2xl animate-pulse">arrow_forward</span>
+</div>
+<!-- Étape 2 : Chef de Service (Avis & Relance J-3) -->
+<div class="step-card relative rounded-lg p-4 bg-surface-container-low transition-all duration-200 hover:shadow-md flex flex-col justify-between" id="step-node-2">
+<div class="space-y-3">
+<div class="flex items-center justify-between">
+<span class="w-7 h-7 rounded-full bg-secondary-container text-on-secondary font-code-num text-code-num flex items-center justify-center font-bold">2</span>
+<span class="material-symbols-outlined text-secondary text-xl">supervisor_account</span>
+</div>
+<div>
+<p class="font-label-md text-label-md text-on-surface font-bold uppercase tracking-wider">Hiérarchie N+1</p>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mt-0.5">Avis Chef Service</h3>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
+              Évaluation d'opportunité de service. Délais contractuel de 72h.
+            </p>
+<div class="p-2 rounded bg-surface-container flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-base">alarm</span>
+<span class="font-label-sm text-label-sm text-secondary font-bold">Relance Auto à J-3</span>
+</div>
+</div>
+<div class="mt-4 pt-3 border-t-0 bg-surface-container-lowest/80 -mx-4 -mb-4 p-3 rounded-b-lg flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-on-surface-variant">Statut</span>
+<span class="font-code-num text-code-num text-secondary font-semibold">12 en instance</span>
+</div>
+</div>
+<!-- Connecteur Desktop 2 -> 3 -->
+<div class="hidden lg:flex absolute top-1/2 left-[39%] -translate-y-1/2 z-20 pointer-events-none">
+<span class="material-symbols-outlined text-primary text-2xl">arrow_forward</span>
+</div>
+<!-- Étape 3 : Sous-Direction (Vérification & Rejet / Demande complément) -->
+<div class="step-card relative rounded-lg p-4 bg-surface-container transition-all duration-200 hover:shadow-md flex flex-col justify-between" id="step-node-3">
+<div class="space-y-3">
+<div class="flex items-center justify-between">
+<span class="w-7 h-7 rounded-full bg-tertiary text-on-tertiary font-code-num text-code-num flex items-center justify-center font-bold">3</span>
+<span class="material-symbols-outlined text-tertiary text-xl">gavel</span>
+</div>
+<div>
+<p class="font-label-md text-label-md text-on-surface font-bold uppercase tracking-wider">Sous-Direction Métier</p>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mt-0.5">Contrôle Légalité</h3>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
+              Vérification des droits statutaires et conformité au statut général.
+            </p>
+<!-- Bifurcation / Sorties alternatives d'instruction -->
+<div class="space-y-1.5 pt-1">
+<div class="p-1.5 rounded bg-error-container text-on-error-container flex items-center gap-1.5 text-label-sm font-label-sm">
+<span class="material-symbols-outlined text-sm">block</span>
+<span>Sortie Rejet (Motif légal)</span>
+</div>
+<div class="p-1.5 rounded bg-surface-container-high text-on-surface-variant flex items-center gap-1.5 text-label-sm font-label-sm">
+<span class="material-symbols-outlined text-sm">replay</span>
+<span>Retour Agent (Complément)</span>
+</div>
+</div>
+</div>
+<div class="mt-4 pt-3 border-t-0 bg-surface-container-lowest/80 -mx-4 -mb-4 p-3 rounded-b-lg flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-on-surface-variant">SD Assignée</span>
+<span class="font-code-num text-code-num text-primary font-semibold" id="sd-assigned-label">SD Carrières</span>
+</div>
+</div>
+<!-- Connecteur Desktop 3 -> 4 -->
+<div class="hidden lg:flex absolute top-1/2 left-[59%] -translate-y-1/2 z-20 pointer-events-none">
+<span class="material-symbols-outlined text-primary text-2xl">arrow_forward</span>
+</div>
+<!-- Étape 4 : DRH (Signature & Visa Électronique) -->
+<div class="step-card relative rounded-lg p-4 bg-surface-container-low transition-all duration-200 hover:shadow-md flex flex-col justify-between" id="step-node-4">
+<div class="space-y-3">
+<div class="flex items-center justify-between">
+<span class="w-7 h-7 rounded-full bg-primary text-on-primary font-code-num text-code-num flex items-center justify-center font-bold">4</span>
+<span class="material-symbols-outlined text-primary text-xl">history_edu</span>
+</div>
+<div>
+<p class="font-label-md text-label-md text-on-surface font-bold uppercase tracking-wider">Direction Centrale</p>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mt-0.5">Visa DRH &amp; Sceau</h3>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
+              Signature électronique qualifiée (KSign PKI CI). Génération du certificat authentifié de l'arrêté ministériel.
+            </p>
+<div class="p-2 rounded bg-surface-container flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-base">verified</span>
+<span class="font-label-sm text-label-sm text-primary font-bold">Sceau Étatique 2D-Doc</span>
+</div>
+</div>
+<div class="mt-4 pt-3 border-t-0 bg-surface-container-lowest/80 -mx-4 -mb-4 p-3 rounded-b-lg flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-on-surface-variant">Signature</span>
+<span class="font-code-num text-code-num text-primary font-semibold">Certificat KSign</span>
+</div>
+</div>
+<!-- Connecteur Desktop 4 -> 5 -->
+<div class="hidden lg:flex absolute top-1/2 left-[79%] -translate-y-1/2 z-20 pointer-events-none">
+<span class="material-symbols-outlined text-primary text-2xl">arrow_forward</span>
+</div>
+<!-- Étape 5 : Notification & Clôture -->
+<div class="step-card relative rounded-lg p-4 bg-surface-container-low transition-all duration-200 hover:shadow-md flex flex-col justify-between" id="step-node-5">
+<div class="space-y-3">
+<div class="flex items-center justify-between">
+<span class="w-7 h-7 rounded-full bg-primary-fixed-dim text-on-primary-fixed font-code-num text-code-num flex items-center justify-center font-bold">5</span>
+<span class="material-symbols-outlined text-primary text-xl">notifications_active</span>
+</div>
+<div>
+<p class="font-label-md text-label-md text-on-surface font-bold uppercase tracking-wider">Exécution Immédiate</p>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mt-0.5">Notification Agent</h3>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
+              Mise à jour instantanée du dossier agent. Déclenchement notification bicanal SMS et courriel sécurisé.
+            </p>
+<div class="flex gap-2">
+<span class="px-2 py-1 rounded bg-surface-container text-on-surface-variant font-code-num text-label-sm">SMS (Orange/MTN)</span>
+<span class="px-2 py-1 rounded bg-surface-container text-on-surface-variant font-code-num text-label-sm">E-mail Gouv</span>
+</div>
+</div>
+<div class="mt-4 pt-3 border-t-0 bg-surface-container-lowest/80 -mx-4 -mb-4 p-3 rounded-b-lg flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-on-surface-variant">Instantanéité</span>
+<span class="font-code-num text-code-num text-primary font-semibold">&lt; 30 secondes</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- SECTION 2 : Tableaux de Bord de Suivi en Direct avec Filtrage -->
+<section class="space-y-4">
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+<div>
+<h2 class="font-headline-md text-headline-md text-on-surface">Registre Dynamique des Dossiers en Cours</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+          Affichage temps réel des dossiers en circulation ministérielle avec horodatage et niveau d'urgence.
+        </p>
+</div>
+<!-- Filtres et Recherche -->
+<div class="flex items-center gap-3">
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-base pointer-events-none">filter_alt</span>
+<select class="pl-9 pr-8 py-2 bg-surface-container-lowest text-on-surface rounded font-label-md text-label-md focus:outline-none focus:ring-1 focus:ring-primary shadow-sm appearance-none cursor-pointer" id="filter-type-select">
+<option value="all">Tous les types de demandes (25)</option>
+<option value="conge">Demandes de Congé (11)</option>
+<option value="social">Prêts &amp; Secours Sociaux (8)</option>
+<option value="formation">Inscriptions Formation Continue (6)</option>
+</select>
+<span class="material-symbols-outlined absolute right-2.5 top-1/2 -translate-y-1/2 text-on-surface-variant text-base pointer-events-none">expand_more</span>
+</div>
+<button class="p-2 rounded bg-surface-container-lowest text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low transition-colors shadow-sm" title="Actualiser le flux" type="button">
+<span class="material-symbols-outlined text-lg">sync</span>
+</button>
+</div>
+</div>
+<!-- Table des dossiers régalienne -->
+<div class="overflow-x-auto rounded-xl bg-surface-container-lowest shadow-sm">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low text-on-surface-variant font-label-md text-label-md uppercase tracking-wider">
+<th class="py-3.5 px-4 font-semibold">Réf. Demande</th>
+<th class="py-3.5 px-4 font-semibold">Agent Fonctionnaire</th>
+<th class="py-3.5 px-4 font-semibold">Nature de l'Acte</th>
+<th class="py-3.5 px-4 font-semibold">Étape Actuelle &amp; Responsable</th>
+<th class="py-3.5 px-4 font-semibold">Délai / Échéance</th>
+<th class="py-3.5 px-4 font-semibold text-right">Actions de Supervision</th>
+</tr>
+</thead>
+<tbody class="divide-y-0 text-body-sm font-body-sm" id="table-demandes-body">
+<!-- Row 1 -->
+<tr class="hover:bg-surface-container-low/60 transition-colors group" data-category="conge">
+<td class="py-3.5 px-4">
+<span class="font-code-num text-code-num font-bold text-primary">#DM-2026-0891</span>
+<span class="block text-label-sm font-label-sm text-on-surface-variant">Dépôt: 14 Mars 2026</span>
+</td>
+<td class="py-3.5 px-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-primary-fixed text-on-primary-fixed font-label-md flex items-center justify-center font-bold">
+                  KA
+                </div>
+<div>
+<p class="font-label-lg text-label-lg font-bold text-on-surface">KOUADIO Aya Marcelle</p>
+<p class="text-label-sm font-label-sm text-on-surface-variant font-code-num">Mle 418 902-X • Catégorie A3</p>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-4">
+<div class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-surface-container text-on-surface font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-xs text-primary">calendar_month</span>
+<span>Congé Annuel (21 j)</span>
+</div>
+</td>
+<td class="py-3.5 px-4">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-secondary-container"></span>
+<span class="font-label-md text-label-md text-on-surface font-semibold">Étape 2: C/S Exploitation</span>
+</div>
+<span class="text-label-sm font-label-sm text-secondary">Avis hiérarchique attendu</span>
+</td>
+<td class="py-3.5 px-4">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-secondary-fixed text-on-secondary-fixed font-code-num text-label-sm font-bold">
+<span class="material-symbols-outlined text-xs">timer</span>
+                J-1 avant relance
+              </span>
+</td>
+<td class="py-3.5 px-4 text-right">
+<button class="px-2.5 py-1 rounded bg-surface-container text-primary font-label-md text-label-md hover:bg-primary hover:text-on-primary transition-colors" type="button">
+                Consulter
+              </button>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-surface-container-low/60 transition-colors group" data-category="social">
+<td class="py-3.5 px-4">
+<span class="font-code-num text-code-num font-bold text-primary">#DM-2026-0874</span>
+<span class="block text-label-sm font-label-sm text-on-surface-variant">Dépôt: 11 Mars 2026</span>
+</td>
+<td class="py-3.5 px-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-secondary-fixed text-on-secondary-fixed font-label-md flex items-center justify-center font-bold">
+                  TB
+                </div>
+<div>
+<p class="font-label-lg text-label-lg font-bold text-on-surface">TRAORÉ Bakary</p>
+<p class="text-label-sm font-label-sm text-on-surface-variant font-code-num">Mle 392 104-D • Catégorie B1</p>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-4">
+<div class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-secondary-fixed text-on-secondary-fixed font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-xs">volunteer_activism</span>
+<span>Prêt Équipement Ménage</span>
+</div>
+</td>
+<td class="py-3.5 px-4">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-tertiary"></span>
+<span class="font-label-md text-label-md text-on-surface font-semibold">Étape 3: SD Action Sociale</span>
+</div>
+<span class="text-label-sm font-label-sm text-on-surface-variant">Calcul quotité cessible</span>
+</td>
+<td class="py-3.5 px-4">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-surface-container text-on-surface-variant font-code-num text-label-sm font-medium">
+                Conforme 48h
+              </span>
+</td>
+<td class="py-3.5 px-4 text-right">
+<button class="px-2.5 py-1 rounded bg-surface-container text-primary font-label-md text-label-md hover:bg-primary hover:text-on-primary transition-colors" type="button">
+                Examiner
+              </button>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-surface-container-low/60 transition-colors group" data-category="formation">
+<td class="py-3.5 px-4">
+<span class="font-code-num text-code-num font-bold text-primary">#DM-2026-0869</span>
+<span class="block text-label-sm font-label-sm text-on-surface-variant">Dépôt: 09 Mars 2026</span>
+</td>
+<td class="py-3.5 px-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-primary-fixed-dim text-on-primary-fixed font-label-md flex items-center justify-center font-bold">
+                  NE
+                </div>
+<div>
+<p class="font-label-lg text-label-lg font-bold text-on-surface">N'GUESSAN Éric Yao</p>
+<p class="text-label-sm font-label-sm text-on-surface-variant font-code-num">Mle 501 229-K • Ingénieur Général</p>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-4">
+<div class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-surface-container-high text-on-surface font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-xs">school</span>
+<span>Cycle ENA Dirigeants</span>
+</div>
+</td>
+<td class="py-3.5 px-4">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-primary animate-ping"></span>
+<span class="font-label-md text-label-md text-primary font-bold">Étape 4: Signature DRH</span>
+</div>
+<span class="text-label-sm font-label-sm text-on-surface-variant">Visa préalable SD Formation OK</span>
+</td>
+<td class="py-3.5 px-4">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-primary-fixed text-on-primary-fixed font-code-num text-label-sm font-bold">
+                Priorité Haute
+              </span>
+</td>
+<td class="py-3.5 px-4 text-right">
+<button class="px-3 py-1 rounded bg-primary text-on-primary font-label-md text-label-md hover:bg-primary-container transition-colors shadow-sm" type="button">
+                Apposer Visa
+              </button>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="hover:bg-surface-container-low/60 transition-colors group" data-category="social">
+<td class="py-3.5 px-4">
+<span class="font-code-num text-code-num font-bold text-primary">#DM-2026-0852</span>
+<span class="block text-label-sm font-label-sm text-on-surface-variant">Dépôt: 08 Mars 2026</span>
+</td>
+<td class="py-3.5 px-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-surface-container-high text-on-surface-variant font-label-md flex items-center justify-center font-bold">
+                  SK
+                </div>
+<div>
+<p class="font-label-lg text-label-lg font-bold text-on-surface">SORO Karidja</p>
+<p class="text-label-sm font-label-sm text-on-surface-variant font-code-num">Mle 476 112-P • Catégorie B2</p>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-4">
+<div class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-secondary-fixed text-on-secondary-fixed font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-xs">local_hospital</span>
+<span>Secours Médical Urgent</span>
+</div>
+</td>
+<td class="py-3.5 px-4">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-error"></span>
+<span class="font-label-md text-label-md text-error font-bold">Étape 3: Complément Requis</span>
+</div>
+<span class="text-label-sm font-label-sm text-on-surface-variant">Facture normalisée manquante</span>
+</td>
+<td class="py-3.5 px-4">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-error-container text-on-error-container font-code-num text-label-sm font-bold">
+                Retourné à l'agent
+              </span>
+</td>
+<td class="py-3.5 px-4 text-right">
+<button class="px-2.5 py-1 rounded bg-surface-container text-on-surface font-label-md text-label-md hover:bg-surface-container-high transition-colors" type="button">
+                Historique
+              </button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<!-- SECTION 3 : Matrice des Rôles & Droits (RBAC - Modèle Page 1) -->
+<section class="space-y-4">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+<div>
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-secondary-container"></span>
+<h2 class="font-headline-md text-headline-md text-on-surface">Matrice Régaliennes des Habilitations (RBAC)</h2>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+          Transposition stricte de la charte de sécurité ministérielle définissant les prérogatives par sous-direction et niveau hiérarchique.
+        </p>
+</div>
+<!-- Légende des habilitations -->
+<div class="flex flex-wrap items-center gap-2 text-label-sm font-label-sm">
+<span class="px-2.5 py-1 rounded bg-surface-container text-on-surface-variant font-medium flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-tertiary-container"></span> Lecture
+        </span>
+<span class="px-2.5 py-1 rounded bg-secondary-fixed text-on-secondary-fixed font-bold flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-secondary"></span> Saisie
+        </span>
+<span class="px-2.5 py-1 rounded bg-primary-fixed text-on-primary-fixed font-bold flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-primary"></span> Validation
+        </span>
+<span class="px-2.5 py-1 rounded bg-surface-container-low text-on-surface-variant flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-outline"></span> - Accès Refusé
+        </span>
+</div>
+</div>
+<!-- Table RBAC -->
+<div class="overflow-x-auto rounded-xl bg-surface-container-lowest shadow-sm">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low text-on-surface font-label-md text-label-md uppercase tracking-wider">
+<th class="py-3.5 px-5 font-bold">Rôles &amp; Acteurs Institutionnels</th>
+<th class="py-3.5 px-4 font-semibold text-center">Dossier Agent</th>
+<th class="py-3.5 px-4 font-semibold text-center">Carrières &amp; Actes</th>
+<th class="py-3.5 px-4 font-semibold text-center">Social &amp; Santé</th>
+<th class="py-3.5 px-4 font-semibold text-center">Formations</th>
+<th class="py-3.5 px-4 font-semibold text-center">Statistiques &amp; RBAC</th>
+</tr>
+</thead>
+<tbody class="text-body-sm font-body-sm divide-y-0">
+<!-- Rôle 1: Agent -->
+<tr class="hover:bg-surface-container-low/50 transition-colors">
+<td class="py-3.5 px-5">
+<div class="flex items-center gap-2.5">
+<span class="material-symbols-outlined text-primary text-base">person</span>
+<div>
+<span class="font-label-lg text-label-lg font-bold text-on-surface block">Agent Fonctionnaire</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Usager de l'administration</span>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-4 text-center">
+<span class="inline-block px-2.5 py-1 rounded bg-surface-container text-on-surface-variant font-label-md text-label-md font-semibold">Lecture</span>
+</td>
+<td class="py-3.5 px-4 text-center">
+<span class="inline-block px-2.5 py-1 rounded bg-surface-container text-on-surface-variant font-label-md text-label-md font-semibold">Lecture</span>
+</td>
+<td class="py-3.5 px-4 text-center">
+<span class="inline-block px-2.5 py-1 rounded bg-secondary-fixed text-on-secondary-fixed font-label-md text-label-md font-bold">Saisie</span>
+</td>
+<td class="py-3.5 px-4 text-center">
+<span class="inline-block px-2.5 py-1 rounded bg-secondary-fixed text-on-secondary-fixed font-label-md text-label-md font-bold">Saisie</span>
+</td>
+<td class="py-3.5 px-4 text-center">
+<span class="text-outline font-bold">-</span>
+</td>
+</tr>
+<!-- Rôle 2: Chef de Service (C/S) -->
+<tr class="hover:bg-surface-container-low/50 transition-colors bg-surface-container-low/20">
+<td class="py-3.5 px-5">
+<div class="flex items-center gap-2.5">
+<span class="material-symbols-outlined text-secondary text-base">supervisor_account</span>
+<div>
+<span class="font-label-lg text-label-lg font-bold text-on-surface block">Chef de Service (C/S)</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Encadrement direct N+1</span>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-4 text-center">
+<span class="inline-block px-2.5 py-1 rounded bg-surface-container text-on-surface-variant font-label-md text-label-md font-semibold">Lecture</span>
+</td>
+<td class="py-3.5 px-4 text-center">
+<span class="inline-block px-2.5 py-1 rounded bg-surface-container text-on-surface-variant font-label-md text-label-md font-semibold">Lecture</span>
+</td>
+<td class="py-3.5 px-4 text-center">
+<span class="inline-block px-2.5 py-1 rounded bg-surface-container text-on-surface-variant font-label-md text-label-md font-semibold">Lecture</span>
+</td>
+<td class="py-3.5 px-4 text-center">
+<span class="inline-block px-2.5 py-1 rounded bg-surface-container text-on-surface-variant font-label-md text-label-md font-semibold">Lecture</span>
+</td>
+<td class="py-3.5 px-4 text-center">
+<span class="inline-block px-2.5 py-1 rounded bg-primary-fixed text-on-primary-fixed font-label-md text-label-md font-bold">Validation (Avis)</span>
+</td>
+</tr>
+<!-- Rôle 3: SD Carrières -->
+<tr class="hover:bg-surface-container-low/50 transition-colors">
+<td class="py-3.5 px-5">
+<div class="flex items-center gap-2.5">
+<span class="material-symbols-outlined text-primary text-base">badge</span>
+<div>
+<span class="font-label-lg text-label-lg font-bold text-on-surface block">SD Carrières &amp; Actes</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Gestion statutaire &amp; mouvements</span>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-4 text-center">
+<span class="inline-block px-2.5 py-1 rounded bg-secondary-fixed text-on-secondary-fixed font-label-md text-label-md font-bold">Saisie</span>
+</td>
+<td class="py-3.5 px-4 text-center">
+<span class="inline-block px-2.5 py-1 rounded bg-primary-fixed text-on-primary-fixed font-label-md text-label-md font-bold">Validation</span>
+</td>
+<td class="py-3.5 px-4 text-center">
+<span class="inline-block px-2.5 py-1 rounded bg-surface-container text-on-surface-variant font-label-md text-label-md font-semibold">Lecture</span>
+</td>
+<td class="py-3.5 px-4 text-center">
+<span class="inline-block px-2.5 py-1 rounded bg-surface-container text-on-surface-variant font-label-md text-label-md font-semibold">Lecture</span>
+</td>
+<td class="py-3.5 px-4 text-center">
+<span class="inline-block px-2.5 py-1 rounded bg-surface-container text-on-surface-variant font-label-md text-label-md font-semibold">Lecture</span>
+</td>
+</tr>
+<!-- Rôle 4: SD Action Sociale -->
+<tr class="hover:bg-surface-container-low/50 transition-colors bg-surface-container-low/20">
+<td class="py-3.5 px-5">
+<div class="flex items-center gap-2.5">
+<span class="material-symbols-outlined text-primary text-base">volunteer_activism</span>
+<div>
+<span class="font-label-lg text-label-lg font-bold text-on-surface block">SD Action Sociale</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Fonds de solidarité &amp; santé</span>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-4 text-center">
+<span class="inline-block px-2.5 py-1 rounded bg-surface-container text-on-surface-variant font-label-md text-label-md font-semibold">Lecture</span>
+</td>
+<td class="py-3.5 px-4 text-center">
+<span class="text-outline font-bold">-</span>
+</td>
+<td class="py-3.5 px-4 text-center">
+<span class="inline-block px-2.5 py-1 rounded bg-primary-fixed text-on-primary-fixed font-label-md text-label-md font-bold">Validation</span>
+</td>
+<td class="py-3.5 px-4 text-center">
+<span class="text-outline font-bold">-</span>
+</td>
+<td class="py-3.5 px-4 text-center">
+<span class="inline-block px-2.5 py-1 rounded bg-surface-container text-on-surface-variant font-label-md text-label-md font-semibold">Lecture</span>
+</td>
+</tr>
+<!-- Rôle 5: SD Formation -->
+<tr class="hover:bg-surface-container-low/50 transition-colors">
+<td class="py-3.5 px-5">
+<div class="flex items-center gap-2.5">
+<span class="material-symbols-outlined text-primary text-base">school</span>
+<div>
+<span class="font-label-lg text-label-lg font-bold text-on-surface block">SD Formation Continue</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Plans sectoriels &amp; stages</span>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-4 text-center">
+<span class="inline-block px-2.5 py-1 rounded bg-surface-container text-on-surface-variant font-label-md text-label-md font-semibold">Lecture</span>
+</td>
+<td class="py-3.5 px-4 text-center">
+<span class="text-outline font-bold">-</span>
+</td>
+<td class="py-3.5 px-4 text-center">
+<span class="text-outline font-bold">-</span>
+</td>
+<td class="py-3.5 px-4 text-center">
+<span class="inline-block px-2.5 py-1 rounded bg-primary-fixed text-on-primary-fixed font-label-md text-label-md font-bold">Validation</span>
+</td>
+<td class="py-3.5 px-4 text-center">
+<span class="inline-block px-2.5 py-1 rounded bg-surface-container text-on-surface-variant font-label-md text-label-md font-semibold">Lecture</span>
+</td>
+</tr>
+<!-- Rôle 6: DRH (Autorité Suprême) -->
+<tr class="hover:bg-surface-container-low/50 transition-colors bg-primary/5">
+<td class="py-4 px-5">
+<div class="flex items-center gap-2.5">
+<span class="material-symbols-outlined text-primary text-xl">admin_panel_settings</span>
+<div>
+<span class="font-label-lg text-label-lg font-bold text-primary block">DRH (Directeur Central)</span>
+<span class="font-label-sm text-label-sm text-primary-container">Autorité administrative déléguée</span>
+</div>
+</div>
+</td>
+<td class="py-4 px-4 text-center">
+<span class="inline-block px-2.5 py-1 rounded bg-primary-fixed text-on-primary-fixed font-label-md text-label-md font-bold">Validation</span>
+</td>
+<td class="py-4 px-4 text-center">
+<span class="inline-block px-2.5 py-1 rounded bg-primary-fixed text-on-primary-fixed font-label-md text-label-md font-bold">Validation</span>
+</td>
+<td class="py-4 px-4 text-center">
+<span class="inline-block px-2.5 py-1 rounded bg-primary-fixed text-on-primary-fixed font-label-md text-label-md font-bold">Validation</span>
+</td>
+<td class="py-4 px-4 text-center">
+<span class="inline-block px-2.5 py-1 rounded bg-primary-fixed text-on-primary-fixed font-label-md text-label-md font-bold">Validation</span>
+</td>
+<td class="py-4 px-4 text-center">
+<span class="inline-block px-3 py-1 rounded bg-primary text-on-primary font-label-md text-label-md font-bold shadow-sm">Supervision Globale</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<!-- MODAL : Audit des Habilitations de Sécurité Ministérielle (Cachée par défaut) -->
+<div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-on-background/40 backdrop-blur-sm hidden" id="rbac-audit-modal">
+<div class="relative w-full max-w-2xl rounded-xl bg-surface-container-lowest p-6 shadow-2xl space-y-6">
+<div class="flex items-start justify-between">
+<div class="flex items-center gap-3">
+<div class="p-2.5 rounded-lg bg-surface-container-low text-primary">
+<span class="material-symbols-outlined text-2xl">security</span>
+</div>
+<div>
+<h3 class="font-headline-md text-headline-md text-on-surface">Journal d'Audit des Privilèges RBAC</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Contrôle de conformité régalienne selon la norme ANSSI-CI 2026</p>
+</div>
+</div>
+<button class="p-1 rounded text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors" id="btn-close-audit-modal" type="button">
+<span class="material-symbols-outlined text-xl">close</span>
+</button>
+</div>
+<!-- Informations de conformité cryptographique -->
+<div class="p-4 rounded-lg bg-surface-container-low space-y-2">
+<div class="flex items-center justify-between text-label-sm font-label-sm">
+<span class="text-on-surface-variant">Statut d'intégrité de la table :</span>
+<span class="text-primary font-bold flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span> Hachage SHA-256 Vérifié
+          </span>
+</div>
+<div class="flex items-center justify-between text-label-sm font-label-sm">
+<span class="text-on-surface-variant">Dernier visa d'habilitation DSI :</span>
+<span class="font-code-num text-code-num text-on-surface font-semibold">12 Mars 2026 à 09:41 UTC</span>
+</div>
+<div class="flex items-center justify-between text-label-sm font-label-sm">
+<span class="text-on-surface-variant">Nombre de profils audités :</span>
+<span class="font-code-num text-code-num text-on-surface font-semibold">6 Rôles / 842 Fonctionnaires actifs</span>
+</div>
+</div>
+<!-- Action de reconfiguration contrôlée -->
+<div class="space-y-3">
+<label class="block font-label-md text-label-md text-on-surface">Re-certification périodique des droits</label>
+<div class="space-y-2">
+<label class="flex items-center gap-3 p-3 rounded-lg bg-surface-container hover:bg-surface-container-high cursor-pointer transition-colors">
+<input checked="" class="text-primary focus:ring-primary h-4 w-4" name="audit_mode" type="radio"/>
+<div class="text-left">
+<span class="font-label-md text-label-md text-on-surface block font-bold">Audit Standard &amp; Génération de Rapport ANSSI</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Exporte le registre légal pour l'inspection générale des services.</span>
+</div>
+</label>
+<label class="flex items-center gap-3 p-3 rounded-lg bg-surface-container hover:bg-surface-container-high cursor-pointer transition-colors">
+<input class="text-primary focus:ring-primary h-4 w-4" name="audit_mode" type="radio"/>
+<div class="text-left">
+<span class="font-label-md text-label-md text-on-surface block font-bold">Verrouillage Conservatoire de Sécurité</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Gèle toute modification des rôles non validée par double visa DRH/DSI.</span>
+</div>
+</label>
+</div>
+</div>
+<div class="flex items-center justify-end gap-3 pt-2">
+<button class="px-4 py-2 rounded bg-surface-container text-on-surface font-label-lg text-label-lg hover:bg-surface-container-high transition-colors" id="btn-cancel-modal" type="button">
+          Fermer
+        </button>
+<button class="px-4 py-2 rounded bg-primary text-on-primary font-label-lg text-label-lg hover:bg-primary-container transition-colors shadow-sm" type="button">
+          Télécharger le Certificat d'Audit (PDF)
+        </button>
+</div>
+</div>
+</div>
+<!-- Inline Script for Tab Switching, Filtering and Modals -->
+<script>
+    // Tab switching for Flow types
+    const flowPills = document.querySelectorAll('.flow-pill');
+    const sdLabel = document.getElementById('sd-assigned-label');
+
+    const flowData = {
+      conges: { sd: "SD Carrières", title: "Demande de Congé Régulier" },
+      social: { sd: "SD Action Sociale", title: "Prêt & Aide Sociale Directe" },
+      formation: { sd: "SD Formation", title: "Plan de Renforcement de Compétences" }
+    };
+
+    flowPills.forEach(pill => {
+      pill.addEventListener('click', () => {
+        flowPills.forEach(p => {
+          p.classList.remove('bg-surface-container-lowest', 'text-primary', 'shadow-sm', 'font-bold');
+          p.classList.add('text-on-surface-variant');
+        });
+        pill.classList.remove('text-on-surface-variant');
+        pill.classList.add('bg-surface-container-lowest', 'text-primary', 'shadow-sm', 'font-bold');
+
+        const flowKey = pill.getAttribute('data-flow');
+        if (flowData[flowKey]) {
+          sdLabel.textContent = flowData[flowKey].sd;
+        }
+      });
+    });
+
+    // Dynamic Filter for Registry Table
+    const filterSelect = document.getElementById('filter-type-select');
+    const tableRows = document.querySelectorAll('#table-demandes-body tr');
+
+    filterSelect.addEventListener('change', (e) => {
+      const selected = e.target.value;
+      tableRows.forEach(row => {
+        const cat = row.getAttribute('data-category');
+        if (selected === 'all' || cat === selected) {
+          row.style.display = '';
+        } else {
+          row.style.display = 'none';
+        }
+      });
+    });
+
+    // Focus Stage Animation
+    function focusStage(stepNumber) {
+      for (let i = 1; i <= 5; i++) {
+        const node = document.getElementById(`step-node-${i}`);
+        if (node) {
+          if (i === stepNumber) {
+            node.classList.add('ring-2', 'ring-primary', 'bg-surface-container-high');
+          } else {
+            node.classList.remove('ring-2', 'ring-primary', 'bg-surface-container-high');
+          }
+        }
+      }
+    }
+
+    // Modal Interaction
+    const modal = document.getElementById('rbac-audit-modal');
+    const btnOpen = document.getElementById('btn-open-audit-modal');
+    const btnClose = document.getElementById('btn-close-audit-modal');
+    const btnCancel = document.getElementById('btn-cancel-modal');
+
+    btnOpen.addEventListener('click', () => {
+      modal.classList.remove('hidden');
+    });
+
+    const closeModal = () => {
+      modal.classList.add('hidden');
+    };
+
+    btnClose.addEventListener('click', closeModal);
+    btnCancel.addEventListener('click', closeModal);
+
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        closeModal();
+      }
+    });
+  </script>
+</div></div><footer class="w-full bg-surface-container-lowest py-4 px-8 mt-12 shadow-[0_-1px_6px_rgba(0,0,0,0.03)]"><div class="max-w-[1600px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left"><div class="flex items-center gap-2"><span class="font-label-md text-label-md text-primary font-bold">SIGRH ÉTAT-CI</span><span class="font-body-sm text-body-sm text-on-surface-variant">• Ministère du Portefeuille de l'État et des Entreprises Publiques</span></div><div class="font-label-sm text-label-sm text-on-surface-variant font-medium tracking-wide uppercase">République de Côte d'Ivoire — Union • Discipline • Travail</div></div></footer></main></div></body></html>

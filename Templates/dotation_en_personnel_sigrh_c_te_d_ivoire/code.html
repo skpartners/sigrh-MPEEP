@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+
+<html lang="fr"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{colors:{"on-tertiary-container":"#bdc4de","on-surface-variant":"#3f4942","tertiary-fixed-dim":"#bec6e0","on-background":"#0b1c30","on-tertiary-fixed":"#131b2e","surface-dim":"#cbdbf5","on-secondary-fixed-variant":"#783100","on-tertiary-fixed-variant":"#3f465c","primary-container":"#0a5e3a","on-surface":"#0b1c30","surface-tint":"#1e6b46","primary-fixed-dim":"#8cd6a9","surface-container":"#e5eeff","on-primary-fixed-variant":"#005231","tertiary-container":"#495167","on-error-container":"#93000a","outline-variant":"#bfc9c0","inverse-primary":"#8cd6a9","surface-variant":"#d3e4fe","surface-container-lowest":"#ffffff","inverse-on-surface":"#eaf1ff","on-primary-container":"#8ad5a7","primary":"#004428","on-primary-fixed":"#002111","surface-bright":"#f8f9ff","surface-container-highest":"#d3e4fe","primary-fixed":"#a7f3c3","inverse-surface":"#213145","on-primary":"#ffffff","error-container":"#ffdad6","error":"#ba1a1a","secondary-fixed-dim":"#ffb691","tertiary-fixed":"#dae2fd","on-secondary":"#ffffff","tertiary":"#333a4f","surface-container-low":"#eff4ff","on-secondary-container":"#602600","secondary-fixed":"#ffdbcb","background":"#f8f9ff","surface":"#f8f9ff","secondary":"#9e4300","on-secondary-fixed":"#341100","on-tertiary":"#ffffff","outline":"#707a71","on-error":"#ffffff","surface-container-high":"#dce9ff","secondary-container":"#fe7b28"},borderRadius:{DEFAULT:"0.125rem",lg:"0.25rem",xl:"0.5rem",full:"0.75rem"},spacing:{"gutter-desktop":"1.5rem","space-sm":"0.5rem","margin-desktop":"2rem",gutter:"1.25rem","space-md":"1rem","space-lg":"1.5rem",margin:"1rem","space-xs":"0.25rem","space-xl":"2rem","margin-tablet":"1.5rem"},fontFamily:{"headline-lg":["Public Sans"],"label-lg":["Public Sans"],"body-lg":["Public Sans"],"headline-sm":["Public Sans"],"label-sm":["Public Sans"],"headline-lg-mobile":["Public Sans"],"body-md":["Public Sans"],"headline-xl":["Public Sans"],"label-md":["Public Sans"],"code-num":["Public Sans"],"body-sm":["Public Sans"],"headline-md":["Public Sans"],"headline-xl-mobile":["Public Sans"]},fontSize:{"headline-lg":["30px",{lineHeight:"38px",fontWeight:"700"}],"label-lg":["14px",{lineHeight:"20px",fontWeight:"600"}],"body-lg":["16px",{lineHeight:"24px",fontWeight:"400"}],"headline-sm":["18px",{lineHeight:"24px",fontWeight:"600"}],"label-sm":["11px",{lineHeight:"14px",fontWeight:"500"}],"headline-lg-mobile":["24px",{lineHeight:"32px",fontWeight:"700"}],"body-md":["14px",{lineHeight:"20px",fontWeight:"400"}],"headline-xl":["36px",{lineHeight:"44px",fontWeight:"700"}],"label-md":["12px",{lineHeight:"16px",fontWeight:"600"}],"code-num":["13px",{lineHeight:"18px",fontWeight:"600"}],"body-sm":["13px",{lineHeight:"18px",fontWeight:"400"}],"headline-md":["22px",{lineHeight:"28px",fontWeight:"600"}],"headline-xl-mobile":["28px",{lineHeight:"36px",fontWeight:"700"}]}}}};</script></head><body class="bg-background font-body-md text-on-surface antialiased"><header class="fixed top-0 left-0 right-0 z-50 bg-surface-container-lowest/95 backdrop-blur-md shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-1 flex w-full"><div class="w-1/3 bg-secondary-container"></div><div class="w-1/3 bg-surface-container-lowest"></div><div class="w-1/3 bg-primary-container"></div></div><div class="h-16 px-6 flex items-center justify-between gap-4"><div class="flex items-center gap-3 min-w-0"><div class="flex items-center justify-center p-1 bg-surface-container-low rounded"><img alt="Armoiries Côte d'Ivoire" class="h-8 w-8 object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDSw7RDrfkH23MP3vRslBhyhcQ6PqxQeuiVBV7MhHMXUkdzQM8SNRahCoiGGz1l5k1jUSBih-nf9uW_I71ODxn4J5xl3WEQZYjsmOSRmouGBn9rBCchF74LeMhfY7v8iSjUxasJDn7PMrzb8Wxus96k4G5ejvdWIDnJmwVPgePID7gdosimtJG8TXG5O64V9oFoQ56kMdMTT0SYsIBHwUU7TwPvci4Dj8x5o_gMdtcJpazXOC3hKx4"/></div><div class="flex flex-col min-w-0"><span class="font-label-md text-label-md text-primary uppercase tracking-wider font-bold truncate">SIGRH | RÉPUBLIQUE DE CÔTE D'IVOIRE</span><span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-tight truncate">Ministère du Portefeuille de l'État et des Entreprises Publiques</span></div></div><div class="flex-1 max-w-md mx-4 hidden lg:block"><div class="relative flex items-center"><span class="material-symbols-outlined absolute left-3 text-on-surface-variant text-lg pointer-events-none">search</span><input class="w-full pl-9 pr-4 py-1.5 bg-surface-container-low text-on-surface placeholder:text-on-surface-variant/70 font-body-sm text-body-sm rounded border-0 focus:outline-none focus:ring-1 focus:ring-primary" placeholder="Rechercher un agent par matricule civil, nom ou direction..." type="text"/></div></div><div class="flex items-center gap-3 shrink-0"><div class="hidden sm:flex items-center gap-1.5 px-2.5 py-1 bg-surface-container-low rounded"><span class="font-label-sm text-label-sm text-on-surface-variant font-medium">Exercice</span><span class="font-code-num text-code-num text-primary font-bold px-1.5 py-0.5 bg-surface-container-lowest rounded">2026</span></div><div class="relative flex items-center"><button aria-label="Notifications de validation" class="p-2 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high rounded transition-colors relative" type="button"><span class="material-symbols-outlined text-xl">notifications</span><span class="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-secondary-container rounded-full"></span></button></div><div class="flex items-center gap-2 pl-2"><img alt="Profile" class="w-8 h-8 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDSw7RDrfkH23MP3vRslBhyhcQ6PqxQeuiVBV7MhHMXUkdzQM8SNRahCoiGGz1l5k1jUSBih-nf9uW_I71ODxn4J5xl3WEQZYjsmOSRmouGBn9rBCchF74LeMhfY7v8iSjUxasJDn7PMrzb8Wxus96k4G5ejvdWIDnJmwVPgePID7gdosimtJG8TXG5O64V9oFoQ56kMdMTT0SYsIBHwUU7TwPvci4Dj8x5o_gMdtcJpazXOC3hKx4"/><div class="hidden md:flex flex-col text-left"><span class="font-label-md text-label-md text-on-surface font-semibold leading-tight">Kouamé N'Dri</span><span class="font-label-sm text-label-sm text-on-surface-variant">Directeur DRH</span></div></div></div></div></header><aside class="fixed left-0 top-0 h-full w-72 bg-surface-container-lowest z-40 flex flex-col pt-20 pb-4 shadow-[1px_0_8px_rgba(0,0,0,0.03)] overflow-y-auto"><div class="px-5 pb-3"><div class="p-3 bg-surface-container-low rounded flex items-center gap-3"><div class="w-8 h-8 rounded bg-primary text-on-primary flex items-center justify-center font-headline-sm text-headline-sm"><span class="material-symbols-outlined text-lg">account_balance</span></div><div class="min-w-0"><p class="font-label-sm text-label-sm text-on-surface-variant uppercase font-medium">Portefeuille Étatique</p><p class="font-label-md text-label-md text-on-surface font-bold truncate">DGPE &amp; Sociétés d'État</p></div></div></div><nav class="flex-1 px-3 space-y-1 font-body-sm text-body-sm" data-active-classes="bg-primary text-on-primary font-semibold shadow-sm"><div class="px-3 pt-2 pb-1"><span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider font-bold">Pilotage Central</span></div><a class="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="dashboard" href="#"><span class="material-symbols-outlined text-lg">dashboard</span><span>Vue d'ensemble DRH</span></a><a class="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="dossier-agent" href="#"><span class="material-symbols-outlined text-lg">badge</span><span>Dossier Agent Numérique</span></a><div class="px-3 pt-3 pb-1"><span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider font-bold">Sous-Directions Métier</span></div><a class="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="carrieres-mutations" href="#"><span class="material-symbols-outlined text-lg">assignment</span><span>SD Carrières &amp; Actes</span></a><a class="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="action-sociale" href="#"><span class="material-symbols-outlined text-lg">volunteer_activism</span><span>SD Action Sociale</span></a><a class="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="formation-continue" href="#"><span class="material-symbols-outlined text-lg">school</span><span>SD Formation Continue</span></a><div class="px-3 pt-3 pb-1"><span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider font-bold">Gouvernance &amp; Conformité</span></div><a class="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="circuits-validation" href="#"><span class="material-symbols-outlined text-lg">approval_delegation</span><span>Circuits de Validation</span></a><a class="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="statistiques-rbac" href="#"><span class="material-symbols-outlined text-lg">admin_panel_settings</span><span>Statistiques &amp; RBAC</span></a></nav><div class="px-4 pt-3 mt-auto"><div class="p-3 bg-surface-container-low rounded text-center"><span class="font-label-sm text-label-sm text-on-surface-variant block font-medium">Sécurisation Régalienne</span><span class="font-code-num text-code-num text-primary block mt-0.5">ANSSI-CI • SIGRH-v2.6</span></div></div></aside><div class="pl-72"><main class="relative pt-16 min-h-screen bg-background flex flex-col justify-between"><div class="flex flex-col w-full">
+<!-- SECTION HEADER & FIL D'ARIANE SOUVERAIN -->
+<div class="p-6 lg:p-8 bg-surface-container-lowest shadow-sm mb-6">
+<div class="max-w-[1600px] mx-auto flex flex-col gap-5">
+<!-- Breadcrumb & Sceaux Officiels -->
+<div class="flex flex-wrap items-center justify-between gap-3 pb-3 bg-surface-container-low px-4 py-2.5 rounded">
+<div class="flex items-center gap-2 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">
+<span class="hover:text-primary transition-colors cursor-pointer">SD Gestion des Carrières</span>
+<span class="material-symbols-outlined text-xs text-outline">chevron_right</span>
+<span class="hover:text-primary transition-colors cursor-pointer">GPEEC &amp; Effectifs</span>
+<span class="material-symbols-outlined text-xs text-outline">chevron_right</span>
+<span class="text-primary font-bold">Dotation en Personnel</span>
+</div>
+<div class="flex flex-wrap items-center gap-2">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-surface-container-high text-on-surface text-label-sm font-label-sm">
+<span class="w-1.5 h-1.5 rounded-full bg-primary-container"></span>
+            Loi de Finances 2026
+          </span>
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-primary-fixed/40 text-on-primary-fixed-variant text-label-sm font-label-sm font-semibold">
+<span class="material-symbols-outlined text-sm">verified_user</span>
+            Conforme DGBF &amp; DGPE
+          </span>
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-secondary-fixed/50 text-on-secondary-fixed-variant text-label-sm font-label-sm">
+<span class="material-symbols-outlined text-sm text-secondary">encrypted</span>
+            Scellement K-Sign Actif
+          </span>
+</div>
+</div>
+<!-- Main Header Title & Primary Operations -->
+<div class="flex flex-col xl:flex-row xl:items-end justify-between gap-6">
+<div class="max-w-4xl space-y-2">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded bg-primary text-on-primary flex items-center justify-center shrink-0 shadow-sm">
+<span class="material-symbols-outlined text-2xl">groups_3</span>
+</div>
+<div>
+<span class="font-label-sm text-label-sm uppercase tracking-widest text-primary font-bold">Portefeuille Ministériel • 84 Entités Publiques</span>
+<h1 class="font-headline-lg text-headline-lg text-on-surface font-bold tracking-tight">Dotation en Personnel &amp; Arbitrage des Plafonds d'Emplois</h1>
+</div>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant pl-13">
+            Suivi des effectifs sous plafond ministériel (PEA), régulation statutaire des plans de recrutement et arbitrages pluriannuels des sociétés d'État et agences publiques en vertu du Décret présidentiel n° 2024-118.
+          </p>
+</div>
+<div class="flex items-center gap-3 shrink-0">
+<button class="h-10 px-4 rounded bg-surface-container-low hover:bg-surface-container text-primary font-label-lg text-label-lg flex items-center gap-2 transition-all shadow-sm" type="button">
+<span class="material-symbols-outlined text-lg">swap_horiz</span>
+<span>Arbitrer les Redéploiements</span>
+</button>
+<button class="h-10 px-4 rounded bg-primary hover:bg-primary-container text-on-primary font-label-lg text-label-lg flex items-center gap-2 transition-all shadow-md" type="button">
+<span class="material-symbols-outlined text-lg">add_circle</span>
+<span>Nouveau Plan de Recrutement</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<div class="max-w-[1600px] mx-auto w-full px-6 lg:px-8 space-y-8 pb-12">
+<!-- KPIS & METRIQUES REPUBLICAINES -->
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
+<!-- KPI 1 -->
+<div class="p-5 rounded bg-surface-container-lowest shadow-sm hover:shadow-md transition-shadow relative overflow-hidden flex flex-col justify-between">
+<div class="flex items-start justify-between gap-2">
+<div>
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-bold">Effectif Global en Poste</span>
+<div class="mt-2 flex items-baseline gap-2">
+<span class="font-headline-lg text-headline-lg font-bold text-on-surface font-code-num">4 826</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant font-code-num">/ 5 050 PEA</span>
+</div>
+</div>
+<div class="p-2.5 rounded bg-surface-container-low text-primary">
+<span class="material-symbols-outlined text-xl">group</span>
+</div>
+</div>
+<div class="mt-4 pt-3 bg-surface-container-low/50 -mx-5 -mb-5 px-5 py-3">
+<div class="flex items-center justify-between text-label-sm font-label-sm mb-1.5">
+<span class="text-on-surface-variant">Taux d'occupation : <strong class="text-primary font-bold">95.5%</strong></span>
+<span class="text-secondary font-code-num font-bold">224 postes vacants</span>
+</div>
+<div class="w-full bg-surface-container-highest rounded-full h-1.5 overflow-hidden">
+<div class="bg-primary h-full rounded-full" style="width: 95.5%;"></div>
+</div>
+</div>
+</div>
+<!-- KPI 2 -->
+<div class="p-5 rounded bg-surface-container-lowest shadow-sm hover:shadow-md transition-shadow relative overflow-hidden flex flex-col justify-between">
+<div class="flex items-start justify-between gap-2">
+<div>
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-bold">Plafonds Budgétisés (PEA)</span>
+<div class="mt-2 flex items-baseline gap-2">
+<span class="font-headline-lg text-headline-lg font-bold text-on-surface font-code-num">5 050</span>
+<span class="inline-flex items-center text-label-sm font-label-sm font-semibold text-primary px-1.5 py-0.5 rounded bg-primary-fixed/40">
+                +140 vs 2025
+              </span>
+</div>
+</div>
+<div class="p-2.5 rounded bg-surface-container-low text-primary">
+<span class="material-symbols-outlined text-xl">account_balance</span>
+</div>
+</div>
+<div class="mt-4 pt-3 bg-surface-container-low/50 -mx-5 -mb-5 px-5 py-3 flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-base text-primary">gavel</span>
+            Accordé en Conseil des Ministres
+          </span>
+<span class="font-code-num text-code-num text-primary font-bold">84 Entités</span>
+</div>
+</div>
+<!-- KPI 3 -->
+<div class="p-5 rounded bg-surface-container-lowest shadow-sm hover:shadow-md transition-shadow relative overflow-hidden flex flex-col justify-between">
+<div class="flex items-start justify-between gap-2">
+<div>
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-bold">Campagnes de Recrutement</span>
+<div class="mt-2 flex items-baseline gap-2">
+<span class="font-headline-lg text-headline-lg font-bold text-on-surface font-code-num">18</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">ouvertes</span>
+</div>
+</div>
+<div class="p-2.5 rounded bg-surface-container-low text-secondary">
+<span class="material-symbols-outlined text-xl">work_outline</span>
+</div>
+</div>
+<div class="mt-4 pt-3 bg-surface-container-low/50 -mx-5 -mb-5 px-5 py-3 flex items-center justify-between text-label-sm font-label-sm">
+<span class="text-on-surface-variant">12 Cadres Sup. • 6 Maîtrise</span>
+<span class="inline-flex items-center gap-1 text-primary font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+            87% FOP
+          </span>
+</div>
+</div>
+<!-- KPI 4 -->
+<div class="p-5 rounded bg-surface-container-lowest shadow-sm hover:shadow-md transition-shadow relative overflow-hidden flex flex-col justify-between">
+<div class="flex items-start justify-between gap-2">
+<div>
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-bold">Masse Salariale Consolidée</span>
+<div class="mt-2 flex items-baseline gap-1">
+<span class="font-headline-lg text-headline-lg font-bold text-on-surface font-code-num">48.6</span>
+<span class="font-headline-sm text-headline-sm font-bold text-on-surface-variant">Mds FCFA</span>
+</div>
+</div>
+<div class="p-2.5 rounded bg-surface-container-low text-primary">
+<span class="material-symbols-outlined text-xl">payments</span>
+</div>
+</div>
+<div class="mt-4 pt-3 bg-surface-container-low/50 -mx-5 -mb-5 px-5 py-3 flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-on-surface-variant">Ratio MS / Valeur Ajoutée</span>
+<span class="font-code-num text-code-num px-2 py-0.5 rounded bg-surface-container-high text-primary font-bold">28.4% (Seuil: 35%)</span>
+</div>
+</div>
+</div>
+<!-- DOUBLE BLOC ANALYSE STRATÉGIQUE (RÉPARTITION & ALERTES TENSION) -->
+<div class="grid grid-cols-1 xl:grid-cols-12 gap-6">
+<!-- Bloc Gauche (7 cols): Répartition Sectorielle -->
+<div class="xl:col-span-7 bg-surface-container-lowest p-6 rounded shadow-sm flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between pb-4">
+<div>
+<span class="font-label-sm text-label-sm text-primary font-bold uppercase tracking-wider">Cartographie des Plafonds d'Emplois</span>
+<h2 class="font-headline-sm text-headline-sm text-on-surface font-bold">Répartition Sectorielle &amp; Taux de Tension</h2>
+</div>
+<button class="px-3 py-1.5 bg-surface-container-low hover:bg-surface-container rounded text-primary text-label-sm font-label-sm flex items-center gap-1.5 transition-colors">
+<span class="material-symbols-outlined text-sm">tune</span>
+<span>Ajuster Quotas</span>
+</button>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-6">
+            Suivi temps réel de la consommation des plafonds d'emplois autorisés par branches stratégiques d'entreprises d'État.
+          </p>
+<div class="space-y-4">
+<!-- Secteur 1 -->
+<div class="p-3.5 rounded bg-surface-container-low">
+<div class="flex items-center justify-between mb-1.5">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-base">local_fire_department</span>
+<span class="font-label-md text-label-md text-on-surface font-bold">Énergie, Mines &amp; Hydrocarbures</span>
+<span class="text-label-sm font-label-sm text-on-surface-variant">(PETROCI, CI-ENERGIES, SODEMI)</span>
+</div>
+<div class="text-right">
+<span class="font-code-num text-code-num text-on-surface font-bold">1 420</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">/ 1 450 PEA</span>
+<span class="ml-2 font-code-num text-label-sm text-secondary font-bold">(Tension: 97.9%)</span>
+</div>
+</div>
+<div class="w-full bg-surface-container-highest rounded-full h-2 overflow-hidden flex">
+<div class="bg-primary h-full" style="width: 97.9%;"></div>
+</div>
+<div class="flex justify-between items-center mt-1.5 text-label-sm font-label-sm text-on-surface-variant">
+<span>30 postes disponibles</span>
+<span class="text-primary font-medium">Besoins imminents offshore validés</span>
+</div>
+</div>
+<!-- Secteur 2 -->
+<div class="p-3.5 rounded bg-surface-container-low">
+<div class="flex items-center justify-between mb-1.5">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-base">account_balance</span>
+<span class="font-label-md text-label-md text-on-surface font-bold">Banques, Assurances &amp; Finances Publiques</span>
+<span class="text-label-sm font-label-sm text-on-surface-variant">(BNI, BIDC, CDC-CI)</span>
+</div>
+<div class="text-right">
+<span class="font-code-num text-code-num text-on-surface font-bold">890</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">/ 920 PEA</span>
+<span class="ml-2 font-code-num text-label-sm text-primary font-bold">(Tension: 96.7%)</span>
+</div>
+</div>
+<div class="w-full bg-surface-container-highest rounded-full h-2 overflow-hidden flex">
+<div class="bg-primary h-full" style="width: 96.7%;"></div>
+</div>
+<div class="flex justify-between items-center mt-1.5 text-label-sm font-label-sm text-on-surface-variant">
+<span>30 postes disponibles</span>
+<span class="text-primary font-medium">Cadre réglementaire bancaire strict</span>
+</div>
+</div>
+<!-- Secteur 3 -->
+<div class="p-3.5 rounded bg-surface-container-low">
+<div class="flex items-center justify-between mb-1.5">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-base">directions_boat</span>
+<span class="font-label-md text-label-md text-on-surface font-bold">Transport, Ports &amp; Logistique</span>
+<span class="text-label-sm font-label-sm text-on-surface-variant">(PAA, PASP, SOTRA, AIR CÔTE D'IVOIRE)</span>
+</div>
+<div class="text-right">
+<span class="font-code-num text-code-num text-on-surface font-bold">1 210</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">/ 1 250 PEA</span>
+<span class="ml-2 font-code-num text-label-sm text-primary font-bold">(Tension: 96.8%)</span>
+</div>
+</div>
+<div class="w-full bg-surface-container-highest rounded-full h-2 overflow-hidden flex">
+<div class="bg-primary h-full" style="width: 96.8%;"></div>
+</div>
+<div class="flex justify-between items-center mt-1.5 text-label-sm font-label-sm text-on-surface-variant">
+<span>40 postes disponibles</span>
+<span class="text-primary font-medium">Extension terminal portuaire San Pedro</span>
+</div>
+</div>
+<!-- Secteur 4 -->
+<div class="p-3.5 rounded bg-surface-container-low">
+<div class="flex items-center justify-between mb-1.5">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-base">foundation</span>
+<span class="font-label-md text-label-md text-on-surface font-bold">Infrastructures, BTP &amp; Patrimoine</span>
+<span class="text-label-sm font-label-sm text-on-surface-variant">(SOGEPIE, AGEROUTE, FER)</span>
+</div>
+<div class="text-right">
+<span class="font-code-num text-code-num text-on-surface font-bold">780</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">/ 800 PEA</span>
+<span class="ml-2 font-code-num text-label-sm text-primary font-bold">(Tension: 97.5%)</span>
+</div>
+</div>
+<div class="w-full bg-surface-container-highest rounded-full h-2 overflow-hidden flex">
+<div class="bg-primary h-full" style="width: 97.5%;"></div>
+</div>
+<div class="flex justify-between items-center mt-1.5 text-label-sm font-label-sm text-on-surface-variant">
+<span>20 postes disponibles</span>
+<span class="text-primary font-medium">Contrôle foncier régalien renforcé</span>
+</div>
+</div>
+<!-- Secteur 5 -->
+<div class="p-3.5 rounded bg-surface-container-low">
+<div class="flex items-center justify-between mb-1.5">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-base">corporate_fare</span>
+<span class="font-label-md text-label-md text-on-surface font-bold">Centrales, Holdings &amp; Agences DGPE</span>
+<span class="text-label-sm font-label-sm text-on-surface-variant">(Agences de régulation, Services centraux)</span>
+</div>
+<div class="text-right">
+<span class="font-code-num text-code-num text-on-surface font-bold">526</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">/ 630 PEA</span>
+<span class="ml-2 font-code-num text-label-sm text-primary font-bold">(Tension: 83.5%)</span>
+</div>
+</div>
+<div class="w-full bg-surface-container-highest rounded-full h-2 overflow-hidden flex">
+<div class="bg-primary h-full" style="width: 83.5%;"></div>
+</div>
+<div class="flex justify-between items-center mt-1.5 text-label-sm font-label-sm text-on-surface-variant">
+<span>104 postes disponibles</span>
+<span class="text-on-surface-variant">Marge d'arbitrage pour réformes transversales</span>
+</div>
+</div>
+</div>
+</div>
+<div class="mt-6 pt-4 bg-surface-container-low rounded p-3 flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">pie_chart</span>
+<span class="font-label-sm text-label-sm text-on-surface font-semibold">Taux moyen de vacance des postes étatiques :</span>
+</div>
+<span class="font-code-num text-code-num px-2.5 py-0.5 rounded bg-surface-container-lowest font-bold text-primary">4.44% (Sous plafond cible national)</span>
+</div>
+</div>
+<!-- Bloc Droit (5 cols): Alertes Tensions & Postes Critiques -->
+<div class="xl:col-span-5 bg-surface-container-lowest p-6 rounded shadow-sm flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between pb-3">
+<div class="flex items-center gap-2">
+<span class="p-1 rounded bg-secondary-container/20 text-secondary">
+<span class="material-symbols-outlined text-lg">warning</span>
+</span>
+<div>
+<span class="font-label-sm text-label-sm text-secondary font-bold uppercase tracking-wider">Gouvernance Opérationnelle</span>
+<h2 class="font-headline-sm text-headline-sm text-on-surface font-bold">Alertes Tensions &amp; Postes Critiques</h2>
+</div>
+</div>
+<span class="px-2 py-0.5 rounded bg-error-container text-on-error-container font-label-sm text-label-sm font-bold">3 Alertes Urgentes</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-4">
+            Emplois clés non pourvus depuis plus de 60 jours présentant un risque direct sur la performance financière ou industrielle de l'État.
+          </p>
+<div class="space-y-3">
+<!-- Alerte 1 -->
+<div class="p-3.5 rounded bg-surface-container-low relative">
+<div class="flex items-start justify-between">
+<div>
+<span class="font-label-sm text-label-sm uppercase text-secondary font-bold">PETROCI Holding • Exploration Offshore</span>
+<h3 class="font-label-md text-label-md font-bold text-on-surface mt-0.5">Ingénieurs Forage &amp; Réservoirs Pétroliers</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">
+                    4 postes vacants depuis 74 jours. Risque de retard sur l'exploitation des blocs profonds.
+                  </p>
+</div>
+<span class="font-code-num text-code-num px-2 py-1 rounded bg-error-container text-on-error-container font-bold shrink-0">
+                  4 POSTES
+                </span>
+</div>
+<div class="mt-3 flex items-center justify-between pt-2">
+<span class="font-label-sm text-label-sm text-on-surface-variant font-medium">Arbitrage : Recrutement dérogatoire ou expatriation inversée</span>
+<button class="text-label-sm font-label-sm text-primary font-bold hover:underline flex items-center gap-0.5">
+                  Consulter dossier
+                  <span class="material-symbols-outlined text-xs">arrow_forward</span>
+</button>
+</div>
+</div>
+<!-- Alerte 2 -->
+<div class="p-3.5 rounded bg-surface-container-low relative">
+<div class="flex items-start justify-between">
+<div>
+<span class="font-label-sm text-label-sm uppercase text-secondary font-bold">Banque Nationale d'Investissement (BNI)</span>
+<h3 class="font-label-md text-label-md font-bold text-on-surface mt-0.5">Auditeurs Risques Systémiques &amp; Marchés</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">
+                    2 postes non pourvus. Exigence de conformité Commission Bancaire UMOA.
+                  </p>
+</div>
+<span class="font-code-num text-code-num px-2 py-1 rounded bg-secondary-fixed text-on-secondary-fixed-variant font-bold shrink-0">
+                  2 POSTES
+                </span>
+</div>
+<div class="mt-3 flex items-center justify-between pt-2">
+<span class="font-label-sm text-label-sm text-on-surface-variant font-medium">Besoins : Échelon Cadre Hors-Catégorie</span>
+<button class="text-label-sm font-label-sm text-primary font-bold hover:underline flex items-center gap-0.5">
+                  Consulter dossier
+                  <span class="material-symbols-outlined text-xs">arrow_forward</span>
+</button>
+</div>
+</div>
+<!-- Alerte 3 -->
+<div class="p-3.5 rounded bg-surface-container-low relative">
+<div class="flex items-start justify-between">
+<div>
+<span class="font-label-sm text-label-sm uppercase text-primary font-bold">Direction Générale du Portefeuille de l'État (DGPE)</span>
+<h3 class="font-label-md text-label-md font-bold text-on-surface mt-0.5">Experts Marchés Publics Régaliens &amp; PPP</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">
+                    3 postes stratégiques sous arbitrage de la Commission Mixte Fonction Publique.
+                  </p>
+</div>
+<span class="font-code-num text-code-num px-2 py-1 rounded bg-surface-container-highest text-primary font-bold shrink-0">
+                  3 POSTES
+                </span>
+</div>
+<div class="mt-3 flex items-center justify-between pt-2">
+<span class="font-label-sm text-label-sm text-on-surface-variant font-medium">Option : Appel inter-entreprises prioritaire</span>
+<button class="text-label-sm font-label-sm text-primary font-bold hover:underline flex items-center gap-0.5">
+                  Consulter dossier
+                  <span class="material-symbols-outlined text-xs">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<div class="mt-6 pt-4">
+<button class="w-full py-2.5 px-4 rounded bg-secondary text-on-secondary hover:bg-on-secondary-container font-label-md text-label-md flex items-center justify-center gap-2 transition-colors shadow-sm" type="button">
+<span class="material-symbols-outlined text-lg">campaign</span>
+<span>Lancer un Appel à Candidatures Inter-Sociétés</span>
+</button>
+</div>
+</div>
+</div>
+<!-- REGISTRE D'INSTRUCTION DES DEMANDES DE DOTATION & RECRUTEMENT -->
+<div class="bg-surface-container-lowest rounded shadow-sm overflow-hidden">
+<!-- Entête & Filtres du Registre -->
+<div class="p-6 bg-surface-container-low/40">
+<div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-5">
+<div>
+<span class="font-label-sm text-label-sm text-primary font-bold uppercase tracking-wider">Actes Administratifs &amp; Décisions de Gestion</span>
+<h2 class="font-headline-sm text-headline-sm text-on-surface font-bold">Registre d'Instruction des Demandes de Dotation &amp; Recrutement</h2>
+</div>
+<div class="flex items-center gap-2">
+<button class="px-3 py-1.5 bg-surface-container-lowest hover:bg-surface-container-high rounded text-on-surface font-label-sm text-label-sm flex items-center gap-1.5 transition-colors shadow-sm">
+<span class="material-symbols-outlined text-base">download</span>
+<span>Exporter Registre (XLS/PDF)</span>
+</button>
+<button class="px-3 py-1.5 bg-surface-container-lowest hover:bg-surface-container-high rounded text-on-surface font-label-sm text-label-sm flex items-center gap-1.5 transition-colors shadow-sm">
+<span class="material-symbols-outlined text-base">history</span>
+<span>Historique Arbitrages</span>
+</button>
+</div>
+</div>
+<!-- Filtres Avancés -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-2.5 text-on-surface-variant text-lg">search</span>
+<input class="w-full pl-9 pr-3 py-2 bg-surface-container-lowest rounded text-body-sm font-body-sm text-on-surface placeholder:text-on-surface-variant/70 focus:outline-none focus:ring-1 focus:ring-primary shadow-sm" placeholder="Filtrer par réf, intitulé du poste, profil..." type="text"/>
+</div>
+<div>
+<select class="w-full px-3 py-2 bg-surface-container-lowest rounded text-body-sm font-body-sm text-on-surface focus:outline-none focus:ring-1 focus:ring-primary shadow-sm">
+<option value="">Toutes les Entreprises d'État (84)</option>
+<option value="petroci">PETROCI Holding</option>
+<option value="ci-energies">CI-ENERGIES</option>
+<option value="sogepie">SOGEPIE</option>
+<option value="pasp">Port Autonome de San Pedro (PASP)</option>
+<option value="bni">Banque Nationale d'Investissement</option>
+</select>
+</div>
+<div>
+<select class="w-full px-3 py-2 bg-surface-container-lowest rounded text-body-sm font-body-sm text-on-surface focus:outline-none focus:ring-1 focus:ring-primary shadow-sm">
+<option value="">Statut de Visa Régalien</option>
+<option value="arbitrage">En arbitrage DGPE</option>
+<option value="controle">Visa Contrôle Financier Requis</option>
+<option value="favorable">Avis Favorable / Acté</option>
+<option value="rejet">Rejet / Plafond Atteint</option>
+</select>
+</div>
+<div>
+<select class="w-full px-3 py-2 bg-surface-container-lowest rounded text-body-sm font-body-sm text-on-surface focus:outline-none focus:ring-1 focus:ring-primary shadow-sm">
+<option value="">Nature du Mouvement</option>
+<option value="cadre">Recrutement Cadre Supérieur</option>
+<option value="concours">Concours Direct Homologué</option>
+<option value="mobilite">Mobilité / Mutation Interne</option>
+<option value="derogatoire">Recrutement Dérogatoire</option>
+</select>
+</div>
+</div>
+</div>
+<!-- Tableau Administratif Conforme -->
+<div class="overflow-x-auto">
+<table class="w-full text-left font-body-sm text-body-sm">
+<thead class="bg-surface-container-low text-on-surface-variant font-label-md text-label-md">
+<tr>
+<th class="py-3.5 px-4 font-semibold uppercase tracking-wider">Réf. Dossier</th>
+<th class="py-3.5 px-4 font-semibold uppercase tracking-wider">Société Publique &amp; Direction</th>
+<th class="py-3.5 px-4 font-semibold uppercase tracking-wider">Poste &amp; Nature de l'Acte</th>
+<th class="py-3.5 px-4 font-semibold uppercase tracking-wider">Impact PEA</th>
+<th class="py-3.5 px-4 font-semibold uppercase tracking-wider">Statut Juridique &amp; Visas</th>
+<th class="py-3.5 px-4 font-semibold uppercase tracking-wider text-right">Actions Métier</th>
+</tr>
+</thead>
+<tbody class="divide-y-0">
+<!-- Row 1 -->
+<tr class="hover:bg-surface-container-low/60 transition-colors">
+<td class="py-4 px-4 font-code-num text-code-num font-bold text-primary">
+                REC-2026-088
+                <span class="block font-label-sm text-label-sm text-on-surface-variant font-normal">Reçu le 14/02/2026</span>
+</td>
+<td class="py-4 px-4">
+<div class="font-label-lg text-label-lg font-bold text-on-surface">PETROCI Holding</div>
+<div class="text-on-surface-variant text-label-sm font-label-sm">Direction Exploration &amp; Production</div>
+</td>
+<td class="py-4 px-4">
+<div class="font-label-md text-label-md text-on-surface font-semibold">Chef de Département Sécurité QHSE</div>
+<span class="inline-block mt-0.5 px-2 py-0.5 rounded bg-surface-container-high text-on-surface text-label-sm font-label-sm">
+                  Recrutement Cadre Supérieur
+                </span>
+</td>
+<td class="py-4 px-4">
+<span class="font-code-num text-code-num px-2 py-1 rounded bg-secondary-fixed text-on-secondary-fixed-variant font-bold">
+                  +1 Poste
+                </span>
+<span class="block text-label-sm font-label-sm text-on-surface-variant mt-0.5">Sous réserve arbitrage</span>
+</td>
+<td class="py-4 px-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-secondary-container/20 text-on-secondary-container font-label-sm text-label-sm font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+                  Visa Contrôle Financier Requis
+                </span>
+<span class="block text-label-sm font-label-sm text-on-surface-variant mt-1">Dépôt DGBF : En cours</span>
+</td>
+<td class="py-4 px-4 text-right">
+<div class="flex items-center justify-end gap-2">
+<button class="px-2.5 py-1.5 bg-primary text-on-primary hover:bg-primary-container rounded font-label-sm text-label-sm font-semibold transition-colors">
+                    Instruire
+                  </button>
+<button class="p-1.5 hover:bg-surface-container rounded text-on-surface-variant transition-colors" title="Rapport d'arbitrage">
+<span class="material-symbols-outlined text-base">description</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="bg-surface-container-low/20 hover:bg-surface-container-low/60 transition-colors">
+<td class="py-4 px-4 font-code-num text-code-num font-bold text-primary">
+                REC-2026-074
+                <span class="block font-label-sm text-label-sm text-on-surface-variant font-normal">Reçu le 08/02/2026</span>
+</td>
+<td class="py-4 px-4">
+<div class="font-label-lg text-label-lg font-bold text-on-surface">CI-ENERGIES</div>
+<div class="text-on-surface-variant text-label-sm font-label-sm">Direction Grands Réseaux HT</div>
+</td>
+<td class="py-4 px-4">
+<div class="font-label-md text-label-md text-on-surface font-semibold">3 Ingénieurs Haute Tension</div>
+<span class="inline-block mt-0.5 px-2 py-0.5 rounded bg-surface-container-high text-on-surface text-label-sm font-label-sm">
+                  Concours Direct Homologué
+                </span>
+</td>
+<td class="py-4 px-4">
+<span class="font-code-num text-code-num px-2 py-1 rounded bg-primary-fixed/60 text-on-primary-fixed-variant font-bold">
+                  +3 Postes
+                </span>
+<span class="block text-label-sm font-label-sm text-on-surface-variant mt-0.5">Budget PEA 2026 validé</span>
+</td>
+<td class="py-4 px-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-primary-fixed/50 text-on-primary-fixed-variant font-label-sm text-label-sm font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+                  Approuvé Conseil d'Administration
+                </span>
+<span class="block text-label-sm font-label-sm text-on-surface-variant mt-1">Visa CF n° CI-2026-04</span>
+</td>
+<td class="py-4 px-4 text-right">
+<div class="flex items-center justify-end gap-2">
+<button class="px-2.5 py-1.5 bg-surface-container-low hover:bg-surface-container text-primary rounded font-label-sm text-label-sm font-semibold flex items-center gap-1 transition-colors">
+<span class="material-symbols-outlined text-sm">verified</span>
+                    Arrêté scellé
+                  </button>
+<button class="px-2.5 py-1.5 bg-primary text-on-primary hover:bg-primary-container rounded font-label-sm text-label-sm font-semibold transition-colors">
+                    Notifier
+                  </button>
+</div>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-surface-container-low/60 transition-colors">
+<td class="py-4 px-4 font-code-num text-code-num font-bold text-primary">
+                REC-2026-061
+                <span class="block font-label-sm text-label-sm text-on-surface-variant font-normal">Reçu le 01/02/2026</span>
+</td>
+<td class="py-4 px-4">
+<div class="font-label-lg text-label-lg font-bold text-on-surface">SOGEPIE</div>
+<div class="text-on-surface-variant text-label-sm font-label-sm">Gestion Immobilière de l'État</div>
+</td>
+<td class="py-4 px-4">
+<div class="font-label-md text-label-md text-on-surface font-semibold">Chargé du Patrimoine Ministériel</div>
+<span class="inline-block mt-0.5 px-2 py-0.5 rounded bg-surface-container-high text-on-surface text-label-sm font-label-sm">
+                  Mobilité / Mutation Interne
+                </span>
+</td>
+<td class="py-4 px-4">
+<span class="font-code-num text-code-num px-2 py-1 rounded bg-surface-container-highest text-on-surface font-bold">
+                  Isopérimètre (0)
+                </span>
+<span class="block text-label-sm font-label-sm text-on-surface-variant mt-0.5">Compensation directe</span>
+</td>
+<td class="py-4 px-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-primary-fixed/50 text-on-primary-fixed-variant font-label-sm text-label-sm font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+                  Favorable DRH MPEEP
+                </span>
+<span class="block text-label-sm font-label-sm text-on-surface-variant mt-1">Sans impact masse salariale</span>
+</td>
+<td class="py-4 px-4 text-right">
+<div class="flex items-center justify-end gap-2">
+<button class="px-2.5 py-1.5 bg-surface-container-low hover:bg-surface-container text-primary rounded font-label-sm text-label-sm font-semibold transition-colors">
+                    Consulter
+                  </button>
+<button class="p-1.5 hover:bg-surface-container rounded text-on-surface-variant transition-colors" title="Fiche agent">
+<span class="material-symbols-outlined text-base">account_circle</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="bg-surface-container-low/20 hover:bg-surface-container-low/60 transition-colors">
+<td class="py-4 px-4 font-code-num text-code-num font-bold text-primary">
+                REC-2026-055
+                <span class="block font-label-sm text-label-sm text-on-surface-variant font-normal">Reçu le 27/01/2026</span>
+</td>
+<td class="py-4 px-4">
+<div class="font-label-lg text-label-lg font-bold text-on-surface">Port Autonome de San Pedro</div>
+<div class="text-on-surface-variant text-label-sm font-label-sm">Commandement de la Capitainerie</div>
+</td>
+<td class="py-4 px-4">
+<div class="font-label-md text-label-md text-on-surface font-semibold">Pilote Maritime Hauturier</div>
+<span class="inline-block mt-0.5 px-2 py-0.5 rounded bg-surface-container-high text-on-surface text-label-sm font-label-sm">
+                  Recrutement Dérogatoire Spécialisé
+                </span>
+</td>
+<td class="py-4 px-4">
+<span class="font-code-num text-code-num px-2 py-1 rounded bg-secondary-fixed text-on-secondary-fixed-variant font-bold">
+                  +1 Poste
+                </span>
+<span class="block text-label-sm font-label-sm text-on-surface-variant mt-0.5">Surquota technique</span>
+</td>
+<td class="py-4 px-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-tertiary-fixed text-on-tertiary-fixed-variant font-label-sm text-label-sm font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+                  En attente Avis DGBF
+                </span>
+<span class="block text-label-sm font-label-sm text-on-surface-variant mt-1">Transmis commission budgétaire</span>
+</td>
+<td class="py-4 px-4 text-right">
+<div class="flex items-center justify-end gap-2">
+<button class="px-2.5 py-1.5 bg-primary text-on-primary hover:bg-primary-container rounded font-label-sm text-label-sm font-semibold transition-colors">
+                    Instruire
+                  </button>
+<button class="p-1.5 hover:bg-surface-container rounded text-on-surface-variant transition-colors" title="Détail technique">
+<span class="material-symbols-outlined text-base">visibility</span>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination & Synthèse basse de table -->
+<div class="px-6 py-4 bg-surface-container-low/40 flex flex-col sm:flex-row items-center justify-between gap-4">
+<span class="font-label-sm text-label-sm text-on-surface-variant">
+          Affichage de <strong class="text-on-surface">1 à 4</strong> sur <strong class="text-on-surface">42 demandes</strong> de dotation inscrites au rôle ministériel
+        </span>
+<div class="flex items-center gap-1.5">
+<button class="p-1.5 rounded bg-surface-container-lowest text-on-surface-variant hover:text-on-surface disabled:opacity-40 shadow-sm" disabled="">
+<span class="material-symbols-outlined text-base">chevron_left</span>
+</button>
+<button class="w-8 h-8 rounded bg-primary text-on-primary font-code-num text-code-num font-bold flex items-center justify-center">1</button>
+<button class="w-8 h-8 rounded bg-surface-container-lowest hover:bg-surface-container text-on-surface font-code-num text-code-num font-bold flex items-center justify-center shadow-sm">2</button>
+<button class="w-8 h-8 rounded bg-surface-container-lowest hover:bg-surface-container text-on-surface font-code-num text-code-num font-bold flex items-center justify-center shadow-sm">3</button>
+<span class="px-1 text-on-surface-variant">...</span>
+<button class="w-8 h-8 rounded bg-surface-container-lowest hover:bg-surface-container text-on-surface font-code-num text-code-num font-bold flex items-center justify-center shadow-sm">11</button>
+<button class="p-1.5 rounded bg-surface-container-lowest text-on-surface-variant hover:text-on-surface shadow-sm">
+<span class="material-symbols-outlined text-base">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+<!-- VOLET OPÉRATIONNEL INFÉRIEUR : BENTO DOUBLE CASQUETTE (MOBILITÉ INTER-ENTREPRISES & JOURNAL CONFORMITÉ) -->
+<div class="grid grid-cols-1 xl:grid-cols-12 gap-6">
+<!-- Bloc Matrice des Mobilités (8 cols) -->
+<div class="xl:col-span-8 bg-surface-container-lowest p-6 rounded shadow-sm flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between pb-3">
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded bg-primary-fixed/50 text-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-xl">sync_alt</span>
+</div>
+<div>
+<span class="font-label-sm text-label-sm text-primary font-bold uppercase tracking-wider">Dispositif Stratégique Régalien</span>
+<h3 class="font-headline-sm text-headline-sm text-on-surface font-bold">Matrice des Mobilités et Redéploiements Inter-Entreprises</h3>
+</div>
+</div>
+<span class="px-2.5 py-1 rounded bg-primary-fixed/40 text-on-primary-fixed-variant font-label-sm text-label-sm font-semibold">
+              Isopérimètre Budgétaire
+            </span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-5">
+            Réaffectation de compétences confirmées issues de sociétés publiques en restructuration ou sureffectif conjoncturel vers les entités sous tension, conformément au Décret n° 2024-118 sur la rationalisation des effectifs d'État.
+          </p>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+<!-- Case 1 -->
+<div class="p-4 rounded bg-surface-container-low flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between text-label-sm font-label-sm mb-2">
+<span class="text-secondary font-bold">Pôle Cédant</span>
+<span class="material-symbols-outlined text-sm text-outline">arrow_forward</span>
+<span class="text-primary font-bold">Pôle Récepteur</span>
+</div>
+<div class="font-label-md text-label-md font-bold text-on-surface">SOTRA (Restructuration)</div>
+<div class="text-label-sm font-label-sm text-on-surface-variant mb-2">vers SOGEPIE (Patrimoine)</div>
+<div class="font-body-sm text-body-sm text-on-surface">5 Gestionnaires de Parcs &amp; Approvisionnements</div>
+</div>
+<div class="mt-4 pt-3 flex items-center justify-between">
+<span class="font-label-sm text-label-sm px-2 py-0.5 rounded bg-primary-fixed/50 text-on-primary-fixed-variant font-semibold">Économie: 120 M FCFA</span>
+<button class="text-primary hover:text-primary-container font-label-sm text-label-sm font-bold">Consulter</button>
+</div>
+</div>
+<!-- Case 2 -->
+<div class="p-4 rounded bg-surface-container-low flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between text-label-sm font-label-sm mb-2">
+<span class="text-secondary font-bold">Pôle Cédant</span>
+<span class="material-symbols-outlined text-sm text-outline">arrow_forward</span>
+<span class="text-primary font-bold">Pôle Récepteur</span>
+</div>
+<div class="font-label-md text-label-md font-bold text-on-surface">Poste de Côte d'Ivoire</div>
+<div class="text-label-sm font-label-sm text-on-surface-variant mb-2">vers BNI (Services Financiers)</div>
+<div class="font-body-sm text-body-sm text-on-surface">8 Contrôleurs d'Opérations &amp; Caissiers Centraux</div>
+</div>
+<div class="mt-4 pt-3 flex items-center justify-between">
+<span class="font-label-sm text-label-sm px-2 py-0.5 rounded bg-primary-fixed/50 text-on-primary-fixed-variant font-semibold">Économie: 195 M FCFA</span>
+<button class="text-primary hover:text-primary-container font-label-sm text-label-sm font-bold">Consulter</button>
+</div>
+</div>
+<!-- Case 3 -->
+<div class="p-4 rounded bg-surface-container-low flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between text-label-sm font-label-sm mb-2">
+<span class="text-secondary font-bold">Pôle Cédant</span>
+<span class="material-symbols-outlined text-sm text-outline">arrow_forward</span>
+<span class="text-primary font-bold">Pôle Récepteur</span>
+</div>
+<div class="font-label-md text-label-md font-bold text-on-surface">SICOGI (Liquidation)</div>
+<div class="text-label-sm font-label-sm text-on-surface-variant mb-2">vers DGPE Centrale</div>
+<div class="font-body-sm text-body-sm text-on-surface">3 Juristes Spécialisés Contentieux Foncier</div>
+</div>
+<div class="mt-4 pt-3 flex items-center justify-between">
+<span class="font-label-sm text-label-sm px-2 py-0.5 rounded bg-primary-fixed/50 text-on-primary-fixed-variant font-semibold">Économie: 98 M FCFA</span>
+<button class="text-primary hover:text-primary-container font-label-sm text-label-sm font-bold">Consulter</button>
+</div>
+</div>
+</div>
+</div>
+<div class="mt-6 flex flex-wrap items-center justify-between gap-4 pt-4 bg-surface-container-low rounded p-3">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary text-xl">savings</span>
+<div>
+<span class="font-label-md text-label-md font-bold text-on-surface">Économie consolidée sur le Trésor Public :</span>
+<span class="font-code-num text-code-num font-bold text-primary ml-2">413 000 000 FCFA</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">évités en recrutements externes superflus.</span>
+</div>
+</div>
+<button class="px-3.5 py-1.5 bg-primary text-on-primary hover:bg-primary-container rounded font-label-sm text-label-sm font-semibold transition-colors">
+            Acter Nouvelle Passerelle
+          </button>
+</div>
+</div>
+<!-- Bloc Journal de Bord Régalien & Certifications (4 cols) -->
+<div class="xl:col-span-4 bg-surface-container-lowest p-6 rounded shadow-sm flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between pb-3">
+<div>
+<span class="font-label-sm text-label-sm text-primary font-bold uppercase tracking-wider">Journal de Bord Sécurisé</span>
+<h3 class="font-headline-sm text-headline-sm text-on-surface font-bold">Audit &amp; Scellements K-Sign</h3>
+</div>
+<span class="material-symbols-outlined text-primary">security</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-4">
+            Traçabilité cryptographique conforme aux spécifications de l'ANSSI-CI pour les actes régaliens de gestion d'effectifs.
+          </p>
+<div class="space-y-3 font-body-sm text-body-sm">
+<div class="p-3 rounded bg-surface-container-low">
+<div class="flex items-center justify-between">
+<span class="font-code-num text-label-sm font-bold text-primary">KSIGN-2026-9921</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Aujourd'hui, 11:24</span>
+</div>
+<p class="font-label-md text-label-md text-on-surface font-semibold mt-1">Visa Budgétaire Accordé • CI-ENERGIES</p>
+<p class="text-label-sm font-label-sm text-on-surface-variant mt-0.5">Par : Directeur Général du Budget et des Finances (DGBF)</p>
+</div>
+<div class="p-3 rounded bg-surface-container-low">
+<div class="flex items-center justify-between">
+<span class="font-code-num text-label-sm font-bold text-primary">KSIGN-2026-9870</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Hier, 16:45</span>
+</div>
+<p class="font-label-md text-label-md text-on-surface font-semibold mt-1">Notification d'Ajustement de PEA • PETROCI</p>
+<p class="text-label-sm font-label-sm text-on-surface-variant mt-0.5">Signataire : Kouamé N'Dri (Directeur DRH Ministériel)</p>
+</div>
+<div class="p-3 rounded bg-surface-container-low">
+<div class="flex items-center justify-between">
+<span class="font-code-num text-label-sm font-bold text-primary">KSIGN-2026-9844</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">12 Fév 2026, 09:12</span>
+</div>
+<p class="font-label-md text-label-md text-on-surface font-semibold mt-1">Certification Conformité Décret n° 2024-118</p>
+<p class="text-label-sm font-label-sm text-on-surface-variant mt-0.5">Scellement automatique de l'annexe budgétaire</p>
+</div>
+</div>
+</div>
+<div class="mt-6 pt-4">
+<div class="p-3 bg-surface-container-low rounded flex items-center justify-between text-label-sm font-label-sm">
+<span class="text-on-surface-variant">Statut d'intégrité :</span>
+<span class="inline-flex items-center gap-1 text-primary font-bold">
+<span class="material-symbols-outlined text-base">check_circle</span>
+              Registre 100% Intègre
+            </span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div></main></div></body></html>

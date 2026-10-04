@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+
+<html lang="fr"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{colors:{"on-tertiary-container":"#bdc4de","on-surface-variant":"#3f4942","tertiary-fixed-dim":"#bec6e0","on-background":"#0b1c30","on-tertiary-fixed":"#131b2e","surface-dim":"#cbdbf5","on-secondary-fixed-variant":"#783100","on-tertiary-fixed-variant":"#3f465c","primary-container":"#0a5e3a","on-surface":"#0b1c30","surface-tint":"#1e6b46","primary-fixed-dim":"#8cd6a9","surface-container":"#e5eeff","on-primary-fixed-variant":"#005231","tertiary-container":"#495167","on-error-container":"#93000a","outline-variant":"#bfc9c0","inverse-primary":"#8cd6a9","surface-variant":"#d3e4fe","surface-container-lowest":"#ffffff","inverse-on-surface":"#eaf1ff","on-primary-container":"#8ad5a7","primary":"#004428","on-primary-fixed":"#002111","surface-bright":"#f8f9ff","surface-container-highest":"#d3e4fe","primary-fixed":"#a7f3c3","inverse-surface":"#213145","on-primary":"#ffffff","error-container":"#ffdad6","error":"#ba1a1a","secondary-fixed-dim":"#ffb691","tertiary-fixed":"#dae2fd","on-secondary":"#ffffff","tertiary":"#333a4f","surface-container-low":"#eff4ff","on-secondary-container":"#602600","secondary-fixed":"#ffdbcb","background":"#f8f9ff","surface":"#f8f9ff","secondary":"#9e4300","on-secondary-fixed":"#341100","on-tertiary":"#ffffff","outline":"#707a71","on-error":"#ffffff","surface-container-high":"#dce9ff","secondary-container":"#fe7b28"},borderRadius:{DEFAULT:"0.125rem",lg:"0.25rem",xl:"0.5rem",full:"0.75rem"},spacing:{"gutter-desktop":"1.5rem","space-sm":"0.5rem","margin-desktop":"2rem",gutter:"1.25rem","space-md":"1rem","space-lg":"1.5rem",margin:"1rem","space-xs":"0.25rem","space-xl":"2rem","margin-tablet":"1.5rem"},fontFamily:{"headline-lg":["Public Sans"],"label-lg":["Public Sans"],"body-lg":["Public Sans"],"headline-sm":["Public Sans"],"label-sm":["Public Sans"],"headline-lg-mobile":["Public Sans"],"body-md":["Public Sans"],"headline-xl":["Public Sans"],"label-md":["Public Sans"],"code-num":["Public Sans"],"body-sm":["Public Sans"],"headline-md":["Public Sans"],"headline-xl-mobile":["Public Sans"]},fontSize:{"headline-lg":["30px",{lineHeight:"38px",fontWeight:"700"}],"label-lg":["14px",{lineHeight:"20px",fontWeight:"600"}],"body-lg":["16px",{lineHeight:"24px",fontWeight:"400"}],"headline-sm":["18px",{lineHeight:"24px",fontWeight:"600"}],"label-sm":["11px",{lineHeight:"14px",fontWeight:"500"}],"headline-lg-mobile":["24px",{lineHeight:"32px",fontWeight:"700"}],"body-md":["14px",{lineHeight:"20px",fontWeight:"400"}],"headline-xl":["36px",{lineHeight:"44px",fontWeight:"700"}],"label-md":["12px",{lineHeight:"16px",fontWeight:"600"}],"code-num":["13px",{lineHeight:"18px",fontWeight:"600"}],"body-sm":["13px",{lineHeight:"18px",fontWeight:"400"}],"headline-md":["22px",{lineHeight:"28px",fontWeight:"600"}],"headline-xl-mobile":["28px",{lineHeight:"36px",fontWeight:"700"}]}}}};</script></head><body class="bg-background font-body-md text-on-surface antialiased"><header class="fixed top-0 left-0 right-0 z-50 bg-surface-container-lowest/95 backdrop-blur-md shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-1 flex w-full"><div class="w-1/3 bg-secondary-container"></div><div class="w-1/3 bg-surface-container-lowest"></div><div class="w-1/3 bg-primary-container"></div></div><div class="h-16 px-6 flex items-center justify-between gap-4"><div class="flex items-center gap-3 min-w-0"><div class="flex items-center justify-center p-1 bg-surface-container-low rounded"><img alt="Armoiries Côte d'Ivoire" class="h-8 w-8 object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDSw7RDrfkH23MP3vRslBhyhcQ6PqxQeuiVBV7MhHMXUkdzQM8SNRahCoiGGz1l5k1jUSBih-nf9uW_I71ODxn4J5xl3WEQZYjsmOSRmouGBn9rBCchF74LeMhfY7v8iSjUxasJDn7PMrzb8Wxus96k4G5ejvdWIDnJmwVPgePID7gdosimtJG8TXG5O64V9oFoQ56kMdMTT0SYsIBHwUU7TwPvci4Dj8x5o_gMdtcJpazXOC3hKx4"/></div><div class="flex flex-col min-w-0"><span class="font-label-md text-label-md text-primary uppercase tracking-wider font-bold truncate">SIGRH | RÉPUBLIQUE DE CÔTE D'IVOIRE</span><span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-tight truncate">Ministère du Portefeuille de l'État et des Entreprises Publiques</span></div></div><div class="flex-1 max-w-md mx-4 hidden lg:block"><div class="relative flex items-center"><span class="material-symbols-outlined absolute left-3 text-on-surface-variant text-lg pointer-events-none">search</span><input class="w-full pl-9 pr-4 py-1.5 bg-surface-container-low text-on-surface placeholder:text-on-surface-variant/70 font-body-sm text-body-sm rounded border-0 focus:outline-none focus:ring-1 focus:ring-primary" placeholder="Rechercher un agent par matricule civil, nom ou direction..." type="text"/></div></div><div class="flex items-center gap-3 shrink-0"><div class="hidden sm:flex items-center gap-1.5 px-2.5 py-1 bg-surface-container-low rounded"><span class="font-label-sm text-label-sm text-on-surface-variant font-medium">Exercice</span><span class="font-code-num text-code-num text-primary font-bold px-1.5 py-0.5 bg-surface-container-lowest rounded">2026</span></div><div class="relative flex items-center"><button aria-label="Notifications de validation" class="p-2 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high rounded transition-colors relative" type="button"><span class="material-symbols-outlined text-xl">notifications</span><span class="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-secondary-container rounded-full"></span></button></div><div class="flex items-center gap-2 pl-2"><img alt="Profile" class="w-8 h-8 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDSw7RDrfkH23MP3vRslBhyhcQ6PqxQeuiVBV7MhHMXUkdzQM8SNRahCoiGGz1l5k1jUSBih-nf9uW_I71ODxn4J5xl3WEQZYjsmOSRmouGBn9rBCchF74LeMhfY7v8iSjUxasJDn7PMrzb8Wxus96k4G5ejvdWIDnJmwVPgePID7gdosimtJG8TXG5O64V9oFoQ56kMdMTT0SYsIBHwUU7TwPvci4Dj8x5o_gMdtcJpazXOC3hKx4"/><div class="hidden md:flex flex-col text-left"><span class="font-label-md text-label-md text-on-surface font-semibold leading-tight">Kouamé N'Dri</span><span class="font-label-sm text-label-sm text-on-surface-variant">Directeur DRH</span></div></div></div></div></header><aside class="fixed left-0 top-0 h-full w-72 bg-surface-container-lowest z-40 flex flex-col pt-20 pb-4 shadow-[1px_0_8px_rgba(0,0,0,0.03)] overflow-y-auto"><div class="px-5 pb-3"><div class="p-3 bg-surface-container-low rounded flex items-center gap-3"><div class="w-8 h-8 rounded bg-primary text-on-primary flex items-center justify-center font-headline-sm text-headline-sm"><span class="material-symbols-outlined text-lg">account_balance</span></div><div class="min-w-0"><p class="font-label-sm text-label-sm text-on-surface-variant uppercase font-medium">Portefeuille Étatique</p><p class="font-label-md text-label-md text-on-surface font-bold truncate">DGPE &amp; Sociétés d'État</p></div></div></div><nav class="flex-1 px-3 space-y-1 font-body-sm text-body-sm" data-active-classes="bg-primary text-on-primary font-semibold shadow-sm"><div class="px-3 pt-2 pb-1"><span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider font-bold">Pilotage Central</span></div><a class="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="dashboard" href="#"><span class="material-symbols-outlined text-lg">dashboard</span><span>Vue d'ensemble DRH</span></a><a class="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="dossier-agent" href="#"><span class="material-symbols-outlined text-lg">badge</span><span>Dossier Agent Numérique</span></a><div class="px-3 pt-3 pb-1"><span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider font-bold">Sous-Directions Métier</span></div><a class="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="carrieres-mutations" href="#"><span class="material-symbols-outlined text-lg">assignment</span><span>SD Carrières &amp; Actes</span></a><a class="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="action-sociale" href="#"><span class="material-symbols-outlined text-lg">volunteer_activism</span><span>SD Action Sociale</span></a><a class="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="formation-continue" href="#"><span class="material-symbols-outlined text-lg">school</span><span>SD Formation Continue</span></a><div class="px-3 pt-3 pb-1"><span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider font-bold">Gouvernance &amp; Conformité</span></div><a class="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="circuits-validation" href="#"><span class="material-symbols-outlined text-lg">approval_delegation</span><span>Circuits de Validation</span></a><a class="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="statistiques-rbac" href="#"><span class="material-symbols-outlined text-lg">admin_panel_settings</span><span>Statistiques &amp; RBAC</span></a></nav><div class="px-4 pt-3 mt-auto"><div class="p-3 bg-surface-container-low rounded text-center"><span class="font-label-sm text-label-sm text-on-surface-variant block font-medium">Sécurisation Régalienne</span><span class="font-code-num text-code-num text-primary block mt-0.5">ANSSI-CI • SIGRH-v2.6</span></div></div></aside><div class="pl-72"><main class="relative pt-16 min-h-screen bg-background flex flex-col justify-between"><div class="flex flex-col w-full">
+<!-- SOUVERAIN FIL D'ARIANE & HERO BANNER D'AUTORITÉ -->
+<section class="relative bg-surface-container-low px-6 py-6 overflow-hidden">
+<div class="absolute -right-24 -top-24 w-96 h-96 bg-primary-container/10 rounded-full blur-3xl pointer-events-none"></div>
+<div class="absolute right-1/3 -bottom-16 w-64 h-64 bg-secondary-container/10 rounded-full blur-2xl pointer-events-none"></div>
+<div class="max-w-7xl mx-auto flex flex-col gap-4 relative z-10">
+<!-- Trace régalienne et fil d'Ariane officiel -->
+<div class="flex flex-wrap items-center justify-between gap-3 text-on-surface-variant font-label-md text-label-md">
+<div class="flex items-center gap-2">
+<span class="inline-flex items-center justify-center w-5 h-5 rounded bg-primary-container text-on-primary">
+<span class="material-symbols-outlined text-sm">balance</span>
+</span>
+<span class="font-bold text-primary tracking-wide">SD CARRIÈRES &amp; ACTES</span>
+<span class="text-outline">/</span>
+<span class="font-medium text-on-surface">Fin de Carrière, Départs &amp; Anticipation GPEEC</span>
+<span class="text-outline">/</span>
+<span class="text-primary font-code-num text-code-num bg-surface-container px-2 py-0.5 rounded font-bold">EXERCICE-2026-REG-09</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-surface-container-lowest shadow-sm rounded text-primary font-bold text-label-sm font-label-sm">
+<span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+            Passerelle CGRAE / CNPS Directe : Synchronisée
+          </span>
+</div>
+</div>
+<!-- Titre d'autorité républicaine & Call to Actions solennels -->
+<div class="flex flex-col lg:flex-row lg:items-end justify-between gap-6 pt-2">
+<div class="space-y-2 max-w-3xl">
+<div class="flex flex-wrap items-center gap-2">
+<span class="px-2.5 py-0.5 rounded bg-primary/10 text-primary font-label-sm text-label-sm font-bold uppercase tracking-wider">
+              Décret n° 2023-894/FP
+            </span>
+<span class="px-2.5 py-0.5 rounded bg-secondary-container/20 text-secondary font-label-sm text-label-sm font-bold uppercase tracking-wider">
+              Anticipation Décennale GPEEC 2026–2035
+            </span>
+<span class="px-2.5 py-0.5 rounded bg-surface-container text-on-surface-variant font-label-sm text-label-sm font-medium">
+              84 Sociétés d'État &amp; Établissements Publics
+            </span>
+</div>
+<h1 class="font-headline-lg text-headline-lg text-on-surface tracking-tight">
+            Pilotage des Fins de Carrière, Départs à la Retraite &amp; Cessations d'Activité
+          </h1>
+<p class="font-body-md text-body-md text-on-surface-variant leading-relaxed">
+            Dispositif central de liquidation des droits statutaires, d'arbitrage des radiations de cadres, de calcul des indemnités de départ (IDR) et de sécurisation de la relève des postes souverains du portefeuille étatique.
+          </p>
+</div>
+<div class="flex flex-wrap sm:flex-nowrap items-center gap-3 shrink-0">
+<button class="inline-flex items-center justify-center gap-2 h-10 px-4 bg-surface-container-lowest text-primary font-label-lg text-label-lg shadow-sm rounded hover:bg-surface-container-high transition-colors" type="button">
+<span class="material-symbols-outlined text-lg">calendar_month</span>
+<span>Tableau Départs 2026–2030</span>
+</button>
+<button class="inline-flex items-center justify-center gap-2 h-10 px-5 bg-primary text-on-primary font-label-lg text-label-lg rounded shadow-sm hover:bg-primary-container transition-colors" type="button">
+<span class="material-symbols-outlined text-lg">payments</span>
+<span>Liquider un Dossier / IDR</span>
+</button>
+</div>
+</div>
+</div>
+</section>
+<!-- CONTENEUR PRINCIPAL FLUIDE -->
+<div class="max-w-7xl mx-auto w-full px-6 py-8 space-y-8">
+<!-- SECTION 1 : CARTES DE PILOTAGE STRATÉGIQUE (KPIs RÉGALIENS) -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+<!-- KPI 1 -->
+<div class="bg-surface-container-lowest p-5 rounded shadow-sm relative overflow-hidden flex flex-col justify-between">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-primary"></div>
+<div class="flex items-start justify-between">
+<span class="font-label-sm text-label-sm text-on-surface-variant font-bold uppercase tracking-wider">
+            Départs Immédiats (2026)
+          </span>
+<div class="w-8 h-8 rounded bg-surface-container-low text-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-lg">event_busy</span>
+</div>
+</div>
+<div class="mt-4 flex items-baseline gap-2">
+<span class="font-headline-xl text-headline-xl font-bold text-on-surface">52</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">agents homologués</span>
+</div>
+<div class="mt-3 flex items-center justify-between font-label-sm text-label-sm text-on-surface-variant">
+<span class="text-primary font-semibold flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">verified</span>
+            100% notifiés à S-6
+          </span>
+<span class="font-code-num text-code-num text-on-surface-variant/80">38 civils / 14 cadres</span>
+</div>
+</div>
+<!-- KPI 2 -->
+<div class="bg-surface-container-lowest p-5 rounded shadow-sm relative overflow-hidden flex flex-col justify-between">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-secondary-container"></div>
+<div class="flex items-start justify-between">
+<span class="font-label-sm text-label-sm text-secondary font-bold uppercase tracking-wider">
+            Postes Clés &amp; Sensibles
+          </span>
+<div class="w-8 h-8 rounded bg-secondary-fixed text-on-secondary-fixed flex items-center justify-center">
+<span class="material-symbols-outlined text-lg">crisis_alert</span>
+</div>
+</div>
+<div class="mt-4 flex items-baseline gap-2">
+<span class="font-headline-xl text-headline-xl font-bold text-secondary">14</span>
+<span class="font-label-sm text-label-sm text-secondary font-medium">Directeurs &amp; Experts</span>
+</div>
+<div class="mt-3 flex items-center justify-between font-label-sm text-label-sm">
+<span class="text-secondary font-semibold">Tension de relève haute</span>
+<span class="px-1.5 py-0.5 rounded bg-secondary-fixed text-on-secondary-fixed-variant font-code-num text-code-num font-bold">11 binômes formés</span>
+</div>
+</div>
+<!-- KPI 3 -->
+<div class="bg-surface-container-lowest p-5 rounded shadow-sm relative overflow-hidden flex flex-col justify-between">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-tertiary"></div>
+<div class="flex items-start justify-between">
+<span class="font-label-sm text-label-sm text-on-surface-variant font-bold uppercase tracking-wider">
+            IDR Engagées (Cumul 2026)
+          </span>
+<div class="w-8 h-8 rounded bg-surface-container text-tertiary flex items-center justify-center">
+<span class="material-symbols-outlined text-lg">receipt_long</span>
+</div>
+</div>
+<div class="mt-4 flex items-baseline gap-1">
+<span class="font-headline-md text-headline-md font-bold text-on-surface font-code-num">486 500 000</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant font-semibold">FCFA</span>
+</div>
+<div class="mt-3 flex items-center justify-between font-label-sm text-label-sm text-on-surface-variant">
+<span class="text-primary font-semibold flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">account_balance_wallet</span>
+            Ordonnancement DAAF
+          </span>
+<span class="font-code-num text-code-num text-on-surface-variant">88% liquidés</span>
+</div>
+</div>
+<!-- KPI 4 -->
+<div class="bg-surface-container-lowest p-5 rounded shadow-sm relative overflow-hidden flex flex-col justify-between">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-primary"></div>
+<div class="flex items-start justify-between">
+<span class="font-label-sm text-label-sm text-on-surface-variant font-bold uppercase tracking-wider">
+            Continuité de Solde CGRAE
+          </span>
+<div class="w-8 h-8 rounded bg-surface-container-low text-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-lg">task_alt</span>
+</div>
+</div>
+<div class="mt-4 flex items-baseline gap-2">
+<span class="font-headline-xl text-headline-xl font-bold text-primary">98.2%</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">taux d'arrimage</span>
+</div>
+<div class="mt-3 flex items-center justify-between font-label-sm text-label-sm">
+<span class="text-primary font-bold">Zéro rupture de solde M+1</span>
+<span class="font-code-num text-code-num text-on-surface-variant">Flux API sécurisé</span>
+</div>
+</div>
+</div>
+<!-- SECTION 2 : PYRAMIDE DES ÂGES & MATRICE GPEEC DE RELÈVE -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+<!-- Graphique Démographique & Pyramide des âges -->
+<div class="lg:col-span-7 bg-surface-container-lowest p-6 rounded shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between pb-4">
+<div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">
+              Pyramide Démographique &amp; Départs Prévisionnels
+            </h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+              Projection d'âge des 18 420 agents du portefeuille des sociétés publiques (2026–2035)
+            </p>
+</div>
+<div class="flex items-center gap-1 bg-surface-container-low p-1 rounded">
+<button class="px-2.5 py-1 text-label-sm font-label-sm rounded bg-surface-container-lowest text-on-surface font-semibold shadow-xs">
+              Par Tranche
+            </button>
+<button class="px-2.5 py-1 text-label-sm font-label-sm rounded text-on-surface-variant hover:text-on-surface">
+              Par Société
+            </button>
+</div>
+</div>
+<!-- Représentation visuelle SVG intégrée de la pyramide d'âges -->
+<div class="py-4">
+<div class="space-y-3.5">
+<!-- 60-65 ans (Critique / Départ immédiat) -->
+<div>
+<div class="flex justify-between items-center mb-1 text-label-sm font-label-sm">
+<span class="font-bold text-secondary flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-secondary-container"></span>
+                  60 à 65 ans (Radiation légale imminente)
+                </span>
+<span class="font-code-num text-code-num text-secondary font-bold">1 240 agents • 6.7%</span>
+</div>
+<div class="w-full h-3 bg-surface-container rounded-full overflow-hidden flex">
+<div class="bg-secondary-container h-full rounded-full transition-all duration-500" style="width: 28%"></div>
+<div class="bg-secondary h-full rounded-full transition-all duration-500 ml-1" style="width: 14%"></div>
+</div>
+<div class="flex justify-between text-label-sm font-label-sm text-on-surface-variant mt-1">
+<span>Hommes: 812 (65.5%)</span>
+<span>Femmes: 428 (34.5%)</span>
+</div>
+</div>
+<!-- 55-59 ans (Phase d'anticipation et tutorat) -->
+<div>
+<div class="flex justify-between items-center mb-1 text-label-sm font-label-sm">
+<span class="font-bold text-primary flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+                  55 à 59 ans (Vivier Senior &amp; Binômage GPEEC)
+                </span>
+<span class="font-code-num text-code-num text-primary font-bold">3 680 agents • 20.0%</span>
+</div>
+<div class="w-full h-3 bg-surface-container rounded-full overflow-hidden flex">
+<div class="bg-primary h-full rounded-full transition-all duration-500" style="width: 54%"></div>
+<div class="bg-primary-container h-full rounded-full transition-all duration-500 ml-1" style="width: 22%"></div>
+</div>
+<div class="flex justify-between text-label-sm font-label-sm text-on-surface-variant mt-1">
+<span>Cadres Dirigeants &amp; Hors-Classe : 940</span>
+<span>Agents de Maîtrise &amp; Exécution : 2 740</span>
+</div>
+</div>
+<!-- 40-54 ans (Cœur d'encadrement opérationnel) -->
+<div>
+<div class="flex justify-between items-center mb-1 text-label-sm font-label-sm">
+<span class="font-semibold text-on-surface">40 à 54 ans (Cadres confirmés &amp; Direction intermédiaire)</span>
+<span class="font-code-num text-code-num text-on-surface font-semibold">8 110 agents • 44.0%</span>
+</div>
+<div class="w-full h-3 bg-surface-container rounded-full overflow-hidden flex">
+<div class="bg-surface-tint h-full rounded-full" style="width: 74%"></div>
+</div>
+</div>
+<!-- Moins de 40 ans (Relève montante) -->
+<div>
+<div class="flex justify-between items-center mb-1 text-label-sm font-label-sm">
+<span class="font-semibold text-on-surface">Moins de 40 ans (Jeunes professionnels &amp; Recrutements récents)</span>
+<span class="font-code-num text-code-num text-on-surface font-semibold">5 390 agents • 29.3%</span>
+</div>
+<div class="w-full h-3 bg-surface-container rounded-full overflow-hidden flex">
+<div class="bg-surface-container-highest h-full rounded-full" style="width: 48%"></div>
+</div>
+</div>
+</div>
+</div>
+<div class="pt-4 bg-surface-container-low p-3 rounded flex items-center justify-between text-body-sm font-body-sm">
+<div class="flex items-center gap-2 text-on-surface">
+<span class="material-symbols-outlined text-secondary text-lg">crisis_alert</span>
+<span class="font-medium">Ratio de renouvellement ministériel : <strong>1 agent entrant pour 1.15 sortant</strong></span>
+</div>
+<a class="text-primary font-semibold font-label-sm text-label-sm hover:underline inline-flex items-center gap-1" href="#">
+            Simulateur GPEEC 2030 <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</a>
+</div>
+</div>
+<!-- Matrice de Transfert de Savoir-Faire & Relève Stratégique -->
+<div class="lg:col-span-5 bg-surface-container-lowest p-6 rounded shadow-sm flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between pb-3">
+<h2 class="font-headline-sm text-headline-sm text-on-surface">
+              Relève &amp; Compétences Sensibles
+            </h2>
+<span class="px-2 py-0.5 rounded bg-primary/10 text-primary font-label-sm text-label-sm font-bold">
+              14 Postes à Risque
+            </span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-4">
+            Suivi des binômes de transmission de compétences critiques avant radiation définitive des cadres.
+          </p>
+<!-- Liste des binômes critiques -->
+<div class="space-y-3">
+<div class="p-3 bg-surface-container-low rounded flex items-center justify-between">
+<div class="min-w-0">
+<div class="flex items-center gap-2">
+<span class="font-label-md text-label-md font-bold text-on-surface truncate">Dir. Audits &amp; Risques • CI-ENERGIES</span>
+<span class="w-2 h-2 rounded-full bg-primary" title="Binôme validé"></span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">
+                  Titulaire : <span class="font-semibold text-on-surface">Koffi Yao Martin</span> (Départ : Oct. 2026)
+                </p>
+<p class="font-label-sm text-label-sm text-primary flex items-center gap-1 mt-1">
+<span class="material-symbols-outlined text-sm">groups</span>
+                  Successeur désigné : Adjéhi B. (Tutorat à 80%)
+                </p>
+</div>
+<span class="px-2 py-1 bg-surface-container-lowest text-primary text-label-sm font-label-sm rounded font-bold shrink-0">
+                Conforme
+              </span>
+</div>
+<div class="p-3 bg-surface-container-low rounded flex items-center justify-between">
+<div class="min-w-0">
+<div class="flex items-center gap-2">
+<span class="font-label-md text-label-md font-bold text-on-surface truncate">Inspecteur Général Énergie • SOGEPIE</span>
+<span class="w-2 h-2 rounded-full bg-secondary-container" title="En cours de sélection"></span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">
+                  Titulaire : <span class="font-semibold text-on-surface">Dr. Touré Souleymane</span> (Départ : Déc. 2026)
+                </p>
+<p class="font-label-sm text-label-sm text-secondary flex items-center gap-1 mt-1">
+<span class="material-symbols-outlined text-sm">warning</span>
+                  Appel à candidature interne ouvert (Commission RH)
+                </p>
+</div>
+<span class="px-2 py-1 bg-secondary-fixed text-on-secondary-fixed-variant text-label-sm font-label-sm rounded font-bold shrink-0">
+                Alerte RH
+              </span>
+</div>
+<div class="p-3 bg-surface-container-low rounded flex items-center justify-between">
+<div class="min-w-0">
+<div class="flex items-center gap-2">
+<span class="font-label-md text-label-md font-bold text-on-surface truncate">Chef Dép. Télécommunications • ANSUT</span>
+<span class="w-2 h-2 rounded-full bg-primary" title="Binôme validé"></span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">
+                  Titulaire : <span class="font-semibold text-on-surface">Gnamien Brou Félicien</span> (Départ : Nov. 2026)
+                </p>
+<p class="font-label-sm text-label-sm text-primary flex items-center gap-1 mt-1">
+<span class="material-symbols-outlined text-sm">groups</span>
+                  Successeur : Kouassi A. (Immersion DSI achevée)
+                </p>
+</div>
+<span class="px-2 py-1 bg-surface-container-lowest text-primary text-label-sm font-label-sm rounded font-bold shrink-0">
+                Conforme
+              </span>
+</div>
+</div>
+</div>
+<button class="w-full mt-4 h-9 bg-surface-container-low hover:bg-surface-container text-primary font-label-sm text-label-sm font-bold rounded flex items-center justify-center gap-2 transition-colors" type="button">
+<span class="material-symbols-outlined text-sm">schema</span>
+          Consulter le Plan Décennal de Transfert de Savoirs
+        </button>
+</div>
+</div>
+<!-- SECTION 3 : REGISTRE D'INSTRUCTION DES DOSSIERS DE RETRAITE (TABLEAU RÉGALIEN) -->
+<div class="bg-surface-container-lowest rounded shadow-sm overflow-hidden">
+<!-- En-tête du registre avec filtres de pilotage -->
+<div class="p-6 bg-surface-container-lowest flex flex-col md:flex-row md:items-center justify-between gap-4">
+<div>
+<div class="flex items-center gap-2">
+<h2 class="font-headline-sm text-headline-sm text-on-surface">
+              Registre d'Instruction des Départs à la Retraite
+            </h2>
+<span class="px-2.5 py-0.5 rounded-full bg-primary-container text-on-primary font-code-num text-code-num">
+              52 dossiers actifs
+            </span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">
+            Suivi des arrêtés de radiation ministériels, quittances de fin de gestion et transmissions CGRAE.
+          </p>
+</div>
+<!-- Filtres rapides d'instruction -->
+<div class="flex flex-wrap items-center gap-2">
+<div class="relative">
+<span class="material-symbols-outlined absolute left-2.5 top-2.5 text-on-surface-variant text-base pointer-events-none">filter_list</span>
+<select class="pl-8 pr-8 py-1.5 bg-surface-container-low text-on-surface font-body-sm text-body-sm rounded border-0 focus:ring-1 focus:ring-primary appearance-none cursor-pointer">
+<option>Tous les Établissements (84)</option>
+<option>CI-ENERGIES</option>
+<option>SOGEPIE</option>
+<option>PETROCI Holding</option>
+<option>SODECI / SODEXAM</option>
+<option>Port Autonome d'Abidjan (PAA)</option>
+</select>
+</div>
+<div class="relative">
+<select class="px-3 py-1.5 bg-surface-container-low text-on-surface font-body-sm text-body-sm rounded border-0 focus:ring-1 focus:ring-primary appearance-none cursor-pointer">
+<option>Statut : Tout afficher</option>
+<option>Arrêté Signé (Prêt Décret)</option>
+<option>Apurement Quittance en cours</option>
+<option>Visite médicale requise</option>
+<option>Transmis CGRAE / CNPS</option>
+</select>
+</div>
+<button class="p-1.5 bg-surface-container-low hover:bg-surface-container text-on-surface-variant rounded transition-colors" title="Exporter au format officiel KSign/PDF" type="button">
+<span class="material-symbols-outlined text-lg">download</span>
+</button>
+</div>
+</div>
+<!-- Tableau solennel des dossiers agents -->
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low text-on-surface-variant font-label-md text-label-md uppercase tracking-wider">
+<th class="py-3 px-6 font-bold">Agent &amp; Matricule Civil</th>
+<th class="py-3 px-4 font-bold">Société / Direction</th>
+<th class="py-3 px-4 font-bold">Grade &amp; Ancienneté</th>
+<th class="py-3 px-4 font-bold">Date Limite / Âge</th>
+<th class="py-3 px-4 font-bold">IDR &amp; Pension Prov.</th>
+<th class="py-3 px-4 font-bold">Statut Règlementaire</th>
+<th class="py-3 px-6 font-bold text-right">Instruction</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-surface-container-low font-body-md text-body-md text-on-surface">
+<!-- Agent 1 -->
+<tr class="hover:bg-surface-container-low/50 transition-colors">
+<td class="py-4 px-6">
+<div class="flex items-center gap-3">
+<img class="w-10 h-10 rounded-full object-cover shrink-0 bg-surface-container" data-alt="Portrait photographique formel d'un haut fonctionnaire ivoirien d'une soixantaine d'années, costume sobre et cravate sombre, regard digne et bienveillant, fond institutionnel neutre avec éclairage doux de studio administratif." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBhcbzVfeE04THHQ08-539oj_6o_1H2JV7BLa9Mg3Wd6KCBm7sy-eDjlAG9y9sADolWI5Q1OvnBDc1z7lo9mQ7jDMM4FNTkdJQgfS0K25uNRDMcEO_OiLgsrfpQZRzHx1inym0FUSaym-vvNQnb-e6O1hAzqP5rPnCGgPzbgvJRIN5sRvs20i56oyqiKenjs7KuOBVpFuobLxEAluYocyr-1udnDEToy7F9BC5Rd_uWAHZttJglkcE"/>
+<div class="min-w-0">
+<p class="font-label-md text-label-md font-bold text-on-surface truncate">Kouassi Yao Bernard</p>
+<span class="font-code-num text-code-num text-on-surface-variant">MAT-184.920-K</span>
+</div>
+</div>
+</td>
+<td class="py-4 px-4">
+<span class="font-medium text-on-surface block">CI-ENERGIES</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Dir. Grands Projets HT</span>
+</td>
+<td class="py-4 px-4">
+<span class="px-2 py-0.5 rounded bg-surface-container text-primary font-code-num text-code-num font-bold">Grade A5</span>
+<span class="block font-body-sm text-body-sm text-on-surface-variant mt-0.5">34 ans 08 mois</span>
+</td>
+<td class="py-4 px-4">
+<span class="font-semibold text-on-surface font-code-num text-code-num block">31 Octobre 2026</span>
+<span class="font-label-sm text-label-sm text-secondary font-bold">Limite 60 ans révolus</span>
+</td>
+<td class="py-4 px-4">
+<span class="font-bold text-on-surface font-code-num text-code-num block">18 450 000 FCFA</span>
+<span class="font-label-sm text-label-sm text-primary">Pension : 940 000 F/m</span>
+</td>
+<td class="py-4 px-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-primary/10 text-primary font-label-sm text-label-sm font-bold">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+                  Arrêté Signé &amp; Scellé
+                </span>
+<span class="block font-label-sm text-label-sm text-on-surface-variant mt-1">Visa Contrôle Fin. accordé</span>
+</td>
+<td class="py-4 px-6 text-right">
+<div class="inline-flex items-center gap-1">
+<button class="p-1.5 hover:bg-surface-container text-primary rounded transition-colors" title="Consulter le Fascicule de Liquidation" type="button">
+<span class="material-symbols-outlined text-lg">visibility</span>
+</button>
+<button class="p-1.5 hover:bg-surface-container text-primary rounded transition-colors" title="Télécharger l'Arrêté Ministériel de Radiation" type="button">
+<span class="material-symbols-outlined text-lg">description</span>
+</button>
+<button class="p-1.5 hover:bg-surface-container text-secondary rounded transition-colors" title="Transmettre à la CGRAE" type="button">
+<span class="material-symbols-outlined text-lg">send</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Agent 2 -->
+<tr class="hover:bg-surface-container-low/50 transition-colors">
+<td class="py-4 px-6">
+<div class="flex items-center gap-3">
+<img class="w-10 h-10 rounded-full object-cover shrink-0 bg-surface-container" data-alt="Portrait officiel d'une directrice générale ivoirienne de société publique d'État, tailleur élégant en pagne tissé de haute autorité, expression solennelle et sereine, fond de bureau gouvernemental sobre." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDC_sDzIHcIHXV_NKm692v2escTiPxxF_fwGwBNJM8Zxb1e5kNJLnfkgdp6PZ54opWvLnmwf-52FNOt6C5nrBCYX2Up_SEO8l2Bgwft2M-Fe6T1pk6P6-gqmltfCAwyG9V1vQPeASt5xd7E5rBf1eoTrnC41egfzTzppjree9GnXRdu8gtOmVN37DbwGVGitAL_XFHhyN2AKX0PbfZTe2S9KNaVkCJBSB-YYuJoL29yRG2y_VnPwqc"/>
+<div class="min-w-0">
+<p class="font-label-md text-label-md font-bold text-on-surface truncate">Mme Bamba née Fofana Aïcha</p>
+<span class="font-code-num text-code-num text-on-surface-variant">MAT-093.411-F</span>
+</div>
+</div>
+</td>
+<td class="py-4 px-4">
+<span class="font-medium text-on-surface block">SOGEPIE</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Dir. Juridique &amp; Patrimoine</span>
+</td>
+<td class="py-4 px-4">
+<span class="px-2 py-0.5 rounded bg-surface-container text-primary font-code-num text-code-num font-bold">Grade A4</span>
+<span class="block font-body-sm text-body-sm text-on-surface-variant mt-0.5">31 ans 02 mois</span>
+</td>
+<td class="py-4 px-4">
+<span class="font-semibold text-on-surface font-code-num text-code-num block">15 Décembre 2026</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Limite 60 ans</span>
+</td>
+<td class="py-4 px-4">
+<span class="font-bold text-on-surface font-code-num text-code-num block">14 200 000 FCFA</span>
+<span class="font-label-sm text-label-sm text-primary">Pension : 815 000 F/m</span>
+</td>
+<td class="py-4 px-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-secondary-fixed text-on-secondary-fixed-variant font-label-sm text-label-sm font-bold">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+                  Quittance de Fin de Gestion
+                </span>
+<span class="block font-label-sm text-label-sm text-on-surface-variant mt-1">Audit clôture en cours</span>
+</td>
+<td class="py-4 px-6 text-right">
+<div class="inline-flex items-center gap-1">
+<button class="p-1.5 hover:bg-surface-container text-primary rounded transition-colors" title="Consulter le Dossier" type="button">
+<span class="material-symbols-outlined text-lg">visibility</span>
+</button>
+<button class="p-1.5 hover:bg-surface-container text-on-surface-variant rounded transition-colors" title="Rappeler l'Auditrice Générale" type="button">
+<span class="material-symbols-outlined text-lg">notification_add</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Agent 3 -->
+<tr class="hover:bg-surface-container-low/50 transition-colors">
+<td class="py-4 px-6">
+<div class="flex items-center gap-3">
+<img class="w-10 h-10 rounded-full object-cover shrink-0 bg-surface-container" data-alt="Portrait institutionnel d'un ingénieur en chef des mines et hydrocarbures de Côte d'Ivoire, 63 ans, allure experte et concentrée, lunettes fines, tenue administrative soignée dans un cadre étatique moderne." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCs3pSYYimM1zhZ_clllGL0zWbUA1Vg6Yd-1IZghcQwn4VeLbhuCIoFfOgRJCiaMEutp-dVeH5UcUF2N8TeBpDkwW6WbRkXP-dXfnHzmVEF0o4wRAffz3zauzwoZ_pO3VnLzAEbdldA_HOxDuk0ZqliJxudZOW3reB4xm_wD8lJoEi_cisGJSJPBJgv97Xt3S5RCZktM2Cs92ZI9VKe-LWrIOLodAPU3Dk18Al_zYfIJ7nCC32u4Vw"/>
+<div class="min-w-0">
+<p class="font-label-md text-label-md font-bold text-on-surface truncate">Diop Mamadou Lamine</p>
+<span class="font-code-num text-code-num text-on-surface-variant">MAT-201.782-M</span>
+</div>
+</div>
+</td>
+<td class="py-4 px-4">
+<span class="font-medium text-on-surface block">PETROCI Holding</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Direction Exploration &amp; Offshore</span>
+</td>
+<td class="py-4 px-4">
+<span class="px-2 py-0.5 rounded bg-surface-container text-primary font-code-num text-code-num font-bold">Hors Catégorie</span>
+<span class="block font-body-sm text-body-sm text-on-surface-variant mt-0.5">38 ans 05 mois</span>
+</td>
+<td class="py-4 px-4">
+<span class="font-semibold text-on-surface font-code-num text-code-num block">30 Novembre 2026</span>
+<span class="font-label-sm text-label-sm text-secondary font-bold">Dérogation 65 ans échue</span>
+</td>
+<td class="py-4 px-4">
+<span class="font-bold text-on-surface font-code-num text-code-num block">24 800 000 FCFA</span>
+<span class="font-label-sm text-label-sm text-primary">Pension : 1 250 000 F/m</span>
+</td>
+<td class="py-4 px-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-primary-fixed text-on-primary-fixed-variant font-label-sm text-label-sm font-bold">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+                  CGRAE Notifiée
+                </span>
+<span class="block font-label-sm text-label-sm text-primary mt-1">Livret de pension généré</span>
+</td>
+<td class="py-4 px-6 text-right">
+<div class="inline-flex items-center gap-1">
+<button class="p-1.5 hover:bg-surface-container text-primary rounded transition-colors" title="Voir l'acte officiel" type="button">
+<span class="material-symbols-outlined text-lg">visibility</span>
+</button>
+<button class="p-1.5 hover:bg-surface-container text-primary rounded transition-colors" title="Télécharger le Livret" type="button">
+<span class="material-symbols-outlined text-lg">receipt</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Agent 4 -->
+<tr class="hover:bg-surface-container-low/50 transition-colors">
+<td class="py-4 px-6">
+<div class="flex items-center gap-3">
+<img class="w-10 h-10 rounded-full object-cover shrink-0 bg-surface-container" data-alt="Portrait officiel d'un cadre supérieur administratif de l'administration portuaire de Côte d'Ivoire, 59 ans, regard franc et professionnel, fond institutionnel d'inspiration républicaine." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCL7RCddXluL_eKqJ97LtwN-YD451N3477hPDcXRLYnee9MiGpG96PHXyUEZ0Bvr-F319pcOzzDfIp4xl8z_MJkvtIj6adE1cjSBMFb_0YnoEtGsjyiURoQdYU76Xgl9c2XuhyJ70gGefITGJPPDfUMn8MEUGZmTsd3rDoj1ojCHFroWy_1JUDzrwJc2rBqvRlG71LGu7bFLdaceFVmvV75wrWAisSKjIjpIrgHWWTCYjFQI-ch9nw"/>
+<div class="min-w-0">
+<p class="font-label-md text-label-md font-bold text-on-surface truncate">N'Guessan Kouamé Charles</p>
+<span class="font-code-num text-code-num text-on-surface-variant">MAT-145.890-C</span>
+</div>
+</div>
+</td>
+<td class="py-4 px-4">
+<span class="font-medium text-on-surface block">Port Autonome d'Abidjan</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Sous-Dir. Facturation Maritime</span>
+</td>
+<td class="py-4 px-4">
+<span class="px-2 py-0.5 rounded bg-surface-container text-primary font-code-num text-code-num font-bold">Grade A3</span>
+<span class="block font-body-sm text-body-sm text-on-surface-variant mt-0.5">29 ans 11 mois</span>
+</td>
+<td class="py-4 px-4">
+<span class="font-semibold text-on-surface font-code-num text-code-num block">15 Août 2026</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Limite 60 ans</span>
+</td>
+<td class="py-4 px-4">
+<span class="font-bold text-on-surface font-code-num text-code-num block">11 350 000 FCFA</span>
+<span class="font-label-sm text-label-sm text-primary">Pension : 620 000 F/m</span>
+</td>
+<td class="py-4 px-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-surface-container text-on-surface-variant font-label-sm text-label-sm font-bold">
+<span class="w-1.5 h-1.5 rounded-full bg-outline"></span>
+                  Visite Médicale de Sortie
+                </span>
+<span class="block font-label-sm text-label-sm text-on-surface-variant mt-1">Convoc. Médecine du Travail</span>
+</td>
+<td class="py-4 px-6 text-right">
+<div class="inline-flex items-center gap-1">
+<button class="p-1.5 hover:bg-surface-container text-primary rounded transition-colors" title="Gérer le Dossier" type="button">
+<span class="material-symbols-outlined text-lg">edit_note</span>
+</button>
+<button class="p-1.5 hover:bg-surface-container text-on-surface-variant rounded transition-colors" title="Rappel Convocation" type="button">
+<span class="material-symbols-outlined text-lg">medical_services</span>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pied de tableau avec pagination et rappel légal -->
+<div class="p-4 bg-surface-container-low/70 flex flex-col sm:flex-row items-center justify-between gap-3 text-body-sm font-body-sm text-on-surface-variant">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-base">verified_user</span>
+<span>Liquidation conforme à l'article 112 du Code Général de la Fonction Publique &amp; Conventions d'Entreprises Publiques.</span>
+</div>
+<div class="flex items-center gap-1">
+<button class="px-2.5 py-1 bg-surface-container-lowest rounded shadow-xs text-primary font-bold">1</button>
+<button class="px-2.5 py-1 text-on-surface-variant hover:text-on-surface">2</button>
+<button class="px-2.5 py-1 text-on-surface-variant hover:text-on-surface">3</button>
+<span class="px-1 text-outline">...</span>
+<button class="px-2.5 py-1 text-on-surface-variant hover:text-on-surface">6</button>
+</div>
+</div>
+</div>
+<!-- SECTION 4 : DISPOSITIFS D'ACCOMPAGNEMENT "RETRAITE ACTIVE" & DISTINCTIONS RÉPUBLICAINES -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+<!-- Carte 1 : Programme "Retraite Active" & Gestion Patrimoniale -->
+<div class="bg-surface-container-lowest p-6 rounded shadow-sm relative overflow-hidden flex flex-col justify-between">
+<div class="absolute -right-8 -bottom-8 w-40 h-40 bg-primary/5 rounded-full pointer-events-none"></div>
+<div>
+<div class="flex items-center justify-between pb-3">
+<div class="flex items-center gap-2">
+<span class="p-2 rounded bg-primary/10 text-primary">
+<span class="material-symbols-outlined text-lg">volunteer_activism</span>
+</span>
+<div>
+<span class="font-label-sm text-label-sm text-primary font-bold uppercase tracking-wider">
+                  SD Action Sociale &amp; Partenariat CNPS
+                </span>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">
+                  Programme National « Retraite Active &amp; Sérénité »
+                </h3>
+</div>
+</div>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-2 leading-relaxed">
+            Sessions ministérielles de formation à la transition de vie professionnelle : gestion d'actifs, entrepreneuriat post-carrière, couverture mutuelle santé complémentaire (MUGEF-CI / Assurances Groupe).
+          </p>
+<div class="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
+<div class="p-3 bg-surface-container-low rounded">
+<span class="font-label-sm text-label-sm text-on-surface-variant font-bold block">Séminaire Reconversion 2026</span>
+<p class="font-label-md text-label-md text-on-surface font-semibold mt-1">Session 3 : Abidjan-Plateau</p>
+<div class="flex items-center justify-between text-label-sm font-label-sm mt-2 text-primary">
+<span>12 - 14 Novembre 2026</span>
+<span class="font-bold">42 inscrits / 50</span>
+</div>
+</div>
+<div class="p-3 bg-surface-container-low rounded">
+<span class="font-label-sm text-label-sm text-on-surface-variant font-bold block">Bilan de Santé Global de Fin de Carrière</span>
+<p class="font-label-md text-label-md text-on-surface font-semibold mt-1">Clinique des Fonctionnaires</p>
+<div class="flex items-center justify-between text-label-sm font-label-sm mt-2 text-primary">
+<span>Prise en charge 100% État</span>
+<span class="font-bold">96% exécuté</span>
+</div>
+</div>
+</div>
+</div>
+<div class="pt-5 mt-4 flex items-center justify-between">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Coordination : Sous-Direction Action Sociale</span>
+<button class="h-9 px-4 bg-surface-container-low hover:bg-surface-container text-primary font-label-sm text-label-sm font-bold rounded transition-colors inline-flex items-center gap-1.5" type="button">
+<span class="material-symbols-outlined text-base">groups_2</span>
+            Inscrire les Futurs Retraités
+          </button>
+</div>
+</div>
+<!-- Carte 2 : Distinctions Honorifiques & Médailles du Travail -->
+<div class="bg-surface-container-lowest p-6 rounded shadow-sm relative overflow-hidden flex flex-col justify-between">
+<div class="absolute -right-8 -bottom-8 w-40 h-40 bg-secondary-container/5 rounded-full pointer-events-none"></div>
+<div>
+<div class="flex items-center justify-between pb-3">
+<div class="flex items-center gap-2">
+<span class="p-2 rounded bg-secondary-fixed text-on-secondary-fixed">
+<span class="material-symbols-outlined text-lg">military_tech</span>
+</span>
+<div>
+<span class="font-label-sm text-label-sm text-secondary font-bold uppercase tracking-wider">
+                  Reconnaissance Républicaine
+                </span>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">
+                  Médailles d'Honneur &amp; Décorations de l'Ordre National
+                </h3>
+</div>
+</div>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-2 leading-relaxed">
+            Instruction des requêtes de décorations pour loyaux services rendus à la République de Côte d'Ivoire avant radiation définitive des cadres de l'État.
+          </p>
+<div class="mt-5 space-y-2.5">
+<div class="p-2.5 bg-surface-container-low rounded flex items-center justify-between">
+<div class="flex items-center gap-3">
+<span class="w-8 h-8 rounded bg-secondary-container/20 text-secondary flex items-center justify-center font-bold text-label-sm font-label-sm">
+                  OR
+                </span>
+<div>
+<span class="font-label-md text-label-md font-bold text-on-surface block">Médaille Grand Or (35+ ans de service)</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">8 cadres éligibles validés en Conseil de l'Ordre</span>
+</div>
+</div>
+<span class="px-2 py-0.5 rounded bg-primary/10 text-primary font-code-num text-code-num font-bold">Décret Prêt</span>
+</div>
+<div class="p-2.5 bg-surface-container-low rounded flex items-center justify-between">
+<div class="flex items-center gap-3">
+<span class="w-8 h-8 rounded bg-surface-container text-tertiary flex items-center justify-center font-bold text-label-sm font-label-sm">
+                  ARG
+                </span>
+<div>
+<span class="font-label-md text-label-md font-bold text-on-surface block">Médaille Vermeil / Argent (25 à 30 ans)</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">29 récipiendaires pour la promotion Fête Nationale</span>
+</div>
+</div>
+<span class="px-2 py-0.5 rounded bg-surface-container text-on-surface-variant font-code-num text-code-num font-bold">En visa</span>
+</div>
+</div>
+</div>
+<div class="pt-5 mt-4 flex items-center justify-between">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Arrêté Grande Chancellerie</span>
+<button class="h-9 px-4 bg-primary text-on-primary font-label-sm text-label-sm font-bold rounded shadow-xs hover:bg-primary-container transition-colors inline-flex items-center gap-1.5" type="button">
+<span class="material-symbols-outlined text-base">workspace_premium</span>
+            Éditer le Palmarès 2026
+          </button>
+</div>
+</div>
+</div>
+<!-- SECTION 5 : GUICHET DES CESSATIONS D'ACTIVITÉ SPÉCIALES & PENSIONS DE RÉVERSION -->
+<div class="bg-surface-container-lowest p-6 rounded shadow-sm">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4">
+<div>
+<div class="flex items-center gap-2">
+<span class="p-1.5 rounded bg-surface-container-low text-tertiary">
+<span class="material-symbols-outlined text-base">gavel</span>
+</span>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">
+              Cessations d'Activité Spéciales &amp; Mesures d'Urgence
+            </h3>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">
+            Traitement prioritaire des ruptures conventionnelles, démissions agréées et liquidations immédiates de rentes aux ayants droit.
+          </p>
+</div>
+<button class="inline-flex items-center gap-2 px-3 py-1.5 bg-surface-container-low hover:bg-surface-container text-on-surface font-label-sm text-label-sm font-bold rounded transition-colors self-start sm:self-auto" type="button">
+<span class="material-symbols-outlined text-base">add_circle</span>
+          Enregistrer une Cessation Spéciale
+        </button>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+<!-- Cas 1 : Décès & Pension de réversion -->
+<div class="p-4 bg-surface-container-low rounded flex flex-col justify-between space-y-3">
+<div>
+<div class="flex items-center justify-between">
+<span class="px-2 py-0.5 rounded bg-error-container text-on-error-container font-label-sm text-label-sm font-bold uppercase">
+                Procédure Urgence Sociale
+              </span>
+<span class="font-code-num text-code-num text-on-surface-variant font-bold">Dossier #DEC-2026-03</span>
+</div>
+<h4 class="font-label-lg text-label-lg font-bold text-on-surface mt-2">
+              Pension de Réversion Immédiate
+            </h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">
+              Feu Touré Brahima (Ex-Chef Division SODECI). Enquête d'ayants droit clôturée : conjoint survivant et 3 orphelins reconnus.
+            </p>
+</div>
+<div class="pt-2 flex items-center justify-between text-label-sm font-label-sm">
+<span class="text-primary font-bold flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">done_all</span>
+              Capital-décès débloqué
+            </span>
+<span class="font-code-num text-code-num font-semibold">Solde CGRAE : J+14</span>
+</div>
+</div>
+<!-- Cas 2 : Rupture conventionnelle homologuée -->
+<div class="p-4 bg-surface-container-low rounded flex flex-col justify-between space-y-3">
+<div>
+<div class="flex items-center justify-between">
+<span class="px-2 py-0.5 rounded bg-surface-container text-on-surface font-label-sm text-label-sm font-bold uppercase">
+                Convention d'Accord
+              </span>
+<span class="font-code-num text-code-num text-on-surface-variant font-bold">Dossier #RC-2026-08</span>
+</div>
+<h4 class="font-label-lg text-label-lg font-bold text-on-surface mt-2">
+              Rupture Conventionnelle Homologuée
+            </h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">
+              Kouadio Essan (Ingénieur Senior Port Autonome de San Pedro). Protocole indemnitaire validé par le Conseil d'Administration.
+            </p>
+</div>
+<div class="pt-2 flex items-center justify-between text-label-sm font-label-sm">
+<span class="text-secondary font-bold flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">pending_actions</span>
+              Visa Ministère du Portefeuille
+            </span>
+<span class="font-code-num text-code-num font-semibold">Effet : 1er Nov 2026</span>
+</div>
+</div>
+<!-- Cas 3 : Démission agréée pour haute charge -->
+<div class="p-4 bg-surface-container-low rounded flex flex-col justify-between space-y-3">
+<div>
+<div class="flex items-center justify-between">
+<span class="px-2 py-0.5 rounded bg-primary/10 text-primary font-label-sm text-label-sm font-bold uppercase">
+                Dégagement des Cadres
+              </span>
+<span class="font-code-num text-code-num text-on-surface-variant font-bold">Dossier #DEM-2026-02</span>
+</div>
+<h4 class="font-label-lg text-label-lg font-bold text-on-surface mt-2">
+              Démission Agréée (Nomination Internationale)
+            </h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">
+              Dr. Aka Danielle (DGA Finances BNETD). Radiation formelle des effectifs nationaux avec conservation des droits acquis à la pension différée.
+            </p>
+</div>
+<div class="pt-2 flex items-center justify-between text-label-sm font-label-sm">
+<span class="text-primary font-bold flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">verified</span>
+              Arrêté Ministériel Notifié
+            </span>
+<span class="font-code-num text-code-num font-semibold">Certificat de cessation</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- PANNEAU D'ASSURANCE RÉGALIENNE & SIGNATURES DU BAS -->
+<footer class="bg-surface-container-lowest mt-12 py-6 px-6">
+<div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-on-surface-variant text-label-sm font-label-sm">
+<div class="flex items-center gap-3">
+<span class="inline-block w-2.5 h-2.5 bg-primary rounded-full"></span>
+<span>Système Intégré de Gestion des Ressources Humaines (SIGRH-CI) • Direction Générale de la Fonction Publique &amp; DGPE</span>
+</div>
+<div class="flex items-center gap-4 font-code-num text-code-num">
+<span>Protocole KSign-v4.1 • ISO 27001</span>
+<span>Serveurs Régalienne : Abidjan-Plateau DC-1</span>
+</div>
+</div>
+</footer>
+</div>
+<script>
+  // Micro-interactions ergonomiques du panneau régalien
+  document.addEventListener('DOMContentLoaded', () => {
+    // Événement d'interactivité sur les boutons d'action rapide
+    const actionButtons = document.querySelectorAll('button[title]');
+    actionButtons.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const title = btn.getAttribute('title');
+        console.log(`Action régalienne déclenchée : ${title}`);
+      });
+    });
+  });
+</script></main></div></body></html>

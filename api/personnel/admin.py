@@ -1,0 +1,119 @@
+from django.contrib import admin
+
+from .models import (
+    Absence,
+    Acte,
+    Agent,
+    BlocEcran,
+    AlerteReleve,
+    Conversation,
+    Demande,
+    Evaluation,
+    Formation,
+    Message,
+    MouvementStrategique,
+    Notification,
+    Organisme,
+    PieceJointe,
+    AyantDroit,
+    DispositifSocial,
+    EnveloppeSociale,
+    PrestationSociale,
+    SituationSociale,
+    Profil,
+    TypeFinCarriere,
+    PilotageFinCarriere,
+    ActionAccompagnement,
+    DistinctionCarriere,
+    DossierRetraite,
+    PosteSensible,
+    TypeActe,
+    TypeFormation,
+    PublicFormation,
+    SessionFormation,
+    InscriptionFormation,
+    AttributionCircuit,
+    CircuitValidation,
+    EtapeValidation,
+    TypeAbsence,
+    TypeConge,
+    VisaDossier,
+    VisaEnAttente,
+    EntiteTutelle,
+    PoleMinisteriel,
+    ExerciceDotation,
+    BranchePlafond,
+    DemandeDotation,
+    AlertePoste,
+    Passerelle,
+    JournalEffectif,
+    CampagneBesoin,
+    FiliereBesoin,
+    FicheBesoin,
+    CompositionStatistique,
+    CampagnePlanConge,
+    ConsultationFlash,
+    LecturePublication,
+    Publication,
+    PlanConge,
+    RappelEcheance,
+    RepriseConge,
+)
+
+admin.site.register(Organisme)
+admin.site.register(BlocEcran)
+admin.site.register(Profil)
+admin.site.register(Agent)
+admin.site.register(Acte)
+admin.site.register(Demande)
+admin.site.register(VisaEnAttente)
+admin.site.register(Evaluation)
+admin.site.register(Absence)
+admin.site.register(TypeConge)
+admin.site.register(TypeAbsence)
+admin.site.register(CircuitValidation)
+admin.site.register(EtapeValidation)
+admin.site.register(AttributionCircuit)
+admin.site.register(TypeFinCarriere)
+admin.site.register(PilotageFinCarriere)
+admin.site.register(ActionAccompagnement)
+admin.site.register(DistinctionCarriere)
+admin.site.register(DossierRetraite)
+admin.site.register(PosteSensible)
+admin.site.register(TypeActe)
+admin.site.register(TypeFormation)
+admin.site.register(PublicFormation)
+admin.site.register(SessionFormation)
+admin.site.register(InscriptionFormation)
+admin.site.register(PrestationSociale)
+admin.site.register(SituationSociale)
+admin.site.register(AyantDroit)
+admin.site.register(EnveloppeSociale)
+admin.site.register(DispositifSocial)
+admin.site.register(Formation)
+admin.site.register(PieceJointe)
+admin.site.register(VisaDossier)
+admin.site.register(MouvementStrategique)
+admin.site.register(AlerteReleve)
+admin.site.register(Notification)
+admin.site.register(Conversation)
+admin.site.register(Message)
+admin.site.register(EntiteTutelle)
+admin.site.register(PoleMinisteriel)
+admin.site.register(ExerciceDotation)
+admin.site.register(BranchePlafond)
+admin.site.register(DemandeDotation)
+admin.site.register(AlertePoste)
+admin.site.register(Passerelle)
+admin.site.register(JournalEffectif)
+admin.site.register(CampagneBesoin)
+admin.site.register(FiliereBesoin)
+admin.site.register(FicheBesoin)
+admin.site.register(CompositionStatistique)
+admin.site.register(Publication)
+admin.site.register(LecturePublication)
+admin.site.register(ConsultationFlash)
+admin.site.register(CampagnePlanConge)
+admin.site.register(PlanConge)
+admin.site.register(RepriseConge)
+admin.site.register(RappelEcheance)

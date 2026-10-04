@@ -1,0 +1,44 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+*.egg-info/
+
+# Django
+*.sqlite3
+media/
+staticfiles/
+
+# Secrets et réglages locaux
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Front
+node_modules/
+dist/
+.vite/
+
+# Journaux et aperçus
+*.log
+_apercu*
+
+# Binaires d'outils locaux
+*.exe
+bin/
+
+# Système et éditeurs
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/
+*.swp

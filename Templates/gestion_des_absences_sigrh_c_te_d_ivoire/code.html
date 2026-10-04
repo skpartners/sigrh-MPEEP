@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+
+<html lang="fr"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{colors:{"on-tertiary-container":"#bdc4de","on-surface-variant":"#3f4942","tertiary-fixed-dim":"#bec6e0","on-background":"#0b1c30","on-tertiary-fixed":"#131b2e","surface-dim":"#cbdbf5","on-secondary-fixed-variant":"#783100","on-tertiary-fixed-variant":"#3f465c","primary-container":"#0a5e3a","on-surface":"#0b1c30","surface-tint":"#1e6b46","primary-fixed-dim":"#8cd6a9","surface-container":"#e5eeff","on-primary-fixed-variant":"#005231","tertiary-container":"#495167","on-error-container":"#93000a","outline-variant":"#bfc9c0","inverse-primary":"#8cd6a9","surface-variant":"#d3e4fe","surface-container-lowest":"#ffffff","inverse-on-surface":"#eaf1ff","on-primary-container":"#8ad5a7","primary":"#004428","on-primary-fixed":"#002111","surface-bright":"#f8f9ff","surface-container-highest":"#d3e4fe","primary-fixed":"#a7f3c3","inverse-surface":"#213145","on-primary":"#ffffff","error-container":"#ffdad6","error":"#ba1a1a","secondary-fixed-dim":"#ffb691","tertiary-fixed":"#dae2fd","on-secondary":"#ffffff","tertiary":"#333a4f","surface-container-low":"#eff4ff","on-secondary-container":"#602600","secondary-fixed":"#ffdbcb","background":"#f8f9ff","surface":"#f8f9ff","secondary":"#9e4300","on-secondary-fixed":"#341100","on-tertiary":"#ffffff","outline":"#707a71","on-error":"#ffffff","surface-container-high":"#dce9ff","secondary-container":"#fe7b28"},borderRadius:{DEFAULT:"0.125rem",lg:"0.25rem",xl:"0.5rem",full:"0.75rem"},spacing:{"gutter-desktop":"1.5rem","space-sm":"0.5rem","margin-desktop":"2rem",gutter:"1.25rem","space-md":"1rem","space-lg":"1.5rem",margin:"1rem","space-xs":"0.25rem","space-xl":"2rem","margin-tablet":"1.5rem"},fontFamily:{"headline-lg":["Public Sans"],"label-lg":["Public Sans"],"body-lg":["Public Sans"],"headline-sm":["Public Sans"],"label-sm":["Public Sans"],"headline-lg-mobile":["Public Sans"],"body-md":["Public Sans"],"headline-xl":["Public Sans"],"label-md":["Public Sans"],"code-num":["Public Sans"],"body-sm":["Public Sans"],"headline-md":["Public Sans"],"headline-xl-mobile":["Public Sans"]},fontSize:{"headline-lg":["30px",{lineHeight:"38px",fontWeight:"700"}],"label-lg":["14px",{lineHeight:"20px",fontWeight:"600"}],"body-lg":["16px",{lineHeight:"24px",fontWeight:"400"}],"headline-sm":["18px",{lineHeight:"24px",fontWeight:"600"}],"label-sm":["11px",{lineHeight:"14px",fontWeight:"500"}],"headline-lg-mobile":["24px",{lineHeight:"32px",fontWeight:"700"}],"body-md":["14px",{lineHeight:"20px",fontWeight:"400"}],"headline-xl":["36px",{lineHeight:"44px",fontWeight:"700"}],"label-md":["12px",{lineHeight:"16px",fontWeight:"600"}],"code-num":["13px",{lineHeight:"18px",fontWeight:"600"}],"body-sm":["13px",{lineHeight:"18px",fontWeight:"400"}],"headline-md":["22px",{lineHeight:"28px",fontWeight:"600"}],"headline-xl-mobile":["28px",{lineHeight:"36px",fontWeight:"700"}]}}}};</script></head><body class="bg-background font-body-md text-on-surface antialiased"><header class="fixed top-0 left-0 right-0 z-50 bg-surface-container-lowest/95 backdrop-blur-md shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-1 flex w-full"><div class="w-1/3 bg-secondary-container"></div><div class="w-1/3 bg-surface-container-lowest"></div><div class="w-1/3 bg-primary-container"></div></div><div class="h-16 px-6 flex items-center justify-between gap-4"><div class="flex items-center gap-3 min-w-0"><div class="flex items-center justify-center p-1 bg-surface-container-low rounded"><img alt="Armoiries Côte d'Ivoire" class="h-8 w-8 object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDSw7RDrfkH23MP3vRslBhyhcQ6PqxQeuiVBV7MhHMXUkdzQM8SNRahCoiGGz1l5k1jUSBih-nf9uW_I71ODxn4J5xl3WEQZYjsmOSRmouGBn9rBCchF74LeMhfY7v8iSjUxasJDn7PMrzb8Wxus96k4G5ejvdWIDnJmwVPgePID7gdosimtJG8TXG5O64V9oFoQ56kMdMTT0SYsIBHwUU7TwPvci4Dj8x5o_gMdtcJpazXOC3hKx4"/></div><div class="flex flex-col min-w-0"><span class="font-label-md text-label-md text-primary uppercase tracking-wider font-bold truncate">SIGRH | RÉPUBLIQUE DE CÔTE D'IVOIRE</span><span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-tight truncate">Ministère du Portefeuille de l'État et des Entreprises Publiques</span></div></div><div class="flex-1 max-w-md mx-4 hidden lg:block"><div class="relative flex items-center"><span class="material-symbols-outlined absolute left-3 text-on-surface-variant text-lg pointer-events-none">search</span><input class="w-full pl-9 pr-4 py-1.5 bg-surface-container-low text-on-surface placeholder:text-on-surface-variant/70 font-body-sm text-body-sm rounded border-0 focus:outline-none focus:ring-1 focus:ring-primary" placeholder="Rechercher un agent par matricule civil, nom ou direction..." type="text"/></div></div><div class="flex items-center gap-3 shrink-0"><div class="hidden sm:flex items-center gap-1.5 px-2.5 py-1 bg-surface-container-low rounded"><span class="font-label-sm text-label-sm text-on-surface-variant font-medium">Exercice</span><span class="font-code-num text-code-num text-primary font-bold px-1.5 py-0.5 bg-surface-container-lowest rounded">2026</span></div><div class="relative flex items-center"><button aria-label="Notifications de validation" class="p-2 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high rounded transition-colors relative" type="button"><span class="material-symbols-outlined text-xl">notifications</span><span class="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-secondary-container rounded-full"></span></button></div><div class="flex items-center gap-2 pl-2"><img alt="Profile" class="w-8 h-8 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDSw7RDrfkH23MP3vRslBhyhcQ6PqxQeuiVBV7MhHMXUkdzQM8SNRahCoiGGz1l5k1jUSBih-nf9uW_I71ODxn4J5xl3WEQZYjsmOSRmouGBn9rBCchF74LeMhfY7v8iSjUxasJDn7PMrzb8Wxus96k4G5ejvdWIDnJmwVPgePID7gdosimtJG8TXG5O64V9oFoQ56kMdMTT0SYsIBHwUU7TwPvci4Dj8x5o_gMdtcJpazXOC3hKx4"/><div class="hidden md:flex flex-col text-left"><span class="font-label-md text-label-md text-on-surface font-semibold leading-tight">Kouamé N'Dri</span><span class="font-label-sm text-label-sm text-on-surface-variant">Directeur DRH</span></div></div></div></div></header><aside class="fixed left-0 top-0 h-full w-72 bg-surface-container-lowest z-40 flex flex-col pt-20 pb-4 shadow-[1px_0_8px_rgba(0,0,0,0.03)] overflow-y-auto"><div class="px-5 pb-3"><div class="p-3 bg-surface-container-low rounded flex items-center gap-3"><div class="w-8 h-8 rounded bg-primary text-on-primary flex items-center justify-center font-headline-sm text-headline-sm"><span class="material-symbols-outlined text-lg">account_balance</span></div><div class="min-w-0"><p class="font-label-sm text-label-sm text-on-surface-variant uppercase font-medium">Portefeuille Étatique</p><p class="font-label-md text-label-md text-on-surface font-bold truncate">DGPE &amp; Sociétés d'État</p></div></div></div><nav class="flex-1 px-3 space-y-1 font-body-sm text-body-sm" data-active-classes="bg-primary text-on-primary font-semibold shadow-sm"><div class="px-3 pt-2 pb-1"><span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider font-bold">Pilotage Central</span></div><a class="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="dashboard" href="#"><span class="material-symbols-outlined text-lg">dashboard</span><span>Vue d'ensemble DRH</span></a><a class="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="dossier-agent" href="#"><span class="material-symbols-outlined text-lg">badge</span><span>Dossier Agent Numérique</span></a><div class="px-3 pt-3 pb-1"><span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider font-bold">Sous-Directions Métier</span></div><a class="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="carrieres-mutations" href="#"><span class="material-symbols-outlined text-lg">assignment</span><span>SD Carrières &amp; Actes</span></a><a class="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="action-sociale" href="#"><span class="material-symbols-outlined text-lg">volunteer_activism</span><span>SD Action Sociale</span></a><a class="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="formation-continue" href="#"><span class="material-symbols-outlined text-lg">school</span><span>SD Formation Continue</span></a><div class="px-3 pt-3 pb-1"><span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider font-bold">Gouvernance &amp; Conformité</span></div><a class="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="circuits-validation" href="#"><span class="material-symbols-outlined text-lg">approval_delegation</span><span>Circuits de Validation</span></a><a class="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="statistiques-rbac" href="#"><span class="material-symbols-outlined text-lg">admin_panel_settings</span><span>Statistiques &amp; RBAC</span></a></nav><div class="px-4 pt-3 mt-auto"><div class="p-3 bg-surface-container-low rounded text-center"><span class="font-label-sm text-label-sm text-on-surface-variant block font-medium">Sécurisation Régalienne</span><span class="font-code-num text-code-num text-primary block mt-0.5">ANSSI-CI • SIGRH-v2.6</span></div></div></aside><div class="pl-72"><main class="relative pt-16 min-h-screen bg-background flex flex-col justify-between"><div class="flex flex-col w-full">
+<div class="px-6 py-6 max-w-[1600px] w-full mx-auto space-y-6">
+<!-- En-tête de section régalienne -->
+<div class="bg-surface-container-lowest p-6 rounded-xl shadow-sm relative overflow-hidden">
+<div class="absolute -right-16 -top-16 w-64 h-64 bg-primary/5 rounded-full blur-3xl pointer-events-none"></div>
+<div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
+<div class="space-y-2">
+<!-- Fil d'Ariane formel -->
+<div class="flex items-center gap-2 text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wider">
+<span class="hover:text-primary transition-colors">SD Gestion des Carrières</span>
+<span class="material-symbols-outlined text-xs">chevron_right</span>
+<span class="hover:text-primary transition-colors">Temps de Service &amp; Suivi</span>
+<span class="material-symbols-outlined text-xs">chevron_right</span>
+<span class="text-primary font-bold">Validation des autorisations</span>
+</div>
+<h1 class="font-headline-lg text-headline-lg text-on-surface tracking-tight">
+            Validation des autorisations d'absence
+          </h1>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-3xl">
+            Page du gestionnaire. Chaque demande d'autorisation se valide ou s'invalide, avec un motif à l'appui.
+          </p>
+<!-- Badges de conformité statutaire -->
+<div class="flex flex-wrap items-center gap-2 pt-1">
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded bg-surface-container text-on-surface font-label-sm text-label-sm font-semibold">
+<span class="w-2 h-2 rounded-full bg-primary-container"></span>
+              Statut Général des Fonctionnaires &amp; Conventions d'Entreprises d'État
+            </span>
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded bg-surface-container text-on-surface font-label-sm text-label-sm font-semibold">
+<span class="material-symbols-outlined text-sm text-primary">fingerprint</span>
+              Contrôle Biométrique &amp; Présentéisme
+            </span>
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded bg-surface-container-high text-on-surface font-label-sm text-label-sm font-semibold">
+<span class="material-symbols-outlined text-sm text-secondary">payments</span>
+              Liaison Paie Solde (Art. 38)
+            </span>
+</div>
+</div>
+<!-- Actions rapides de haut de page -->
+<div class="flex flex-wrap sm:flex-nowrap items-center gap-3 shrink-0">
+<button class="inline-flex items-center gap-2 px-4 py-2.5 rounded bg-surface-container text-primary font-label-lg text-label-lg hover:bg-surface-container-high transition-colors" type="button">
+<span class="material-symbols-outlined text-lg">picture_as_pdf</span>
+<span>Rapport d'Assiduité Mensuel (PDF)</span>
+</button>
+</div>
+</div>
+</div>
+<!-- KPIs Métriques d'Assiduité -->
+<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+<!-- KPI 1 -->
+<div class="bg-surface-container-lowest p-5 rounded-xl shadow-sm flex flex-col justify-between relative overflow-hidden">
+<div class="flex items-center justify-between mb-3">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase font-semibold">Taux de Présentéisme Global</span>
+<span class="w-8 h-8 rounded bg-primary-fixed text-on-primary-fixed flex items-center justify-center">
+<span class="material-symbols-outlined text-lg">how_to_reg</span>
+</span>
+</div>
+<div class="flex items-baseline gap-2">
+<span class="font-headline-xl text-headline-xl text-on-surface tracking-tight font-bold">97.4%</span>
+<span class="inline-flex items-center text-xs font-semibold text-primary">
+<span class="material-symbols-outlined text-sm">trending_up</span> +0.8%
+          </span>
+</div>
+<div class="mt-3 flex items-center justify-between font-label-sm text-label-sm text-on-surface-variant">
+<span>Objectif souverain ministériel</span>
+<span class="font-bold text-primary">≥ 96.0%</span>
+</div>
+<div class="w-full bg-surface-container-high h-1.5 rounded-full mt-2 overflow-hidden">
+<div class="bg-primary h-full rounded-full" style="width: 97.4%"></div>
+</div>
+</div>
+<!-- KPI 2 -->
+<div class="bg-surface-container-lowest p-5 rounded-xl shadow-sm flex flex-col justify-between relative">
+<div class="flex items-center justify-between mb-3">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase font-semibold">Absences Justifiées en Cours</span>
+<span class="w-8 h-8 rounded bg-surface-container-high text-on-surface flex items-center justify-center">
+<span class="material-symbols-outlined text-lg">assignment_turned_in</span>
+</span>
+</div>
+<div class="flex items-baseline gap-2">
+<span class="font-headline-xl text-headline-xl text-on-surface font-bold">68</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">dossiers en cours</span>
+</div>
+<div class="mt-3 font-label-sm text-label-sm text-on-surface-variant line-clamp-1">
+          Autorisations d'absence, autorisations spéciales et permissions spéciales
+        </div>
+<div class="w-full bg-surface-container-high h-1.5 rounded-full mt-2 overflow-hidden">
+<div class="bg-surface-tint h-full rounded-full" style="width: 65%"></div>
+</div>
+</div>
+<!-- KPI 3 -->
+<div class="bg-surface-container-lowest p-5 rounded-xl shadow-sm flex flex-col justify-between relative">
+<div class="flex items-center justify-between mb-3">
+<span class="font-label-md text-label-md text-secondary uppercase font-semibold">En Attente de Justificatif (48h)</span>
+<span class="w-8 h-8 rounded bg-secondary-fixed text-on-secondary-fixed flex items-center justify-center">
+<span class="material-symbols-outlined text-lg">alarm</span>
+</span>
+</div>
+<div class="flex items-baseline gap-2">
+<span class="font-headline-xl text-headline-xl text-secondary font-bold">09</span>
+<span class="font-label-sm text-label-sm font-semibold px-2 py-0.5 rounded bg-secondary-fixed text-on-secondary-fixed">Délai critique</span>
+</div>
+<div class="mt-3 font-label-sm text-label-sm text-on-surface-variant flex items-center gap-1.5">
+<span class="material-symbols-outlined text-sm text-secondary">sms</span>
+          Relances SMS &amp; emails envoyées au N+1
+        </div>
+<div class="w-full bg-surface-container-high h-1.5 rounded-full mt-2 overflow-hidden">
+<div class="bg-secondary-container h-full rounded-full" style="width: 35%"></div>
+</div>
+</div>
+<!-- KPI 4 -->
+<div class="bg-surface-container-lowest p-5 rounded-xl shadow-sm flex flex-col justify-between relative">
+<div class="flex items-center justify-between mb-3">
+<span class="font-label-md text-label-md text-error uppercase font-semibold">Retenues sur Solde (Tantièmes)</span>
+<span class="w-8 h-8 rounded bg-error-container text-on-error-container flex items-center justify-center">
+<span class="material-symbols-outlined text-lg">gavel</span>
+</span>
+</div>
+<div class="flex items-baseline gap-2">
+<span class="font-headline-xl text-headline-xl text-error font-bold">04</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">dossiers sanctionnés</span>
+</div>
+<div class="mt-3 font-label-sm text-label-sm text-on-surface-variant flex items-center gap-1.5">
+<span class="material-symbols-outlined text-sm text-error">account_balance</span>
+          Ordres de reversement Trésor / 1/30ème
+        </div>
+<div class="w-full bg-surface-container-high h-1.5 rounded-full mt-2 overflow-hidden">
+<div class="bg-error h-full rounded-full" style="width: 18%"></div>
+</div>
+</div>
+</div>
+<!-- Section analytique: Grille Bento (Ventilation + Cadre Juridique Art. 38) -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+<!-- Ventilation des Motifs de l'Exercice -->
+<div class="lg:col-span-8 bg-surface-container-lowest p-6 rounded-xl shadow-sm space-y-5">
+<div class="flex items-center justify-between">
+<div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Ventilation Statutaire des Motifs d'Absence</h2>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Période du 1er au 31 Mars 2026 - Ensemble des Entités Sous Tutelle</p>
+</div>
+<span class="px-2.5 py-1 rounded bg-surface-container text-on-surface font-code-num text-code-num font-bold">Total: 81 Cas Déclarés</span>
+</div>
+<div class="space-y-4 pt-2">
+<div class="space-y-1.5">
+<div class="flex justify-between font-label-md text-label-md">
+<span class="text-on-surface font-semibold flex items-center gap-2">
+<span class="w-3 h-3 rounded-full bg-primary-container inline-block"></span>
+                Autorisations d'absence
+              </span>
+<span class="font-code-num text-code-num text-on-surface font-bold">48% (39 cas)</span>
+</div>
+<div class="w-full bg-surface-container-high h-2 rounded-full overflow-hidden">
+<div class="bg-primary-container h-full rounded-full" style="width: 48%"></div>
+</div>
+</div>
+<div class="space-y-1.5">
+<div class="flex justify-between font-label-md text-label-md">
+<span class="text-on-surface font-semibold flex items-center gap-2">
+<span class="w-3 h-3 rounded-full bg-surface-tint inline-block"></span>
+                Autorisations spéciales d'absence
+              </span>
+<span class="font-code-num text-code-num text-on-surface font-bold">32% (26 cas)</span>
+</div>
+<div class="w-full bg-surface-container-high h-2 rounded-full overflow-hidden">
+<div class="bg-surface-tint h-full rounded-full" style="width: 32%"></div>
+</div>
+</div>
+<div class="space-y-1.5">
+<div class="flex justify-between font-label-md text-label-md">
+<span class="text-on-surface font-semibold flex items-center gap-2">
+<span class="w-3 h-3 rounded-full bg-secondary-container inline-block"></span>
+                Permissions spéciales d'absence
+              </span>
+<span class="font-code-num text-code-num text-on-surface font-bold">20% (16 cas)</span>
+</div>
+<div class="w-full bg-surface-container-high h-2 rounded-full overflow-hidden">
+<div class="bg-secondary-container h-full rounded-full" style="width: 20%"></div>
+</div>
+</div>
+</div>
+<div class="pt-4 flex items-center justify-between text-on-surface-variant font-label-sm text-label-sm bg-surface-container-low p-3 rounded-lg">
+<span class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-base text-primary">verified</span>
+            Toutes les autorisations de plus de 72h requièrent le visa du Directeur des Ressources Humaines.
+          </span>
+<a class="text-primary font-bold hover:underline" href="#">Exporter le registre exhaustif</a>
+</div>
+</div>
+<!-- Bloc Alerte & Règle du Service Fait (Article 38) -->
+<div class="lg:col-span-4 bg-surface-container-low p-6 rounded-xl shadow-sm flex flex-col justify-between">
+<div class="space-y-3">
+<div class="flex items-center gap-2 text-secondary">
+<span class="material-symbols-outlined text-2xl">policy</span>
+<span class="font-headline-sm text-headline-sm text-on-surface font-bold">Règle du Service Fait</span>
+</div>
+<span class="inline-block px-2.5 py-0.5 rounded bg-secondary-fixed text-on-secondary-fixed font-code-num text-code-num font-bold">
+            Art. 38 - Statut Général &amp; Dir. Paie
+          </span>
+<p class="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
+            « Toute absence non légalement autorisée ou non justifiée dans un délai impératif de quarante-huit (48) heures entraîne de plein droit une retenue sur traitement calculée au trentième indivisible (1/30ème) par jour d'interruption de service. »
+          </p>
+<div class="bg-surface-container-lowest p-3 rounded-lg space-y-2">
+<div class="flex items-center justify-between text-on-surface font-label-sm text-label-sm">
+<span>Constat d'abandon de poste :</span>
+<span class="font-bold text-error">À compter de J+15</span>
+</div>
+<div class="flex items-center justify-between text-on-surface font-label-sm text-label-sm">
+<span>Délai légal de transmission solde :</span>
+<span class="font-bold text-primary">Le 20 du mois M</span>
+</div>
+<div class="flex items-center justify-between text-on-surface font-label-sm text-label-sm">
+<span>Organe compétent :</span>
+<span class="font-bold text-on-surface">Direction du Contrôle Financier</span>
+</div>
+</div>
+</div>
+<div class="pt-4">
+<button class="w-full py-2 px-3 rounded bg-secondary-container text-on-secondary-container font-label-md text-label-md font-bold flex items-center justify-center gap-2 hover:opacity-90 transition-opacity" type="button">
+<span class="material-symbols-outlined text-base">warning</span>
+            Émettre un Avis d'Avertissement Solde
+          </button>
+</div>
+</div>
+</div>
+<!-- Registre Général d'Instruction des Déclarations d'Absence -->
+<div class="bg-surface-container-lowest rounded-xl shadow-sm overflow-hidden space-y-4 p-6">
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+<div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Autorisations à statuer</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Le gestionnaire valide ou invalide la demande. Le motif est consigné avec la décision.</p>
+</div>
+<!-- Filtres rapides -->
+<div class="flex flex-wrap items-center gap-2">
+<select class="px-3 py-1.5 rounded bg-surface-container-low text-on-surface font-label-sm text-label-sm focus:outline-none focus:ring-1 focus:ring-primary">
+<option value="all">Toutes les entités (DGPE, PETROCI, SOGEPIE...)</option>
+<option value="dgpe">DGPE Centrale</option>
+<option value="petroci">PETROCI Holding</option>
+<option value="ci-energies">CI-ENERGIES</option>
+<option value="sogepie">SOGEPIE</option>
+</select>
+<select class="px-3 py-1.5 rounded bg-surface-container-low text-on-surface font-label-sm text-label-sm focus:outline-none focus:ring-1 focus:ring-primary">
+<option value="all">Tous les types</option>
+<option value="autorisation">Autorisations d'absence</option>
+<option value="autorisation-speciale">Autorisations spéciales d'absence</option>
+<option value="permission-speciale">Permissions spéciales d'absence</option>
+</select>
+<button class="p-2 rounded bg-surface-container-low text-on-surface hover:bg-surface-container-high transition-colors" title="Filtrer par date" type="button">
+<span class="material-symbols-outlined text-base">tune</span>
+</button>
+</div>
+</div>
+<!-- Tableau Administratif Conforme -->
+<div class="overflow-x-auto">
+<table class="w-full text-left font-body-sm text-body-sm">
+<thead>
+<tr class="bg-surface-container-low text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wider">
+<th class="py-3 px-4 rounded-l">Agent Public &amp; Matricule</th>
+<th class="py-3 px-4">Motif &amp; Justificatif Règlementaire</th>
+<th class="py-3 px-4">Période &amp; Durée</th>
+<th class="py-3 px-4">État de Conformité</th>
+<th class="py-3 px-4">Impact Solde</th>
+<th class="py-3 px-4 text-right rounded-r">Décision</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-surface-container">
+<!-- Ligne 1: Dr Kouamé (Mission) -->
+<tr class="hover:bg-surface-container-low/50 transition-colors">
+<td class="py-4 px-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-primary-fixed text-primary flex items-center justify-center font-bold text-sm">
+                    KN
+                  </div>
+<div>
+<div class="font-label-lg text-label-lg font-bold text-on-surface">Dr KOUAMÉ N'Dri Félix</div>
+<div class="font-code-num text-code-num text-on-surface-variant flex items-center gap-2">
+<span>Mat. 302.840-P</span>
+<span>•</span>
+<span>Grade A5</span>
+<span>•</span>
+<span class="px-1.5 py-0.2 rounded bg-surface-container text-on-surface text-[11px] font-semibold">PETROCI</span>
+</div>
+</div>
+</div>
+</td>
+<td class="py-4 px-4">
+<div class="font-semibold text-on-surface">Autorisation d'absence</div>
+<div class="text-xs text-on-surface-variant flex items-center gap-1 mt-0.5">
+<span class="material-symbols-outlined text-xs text-primary">description</span>
+                  Ordre de mission ministériel validé N° 049/MPEEP
+                </div>
+</td>
+<td class="py-4 px-4">
+<div class="font-code-num text-code-num font-semibold text-on-surface">02 au 06 Mars 2026</div>
+<span class="inline-block mt-0.5 px-2 py-0.5 rounded bg-surface-container text-primary font-code-num text-code-num">5 jours ouvrés</span>
+</td>
+<td class="py-4 px-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-surface-container text-primary font-label-sm text-label-sm font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-primary-container"></span>
+                  Conforme &amp; Approuvé
+                </span>
+</td>
+<td class="py-4 px-4">
+<div class="font-semibold text-primary">Maintien Intégral</div>
+<div class="text-xs text-on-surface-variant">Prise en charge per diem</div>
+</td>
+<td class="py-4 px-4 text-right">
+<div class="text-right">
+<span class="inline-flex items-center gap-1 text-primary font-label-sm text-label-sm font-semibold"><span class="material-symbols-outlined text-base">check_circle</span>Validée</span>
+<p class="text-xs text-on-surface-variant mt-1 max-w-[220px] ml-auto">Motif : pièce conforme à l'ordre de service.</p>
+</div>
+</td>
+</tr>
+<!-- Ligne 2: Mme Koné (Maladie) -->
+<tr class="hover:bg-surface-container-low/50 transition-colors">
+<td class="py-4 px-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-container-high text-on-surface flex items-center justify-center font-bold text-sm">
+                    KA
+                  </div>
+<div>
+<div class="font-label-lg text-label-lg font-bold text-on-surface">Mme KONÉ Awa</div>
+<div class="font-code-num text-code-num text-on-surface-variant flex items-center gap-2">
+<span>Mat. 415.201-D</span>
+<span>•</span>
+<span>Grade A4</span>
+<span>•</span>
+<span class="px-1.5 py-0.2 rounded bg-surface-container text-on-surface text-[11px] font-semibold">DGPE Centrale</span>
+</div>
+</div>
+</div>
+</td>
+<td class="py-4 px-4">
+<div class="font-semibold text-on-surface">Autorisation spéciale d'absence</div>
+<div class="text-xs text-on-surface-variant flex items-center gap-1 mt-0.5">
+<span class="material-symbols-outlined text-xs text-primary">local_hospital</span>
+                  Certificat CHU Treichville certifié CNAM
+                </div>
+</td>
+<td class="py-4 px-4">
+<div class="font-code-num text-code-num font-semibold text-on-surface">28 Fév au 05 Mars 2026</div>
+<span class="inline-block mt-0.5 px-2 py-0.5 rounded bg-surface-container text-on-surface-variant font-code-num text-code-num">6 jours calendaires</span>
+</td>
+<td class="py-4 px-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-secondary-fixed text-on-secondary-fixed font-label-sm text-label-sm font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary-container"></span>
+                  En attente de décision
+                </span>
+</td>
+<td class="py-4 px-4">
+<div class="font-semibold text-on-surface">Plein Traitement</div>
+<div class="text-xs text-on-surface-variant">Tranche 1 (1er au 3e mois)</div>
+</td>
+<td class="py-4 px-4 text-right">
+<div class="flex items-center justify-end gap-1.5">
+<button class="px-2.5 py-1 rounded bg-primary text-on-primary text-xs font-semibold hover:bg-primary-container" type="button" data-decision="valider" data-agent="Mme KONÉ Awa" data-type="Autorisation spéciale d'absence">Valider</button>
+<button class="px-2.5 py-1 rounded bg-error text-on-error text-xs font-semibold hover:bg-error/90" type="button" data-decision="invalider" data-agent="Mme KONÉ Awa" data-type="Autorisation spéciale d'absence">Invalider</button>
+</div>
+</td>
+</tr>
+<!-- Ligne 3: M. Cissé (Événement Familial) -->
+<tr class="hover:bg-surface-container-low/50 transition-colors">
+<td class="py-4 px-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-container-high text-on-surface flex items-center justify-center font-bold text-sm">
+                    CL
+                  </div>
+<div>
+<div class="font-label-lg text-label-lg font-bold text-on-surface">M. CISSÉ Lamine</div>
+<div class="font-code-num text-code-num text-on-surface-variant flex items-center gap-2">
+<span>Mat. 509.112-R</span>
+<span>•</span>
+<span>Grade B2</span>
+<span>•</span>
+<span class="px-1.5 py-0.2 rounded bg-surface-container text-on-surface text-[11px] font-semibold">CI-ENERGIES</span>
+</div>
+</div>
+</div>
+</td>
+<td class="py-4 px-4">
+<div class="font-semibold text-on-surface">Permission spéciale d'absence</div>
+<div class="text-xs text-on-surface-variant flex items-center gap-1 mt-0.5">
+<span class="material-symbols-outlined text-xs text-primary">diversity_1</span>
+                  Naissance au foyer (Acte d'état civil certifié)
+                </div>
+</td>
+<td class="py-4 px-4">
+<div class="font-code-num text-code-num font-semibold text-on-surface">04 au 05 Mars 2026</div>
+<span class="inline-block mt-0.5 px-2 py-0.5 rounded bg-surface-container text-on-surface-variant font-code-num text-code-num">2 jours ouvrés</span>
+</td>
+<td class="py-4 px-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-surface-container text-primary font-label-sm text-label-sm font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+                  En attente de décision
+                </span>
+</td>
+<td class="py-4 px-4">
+<div class="font-semibold text-primary">Solde Intégrale</div>
+<div class="text-xs text-on-surface-variant">Quota légal annuel (10 j max)</div>
+</td>
+<td class="py-4 px-4 text-right">
+<div class="flex items-center justify-end gap-1.5">
+<button class="px-2.5 py-1 rounded bg-primary text-on-primary text-xs font-semibold hover:bg-primary-container" type="button" data-decision="valider" data-agent="M. CISSÉ Lamine" data-type="Permission spéciale d'absence">Valider</button>
+<button class="px-2.5 py-1 rounded bg-error text-on-error text-xs font-semibold hover:bg-error/90" type="button" data-decision="invalider" data-agent="M. CISSÉ Lamine" data-type="Permission spéciale d'absence">Invalider</button>
+</div>
+</td>
+</tr>
+<!-- Ligne 4: M. Tapé (Injustifiée / Retenue) -->
+<tr class="bg-error-container/20 hover:bg-error-container/30 transition-colors">
+<td class="py-4 px-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-error-container text-error flex items-center justify-center font-bold text-sm">
+                    TR
+                  </div>
+<div>
+<div class="font-label-lg text-label-lg font-bold text-error">M. TAPÉ Roland</div>
+<div class="font-code-num text-code-num text-on-surface-variant flex items-center gap-2">
+<span>Mat. 218.490-S</span>
+<span>•</span>
+<span>Grade C1</span>
+<span>•</span>
+<span class="px-1.5 py-0.2 rounded bg-surface-container text-on-surface text-[11px] font-semibold">SOGEPIE</span>
+</div>
+</div>
+</div>
+</td>
+<td class="py-4 px-4">
+<div class="font-semibold text-error">Autorisation d'absence</div>
+<div class="text-xs text-error flex items-center gap-1 mt-0.5">
+<span class="material-symbols-outlined text-xs">warning</span>
+                  Mise en demeure LRAR N° 082 transmise sans retour
+                </div>
+</td>
+<td class="py-4 px-4">
+<div class="font-code-num text-code-num font-semibold text-error">Depuis le 26 Fév 2026</div>
+<span class="inline-block mt-0.5 px-2 py-0.5 rounded bg-error-container text-on-error-container font-code-num text-code-num font-bold">6 jours consécutifs</span>
+</td>
+<td class="py-4 px-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-error-container text-error font-label-sm text-label-sm font-bold">
+<span class="w-1.5 h-1.5 rounded-full bg-error"></span>
+                  Invalidée
+                </span>
+</td>
+<td class="py-4 px-4">
+<div class="font-semibold text-error">Retenue 6/30ème Émise</div>
+<div class="text-xs text-on-surface-variant">Transmission Trésor Actée</div>
+</td>
+<td class="py-4 px-4 text-right">
+<div class="text-right">
+<span class="inline-flex items-center gap-1 text-error font-label-sm text-label-sm font-semibold"><span class="material-symbols-outlined text-base">cancel</span>Invalidée</span>
+<p class="text-xs text-on-surface-variant mt-1 max-w-[220px] ml-auto">Motif : justificatif absent à l'échéance du délai de 48 h.</p>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination & Métadonnées régaliennes -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 text-on-surface-variant font-label-sm text-label-sm">
+<div>Affichage de 1 à 4 sur 81 actes d'absence enregistrés pour l'exercice en cours</div>
+<div class="flex items-center gap-1">
+<button class="px-3 py-1 rounded bg-surface-container-low text-on-surface hover:bg-surface-container font-semibold disabled:opacity-50" disabled="" type="button">Précédent</button>
+<button class="px-3 py-1 rounded bg-primary text-on-primary font-semibold" type="button">1</button>
+<button class="px-3 py-1 rounded bg-surface-container-low text-on-surface hover:bg-surface-container font-semibold" type="button">2</button>
+<button class="px-3 py-1 rounded bg-surface-container-low text-on-surface hover:bg-surface-container font-semibold" type="button">3</button>
+<button class="px-3 py-1 rounded bg-surface-container-low text-on-surface hover:bg-surface-container font-semibold" type="button">Suivant</button>
+</div>
+</div>
+</div>
+<!-- Section Bi-partite: Saisie Directe de Régularisation & Journal d'Audit Biométrique -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+<!-- Formulaire d'Enregistrement Rapide / Régularisation de Justificatif -->
+<div class="lg:col-span-7 bg-surface-container-lowest p-6 rounded-xl shadow-sm space-y-4">
+<div class="flex items-center justify-between pb-2">
+<div class="flex items-center gap-2">
+<span class="w-8 h-8 rounded bg-primary text-on-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-base">cloud_upload</span>
+</span>
+<div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Régularisation &amp; Téléversement de Pièce Certifiée</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Instruction directe du certificat ou de l'ordre de mission officiel</p>
+</div>
+</div>
+<span class="text-xs font-semibold px-2 py-1 rounded bg-surface-container text-on-surface">Transmission Sécurisée ANSSI-CI</span>
+</div>
+<form class="space-y-4" onsubmit="event.preventDefault(); alert('Dossier de régularisation transmis à la commission médicale et financière pour validation.');">
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+<div class="space-y-1">
+<label class="block font-label-md text-label-md text-on-surface font-semibold">
+                Matricule Civil ou Nom de l'Agent <span class="text-error">*</span>
+</label>
+<input class="w-full h-10 px-3 rounded bg-surface-container-low text-on-surface text-body-sm focus:outline-none focus:ring-1 focus:ring-primary" placeholder="Ex: 415.201-D ou NOM Prénoms" required="" type="text"/>
+</div>
+<div class="space-y-1">
+<label class="block font-label-md text-label-md text-on-surface font-semibold">
+                Type d'Autorisation Réglementaire <span class="text-error">*</span>
+</label>
+<select class="w-full h-10 px-3 rounded bg-surface-container-low text-on-surface text-body-sm focus:outline-none focus:ring-1 focus:ring-primary" required="">
+<option value="">Sélectionner un type d'absence...</option>
+<option value="autorisation">Autorisation d'absence</option>
+<option value="autorisation-speciale">Autorisation spéciale d'absence</option>
+<option value="permission-speciale">Permission spéciale d'absence</option>
+</select>
+</div>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+<div class="space-y-1">
+<label class="block font-label-md text-label-md text-on-surface font-semibold">Date de Début <span class="text-error">*</span></label>
+<input class="w-full h-10 px-3 rounded bg-surface-container-low text-on-surface text-body-sm focus:outline-none focus:ring-1 focus:ring-primary" required="" type="date" value="2026-03-09"/>
+</div>
+<div class="space-y-1">
+<label class="block font-label-md text-label-md text-on-surface font-semibold">Date de Fin (Inclus) <span class="text-error">*</span></label>
+<input class="w-full h-10 px-3 rounded bg-surface-container-low text-on-surface text-body-sm focus:outline-none focus:ring-1 focus:ring-primary" required="" type="date" value="2026-03-12"/>
+</div>
+<div class="space-y-1">
+<label class="block font-label-md text-label-md text-on-surface font-semibold">Entité d'Affectation</label>
+<input class="w-full h-10 px-3 rounded bg-surface-container-low text-on-surface text-body-sm focus:outline-none focus:ring-1 focus:ring-primary" readonly="" type="text" value="Direction du Portefeuille"/>
+</div>
+</div>
+<!-- Zone de glisser-déposer de pièce justificative -->
+<div class="p-4 rounded-xl bg-surface-container-low text-center space-y-2">
+<span class="material-symbols-outlined text-3xl text-primary">note_add</span>
+<div class="font-label-lg text-label-lg font-semibold text-on-surface">Déposez le document probant certifié</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+              Formats requis: PDF avec signature électronique, cachet médical CHU, ou arrêté ministériel numérisé (Max. 10 Mo)
+            </p>
+<input class="hidden" id="file-upload" type="file"/>
+<button class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-surface-container text-primary font-label-sm text-label-sm font-semibold hover:bg-surface-container-high transition-colors" onclick="document.getElementById('file-upload').click()" type="button">
+<span class="material-symbols-outlined text-base">attach_file</span>
+              Parcourir les fichiers d'actes
+            </button>
+</div>
+<div class="flex items-center justify-between pt-2">
+<label class="flex items-center gap-2 cursor-pointer font-body-sm text-body-sm text-on-surface">
+<input checked="" class="rounded text-primary focus:ring-primary" type="checkbox"/>
+              Notifier immédiatement le supérieur hiérarchique direct (N+1) et le contrôle paie
+            </label>
+<button class="px-5 py-2.5 rounded bg-primary text-on-primary font-label-lg text-label-lg font-bold shadow hover:bg-primary-container transition-colors" type="submit">
+              Soumettre la Régularisation
+            </button>
+</div>
+</form>
+</div>
+<div class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4" id="decision-absence">
+<div class="bg-surface-container-lowest max-w-lg w-full rounded-xl shadow-xl p-6 space-y-4" role="dialog" aria-modal="true" aria-labelledby="decision-titre">
+<div class="flex items-start justify-between gap-3">
+<div>
+<p class="font-label-sm text-label-sm text-primary font-bold uppercase tracking-wider">Décision du gestionnaire</p>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mt-1" id="decision-titre">Valider l'autorisation</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1" id="decision-detail"></p>
+</div>
+<button class="p-1 rounded hover:bg-surface-container text-on-surface-variant" type="button" data-decision-annuler="1" aria-label="Fermer">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<label class="block font-label-md text-label-md text-on-surface font-semibold" for="decision-motif">Motif de la décision <span class="text-error">*</span></label>
+<textarea class="w-full p-3 rounded bg-surface-container-low text-on-surface font-body-sm text-body-sm focus:outline-none focus:ring-1 focus:ring-primary" id="decision-motif" rows="3" placeholder="Indiquez le motif qui justifie la validation ou l'invalidation."></textarea>
+<p class="hidden font-label-sm text-label-sm text-error" id="decision-erreur">Le motif est obligatoire.</p>
+<div class="flex items-center justify-end gap-3">
+<button class="px-4 py-2 rounded bg-surface-container-low text-on-surface font-label-md text-label-md" type="button" data-decision-annuler="1">Annuler</button>
+<button class="px-4 py-2 rounded bg-primary text-on-primary font-label-md text-label-md font-semibold" type="button" data-decision-confirmer="1">Enregistrer la décision</button>
+</div>
+</div>
+</div>
+<!-- Contrôle biométrique reporté à une version ultérieure -->
+<div class="lg:col-span-5 bg-surface-container-lowest p-6 rounded-xl shadow-sm flex flex-col gap-4">
+<div class="flex items-start justify-between gap-3">
+<div class="flex items-center gap-2 min-w-0">
+<span class="w-8 h-8 rounded bg-surface-container-high text-on-surface flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-base">history</span>
+</span>
+<div class="min-w-0">
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Contrôle Biométrique &amp; Écarts</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Liaison bornes physiques &amp; pointage SIGRH</p>
+</div>
+</div>
+<span class="inline-flex items-center gap-1 px-2 py-1 rounded bg-secondary-fixed text-on-secondary-fixed font-label-sm text-label-sm font-semibold whitespace-nowrap shrink-0">
+<span class="material-symbols-outlined text-[14px]">schedule</span>
+              Version ultérieure
+            </span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Le recoupement des bornes biométriques et du pointage sera livré dans une version ultérieure.</p>
+</div>
+</div>
+</div>
+</div></main></div></body></html>
