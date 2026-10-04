@@ -44,7 +44,7 @@ export function HomeScreen() {
       </div>
       <div className={"h-16 max-w-[1600px] mx-auto px-margin-desktop flex items-center justify-between gap-space-md"}>
         <div className={"flex items-center gap-space-md"}>
-          <img alt="Armoiries de la République de Côte d'Ivoire" className="h-12 w-12 object-contain" src="/logo.png" />
+          <img alt="Armoiries de la République de Côte d'Ivoire" className="h-12 w-12 object-contain" src={`${import.meta.env.BASE_URL}logo.png`} />
           <div className={"flex flex-col"}>
             <span className={"font-label-lg text-label-lg text-primary uppercase tracking-tight"}>
               SIGRH-PORTFEUILLE
@@ -91,11 +91,11 @@ export function HomeScreen() {
           <div className={"relative max-w-[1600px] mx-auto px-margin-desktop py-space-xl"}>
             <div className={"grid grid-cols-1 lg:grid-cols-12 gap-space-xl items-center"}>
               {/* Contenu textuel solennel */}
-              <div className={"lg:col-span-8 space-y-space-md"}>
+              <div className={"lg:col-span-8 min-w-0 space-y-space-md"}>
                 {/* Badge souverain */}
-                <div className={"inline-flex items-center gap-space-sm bg-surface-container-lowest/15 backdrop-blur-md px-space-md py-space-xs rounded-full"}>
-                  <span className={"inline-block w-2.5 h-2.5 rounded-full bg-secondary-container"}></span>
-                  <span className={"font-label-sm text-label-sm tracking-wider uppercase text-on-primary"}>
+                <div className={"inline-flex max-w-full flex-wrap items-center gap-space-sm bg-surface-container-lowest/15 backdrop-blur-md px-space-md py-space-xs rounded-full"}>
+                  <span className={"inline-block w-2.5 h-2.5 rounded-full bg-secondary-container shrink-0"}></span>
+                  <span className={"min-w-0 font-label-sm text-label-sm tracking-wider uppercase text-on-primary"}>
                     Portail Numérique Souverain · République de Côte d'Ivoire
                   </span>
                 </div>
@@ -124,7 +124,7 @@ export function HomeScreen() {
               {/* Visuel symbolique solennel : Armoiries & Sceau Étatique Numérique */}
               <div className={"lg:col-span-4 flex flex-col items-center gap-4"}>
                 <div className={"relative w-full max-w-xs aspect-square overflow-hidden rounded-full bg-primary-container border border-primary-fixed/20 shadow-xl"}>
-                  <img alt="Armoiries de la République de Côte d'Ivoire" className={"absolute inset-0 h-full w-full object-cover"} src="/logo.png" />
+                  <img alt="Armoiries de la République de Côte d'Ivoire" className={"absolute inset-0 h-full w-full object-cover"} src={`${import.meta.env.BASE_URL}logo.png`} />
                 </div>
                 <div className={"text-center"}>
                   <span className={"font-headline-sm text-headline-sm text-on-primary uppercase tracking-wide"}>

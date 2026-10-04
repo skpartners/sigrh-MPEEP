@@ -244,7 +244,7 @@ export function PlanificationConges() {
             <Mois mois={mois} setMois={setMois} />
           </div>
           <div className="overflow-x-auto">
-            <table className="w-full border-separate border-spacing-0.5 text-center">
+            <table className="tableau-fixe w-full border-separate border-spacing-0.5 text-center">
               <thead>
                 <tr>
                   <th className="text-left font-label-sm text-label-sm text-on-surface-variant px-2">Agent</th>

@@ -27,7 +27,7 @@ export function ProtectionDonneesScreen() {
       </div>
       <div className={"h-16 max-w-[1600px] mx-auto px-margin-desktop flex items-center justify-between gap-space-md"}>
         <div className={"flex items-center gap-space-md"}>
-          <img alt="Armoiries de la République de Côte d'Ivoire" className="h-12 w-12 object-contain" src="/logo.png" />
+          <img alt="Armoiries de la République de Côte d'Ivoire" className="h-12 w-12 object-contain" src={`${import.meta.env.BASE_URL}logo.png`} />
           <div className={"flex flex-col"}>
             <span className={"font-label-lg text-label-lg text-primary uppercase tracking-tight"}>
               SIGRH-PORTFEUILLE
@@ -157,7 +157,7 @@ export function ProtectionDonneesScreen() {
               {/* Sceau Officiel de Certification */}
               <div className={"lg:col-span-4 flex flex-col items-center justify-center p-space-lg bg-surface-container-lowest rounded-xl shadow-md text-center relative"}>
                 <div className={"w-32 h-32 mb-space-sm rounded-full bg-surface-container-low flex items-center justify-center relative shadow-sm"}>
-                  <img className={"w-24 h-24 object-contain"} alt="Armoiries de la République de Côte d'Ivoire" src="/logo.png" />
+                  <img className={"w-24 h-24 object-contain"} alt="Armoiries de la République de Côte d'Ivoire" src={`${import.meta.env.BASE_URL}logo.png`} />
                   <div className={"absolute -bottom-1 -right-1 bg-primary text-on-primary rounded-full p-1.5 shadow"}>
                     <span className={"material-symbols-outlined text-[16px] block"}>
                       verified
@@ -636,7 +636,7 @@ export function ProtectionDonneesScreen() {
                     <th className={"py-space-sm px-space-md"}>
                       Typologie d'Organisme
                     </th>
-                    <th className={"py-space-sm px-space-md"}>
+                    <th className={"py-space-sm px-space-md"} data-min="">
                       Nature des Traitements
                     </th>
                     <th className={"py-space-sm px-space-md"}>

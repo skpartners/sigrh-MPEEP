@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useRef, useState, type DragEvent, type ReactNode } from "react";
-import { ApiError, api, telecharger } from "../api/client";
+import { ApiError, api, mediaUrl, telecharger } from "../api/client";
 import type { Dossier } from "../api/types";
 import { dateCourte } from "../ui/format";
 import { BOUTON_PRIMAIRE, BOUTON_SECONDAIRE, Modale } from "../ui/Modale";
@@ -16,7 +16,6 @@ const ICONE: Record<string, string> = {
   "Santé": "medical_information",
   "Autre": "description",
 };
-const BASE = (import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8101").replace(/\/$/, "");
 const CHAMP = "w-full h-10 px-3 bg-surface-container-low text-on-surface font-body-sm text-body-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-primary";
 
 type Piece = Dossier["pieces"][number];
@@ -301,7 +300,7 @@ function Puce({ actif, onClick, children }: { actif: boolean; onClick: () => voi
 }
 
 function LignePiece({ piece }: { piece: Piece }) {
-  const href = media(piece.fichier_url);
+  const href = mediaUrl(piece.fichier_url);
   return (
     <li className="p-5 hover:bg-surface-container-low/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
       <div className="flex items-start gap-4 min-w-0">
@@ -456,11 +455,6 @@ function DepotPiece({ agent, onClose, onEnregistre }: {
       </div>
     </Modale>
   );
-}
-
-function media(url: string | undefined): string {
-  if (!url) return "";
-  return url.startsWith("http") ? url : `${BASE}${url}`;
 }
 
 function taille(ko: number): string {

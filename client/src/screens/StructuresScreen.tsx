@@ -699,7 +699,7 @@ function ListeEmplois({
             <tr>
               <th className="px-4 py-3">Emploi</th>
               <th className="px-4 py-3">Famille</th>
-              <th className="px-4 py-3">Grade</th>
+              <th className="px-4 py-3" data-min="">Grade</th>
               <th className="px-4 py-3 text-right">Actions</th>
             </tr>
           </thead>

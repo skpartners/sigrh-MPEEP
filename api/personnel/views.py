@@ -79,7 +79,7 @@ def _me(user, request) -> dict:
     profil = user.profil
     signature = ""
     if profil.signature:
-        signature = request.build_absolute_uri(profil.signature.url)
+        signature = profil.signature.url
     return {
         "matricule": user.username,
         "nom": user.last_name,

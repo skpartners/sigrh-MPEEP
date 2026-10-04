@@ -29,7 +29,12 @@ const DELAI_MAX_MS = 30_000;
 const FERMETURE_NON_AUTHENTIFIE = 4401;
 
 function adresse(): string {
-  return `${apiBaseUrl().replace(/^http/, "ws")}/ws/`;
+  const base = apiBaseUrl();
+  if (!base) {
+    const protocole = window.location.protocol === "https:" ? "wss:" : "ws:";
+    return `${protocole}//${window.location.host}/sigrh/ws/`;
+  }
+  return `${base.replace(/^http/, "ws")}/sigrh/ws/`;
 }
 
 /**

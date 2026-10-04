@@ -27,7 +27,7 @@ export function ConfidentialiteScreen() {
       </div>
       <div className={"h-16 max-w-[1600px] mx-auto px-margin-desktop flex items-center justify-between gap-space-md"}>
         <div className={"flex items-center gap-space-md"}>
-          <img alt="Armoiries de la République de Côte d'Ivoire" className="h-12 w-12 object-contain" src="/logo.png" />
+          <img alt="Armoiries de la République de Côte d'Ivoire" className="h-12 w-12 object-contain" src={`${import.meta.env.BASE_URL}logo.png`} />
           <div className={"flex flex-col"}>
             <span className={"font-label-lg text-label-lg text-primary uppercase tracking-tight"}>
               SIGRH-PORTFEUILLE
@@ -150,7 +150,7 @@ export function ConfidentialiteScreen() {
               {/* Cartouche armoiries & certification numérique */}
               <div className={"lg:col-span-4 flex flex-col items-center justify-center p-space-lg rounded-xl bg-surface-container-low shadow-sm text-center relative"}>
                 <div className={"w-24 h-24 rounded-full bg-surface-container-lowest p-2 shadow-sm flex items-center justify-center mb-space-sm relative"}>
-                  <img className={"w-20 h-20 object-contain"} alt="Armoiries de la République de Côte d'Ivoire" src="/logo.png" />
+                  <img className={"w-20 h-20 object-contain"} alt="Armoiries de la République de Côte d'Ivoire" src={`${import.meta.env.BASE_URL}logo.png`} />
                   <span className={"absolute -bottom-1 -right-1 bg-primary text-on-primary w-7 h-7 rounded-full flex items-center justify-center shadow"}>
                     <span className={"material-symbols-outlined text-[16px]"}>
                       lock
@@ -266,7 +266,7 @@ export function ConfidentialiteScreen() {
           <div className={"max-w-[1600px] mx-auto px-margin-desktop"}>
             <div className={"grid grid-cols-1 lg:grid-cols-12 gap-space-lg items-start"}>
               {/* Sommaire latéral fixe (Sticky Menu) */}
-              <div className={"lg:col-span-4 sticky top-24 space-y-space-md"}>
+              <div className={"lg:col-span-4 lg:sticky lg:top-24 space-y-space-md"}>
                 <div className={"bg-surface-container-lowest p-space-md rounded-xl border border-hairline"}>
                   <div className={"flex items-center gap-2 mb-space-md pb-space-sm bg-surface-container-low px-space-sm py-2 rounded-lg"}>
                     <span className={"material-symbols-outlined text-primary text-[20px]"}>
@@ -501,7 +501,7 @@ export function ConfidentialiteScreen() {
                           <th className={"p-space-sm"}>
                             Organe / Direction
                           </th>
-                          <th className={"p-space-sm"}>
+                          <th className={"p-space-sm"} data-min="">
                             Périmètre Autorisé
                           </th>
                           <th className={"p-space-sm"}>

@@ -27,7 +27,7 @@ def _preparer():
 
 
 async def _connecter(jeton: str) -> WebsocketCommunicator:
-    communicateur = WebsocketCommunicator(application, "/ws/", headers=[ORIGINE])
+    communicateur = WebsocketCommunicator(application, "/sigrh/ws/", headers=[ORIGINE])
     connecte, _ = await communicateur.connect()
     assert connecte
     await communicateur.send_json_to({"type": "auth", "token": jeton})
@@ -42,7 +42,7 @@ async def test_jeton_invalide_ferme_la_connexion():
 
 
 async def test_origine_inconnue_refusee():
-    communicateur = WebsocketCommunicator(application, "/ws/", headers=[(b"origin", b"https://site-pirate.example")])
+    communicateur = WebsocketCommunicator(application, "/sigrh/ws/", headers=[(b"origin", b"https://site-pirate.example")])
     connecte, _ = await communicateur.connect()
     assert not connecte
 

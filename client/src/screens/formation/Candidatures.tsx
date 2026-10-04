@@ -91,7 +91,7 @@ export function Candidatures({ data }: { data: TableauFormation }) {
                   <th className="py-3 px-4">Agent</th>
                   <th className="py-3 px-4">Module demandé</th>
                   <th className="py-3 px-4">Déposée le</th>
-                  <th className="py-3 px-4">Étape</th>
+                  <th className="py-3 px-4" data-min="">Étape</th>
                   <th className="py-3 px-4 text-right">Décision</th>
                 </tr>
               </thead>

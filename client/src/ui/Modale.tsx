@@ -109,6 +109,8 @@ export type ModaleProps = {
   focusInitial?: RefObject<HTMLElement | null>;
   /** Cache le bouton de fermeture (attente non interruptible). */
   sansFermeture?: boolean;
+  /** Titre et sous-titre centrés. */
+  centre?: boolean;
 };
 
 export function Modale({
@@ -129,6 +131,7 @@ export function Modale({
   role = "dialog",
   focusInitial,
   sansFermeture = false,
+  centre = false,
 }: ModaleProps) {
   const id = useId();
   const voile = useRef<HTMLDivElement>(null);
@@ -211,13 +214,13 @@ export function Modale({
         <span className="w-1/3 bg-primary-container" />
       </div>
       <span className="mx-auto mt-2 h-1 w-10 shrink-0 rounded-full bg-outline-variant sm:hidden" aria-hidden="true" />
-      <header className="flex shrink-0 items-start gap-3 px-5 pt-4 pb-3 sm:px-6 sm:pt-5">
+      <header className={`flex shrink-0 gap-3 px-5 pt-4 pb-3 sm:px-6 sm:pt-5 ${centre ? "flex-col items-center text-center" : "items-start"}`}>
         {icone ? (
           <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${TON[ton]}`} aria-hidden="true">
             <span className="material-symbols-outlined text-xl">{icone}</span>
           </span>
         ) : null}
-        <div className="min-w-0 flex-1 pt-0.5">
+        <div className={`min-w-0 pt-0.5 ${centre ? "w-full" : "flex-1"}`}>
           <h2 id={`${id}-titre`} className="font-headline-sm text-headline-sm text-on-surface font-bold">{titre}</h2>
           {sousTitre ? <div id={`${id}-description`} className="mt-1 font-body-sm text-body-sm text-on-surface-variant">{sousTitre}</div> : null}
         </div>

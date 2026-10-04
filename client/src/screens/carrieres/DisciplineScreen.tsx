@@ -227,7 +227,7 @@ export function DisciplineScreen() {
                     <th className="py-3.5 px-6 font-semibold">Agent mis en cause & société</th>
                     <th className="py-3.5 px-6 font-semibold">Nature du grief</th>
                     <th className="py-3.5 px-6 font-semibold">Rapporteur & délais ({delai} j)</th>
-                    <th className="py-3.5 px-6 font-semibold">Stade du contradictoire</th>
+                    <th className="py-3.5 px-6 font-semibold" data-min="">Stade du contradictoire</th>
                     <th className="py-3.5 px-6 font-semibold">Avis</th>
                     <th className="py-3.5 px-6 text-right font-semibold">Actions</th>
                   </tr>

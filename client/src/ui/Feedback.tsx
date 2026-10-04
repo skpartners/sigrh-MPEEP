@@ -201,7 +201,7 @@ function ConfirmDialog({ title, message, confirmLabel = "Confirmer", onClose }: 
 
 function BusyOverlay({ label, detail }: { label: string; detail?: string }) {
   return (
-    <Modale role="alertdialog" titre={label} sousTitre={detail} taille="sm" sansFermeture onClose={() => undefined}>
+    <Modale role="alertdialog" titre={label} sousTitre={detail} taille="sm" sansFermeture centre onClose={() => undefined}>
       <div className="flex flex-col items-center pt-2 text-center" aria-busy="true">
         <div className="relative h-20 w-20">
           <svg className="motion-spin absolute inset-0" viewBox="0 0 80 80" aria-hidden="true">
@@ -209,7 +209,7 @@ function BusyOverlay({ label, detail }: { label: string; detail?: string }) {
             <circle cx="40" cy="40" r="34" fill="none" stroke="var(--color-primary)" strokeWidth="5" strokeLinecap="round" strokeDasharray="60 154" />
             <circle cx="40" cy="40" r="34" fill="none" stroke="var(--color-secondary-container)" strokeWidth="5" strokeLinecap="round" strokeDasharray="22 192" strokeDashoffset="-90" />
           </svg>
-          <img src="/logo.png" alt="" className="motion-breathe absolute inset-0 m-auto h-11 w-11 object-contain" />
+          <img src={`${import.meta.env.BASE_URL}logo.png`} alt="" className="motion-breathe absolute inset-0 m-auto h-11 w-11 object-contain" />
         </div>
         <div className="motion-indeterminate mt-5 h-1 w-full overflow-hidden rounded-full bg-surface-container" />
       </div>

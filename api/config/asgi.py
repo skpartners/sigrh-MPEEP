@@ -17,6 +17,6 @@ application = ProtocolTypeRouter(
     {
         "http": django_asgi_app,
         # Seules les origines du front (SIGRH_SPA_ORIGINS) peuvent ouvrir un WebSocket.
-        "websocket": OriginValidator(URLRouter([path("ws/", TempsReelConsumer.as_asgi())]), settings.SPA_ORIGINS),
+        "websocket": OriginValidator(URLRouter([path("sigrh/ws/", TempsReelConsumer.as_asgi())]), settings.SPA_ORIGINS),
     }
 )

@@ -595,3 +595,169 @@ a[class*="rounded"]:active {
     animation: content-in 160ms linear both !important;
   }
 }
+
+/* --- Mobile et tablette -------------------------------------------------------
+   Sous 1280 px (téléphone, tablette portrait et paysage avec le menu), les
+   registres deviennent des cartes. Chaque ligne ne garde que l'identité, les
+   colonnes marquées data-min, et la dernière cellule (statut ou action).
+   Les grilles (calendrier, matrice de droits) restent des tableaux défilants. */
+@media screen and (max-width: 1279px) {
+  .px-margin-desktop {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  header > div.bg-primary .italic,
+  header > div.bg-primary .opacity-40,
+  header > div.bg-primary .justify-between > div:last-child,
+  header .max-w-xl.truncate {
+    display: none;
+  }
+
+  header .h-16 > div:first-child {
+    min-width: 0;
+  }
+
+  header .h-16 .bg-surface-container-high {
+    display: none;
+  }
+
+  main {
+    overflow-x: clip;
+  }
+
+  body {
+    overflow-x: clip;
+  }
+
+  main > *,
+  main .flex > *,
+  main .inline-flex,
+  main .grid > * {
+    min-width: 0;
+  }
+
+  main .flex,
+  main .inline-flex,
+  main .grid {
+    max-width: 100%;
+  }
+
+  main h1,
+  main h2,
+  main h3,
+  main p,
+  main li {
+    overflow-wrap: break-word;
+  }
+
+  .overflow-x-auto:has(table:not(.tableau-fixe)) {
+    overflow-x: visible;
+  }
+
+  table:not(.tableau-fixe) {
+    display: block;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  table:not(.tableau-fixe) > thead {
+    display: none;
+  }
+
+  table:not(.tableau-fixe) > tbody {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.5rem;
+  }
+
+  table:not(.tableau-fixe) > tbody > tr {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 0.75rem;
+    margin: 0;
+    padding: 0.75rem 0.875rem;
+    border: 1px solid var(--color-hairline);
+    border-radius: 0.75rem;
+    background: var(--color-surface-container-lowest);
+  }
+
+  table:not(.tableau-fixe) > tbody > tr > * {
+    display: none !important;
+    min-width: 0;
+    max-width: 100%;
+    padding: 0 !important;
+    border: 0 !important;
+    text-align: left !important;
+    white-space: normal !important;
+    position: static !important;
+    overflow-wrap: anywhere;
+  }
+
+  table:not(.tableau-fixe) > tbody > tr > * * {
+    max-width: 100%;
+    white-space: normal;
+  }
+
+  table:not(.tableau-fixe) > tbody > tr > :first-child,
+  table:not(.tableau-fixe) > tbody > tr > :last-child,
+  table:not(.tableau-fixe) > tbody > tr > [colspan],
+  table:not(.tableau-fixe) > tbody > tr:not(:has(> :nth-child(4))) > * {
+    display: block !important;
+  }
+
+  table:not(.tableau-fixe):has(thead > tr > :nth-child(2)[data-min]) > tbody > tr > :nth-child(2),
+  table:not(.tableau-fixe):has(thead > tr > :nth-child(3)[data-min]) > tbody > tr > :nth-child(3),
+  table:not(.tableau-fixe):has(thead > tr > :nth-child(4)[data-min]) > tbody > tr > :nth-child(4),
+  table:not(.tableau-fixe):has(thead > tr > :nth-child(5)[data-min]) > tbody > tr > :nth-child(5),
+  table:not(.tableau-fixe):has(thead > tr > :nth-child(6)[data-min]) > tbody > tr > :nth-child(6),
+  table:not(.tableau-fixe):has(thead > tr > :nth-child(7)[data-min]) > tbody > tr > :nth-child(7),
+  table:not(.tableau-fixe):has(thead > tr > :nth-child(8)[data-min]) > tbody > tr > :nth-child(8),
+  table:not(.tableau-fixe):has(thead > tr > :nth-child(9)[data-min]) > tbody > tr > :nth-child(9),
+  table:not(.tableau-fixe):has(thead > tr > :nth-child(10)[data-min]) > tbody > tr > :nth-child(10),
+  table:not(.tableau-fixe):has(thead > tr > :nth-child(11)[data-min]) > tbody > tr > :nth-child(11),
+  table:not(.tableau-fixe):has(thead > tr > :nth-child(12)[data-min]) > tbody > tr > :nth-child(12) {
+    display: block !important;
+  }
+
+  table:not(.tableau-fixe) > tbody > tr > :first-child:not([colspan]) {
+    flex: 1 1 100%;
+  }
+
+  table:not(.tableau-fixe) > tbody > tr > :not(:first-child):not([colspan]) {
+    flex: 0 1 auto;
+  }
+
+  table:not(.tableau-fixe) > tbody > tr > [colspan] {
+    flex: 1 1 100%;
+  }
+
+  table:not(.tableau-fixe) > tbody > tr > :not(:first-child):not([colspan])[data-label]::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: 0.125rem;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 16px;
+    color: var(--color-on-surface-variant);
+  }
+
+  table:not(.tableau-fixe) > tbody > tr > :last-child button {
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+  }
+}
+
+@media (min-width: 640px) and (max-width: 1279px) {
+  table:not(.tableau-fixe) > tbody > tr > :first-child:not([colspan]) {
+    flex-basis: 14rem;
+  }
+}
+
+@supports (padding: env(safe-area-inset-bottom)) {
+  .app-pied {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+}

@@ -1,4 +1,17 @@
 import pytest
+from rest_framework.test import APIClient
+
+# Les routes publiques sont sous /sigrh ; les tests continuent d'écrire /api/v1/…
+_generique = APIClient.generic
+
+
+def _avec_racine(self, method, path, *args, **kwargs):
+    if isinstance(path, str) and path.startswith("/") and not path.startswith("/sigrh/") and path != "/sigrh":
+        path = "/sigrh" + path
+    return _generique(self, method, path, *args, **kwargs)
+
+
+APIClient.generic = _avec_racine
 
 
 @pytest.fixture(autouse=True)

@@ -242,7 +242,7 @@ export function CircuitsScreen() {
               </div>
             </div>
             <div className={`${CARD} overflow-x-auto`}>
-              <table className="w-max min-w-full text-left border-collapse">
+              <table className="tableau-fixe w-max min-w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-surface-container-low text-on-surface font-label-md text-label-md">
                     <th className="sticky left-0 z-10 bg-surface-container-low py-3 px-5" rowSpan={2}>Rôle</th>
@@ -573,7 +573,7 @@ function RegistreDemandes({
               <th className="py-3.5 px-4">Référence</th>
               <th className="py-3.5 px-4">Agent</th>
               <th className="py-3.5 px-4">Nature</th>
-              <th className="py-3.5 px-4">Étape & responsable</th>
+              <th className="py-3.5 px-4" data-min="">Étape & responsable</th>
               <th className="py-3.5 px-4">Échéance</th>
               <th className="py-3.5 px-4 text-right"><span className="sr-only">Actions</span></th>
             </tr>

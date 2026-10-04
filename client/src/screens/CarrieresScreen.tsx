@@ -255,7 +255,7 @@ function TableauAvancement({ lignes }: { lignes: Ligne[] | undefined }) {
                 <th className="py-3.5 px-4">Agent</th>
                 <th className="py-3.5 px-3">Emploi & structure</th>
                 <th className="py-3.5 px-3 text-center">Situation</th>
-                <th className="py-3.5 px-3 text-center">Proposition</th>
+                <th className="py-3.5 px-3 text-center" data-min="">Proposition</th>
                 <th className="py-3.5 px-3 text-center">Note /20</th>
                 <th className="py-3.5 px-3 text-center">Avis N+1</th>
                 <th className="py-3.5 px-3">Statut</th>

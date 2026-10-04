@@ -174,7 +174,7 @@ export function StatistiquesScreen() {
                   {(data?.exercices ?? []).map((annee) => <option key={annee} value={annee}>{annee}</option>)}
                 </select>
               </label>
-              <label className="flex flex-col gap-1 font-label-sm text-label-sm text-on-surface-variant min-w-[16rem]">
+              <label className="flex flex-col gap-1 font-label-sm text-label-sm text-on-surface-variant min-w-0 sm:min-w-[16rem] sm:flex-1">
                 Structure
                 <select className={CHAMP} value={structure} aria-label="Structure" onChange={(event) => setStructure(event.target.value)}>
                   <option value="">Toutes les structures</option>
@@ -668,7 +668,7 @@ function SeriesPluri({ series, exercice }: { series: SerieAnnuelle[]; exercice: 
             <tr>
               <th className="px-4 py-3">Indicateur</th>
               {annees.map((point) => (
-                <th key={point.annee} className={`px-3 py-3 text-right ${point.annee === exercice ? "bg-primary-fixed text-primary" : ""}`}>{point.annee}</th>
+                <th key={point.annee} data-min={point.annee === exercice ? "" : undefined} className={`px-3 py-3 text-right ${point.annee === exercice ? "bg-primary-fixed text-primary" : ""}`}>{point.annee}</th>
               ))}
               <th className="px-4 py-3 text-right">Écart</th>
             </tr>
@@ -750,7 +750,7 @@ function MatriceStructures({ lignes }: { lignes: Ligne[] }) {
             <tr>
               <th className="px-4 py-3">Structure</th>
               <th className="px-4 py-3">Pôle</th>
-              <th className="px-4 py-3 text-right">Effectif réel</th>
+              <th className="px-4 py-3 text-right" data-min="">Effectif réel</th>
               <th className="px-4 py-3 text-right">Cadres A</th>
               <th className="px-4 py-3 text-right">Départs N+1</th>
               <th className="px-4 py-3 text-right">Parité F/H</th>

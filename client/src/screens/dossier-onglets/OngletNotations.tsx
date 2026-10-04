@@ -203,7 +203,7 @@ export function OngletNotations({ agent }: { agent: Dossier }) {
               <thead>
                 <tr className="text-on-surface-variant font-label-sm text-label-sm uppercase">
                   <th className="py-2">Exercice</th>
-                  <th className="py-2">Note</th>
+                  <th className="py-2" data-min="">Note</th>
                   <th className="py-2">Mention</th>
                   <th className="py-2">Statut</th>
                 </tr>

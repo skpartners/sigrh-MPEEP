@@ -201,7 +201,7 @@ export function SituationScreen() {
                   <tr>
                     <th className="py-3 px-4">Agent / Fonctionnaire</th>
                     <th className="py-3 px-4">Origine & Affectation</th>
-                    <th className="py-3 px-4">Position</th>
+                    <th className="py-3 px-4" data-min="">Position</th>
                     <th className="py-3 px-4 text-right">Action</th>
                   </tr>
                 </thead>

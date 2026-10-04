@@ -538,7 +538,7 @@ export function OngletSocial({ agent }: { agent: Dossier }) {
                   <th className="py-3 px-4">Date Dépôt</th>
                   <th className="py-3 px-4">Type de Prestation</th>
                   <th className="py-3 px-4">Montant Sollicité</th>
-                  <th className="py-3 px-4">{"Circuit d'Approbation & Statut"}</th>
+                  <th className="py-3 px-4" data-min="">{"Circuit d'Approbation & Statut"}</th>
                   <th className="py-3 px-4">Échéance Mandat</th>
                   <th className="py-3 px-4 text-right">Actions</th>
                 </tr>

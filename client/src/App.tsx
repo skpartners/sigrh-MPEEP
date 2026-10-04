@@ -10,6 +10,7 @@ import { CommunicationScreen } from "./screens/CommunicationScreen";
 import { SondageScreen } from "./screens/SondageScreen";
 import { StructuresScreen } from "./screens/StructuresScreen";
 import { UtilisateursScreen } from "./screens/UtilisateursScreen";
+import { AideScreen } from "./screens/AideScreen";
 import { DashboardScreen } from "./screens/DashboardScreen";
 import { DossierScreen } from "./screens/DossierScreen";
 import { BesoinsScreen, SocialScreen } from "./screens/ModuleScreens";
@@ -22,6 +23,7 @@ import { ProtectionDonneesScreen } from "./screens/ProtectionDonneesScreen";
 import { getToken } from "./api/client";
 import { MessagerieProvider } from "./screens/Messagerie";
 import { FeedbackProvider } from "./ui/Feedback";
+import { EtiquettesTableaux } from "./ui/EtiquettesTableaux";
 import { PageMotion, TopProgress } from "./ui/Motion";
 import { TempsReelProvider } from "./ui/TempsReel";
 
@@ -32,8 +34,9 @@ const queryClient = new QueryClient({
 export function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter useTransitions={false}>
+      <BrowserRouter basename="/sigrh" useTransitions={false}>
         <FeedbackProvider>
+          <EtiquettesTableaux />
           <TopProgress />
           <SessionApplicative>
           <PublicMotion>
@@ -64,6 +67,7 @@ export function App() {
               <Route path="/app/structures" element={<RequireAuth><StructuresScreen /></RequireAuth>} />
               <Route path="/app/communication" element={<RequireAuth><CommunicationScreen /></RequireAuth>} />
               <Route path="/app/sondage" element={<RequireAuth><SondageScreen /></RequireAuth>} />
+              <Route path="/app/aide" element={<RequireAuth><AideScreen /></RequireAuth>} />
             </Routes>
           </PublicMotion>
           </SessionApplicative>

@@ -274,7 +274,7 @@ export function OngletFormation({ agent }: { agent: Dossier }) {
                       <th className="py-3 px-4">{"Intitulé & Organisme Partenaire"}</th>
                       <th className="py-3 px-4">Cible Statutaire</th>
                       <th className="py-3 px-4">Crédits</th>
-                      <th className="py-3 px-4">Statut Session</th>
+                      <th className="py-3 px-4" data-min="">Statut Session</th>
                       <th className="py-3 px-4 text-right rounded-r">Action</th>
                     </tr>
                   </thead>
@@ -352,7 +352,7 @@ export function OngletFormation({ agent }: { agent: Dossier }) {
                     <th className="py-3 px-4 rounded-l">Intitulé & période</th>
                     <th className="py-3 px-4">Organisme</th>
                     <th className="py-3 px-4">Volume horaire</th>
-                    <th className="py-3 px-4">Statut</th>
+                    <th className="py-3 px-4" data-min="">Statut</th>
                     <th className="py-3 px-4 rounded-r">Attestation</th>
                   </tr>
                 </thead>

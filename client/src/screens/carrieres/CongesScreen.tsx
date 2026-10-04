@@ -336,7 +336,7 @@ export function CongesScreen() {
                     <th className="py-3 px-3">Type & période</th>
                     <th className="py-3 px-3">Durée</th>
                     <th className="py-3 px-3">Continuité / intérim</th>
-                    <th className="py-3 px-3">Statut d'instruction</th>
+                    <th className="py-3 px-3" data-min="">Statut d'instruction</th>
                     <th className="py-3 px-4 text-right">Actions</th>
                   </tr>
                 </thead>

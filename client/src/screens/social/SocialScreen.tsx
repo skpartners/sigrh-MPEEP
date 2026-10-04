@@ -329,7 +329,7 @@ export function SocialScreen() {
                     <th className="py-3 px-4">Nature de la prestation</th>
                     <th className="py-3 px-4">Montant sollicité</th>
                     <th className="py-3 px-4">Pièces justificatives</th>
-                    <th className="py-3 px-4">Avis de la commission</th>
+                    <th className="py-3 px-4" data-min="">Avis de la commission</th>
                     <th className="py-3 px-4 text-right rounded-r">Décision</th>
                   </tr>
                 </thead>

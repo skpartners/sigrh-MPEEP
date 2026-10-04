@@ -1,4 +1,8 @@
-const BASE = (import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8101").replace(/\/$/, "");
+const RACINE = "/sigrh";
+const BASE = (import.meta.env.DEV
+  ? (import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8101")
+  : (import.meta.env.VITE_API_BASE_URL || "")
+).replace(/\/$/, "");
 
 const TOKEN_KEY = "sigrh_token";
 
@@ -6,10 +10,19 @@ export function apiBaseUrl(): string {
   return BASE;
 }
 
-/** Une URL média renvoyée par l'API (`/media/…`) devient absolue pour le front. */
+function adresseApi(path: string): string {
+  const chemin = path.startsWith(RACINE) ? path : `${RACINE}${path.startsWith("/") ? path : `/${path}`}`;
+  return `${BASE}${chemin}`;
+}
+
+export function pageConnexion(): string {
+  return `${RACINE}/connexion`;
+}
+
+/** Une URL média (`/sigrh/media/…`) suit l'origine de l'API. En production, c'est le même hôte. */
 export function mediaUrl(path: string | undefined): string {
   if (!path) return "";
-  return path.startsWith("http") ? path : `${BASE}${path}`;
+  return path.startsWith("http") ? path : adresseApi(path);
 }
 
 export function getToken(): string | null {
@@ -54,11 +67,11 @@ export async function api<T>(path: string, options: RequestInit = {}): Promise<T
   const token = getToken();
   if (token) headers.set("Authorization", `Token ${token}`);
 
-  const response = await fetch(`${BASE}${path}`, { ...options, headers });
+  const response = await fetch(adresseApi(path), { ...options, headers });
   // Jeton expiré ou révoqué : on repart de la connexion plutôt que de laisser l'écran en erreur.
   if (response.status === 401 && token && !path.startsWith("/api/v1/auth/")) {
     setToken(null);
-    window.location.replace("/connexion");
+    window.location.replace(pageConnexion());
   }
   if (!response.ok) {
     let detail = "La requête n'a pas abouti.";
@@ -84,10 +97,10 @@ export async function telecharger(path: string, nom: string): Promise<void> {
   const headers = new Headers();
   const token = getToken();
   if (token) headers.set("Authorization", `Token ${token}`);
-  const response = await fetch(`${BASE}${path}`, { headers });
+  const response = await fetch(adresseApi(path), { headers });
   if (response.status === 401 && token) {
     setToken(null);
-    window.location.replace("/connexion");
+    window.location.replace(pageConnexion());
   }
   if (!response.ok) {
     let detail = "La requête n'a pas abouti.";

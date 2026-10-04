@@ -322,7 +322,7 @@ export function DotationScreen() {
                   <th className="px-4 py-3">Entité</th>
                   <th className="px-4 py-3">Poste</th>
                   <th className="px-4 py-3">Impact</th>
-                  <th className="px-4 py-3">Statut</th>
+                  <th className="px-4 py-3" data-min="">Statut</th>
                   <th className="px-4 py-3 text-right">Actions</th>
                 </tr>
               </thead>

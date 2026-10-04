@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { NavLink } from "react-router-dom";
 
 const idle =
@@ -13,18 +14,49 @@ const links = [
 ];
 
 export function PublicHeaderNav() {
+  const [ouvert, setOuvert] = useState(false);
+
   return (
-    <nav className="hidden lg:flex items-center gap-space-sm" aria-label="Pages publiques">
-      {links.map((link) => (
-        <NavLink
-          key={link.to}
-          to={link.to}
-          end={link.end}
-          className={({ isActive }) => (isActive ? current : idle)}
+    <>
+      <button
+        type="button"
+        className="lg:hidden inline-flex items-center justify-center min-h-11 min-w-11 rounded text-on-surface"
+        aria-label={ouvert ? "Fermer le menu" : "Ouvrir le menu"}
+        aria-expanded={ouvert}
+        onClick={() => setOuvert((valeur) => !valeur)}
+      >
+        <span className="material-symbols-outlined text-2xl" aria-hidden="true">{ouvert ? "close" : "menu"}</span>
+      </button>
+      <nav className="hidden lg:flex items-center gap-space-sm" aria-label="Pages publiques">
+        {links.map((link) => (
+          <NavLink
+            key={link.to}
+            to={link.to}
+            end={link.end}
+            className={({ isActive }) => (isActive ? current : idle)}
+          >
+            {link.label}
+          </NavLink>
+        ))}
+      </nav>
+      {ouvert ? (
+        <nav
+          className="lg:hidden fixed inset-x-4 top-24 z-50 rounded-xl border border-hairline bg-surface-container-lowest p-2 shadow-xl"
+          aria-label="Pages publiques"
         >
-          {link.label}
-        </NavLink>
-      ))}
-    </nav>
+          {links.map((link) => (
+            <NavLink
+              key={link.to}
+              to={link.to}
+              end={link.end}
+              onClick={() => setOuvert(false)}
+              className={({ isActive }) => `flex min-h-11 items-center rounded-lg px-3 ${isActive ? "bg-primary-container text-on-primary font-semibold" : "text-on-surface hover:bg-surface-container-low"}`}
+            >
+              {link.label}
+            </NavLink>
+          ))}
+        </nav>
+      ) : null}
+    </>
   );
 }

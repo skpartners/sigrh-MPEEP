@@ -187,7 +187,7 @@ export function BesoinsScreen() {
                   <th className="px-4 py-3">Profil</th>
                   <th className="px-4 py-3">Volume</th>
                   <th className="px-4 py-3">Arbitrage</th>
-                  <th className="px-4 py-3">Visa</th>
+                  <th className="px-4 py-3" data-min="">Visa</th>
                   <th className="px-4 py-3 text-right">Action</th>
                 </tr>
               </thead>

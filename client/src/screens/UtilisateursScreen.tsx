@@ -275,11 +275,11 @@ export function UtilisateursScreen() {
               <thead className="bg-surface-container-low font-label-sm text-label-sm uppercase tracking-wide text-on-surface-variant">
                 <tr>
                   <th className="px-4 py-3">Matricule</th>
-                  <th className="px-4 py-3">Nom</th>
+                  <th className="px-4 py-3" data-min="">Nom</th>
                   <th className="px-4 py-3">Structure</th>
                   <th className="px-4 py-3">Supérieur</th>
                   <th className="px-4 py-3">Rôle</th>
-                  <th className="px-4 py-3">Statut</th>
+                  <th className="px-4 py-3" data-min="">Statut</th>
                   <th className="px-4 py-3 text-right">Actions</th>
                 </tr>
               </thead>

@@ -275,7 +275,7 @@ export function FinCarriereScreen() {
                     <th className="py-3 px-4 font-bold">Grade & ancienneté</th>
                     <th className="py-3 px-4 font-bold">Date limite / âge</th>
                     <th className="py-3 px-4 font-bold">IDR & pension prov.</th>
-                    <th className="py-3 px-4 font-bold">Statut réglementaire</th>
+                    <th className="py-3 px-4 font-bold" data-min="">Statut réglementaire</th>
                     <th className="py-3 px-4 font-bold text-right">Actions</th>
                   </tr>
                 </thead>

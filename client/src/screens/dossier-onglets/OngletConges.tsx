@@ -307,7 +307,7 @@ export function OngletConges({ agent }: { agent: Dossier }) {
                   <th className="py-3 px-4">Période d'Effet</th>
                   <th className="py-3 px-4">Durée</th>
                   <th className="py-3 px-4">Remplaçant Intérimaire</th>
-                  <th className="py-3 px-4">Statut Légal</th>
+                  <th className="py-3 px-4" data-min="">Statut Légal</th>
                   <th className="py-3 px-4 text-right rounded-r">Arrêté</th>
                 </tr>
               </thead>

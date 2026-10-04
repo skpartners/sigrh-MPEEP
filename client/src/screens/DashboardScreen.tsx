@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { api, telecharger } from "../api/client";
+import { api, mediaUrl, telecharger } from "../api/client";
 import type { Acte, Dashboard, Kpi, SessionUser, Ton } from "../api/types";
 import { dateCourte, moisAnnee } from "../ui/format";
 import { Portrait } from "../ui/PhotoProfil";
@@ -109,7 +109,7 @@ export function DashboardScreen() {
           <section aria-labelledby="titre-modules">
             <h2 id="titre-modules" className="font-headline-sm text-headline-sm text-on-surface">Registres en cours</h2>
             <p className="font-body-sm text-body-sm text-on-surface-variant mt-1 mb-4">Chaque chiffre est lu dans le registre du module.</p>
-            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">
+            <div className="grid grid-cols-1 min-[480px]:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">
               {data
                 ? data.modules.map((module) => (
                     <Link key={module.cle} to={module.lien} className={`${CARD} p-4 hover:bg-surface-container-low flex flex-col gap-2 min-h-28`}>
@@ -331,7 +331,7 @@ function VisaLigne({ visa, signatureUrl, onTraite }: { visa: Visa; signatureUrl:
           onClick={() => traiter("visa")}
         >
           {signatureUrl ? (
-            <img src={signatureUrl} alt="" className="h-5 max-w-[4.5rem] object-contain bg-white rounded-sm" />
+            <img src={mediaUrl(signatureUrl)} alt="" className="h-5 max-w-[4.5rem] object-contain bg-white rounded-sm" />
           ) : (
             <span className="material-symbols-outlined text-sm" aria-hidden="true">draw</span>
           )}
@@ -449,7 +449,7 @@ function RegistreActes({ actes }: { actes: Acte[] | undefined }) {
             <tr className="bg-surface-container-low text-on-surface-variant font-label-md text-label-md">
               <th className="py-3 px-4">Agent</th>
               <th className="py-3 px-4">Structure</th>
-              <th className="py-3 px-4">Acte administratif</th>
+              <th className="py-3 px-4" data-min="">Acte administratif</th>
               <th className="py-3 px-4">Statut</th>
               <th className="py-3 px-4">Enregistré le</th>
               <th className="py-3 px-4 text-right"><span className="sr-only">Télécharger</span></th>

@@ -127,7 +127,7 @@ function Attestation({ agent, formation, onClose }: { agent: Dossier; formation:
     >
       <article className="zone-impression rounded-lg border border-hairline bg-white p-8 text-[#0b1c30]">
         <header className="flex items-center gap-4 border-b border-hairline pb-4">
-          <img src="/logo.png" alt="Armoiries de la République de Côte d'Ivoire" className="h-16 w-16 object-contain" />
+          <img src={`${import.meta.env.BASE_URL}logo.png`} alt="Armoiries de la République de Côte d'Ivoire" className="h-16 w-16 object-contain" />
           <div>
             <p className="font-label-md text-label-md uppercase tracking-wider">République de Côte d'Ivoire</p>
             <p className="font-body-sm text-body-sm">Ministère du Portefeuille de l'État et des Entreprises Publiques</p>

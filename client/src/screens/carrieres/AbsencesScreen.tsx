@@ -322,7 +322,7 @@ export function AbsencesScreen() {
                     <th className="py-3 px-4 rounded-l">{"Agent Public & Matricule"}</th>
                     <th className="py-3 px-4">{"Motif & Justificatif Règlementaire"}</th>
                     <th className="py-3 px-4">{"Période & Durée"}</th>
-                    <th className="py-3 px-4">État de Conformité</th>
+                    <th className="py-3 px-4" data-min="">État de Conformité</th>
                     <th className="py-3 px-4">Impact Solde</th>
                     <th className="py-3 px-4 text-right rounded-r">Décision</th>
                   </tr>

@@ -1,16 +1,55 @@
 import os
 from pathlib import Path
 
+from django.core.exceptions import ImproperlyConfigured
+
 BASE_DIR = Path(__file__).resolve().parent.parent
+_HOTES_LOCAUX = {"localhost", "127.0.0.1", "0.0.0.0", "::1"}
+
+
+def _lire_fichier_env(path: Path) -> None:
+    for raw in path.read_text(encoding="utf-8").splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
+
+
+_fichier_env = os.environ.get("SIGRH_ENV_FILE", "").strip()
+if _fichier_env:
+    _chemin_env = Path(_fichier_env)
+    if not _chemin_env.is_file():
+        raise ImproperlyConfigured(f"Fichier d'environnement introuvable : {_chemin_env}")
+    _lire_fichier_env(_chemin_env)
 
 
 def _env(name: str, default: str = "") -> str:
     return os.environ.get(name, default).strip()
 
 
+def _hote(valeur: str) -> str:
+    return valeur.split("://", 1)[-1].split("/", 1)[0].split(":", 1)[0].strip().lower()
+
+
+def _publics(valeurs: list[str]) -> list[str]:
+    if DEBUG:
+        return valeurs
+    return [valeur for valeur in valeurs if _hote(valeur) not in _HOTES_LOCAUX]
+
+
 SECRET_KEY = _env("DJANGO_SECRET_KEY", "sigrh-dev-only-not-for-production")
 DEBUG = _env("DJANGO_DEBUG", "true").lower() in {"1", "true", "yes"}
-ALLOWED_HOSTS = [h.strip() for h in _env("DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost").split(",") if h.strip()]
+ALLOWED_HOSTS = _publics([
+    h.strip()
+    for h in _env("DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost").split(",")
+    if h.strip()
+])
+if not DEBUG and not ALLOWED_HOSTS:
+    raise ImproperlyConfigured("DJANGO_ALLOWED_HOSTS ne contient aucun hôte public.")
+
+# Préfixe public : le tunnel Cloudflare publie l'application sous /sigrh.
+ROOT_PATH = "/sigrh"
 
 INSTALLED_APPS = [
     # daphne en tête : `runserver` sert alors l'application ASGI (HTTP + WebSocket).
@@ -78,15 +117,19 @@ TIME_ZONE = "Africa/Abidjan"
 USE_I18N = True
 USE_TZ = True
 
-STATIC_URL = "static/"
+STATIC_URL = "/sigrh/static/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-SPA_ORIGINS = [
+SPA_ORIGINS = _publics([
     origin.strip()
-    for origin in _env("SIGRH_SPA_ORIGINS", "http://127.0.0.1:9100,http://localhost:9100").split(",")
+    for origin in _env(
+        "SIGRH_SPA_ORIGINS",
+        "http://127.0.0.1:9100,http://localhost:9100",
+    ).split(",")
     if origin.strip()
-]
+])
 CORS_ALLOWED_ORIGINS = SPA_ORIGINS
+CSRF_TRUSTED_ORIGINS = [origin for origin in SPA_ORIGINS if origin.startswith("https://")]
 CORS_ALLOW_HEADERS = [
     "accept",
     "authorization",
@@ -106,7 +149,7 @@ CHANNEL_LAYERS = {
 }
 
 MEDIA_ROOT = BASE_DIR / "media"
-MEDIA_URL = "/media/"
+MEDIA_URL = "/sigrh/media/"
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [

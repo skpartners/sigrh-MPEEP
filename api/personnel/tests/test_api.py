@@ -521,17 +521,17 @@ def test_apposer_un_visa_rend_l_acte_executoire(api, tmp_path, settings):
     signature = SimpleUploadedFile("signature.png", png, content_type="image/png")
     depot = api.post("/api/v1/me/signature/", {"fichier": signature}, format="multipart", **auth)
     assert depot.status_code == 200
-    assert depot.json()["signature_url"]
+    assert depot.json()["signature_url"].startswith("/sigrh/media/")
 
     reponse = api.post(f"/api/v1/visas/{visa.id}/decision/", {"decision": "visa"}, format="json", **auth)
     assert reponse.status_code == 200
     assert reponse.json()["reference"].startswith("MPEEP-")
-    assert reponse.json()["signature"]
+    assert reponse.json()["signature"].startswith("/sigrh/media/")
     acte = Acte.objects.get(reference="2026-0231/MPEEP")
     # L'accord autorise le papier à en-tête ; le droit n'est pas encore ouvert.
     assert acte.statut == Acte.Statut.ACCORDE
     fiche = next(item for item in api.get(f"/api/v1/agents/{visa.agent.matricule}/", **auth).json()["actes"] if item["id"] == acte.id)
-    assert fiche["signatures"] and fiche["signatures"][0]["signature_url"]
+    assert fiche["signatures"] and fiche["signatures"][0]["signature_url"].startswith("/sigrh/media/")
     assert fiche["scan_url"] == ""
     assert VisaDossier.objects.get(agent=visa.agent, ordre=2).avis == "Visa apposé"
     assert _non_lues(api, auth) == avant + 1
@@ -546,7 +546,7 @@ def test_apposer_un_visa_rend_l_acte_executoire(api, tmp_path, settings):
     assert acte.statut == Acte.Statut.VALIDE
     assert acte.scan
     fiche = next(item for item in verse.json()["actes"] if item["id"] == acte.id)
-    assert fiche["scan_url"]
+    assert fiche["scan_url"].startswith("/sigrh/media/")
 
 
 def test_decision_de_visa_inconnue(api):
@@ -961,7 +961,10 @@ def test_photo_de_profil_de_l_agent(api, tmp_path, settings):
         **auth,
     )
     assert depot.status_code == 200
-    assert depot.json()["photo_url"].endswith(".png")
+    assert depot.json()["photo_url"].startswith("/sigrh/media/")
+    portrait = api.get(depot.json()["photo_url"])
+    assert portrait.status_code == 200
+    assert b"".join(portrait.streaming_content).startswith(b"\x89PNG")
     assert api.get("/api/v1/agents/", **auth).json()
     trouve = next(agent for agent in api.get("/api/v1/agents/", **auth).json() if agent["matricule"] == "340188P")
     assert trouve["photo_url"].endswith(".png")

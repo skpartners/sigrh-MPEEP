@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { api, logout } from "../api/client";
+import { api, logout, mediaUrl } from "../api/client";
 import type { AgentBrief, SessionUser } from "../api/types";
 import { EditeurSignature } from "../ui/EditeurSignature";
 import { Portrait } from "../ui/PhotoProfil";
@@ -15,7 +15,7 @@ type AccesMenu = { module: string; fonction?: string };
 type EnfantNav = { to: string; libelle: string; end?: boolean; acces: AccesMenu };
 type LienNav = { to: string; end?: boolean; icone: string; libelle: string; acces: AccesMenu; enfants?: EnfantNav[] };
 
-const NAV: { groupe: string; liens: LienNav[] }[] = [
+const NAV: { groupe: string; liens: LienNav[]; accordeon?: boolean }[] = [
   {
     groupe: "Pilotage central",
     liens: [
@@ -69,6 +69,7 @@ const NAV: { groupe: string; liens: LienNav[] }[] = [
   },
   {
     groupe: "Gouvernance & conformité",
+    accordeon: true,
     liens: [
       { to: "/app/circuits", icone: "approval_delegation", libelle: "Circuits de validation", acces: { module: "Statistiques & RBAC", fonction: "Circuits et habilitations" } },
       { to: "/app/circuits#rbac", icone: "admin_panel_settings", libelle: "Habilitations", acces: { module: "Statistiques & RBAC", fonction: "Habilitations" } },
@@ -139,6 +140,18 @@ function initiales(user: SessionUser | undefined): string {
   return `${user.prenoms.charAt(0)}${user.nom.charAt(0)}`.toUpperCase();
 }
 
+const MOTS_VIDES = new Set(["de", "des", "du", "d", "et", "la", "le", "les", "l", "au", "aux", "en", "par", "pour", "sur", "a", "un", "une", "dans"]);
+
+/** « Directeur des Ressources Humaines » → DRH. Un seul mot reste tel quel. */
+function sigleFonction(fonction: string): string {
+  const mots = fonction
+    .split(/[\s'’]+/)
+    .map((mot) => mot.trim())
+    .filter((mot) => mot && !MOTS_VIDES.has(mot.toLowerCase().normalize("NFD").replace(/\p{M}/gu, "")));
+  if (mots.length <= 1) return fonction;
+  return mots.map((mot) => mot.normalize("NFD").replace(/\p{M}/gu, "").charAt(0).toUpperCase()).join("");
+}
+
 function BandeauSondage() {
   const sondage = useQuery({
     queryKey: ["sondage-courant"],
@@ -201,14 +214,14 @@ export function AppChrome({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen bg-background font-body-md text-body-md text-on-surface antialiased">
-      <header className="fixed top-0 left-0 right-0 z-50 bg-surface-container-lowest/95 backdrop-blur-md border-b border-hairline">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-surface-container-lowest/95 backdrop-blur-md border-b border-hairline pt-[env(safe-area-inset-top)]">
         <div className="h-1 flex w-full" aria-hidden="true">
           <div className="w-1/3 bg-secondary-container"></div>
           <div className="w-1/3 bg-surface-container-lowest"></div>
           <div className="w-1/3 bg-primary-container"></div>
         </div>
-        <div className="h-16 px-4 sm:px-6 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+        <div className="h-16 px-3 sm:px-6 flex items-center justify-between gap-1 sm:gap-3">
+          <div className="flex items-center gap-1 sm:gap-3 min-w-0">
             <button
               type="button"
               className="p-2 -ml-1 rounded text-on-surface-variant hover:bg-surface-container-high"
@@ -223,7 +236,7 @@ export function AppChrome({ children }: { children: ReactNode }) {
             </button>
             <Link to="/app" className="flex items-center gap-3 min-w-0 rounded">
               <span className="flex items-center justify-center p-1 bg-surface-container-low rounded shrink-0">
-                <img alt="Armoiries de la République de Côte d'Ivoire" className="h-10 w-10 object-contain" src="/logo.png" />
+                <img alt="Armoiries de la République de Côte d'Ivoire" className="h-8 w-8 sm:h-10 sm:w-10 object-contain" src={`${import.meta.env.BASE_URL}logo.png`} />
               </span>
               <span className="hidden sm:flex flex-col min-w-0">
                 <span className="font-label-md text-label-md text-primary uppercase tracking-wider font-bold truncate">
@@ -236,7 +249,7 @@ export function AppChrome({ children }: { children: ReactNode }) {
             </Link>
           </div>
           <AgentSearch />
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          <div className="flex items-center gap-0.5 sm:gap-3 shrink-0">
             <div className="hidden xl:flex items-center gap-1.5 px-2.5 py-1 bg-surface-container-low rounded">
               <span className="font-label-sm text-label-sm text-on-surface-variant font-medium">Exercice</span>
               <span className="font-code-num text-code-num text-primary font-bold px-1.5 py-0.5 bg-surface-container-lowest rounded">
@@ -246,6 +259,15 @@ export function AppChrome({ children }: { children: ReactNode }) {
             {menuAutorise(me.data?.acces, { module: "Statistiques & RBAC", fonction: "Communication" }) ? <CommunicationBouton /> : null}
             <MessagerieBouton />
             <NotificationBell />
+            <Link
+              to="/app/aide"
+              aria-label="Aide"
+              aria-current={pathname === "/app/aide" ? "page" : undefined}
+              title="Aide"
+              className={`hidden sm:inline-flex p-2 rounded hover:bg-surface-container-high ${pathname === "/app/aide" ? "bg-surface-container-high text-on-surface" : "text-on-surface-variant hover:text-on-surface"}`}
+            >
+              <span className="material-symbols-outlined text-xl" aria-hidden="true">help</span>
+            </Link>
             <ProfileMenu user={me.data} />
           </div>
         </div>
@@ -274,15 +296,7 @@ export function AppChrome({ children }: { children: ReactNode }) {
         </div>
         <nav className={`flex-1 space-y-1 font-body-sm text-body-sm ${reduit ? "px-2" : "px-3"}`} aria-label="Navigation principale">
           {NAV.map((section, index) => (
-            <div key={section.groupe}>
-              {reduit && index > 0 ? <div className="mx-2 my-2 border-t border-primary-fixed/40" /> : null}
-              <p className={reduit ? "sr-only" : `px-3 ${index === 0 ? "pt-2" : "pt-3"} pb-1 font-label-sm text-label-sm text-primary-fixed uppercase tracking-wider font-bold`}>
-                {section.groupe}
-              </p>
-              {section.liens.map((lien) => (
-                <EntreeNav key={lien.to} lien={lien} pathname={pathname} hash={hash} acces={me.data?.acces} reduit={reduit} />
-              ))}
-            </div>
+            <GroupeNav key={section.groupe} section={section} index={index} pathname={pathname} hash={hash} acces={me.data?.acces} reduit={reduit} />
           ))}
         </nav>
         <div className={reduit ? "px-2 pt-3 mt-auto" : "px-4 pt-3 mt-auto"}>
@@ -294,7 +308,7 @@ export function AppChrome({ children }: { children: ReactNode }) {
       </aside>
 
       <div className={`transition-[padding] duration-300 ${repli ? "lg:pl-16" : "lg:pl-72"}`}>
-        <main className="relative pt-16 pb-28 min-h-screen bg-background flex flex-col justify-between">
+        <main className="relative pt-[calc(4.25rem+env(safe-area-inset-top))] pb-36 sm:pb-28 min-h-screen bg-background flex flex-col justify-between">
           <PageMotion className="flex-1 flex flex-col" reveal={false}>
             <BandeauSondage />
             {pageHorsHabilitation(pathname, hash, me.data?.acces) ? (
@@ -303,11 +317,11 @@ export function AppChrome({ children }: { children: ReactNode }) {
           </PageMotion>
         </main>
       </div>
-      <footer className="fixed bottom-0 inset-x-0 z-50 bg-surface-container-lowest py-4 px-4 sm:px-8 border-t border-hairline">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
+      <footer className="app-pied fixed bottom-0 inset-x-0 z-50 bg-surface-container-lowest py-3 sm:py-4 px-4 sm:px-8 border-t border-hairline">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-3 text-center sm:text-left">
           <div className="flex flex-wrap items-center justify-center gap-2">
             <span className="font-label-md text-label-md text-primary font-bold">SIGRH MPEEP</span>
-            <span className="font-body-sm text-body-sm text-on-surface-variant">
+            <span className="hidden sm:inline font-body-sm text-body-sm text-on-surface-variant">
               • Ministère du Portefeuille de l'État et des Entreprises Publiques
             </span>
           </div>
@@ -329,6 +343,52 @@ export function AppChrome({ children }: { children: ReactNode }) {
 }
 
 const REFUSE = "text-on-primary/35 cursor-not-allowed";
+
+function sectionActive(section: (typeof NAV)[number], pathname: string, hash: string): boolean {
+  return section.liens.some((lien) => lienActif(lien.to, lien.end, pathname, hash) || lien.enfants?.some((enfant) => lienActif(enfant.to, enfant.end, pathname, hash)));
+}
+
+function GroupeNav({ section, index, pathname, hash, acces, reduit }: { section: (typeof NAV)[number]; index: number; pathname: string; hash: string; acces: SessionUser["acces"]; reduit: boolean }) {
+  const panneauId = useId();
+  const active = sectionActive(section, pathname, hash);
+  const [ouvert, setOuvert] = useState(active);
+
+  useEffect(() => {
+    if (active) setOuvert(true);
+  }, [active]);
+
+  const liens = section.liens.map((lien) => (
+    <EntreeNav key={lien.to} lien={lien} pathname={pathname} hash={hash} acces={acces} reduit={reduit} />
+  ));
+
+  if (!section.accordeon || reduit) {
+    return (
+      <div>
+        {reduit && index > 0 ? <div className="mx-2 my-2 border-t border-primary-fixed/40" /> : null}
+        <p className={reduit ? "sr-only" : `px-3 ${index === 0 ? "pt-2" : "pt-3"} pb-1 font-label-sm text-label-sm text-primary-fixed uppercase tracking-wider font-bold`}>
+          {section.groupe}
+        </p>
+        {liens}
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <button
+        type="button"
+        className="mt-2 flex w-full items-center justify-between gap-2 rounded px-3 py-2 text-left font-label-sm text-label-sm font-bold uppercase tracking-wider text-primary-fixed hover:bg-primary-container"
+        aria-expanded={ouvert}
+        aria-controls={panneauId}
+        onClick={() => setOuvert((valeur) => !valeur)}
+      >
+        <span>{section.groupe}</span>
+        <span className={`material-symbols-outlined text-lg transition-transform ${ouvert ? "rotate-180" : ""}`} aria-hidden="true">expand_more</span>
+      </button>
+      {ouvert ? <div id={panneauId}>{liens}</div> : null}
+    </div>
+  );
+}
 
 function EntreeNav({ lien, pathname, hash, acces, reduit }: { lien: LienNav; pathname: string; hash: string; acces: SessionUser["acces"]; reduit: boolean }) {
   const sousMenuId = useId();
@@ -492,14 +552,14 @@ function ProfileMenu({ user }: { user: SessionUser | undefined }) {
           <span className="font-label-md text-label-md text-on-surface font-semibold leading-tight">
             {user?.nom_complet ?? "Session"}
           </span>
-          <span className="font-label-sm text-label-sm text-on-surface-variant">{user?.fonction ?? ""}</span>
+          <span className="font-label-sm text-label-sm text-on-surface-variant" title={user?.fonction || undefined}>{user?.fonction ? sigleFonction(user.fonction) : ""}</span>
         </span>
-        <span className="material-symbols-outlined text-lg text-on-surface-variant" aria-hidden="true">expand_more</span>
+        <span className="material-symbols-outlined text-lg text-on-surface-variant hidden sm:inline" aria-hidden="true">expand_more</span>
       </button>
       {open ? (
         <div
           role="menu"
-          className="motion-overlay-card absolute right-0 mt-2 w-72 rounded-lg border border-hairline bg-surface-container-lowest p-2 shadow-xl"
+          className="motion-overlay-card absolute right-0 mt-2 w-72 max-w-[calc(100vw-1.5rem)] rounded-lg border border-hairline bg-surface-container-lowest p-2 shadow-xl"
         >
           {user ? (
             <div className="px-3 py-2 border-b border-hairline mb-1">
@@ -522,12 +582,21 @@ function ProfileMenu({ user }: { user: SessionUser | undefined }) {
             </span>
             {user?.signature_url ? (
               <span className="flex h-14 items-center justify-center rounded-md border border-hairline bg-white px-3">
-                <img src={user.signature_url} alt="Signature enregistrée" className="max-h-10 max-w-full object-contain" />
+                <img src={mediaUrl(user.signature_url)} alt="Signature enregistrée" className="max-h-10 max-w-full object-contain" />
               </span>
             ) : (
               <span className="font-body-sm text-body-sm text-on-surface-variant">Aucune signature enregistrée</span>
             )}
           </button>
+          <Link
+            role="menuitem"
+            to="/app/aide"
+            className="sm:hidden w-full flex items-center gap-2 px-3 py-2 rounded text-left font-label-lg text-label-lg text-on-surface hover:bg-surface-container-high"
+            onClick={() => setOpen(false)}
+          >
+            <span className="material-symbols-outlined text-lg" aria-hidden="true">help</span>
+            Aide
+          </Link>
           <button
             role="menuitem"
             type="button"
@@ -549,7 +618,9 @@ function AgentSearch() {
   const [query, setQuery] = useState("");
   const [debounced, setDebounced] = useState("");
   const [open, setOpen] = useState(false);
+  const [panneau, setPanneau] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const { pathname } = useLocation();
   const listId = useId();
   const navigate = useNavigate();
 
@@ -563,12 +634,20 @@ function AgentSearch() {
       const target = event.target as HTMLElement;
       if (event.key === "/" && !/^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName) && !target.isContentEditable) {
         event.preventDefault();
+        setPanneau(true);
         inputRef.current?.focus();
       }
+      if (event.key === "Escape") setPanneau(false);
     }
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, []);
+
+  useEffect(() => setPanneau(false), [pathname]);
+
+  useEffect(() => {
+    if (panneau) inputRef.current?.focus();
+  }, [panneau]);
 
   const results = useQuery({
     queryKey: ["agents", debounced],
@@ -580,12 +659,13 @@ function AgentSearch() {
 
   function goTo(matricule: string) {
     setOpen(false);
+    setPanneau(false);
     setQuery("");
     navigate(`/app/dossiers/${encodeURIComponent(matricule)}`);
   }
 
-  return (
-    <div className="flex-1 max-w-md mx-2 hidden lg:block relative">
+  const champ = (
+    <>
       <label className="relative flex items-center">
         <span className="sr-only">Rechercher un agent</span>
         <span className="material-symbols-outlined absolute left-3 text-on-surface-variant text-lg pointer-events-none" aria-hidden="true">
@@ -655,6 +735,27 @@ function AgentSearch() {
           )}
         </ul>
       ) : null}
-    </div>
+    </>
+  );
+
+  return (
+    <>
+      <button
+        type="button"
+        className="xl:hidden p-2 rounded text-on-surface-variant hover:bg-surface-container-high"
+        aria-label={panneau ? "Fermer la recherche" : "Rechercher un agent"}
+        aria-expanded={panneau}
+        onClick={() => setPanneau((ouvert) => !ouvert)}
+      >
+        <span className="material-symbols-outlined text-2xl" aria-hidden="true">{panneau ? "close" : "search"}</span>
+      </button>
+      <div className={panneau
+        ? "fixed inset-x-0 z-[60] border-b border-hairline bg-surface-container-lowest px-4 py-3 shadow-md xl:static xl:inset-auto xl:z-auto xl:flex-1 xl:max-w-md xl:mx-2 xl:border-0 xl:bg-transparent xl:p-0 xl:shadow-none xl:relative"
+        : "hidden xl:block flex-1 max-w-md mx-2 relative"}
+        style={panneau ? { top: "calc(4.25rem + env(safe-area-inset-top, 0px))" } : undefined}
+      >
+        {champ}
+      </div>
+    </>
   );
 }

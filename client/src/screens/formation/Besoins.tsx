@@ -82,7 +82,7 @@ export function Besoins({ data }: { data: TableauFormation }) {
                 <th className="py-3 px-4">Structure</th>
                 <th className="py-3 px-4 text-right">Agents</th>
                 <th className="py-3 px-4">Priorité</th>
-                <th className="py-3 px-4">Statut</th>
+                <th className="py-3 px-4" data-min="">Statut</th>
                 <th className="py-3 px-4"><span className="sr-only">Actions</span></th>
               </tr>
             </thead>

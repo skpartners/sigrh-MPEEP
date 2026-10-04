@@ -1,7 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import SignaturePad from "signature_pad";
-import { api } from "../api/client";
+import { api, mediaUrl } from "../api/client";
 import type { SessionUser } from "../api/types";
 import { useFeedback } from "./Feedback";
 import { BOUTON_PRIMAIRE, BOUTON_SECONDAIRE, Modale } from "./Modale";
@@ -100,7 +100,7 @@ export function EditeurSignature({ user, onClose }: { user: SessionUser | undefi
           <div>
             <p className="font-label-sm text-label-sm text-on-surface-variant mb-1.5">Signature actuelle</p>
             <div className="flex h-16 items-center justify-center rounded-lg border border-hairline bg-white px-4">
-              <img src={user.signature_url} alt="Signature enregistrée" className="max-h-12 max-w-full object-contain" />
+              <img src={mediaUrl(user.signature_url)} alt="Signature enregistrée" className="max-h-12 max-w-full object-contain" />
             </div>
           </div>
         ) : null}

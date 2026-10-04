@@ -51,9 +51,9 @@ export function LoginScreen() {
     <main className="flex min-h-screen w-full flex-col bg-surface-container-lowest">
           <div className="flex w-full flex-1 flex-col md:flex-row">
             {/* Colonne Visuelle Institutionnelle & Sécurité Défense (Gauche) */}
-            <div className="relative flex w-full flex-col justify-between overflow-hidden bg-primary p-space-xl text-on-primary md:w-5/12">
+            <div className="relative flex w-full min-w-0 flex-col justify-between overflow-hidden bg-primary p-4 text-on-primary sm:p-space-xl md:w-5/12">
               <img
-                src="/fond-connexion.jpg"
+                src={`${import.meta.env.BASE_URL}fond-connexion.jpg`}
                 alt=""
                 className="pointer-events-none absolute inset-0 h-full w-full origin-center scale-150 object-cover object-center"
               />
@@ -65,11 +65,11 @@ export function LoginScreen() {
                 <div className={"w-1/3 h-full bg-surface-container-lowest"}></div>
                 <div className={"w-1/3 h-full bg-primary-fixed"}></div>
               </div>
-              <div className="relative z-10 flex flex-1 flex-col items-center justify-center space-y-space-lg text-center">
+              <div className="relative z-10 flex w-full min-w-0 flex-1 flex-col items-center justify-center space-y-space-lg text-center">
                 <div className="flex flex-col items-center gap-3">
-                  <img alt="Armoiries de la République de Côte d'Ivoire" className="h-24 w-24 object-contain" src="/logo.png" />
-                  <div className="flex flex-col items-center">
-                    <span className="font-label-lg text-label-lg font-bold uppercase tracking-widest text-primary-fixed">
+                  <img alt="Armoiries de la République de Côte d'Ivoire" className="h-24 w-24 object-contain" src={`${import.meta.env.BASE_URL}logo.png`} />
+                  <div className="flex w-full max-w-full flex-col items-center">
+                    <span className="max-w-full font-label-lg text-label-lg font-bold uppercase tracking-widest text-primary-fixed">
                       République de Côte d'Ivoire
                     </span>
                     <span className="font-body-md text-body-md italic text-on-primary-container">
@@ -77,7 +77,7 @@ export function LoginScreen() {
                     </span>
                   </div>
                 </div>
-                <div className="max-w-xl">
+                <div className="w-full max-w-xl min-w-0">
                   <p className="mb-space-xs font-label-lg text-label-lg font-semibold uppercase tracking-wider text-secondary-fixed">
                     Portail ministériel
                   </p>

@@ -27,7 +27,7 @@ export function CguScreen() {
       </div>
       <div className={"h-16 max-w-[1600px] mx-auto px-margin-desktop flex items-center justify-between gap-space-md"}>
         <div className={"flex items-center gap-space-md"}>
-          <img alt="Armoiries de la République de Côte d'Ivoire" className="h-12 w-12 object-contain" src="/logo.png" />
+          <img alt="Armoiries de la République de Côte d'Ivoire" className="h-12 w-12 object-contain" src={`${import.meta.env.BASE_URL}logo.png`} />
           <div className={"flex flex-col"}>
             <span className={"font-label-lg text-label-lg text-primary uppercase tracking-tight"}>
               SIGRH-PORTFEUILLE

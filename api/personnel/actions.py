@@ -75,7 +75,7 @@ def decision_visa(request, pk: int):
                 )
             nom = Path(fichier.name).name
             visa.signature.save(nom, ContentFile(fichier.read()), save=False)
-            signature = request.build_absolute_uri(visa.signature.url)
+            signature = visa.signature.url
 
         visa.statut = VisaEnAttente.Statut.VISE if decision == "visa" else VisaEnAttente.Statut.COMPLEMENT
         visa.traite_le = timezone.now()
