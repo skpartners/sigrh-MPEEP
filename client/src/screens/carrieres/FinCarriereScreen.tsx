@@ -7,6 +7,7 @@ import { Modale } from "../../ui/Modale";
 import { Skeleton } from "../../ui/Motion";
 import { Pagination, usePagination } from "../../ui/Pagination";
 import { AppChrome } from "../AppChrome";
+import { Icone } from "../../ui/Icone";
 
 type Statut = "visite" | "quittance" | "arrete" | "transmis" | "notifie";
 type Dossier = {
@@ -110,13 +111,13 @@ export function FinCarriereScreen() {
   return (
     <AppChrome>
       <div className="flex flex-col w-full">
-        <div className="px-6 lg:px-8 py-6 space-y-8 max-w-[1600px] mx-auto w-full">
+        <div className="px-6 lg:px-8 py-6 space-y-8 mx-auto w-full">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div className="space-y-1.5">
               <nav className="flex flex-wrap items-center gap-2 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">
                 {(donnees?.entete.fil ?? []).map((etape, index, fil) => (
                   <Fragment key={etape}>
-                    {index > 0 ? <span className="material-symbols-outlined text-xs">chevron_right</span> : null}
+                    {index > 0 ? <Icone nom="chevron_right" className="text-xs" /> : null}
                     <span className={index === fil.length - 1 ? "text-primary font-bold" : undefined}>{etape}</span>
                   </Fragment>
                 ))}
@@ -138,7 +139,7 @@ export function FinCarriereScreen() {
             </div>
             <div className="flex flex-wrap items-center gap-2 shrink-0">
               <button className="inline-flex items-center gap-2 px-3 py-2 rounded bg-surface-container-lowest text-primary font-label-md text-label-md font-semibold shadow-sm hover:bg-surface-container" type="button" onClick={() => setPanneau({ genre: "cadre" })}>
-                <span className="material-symbols-outlined text-lg">edit</span>
+                <Icone nom="edit" className="text-lg" />
                 Modifier le cadre
               </button>
             </div>
@@ -187,7 +188,7 @@ export function FinCarriereScreen() {
               </div>
               {donnees?.renouvellement.texte ? (
                 <div className="pt-4 bg-surface-container-low p-3 rounded flex items-center gap-2 text-body-sm font-body-sm text-on-surface">
-                  <span className="material-symbols-outlined text-secondary text-lg">crisis_alert</span>
+                  <Icone nom="crisis_alert" className="text-secondary text-lg" />
                   <span className="font-medium">
                     Ratio de renouvellement : <strong>{donnees.renouvellement.texte}</strong>
                   </span>
@@ -198,7 +199,7 @@ export function FinCarriereScreen() {
               <div className="flex items-center justify-between gap-2 pb-3">
                 <h2 className="font-headline-sm text-headline-sm text-on-surface">Relève & compétences sensibles</h2>
                 <button className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-primary text-on-primary font-label-sm text-label-sm font-semibold" type="button" onClick={() => setPanneau({ genre: "poste" })}>
-                  <span className="material-symbols-outlined text-sm">add</span>
+                  <Icone nom="add" className="text-sm" />
                   Ajouter
                 </button>
               </div>
@@ -217,7 +218,7 @@ export function FinCarriereScreen() {
                           Titulaire : <span className="font-semibold text-on-surface">{poste.titulaire.nom_complet}</span> (départ : {moisAnnee(poste.depart)})
                         </p>
                         <p className={`font-label-sm text-label-sm mt-1 flex items-center gap-1 ${forme ? "text-primary" : "text-secondary"}`}>
-                          <span className="material-symbols-outlined text-sm">{forme ? "groups" : "warning"}</span>
+                          <Icone nom={forme ? "groups" : "warning"} className="text-sm" />
                           {forme ? `Successeur : ${poste.successeur} (tutorat à ${poste.progression} %)` : poste.commentaire}
                         </p>
                       </div>
@@ -226,8 +227,8 @@ export function FinCarriereScreen() {
                           {forme ? "Conforme" : "Alerte RH"}
                         </span>
                         <span className="flex">
-                          <button className={ICONE} type="button" aria-label={`Modifier ${poste.intitule}`} onClick={() => setPanneau({ genre: "poste", poste })}><span className="material-symbols-outlined text-lg">edit</span></button>
-                          <button className={ICONE} type="button" aria-label={`Supprimer ${poste.intitule}`} onClick={() => void retirer(`${ROUTE}postes/${poste.id}/`, `Retirer le poste « ${poste.intitule} » ?`)}><span className="material-symbols-outlined text-lg">delete</span></button>
+                          <button className={ICONE} type="button" aria-label={`Modifier ${poste.intitule}`} onClick={() => setPanneau({ genre: "poste", poste })}><Icone nom="edit" className="text-lg" /></button>
+                          <button className={ICONE} type="button" aria-label={`Supprimer ${poste.intitule}`} onClick={() => void retirer(`${ROUTE}postes/${poste.id}/`, `Retirer le poste « ${poste.intitule} » ?`)}><Icone nom="delete" className="text-lg" /></button>
                         </span>
                       </div>
                     </div>
@@ -249,7 +250,7 @@ export function FinCarriereScreen() {
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 <button className="inline-flex items-center gap-1 px-3 py-1.5 rounded bg-primary text-on-primary font-label-sm text-label-sm font-semibold" type="button" onClick={() => setPanneau({ genre: "dossier" })}>
-                  <span className="material-symbols-outlined text-sm">add</span>
+                  <Icone nom="add" className="text-sm" />
                   Enregistrer une cessation
                 </button>
                 <select aria-label="Filtrer par établissement" className="px-3 py-1.5 bg-surface-container-low text-on-surface font-body-sm text-body-sm rounded border-0 focus:ring-1 focus:ring-primary cursor-pointer" value={entite} onChange={(event) => setEntite(event.target.value)}>
@@ -328,9 +329,9 @@ export function FinCarriereScreen() {
                           <span className="block font-label-sm text-label-sm text-on-surface-variant mt-1">{dossier.statut_detail}</span>
                         </td>
                         <td className="py-4 px-4 text-right">
-                          <button className={ICONE} type="button" aria-label={`Modifier le dossier de ${dossier.agent.nom_complet}`} onClick={() => setPanneau({ genre: "dossier", dossier })}><span className="material-symbols-outlined text-lg">edit</span></button>
+                          <button className={ICONE} type="button" aria-label={`Modifier le dossier de ${dossier.agent.nom_complet}`} onClick={() => setPanneau({ genre: "dossier", dossier })}><Icone nom="edit" className="text-lg" /></button>
                           {dossier.automatique ? null : (
-                            <button className={ICONE} type="button" aria-label={`Supprimer le dossier de ${dossier.agent.nom_complet}`} onClick={() => void retirer(`${ROUTE}dossiers/${dossier.id}/`, `Retirer le dossier de ${dossier.agent.nom_complet} ?`)}><span className="material-symbols-outlined text-lg">delete</span></button>
+                            <button className={ICONE} type="button" aria-label={`Supprimer le dossier de ${dossier.agent.nom_complet}`} onClick={() => void retirer(`${ROUTE}dossiers/${dossier.id}/`, `Retirer le dossier de ${dossier.agent.nom_complet} ?`)}><Icone nom="delete" className="text-lg" /></button>
                           )}
                         </td>
                       </tr>
@@ -341,7 +342,7 @@ export function FinCarriereScreen() {
             </div>
             <Pagination page={pageDossiers.page} pages={pageDossiers.pages} total={pageDossiers.total} aller={pageDossiers.aller} libelle="dossier" />
             <div className="p-4 bg-surface-container-low/70 flex items-center gap-2 text-body-sm font-body-sm text-on-surface-variant">
-              <span className="material-symbols-outlined text-primary text-base">verified_user</span>
+              <Icone nom="verified_user" className="text-primary text-base" />
               <span>Liquidation conforme au Code général de la fonction publique et aux conventions des entreprises publiques.</span>
             </div>
           </div>
@@ -353,13 +354,13 @@ export function FinCarriereScreen() {
                 <div className="absolute -right-8 -bottom-8 w-40 h-40 bg-primary/5 rounded-full pointer-events-none" />
                 <div className="flex items-center gap-2 pb-3">
                   <span className="p-2 rounded bg-primary/10 text-primary">
-                    <span className="material-symbols-outlined text-lg">volunteer_activism</span>
+                    <Icone nom="volunteer_activism" className="text-lg" />
                   </span>
                   <div>
                     <span className="font-label-sm text-label-sm text-primary font-bold uppercase tracking-wider">SD Action sociale</span>
                     <h3 className="font-headline-sm text-headline-sm text-on-surface">{donnees.accompagnement.titre}</h3>
                     <button className="mt-1 inline-flex items-center gap-1 text-primary font-label-sm text-label-sm font-semibold" type="button" onClick={() => setPanneau({ genre: "action" })}>
-                      <span className="material-symbols-outlined text-sm">add</span>
+                      <Icone nom="add" className="text-sm" />
                       Ajouter une action
                     </button>
                   </div>
@@ -371,8 +372,8 @@ export function FinCarriereScreen() {
                       <div className="flex items-start justify-between gap-2">
                         <span className="font-label-sm text-label-sm text-on-surface-variant font-bold block">{action.titre}</span>
                         <span className="flex shrink-0">
-                          <button className={ICONE} type="button" aria-label={`Modifier ${action.titre}`} onClick={() => setPanneau({ genre: "action", action })}><span className="material-symbols-outlined text-base">edit</span></button>
-                          <button className={ICONE} type="button" aria-label={`Supprimer ${action.titre}`} onClick={() => void retirer(`${ROUTE}actions/${action.id}/`, `Retirer l'action « ${action.titre} » ?`)}><span className="material-symbols-outlined text-base">delete</span></button>
+                          <button className={ICONE} type="button" aria-label={`Modifier ${action.titre}`} onClick={() => setPanneau({ genre: "action", action })}><Icone nom="edit" className="text-base" /></button>
+                          <button className={ICONE} type="button" aria-label={`Supprimer ${action.titre}`} onClick={() => void retirer(`${ROUTE}actions/${action.id}/`, `Retirer l'action « ${action.titre} » ?`)}><Icone nom="delete" className="text-base" /></button>
                         </span>
                       </div>
                       <p className="font-label-md text-label-md text-on-surface font-semibold mt-1">{action.detail}</p>
@@ -390,13 +391,13 @@ export function FinCarriereScreen() {
                 <div className="absolute -right-8 -bottom-8 w-40 h-40 bg-secondary-container/5 rounded-full pointer-events-none" />
                 <div className="flex items-center gap-2 pb-3">
                   <span className="p-2 rounded bg-secondary-fixed text-on-secondary-fixed">
-                    <span className="material-symbols-outlined text-lg">military_tech</span>
+                    <Icone nom="military_tech" className="text-lg" />
                   </span>
                   <div>
                     <span className="font-label-sm text-label-sm text-secondary font-bold uppercase tracking-wider">Reconnaissance républicaine</span>
                     <h3 className="font-headline-sm text-headline-sm text-on-surface">Médailles d'honneur & décorations</h3>
                     <button className="mt-1 inline-flex items-center gap-1 text-secondary font-label-sm text-label-sm font-semibold" type="button" onClick={() => setPanneau({ genre: "distinction" })}>
-                      <span className="material-symbols-outlined text-sm">add</span>
+                      <Icone nom="add" className="text-sm" />
                       Ajouter
                     </button>
                   </div>
@@ -414,8 +415,8 @@ export function FinCarriereScreen() {
                       </div>
                       <span className="flex items-center gap-1 shrink-0">
                         <span className={`px-2 py-0.5 rounded font-code-num text-code-num font-bold whitespace-nowrap ${index === 0 ? "bg-primary/10 text-primary" : "bg-surface-container text-on-surface-variant"}`}>{distinction.etat}</span>
-                        <button className={ICONE} type="button" aria-label={`Modifier ${distinction.titre}`} onClick={() => setPanneau({ genre: "distinction", distinction })}><span className="material-symbols-outlined text-base">edit</span></button>
-                        <button className={ICONE} type="button" aria-label={`Supprimer ${distinction.titre}`} onClick={() => void retirer(`${ROUTE}distinctions/${distinction.id}/`, `Retirer « ${distinction.titre} » ?`)}><span className="material-symbols-outlined text-base">delete</span></button>
+                        <button className={ICONE} type="button" aria-label={`Modifier ${distinction.titre}`} onClick={() => setPanneau({ genre: "distinction", distinction })}><Icone nom="edit" className="text-base" /></button>
+                        <button className={ICONE} type="button" aria-label={`Supprimer ${distinction.titre}`} onClick={() => void retirer(`${ROUTE}distinctions/${distinction.id}/`, `Retirer « ${distinction.titre} » ?`)}><Icone nom="delete" className="text-base" /></button>
                       </span>
                     </div>
                   ))}
@@ -429,11 +430,11 @@ export function FinCarriereScreen() {
             <div className="pb-4">
               <div className="flex items-center gap-2">
                 <span className="p-1.5 rounded bg-surface-container-low text-tertiary">
-                  <span className="material-symbols-outlined text-base">gavel</span>
+                  <Icone nom="gavel" className="text-base" />
                 </span>
                 <h3 className="font-headline-sm text-headline-sm text-on-surface">Motifs de cessation d'activité</h3>
                 <button className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-primary text-on-primary font-label-sm text-label-sm font-semibold" type="button" onClick={() => setPanneau({ genre: "motif" })}>
-                  <span className="material-symbols-outlined text-sm">add</span>
+                  <Icone nom="add" className="text-sm" />
                   Ajouter
                 </button>
               </div>
@@ -445,13 +446,13 @@ export function FinCarriereScreen() {
                   <h4 className="font-label-lg text-label-lg font-bold text-on-surface">{motif.libelle}</h4>
                   {motif.automatique ? (
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-primary-fixed text-on-primary-fixed font-label-sm text-label-sm font-bold shrink-0">
-                      <span className="material-symbols-outlined text-sm">lock</span>
+                      <Icone nom="lock" className="text-sm" />
                       Automatique
                     </span>
                   ) : (
                     <span className="flex shrink-0">
-                      <button className={ICONE} type="button" aria-label={`Modifier ${motif.libelle}`} onClick={() => setPanneau({ genre: "motif", motif })}><span className="material-symbols-outlined text-lg">edit</span></button>
-                      <button className={ICONE} type="button" aria-label={`Supprimer ${motif.libelle}`} onClick={() => void retirer(`${ROUTE}motifs/${motif.id}/`, `Retirer le motif « ${motif.libelle} » ?`)}><span className="material-symbols-outlined text-lg">delete</span></button>
+                      <button className={ICONE} type="button" aria-label={`Modifier ${motif.libelle}`} onClick={() => setPanneau({ genre: "motif", motif })}><Icone nom="edit" className="text-lg" /></button>
+                      <button className={ICONE} type="button" aria-label={`Supprimer ${motif.libelle}`} onClick={() => void retirer(`${ROUTE}motifs/${motif.id}/`, `Retirer le motif « ${motif.libelle} » ?`)}><Icone nom="delete" className="text-lg" /></button>
                     </span>
                   )}
                 </div>
@@ -476,7 +477,7 @@ function Indicateur({ titre, titreCouleur = "text-on-surface-variant", icone, li
       <div className="flex items-start justify-between gap-2">
         <span className={`font-label-sm text-label-sm font-bold uppercase tracking-wider ${titreCouleur}`}>{titre}</span>
         <div className={`w-8 h-8 rounded flex items-center justify-center shrink-0 ${teinte}`}>
-          <span className="material-symbols-outlined text-lg">{icone}</span>
+          <Icone nom={icone} className="text-lg" />
         </div>
       </div>
       <div className="mt-4 flex items-baseline gap-2">

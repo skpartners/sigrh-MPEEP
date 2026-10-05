@@ -1,8 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from "react";
-import { Link, useParams, useSearchParams } from "react-router-dom";
+import { Link, Navigate, useParams, useSearchParams } from "react-router-dom";
 import { ApiError, api, telecharger } from "../api/client";
-import type { Acte, AgentBrief, Dossier } from "../api/types";
+import type { Acte, Dossier, SessionUser } from "../api/types";
 import { dateCourte, dateLongue, nombre, pluriel } from "../ui/format";
 import { useFeedback } from "../ui/Feedback";
 import { OngletConges } from "./dossier-onglets/OngletConges";
@@ -14,14 +14,12 @@ import { TitreOnglet } from "./dossier-onglets/TitreOnglet";
 import { ActionsImport } from "./ImportAgents";
 import { OngletPieces } from "./OngletPieces";
 import { EditeurPhoto, Portrait } from "../ui/PhotoProfil";
-import { Skeleton, useFlip } from "../ui/Motion";
-import { Pagination, usePagination } from "../ui/Pagination";
+import { Skeleton } from "../ui/Motion";
 import { AppChrome } from "./AppChrome";
+import { Icone } from "../ui/Icone";
 
-const PAGE = "w-full px-4 sm:px-6 lg:px-8 py-6 max-w-[1600px] mx-auto flex-1";
+const PAGE = "w-full px-4 sm:px-6 lg:px-8 py-6 mx-auto flex-1";
 const CARD = "bg-surface-container-lowest rounded-xl border border-hairline p-6";
-const TH = "py-3 px-4 font-label-md text-label-md text-on-surface-variant";
-const TD = "py-3 px-4 align-top";
 
 const STATUT_ACTE: Record<Acte["statut"], { pastille: string; badge: string }> = {
   valide: { pastille: "bg-primary", badge: "bg-primary text-on-primary" },
@@ -45,108 +43,20 @@ function Statut({ children }: { children: string }) {
 
 export function DossierScreen() {
   const { matricule } = useParams();
-  return <AppChrome>{matricule ? <DossierAgent matricule={matricule} /> : <AnnuaireAgents />}</AppChrome>;
+  return <AppChrome>{matricule ? <DossierAgent matricule={matricule} /> : <VersMonProfil />}</AppChrome>;
 }
 
-/** /app/dossiers sans matricule : choisir l'agent dont on ouvre le dossier. */
-function AnnuaireAgents() {
-  const [filtre, setFiltre] = useState("");
-  const agents = useQuery({ queryKey: ["agents", ""], queryFn: () => api<AgentBrief[]>("/api/v1/agents/") });
-  const correspondants = useMemo(() => {
-    const q = filtre.trim().toLowerCase();
-    return (agents.data ?? []).filter(
-      (agent) => !q || agent.nom_complet.toLowerCase().includes(q) || agent.matricule.toLowerCase().includes(q),
+function VersMonProfil() {
+  const me = useQuery({ queryKey: ["me"], queryFn: () => api<SessionUser>("/api/v1/me/"), staleTime: Infinity });
+  if (me.isError) {
+    return (
+      <div className={PAGE}>
+        <p className="font-body-md text-body-md text-error" role="alert">Votre profil n'a pas pu être ouvert.</p>
+      </div>
     );
-  }, [agents.data, filtre]);
-  const pageAgents = usePagination(correspondants, filtre);
-  const corps = useFlip<HTMLTableSectionElement>(`${filtre}|${agents.data?.length ?? 0}`);
-
-  return (
-    <div className={PAGE}>
-      <div className={CARD}>
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div>
-            <h1 className="font-headline-lg text-headline-lg text-on-surface">Dossiers agents</h1>
-            <p className="font-body-md text-body-md text-on-surface-variant mt-1 max-w-3xl">
-              Choisissez un agent pour ouvrir son dossier numérique, ou importez un classeur pour renseigner plusieurs situations à la fois.
-            </p>
-          </div>
-          <ActionsImport />
-        </div>
-        <label className="mt-5 block max-w-md">
-          <span className="block font-label-md text-label-md text-on-surface mb-1">Filtrer par nom ou matricule</span>
-          <input
-            type="search"
-            value={filtre}
-            onChange={(event) => setFiltre(event.target.value)}
-            placeholder="Ex. BAMBA ou 288103A"
-            className="w-full h-10 px-3 rounded border border-outline-variant bg-surface-container-lowest font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary"
-          />
-        </label>
-      </div>
-
-      <div className="mt-6 overflow-x-auto rounded-xl border border-hairline bg-surface-container-lowest">
-        <table className="w-full text-left">
-          <thead className="bg-surface-container-low">
-            <tr>
-              <th className={TH}>Agent</th>
-              <th className={TH}>Corps & grade</th>
-              <th className={`${TH} hidden md:table-cell`}>Structure</th>
-              <th className={TH}>Situation</th>
-            </tr>
-          </thead>
-          <tbody ref={corps} className="font-body-sm text-body-sm">
-            {agents.isPending
-              ? [0, 1, 2, 3, 4].map((ligne) => (
-                  <tr key={ligne} className="border-t border-hairline">
-                    <td className={TD} colSpan={4}>
-                      <Skeleton className="h-5 w-2/3" />
-                    </td>
-                  </tr>
-                ))
-              : null}
-            {pageAgents.visibles.map((agent) => (
-              <tr key={agent.matricule} data-flip={agent.matricule} className="motion-content border-t border-hairline hover:bg-surface-container-low/60">
-                <td className={TD}>
-                  <Link to={`/app/dossiers/${encodeURIComponent(agent.matricule)}`} className="flex items-center gap-3 rounded group">
-                    <Portrait agent={agent} className="w-9 h-9 rounded-full bg-primary-fixed text-on-primary-fixed font-label-md text-label-md shrink-0" />
-                    <span>
-                      <span className="block font-label-lg text-label-lg text-on-surface group-hover:text-primary group-hover:underline">{agent.nom_complet}</span>
-                      <span className="block font-code-num text-code-num text-on-surface-variant">{agent.matricule}</span>
-                    </span>
-                  </Link>
-                </td>
-                <td className={`${TD} text-on-surface`}>
-                  {agent.corps}
-                  <span className="block text-on-surface-variant">Grade {agent.grade}, échelon {agent.echelon}</span>
-                </td>
-                <td className={`${TD} hidden md:table-cell text-on-surface-variant`}>
-                  {agent.structure} · {agent.organisme_sigle}
-                </td>
-                <td className={TD}>
-                  <Statut>{agent.situation}</Statut>
-                </td>
-              </tr>
-            ))}
-            {agents.data && correspondants.length === 0 ? (
-              <tr className="border-t border-hairline">
-                <td className="py-6 px-4 text-on-surface-variant" colSpan={4}>Aucun agent ne correspond à « {filtre} ».</td>
-              </tr>
-            ) : null}
-            {agents.isError ? (
-              <tr className="border-t border-hairline">
-                <td className="py-6 px-4 text-error" colSpan={4} role="alert">
-                  La liste des agents n'a pas pu être chargée. Vérifiez votre connexion puis{" "}
-                  <button type="button" className="underline font-semibold rounded" onClick={() => agents.refetch()}>réessayez</button>.
-                </td>
-              </tr>
-            ) : null}
-          </tbody>
-        </table>
-        <Pagination page={pageAgents.page} pages={pageAgents.pages} total={pageAgents.total} aller={pageAgents.aller} libelle="agent" />
-      </div>
-    </div>
-  );
+  }
+  if (!me.data) return <DossierSquelette />;
+  return <Navigate to={`/app/dossiers/${encodeURIComponent(me.data.matricule)}`} replace />;
 }
 
 function DossierAgent({ matricule }: { matricule: string }) {
@@ -164,7 +74,7 @@ function DossierAgent({ matricule }: { matricule: string }) {
           <h1 className="font-headline-md text-headline-md text-on-surface">{introuvable ? "Agent introuvable" : "Le dossier n'a pas pu être chargé"}</h1>
           <p className="font-body-md text-body-md text-on-surface-variant mt-2">
             {introuvable
-              ? `Aucun agent ne porte le matricule « ${matricule} ». Vérifiez la saisie ou recherchez l'agent par son nom.`
+              ? `Aucun dossier ne correspond au matricule « ${matricule} ».`
               : "Vérifiez votre connexion au réseau ministériel, puis réessayez."}
           </p>
           <div className="mt-5 flex flex-wrap gap-3">
@@ -174,7 +84,7 @@ function DossierAgent({ matricule }: { matricule: string }) {
               </button>
             )}
             <Link to="/app/dossiers" className="h-10 px-4 inline-flex items-center rounded border border-outline-variant font-label-lg text-label-lg text-on-surface hover:bg-surface-container-low">
-              Voir tous les dossiers
+              Mon profil
             </Link>
           </div>
         </div>
@@ -241,7 +151,7 @@ function DossierContenu({ agent }: { agent: Dossier }) {
   // Sens du changement d'onglet : le nouveau contenu entre du côté de l'onglet choisi.
   const sens = useRef(1);
   const tabsRef = useRef<HTMLDivElement>(null);
-  const [indicateur, setIndicateur] = useState<{ x: number; w: number; anime: boolean } | null>(null);
+  const [indicateur, setIndicateur] = useState<{ x: number; y: number; w: number; h: number; anime: boolean } | null>(null);
 
   useLayoutEffect(() => {
     const liste = tabsRef.current;
@@ -250,7 +160,7 @@ function DossierContenu({ agent }: { agent: Dossier }) {
       const actif = liste.querySelector<HTMLElement>(`#onglet-${onglet}`);
       if (!actif) return;
       actif.scrollIntoView({ inline: "nearest", block: "nearest" });
-      setIndicateur((avant) => ({ x: actif.offsetLeft, w: actif.offsetWidth, anime: avant !== null }));
+      setIndicateur((avant) => ({ x: actif.offsetLeft, y: actif.offsetTop, w: actif.offsetWidth, h: actif.offsetHeight, anime: avant !== null }));
     };
     mesurer();
     const observateur = new ResizeObserver(mesurer);
@@ -289,7 +199,7 @@ function DossierContenu({ agent }: { agent: Dossier }) {
       <div className="motion-content flex flex-col w-full">
         <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
           <nav aria-label="Fil d'Ariane" className="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-1.5">
-            <Link to="/app/dossiers" className="rounded hover:text-primary hover:underline">Dossiers agents</Link>
+            <Link to="/app/dossiers" className="rounded hover:text-primary hover:underline">Mon profil</Link>
             <span aria-hidden="true">/</span>
             <span className="text-on-surface font-semibold">{agent.nom_complet}</span>
           </nav>
@@ -308,7 +218,7 @@ function DossierContenu({ agent }: { agent: Dossier }) {
               >
                 <Portrait agent={agent} className="w-24 h-24 sm:w-28 sm:h-28 rounded-xl bg-primary-fixed text-on-primary-fixed font-headline-lg text-headline-lg" />
                 <span className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center ring-2 ring-surface-container-lowest" aria-hidden="true">
-                  <span className="material-symbols-outlined text-base">photo_camera</span>
+                  <Icone nom="photo_camera" className="text-base" />
                 </span>
               </button>
               <div className="flex flex-col space-y-1 min-w-0">
@@ -319,11 +229,11 @@ function DossierContenu({ agent }: { agent: Dossier }) {
                 </div>
                 <h1 className="font-headline-lg text-headline-lg text-on-surface font-bold tracking-tight mt-1">{agent.nom_complet}</h1>
                 <p className="font-body-md text-body-md text-primary font-semibold flex items-start gap-1.5 min-w-0">
-                  <span className="material-symbols-outlined text-base shrink-0" aria-hidden="true">workspace_premium</span>
+                  <Icone nom="workspace_premium" className="text-base shrink-0" />
                   <span className="min-w-0">Grade {agent.grade}, échelon {agent.echelon} · catégorie {agent.categorie}</span>
                 </p>
                 <p className="font-body-sm text-body-sm text-on-surface-variant flex items-start gap-1.5 min-w-0">
-                  <span className="material-symbols-outlined text-base shrink-0" aria-hidden="true">apartment</span>
+                  <Icone nom="apartment" className="text-base shrink-0" />
                   <span className="min-w-0">{agent.organisme} — {agent.structure}</span>
                 </p>
                 <button
@@ -331,7 +241,7 @@ function DossierContenu({ agent }: { agent: Dossier }) {
                   className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-on-primary font-label-md text-label-md"
                   onClick={() => void exporterDossier()}
                 >
-                  <span className="material-symbols-outlined text-lg" aria-hidden="true">picture_as_pdf</span>
+                  <Icone nom="picture_as_pdf" className="text-lg" />
                   Dossier (PDF)
                 </button>
               </div>
@@ -363,13 +273,13 @@ function DossierContenu({ agent }: { agent: Dossier }) {
         </div>
 
         {/* Onglets du dossier */}
-        <div className="bg-surface-container-lowest rounded-xl border border-hairline mb-8 overflow-x-auto">
-          <div ref={tabsRef} role="tablist" aria-label="Sections du dossier agent" onKeyDown={clavier} className="relative flex items-stretch min-w-max p-1 gap-1">
+        <div className="bg-surface-container-lowest rounded-xl border border-hairline mb-8">
+          <div ref={tabsRef} role="tablist" aria-label="Sections du dossier agent" onKeyDown={clavier} className="relative flex flex-wrap items-stretch p-1 gap-1">
             {indicateur ? (
               <span
                 aria-hidden="true"
-                className={`absolute top-1 bottom-1 left-0 rounded bg-primary shadow-sm ${indicateur.anime ? "tab-indicator" : ""}`}
-                style={{ width: indicateur.w, transform: `translateX(${indicateur.x}px)` }}
+                className={`absolute top-0 left-0 rounded bg-primary shadow-sm ${indicateur.anime ? "tab-indicator" : ""}`}
+                style={{ width: indicateur.w, height: indicateur.h, transform: `translate(${indicateur.x}px, ${indicateur.y}px)` }}
               />
             ) : null}
             {onglets.map((item) => {
@@ -387,7 +297,7 @@ function DossierContenu({ agent }: { agent: Dossier }) {
                   onClick={() => choisir(item.id)}
                   className={`relative z-10 flex items-center gap-2 px-4 py-3 rounded font-label-md text-label-md ${actif ? "text-on-primary font-semibold" : item.aVenir ? "text-outline cursor-not-allowed" : "text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low"}`}
                 >
-                  <span className="material-symbols-outlined text-base" aria-hidden="true">{item.icone}</span>
+                  <Icone nom={item.icone} className="text-base" />
                   <span>{item.libelle}</span>
                   {item.compteur ? (
                     <span className={`ml-1 px-1.5 rounded font-code-num text-label-sm ${actif ? "bg-on-primary/20 text-on-primary" : item.aVenir ? "bg-surface-container text-outline" : "bg-surface-container-high text-on-surface"}`}>
@@ -421,7 +331,7 @@ function Section({ icone, titre, sousTitre, action, children }: { icone: string;
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-5">
         <div>
           <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-primary text-xl" aria-hidden="true">{icone}</span>
+            <Icone nom={icone} className="text-primary text-xl" />
             <h2 id={id} className="font-headline-sm text-headline-sm text-on-surface font-bold">{titre}</h2>
           </div>
           {sousTitre ? <p className="font-body-sm text-body-sm text-on-surface-variant mt-0.5">{sousTitre}</p> : null}
@@ -436,7 +346,7 @@ function Section({ icone, titre, sousTitre, action, children }: { icone: string;
 function Vide({ icone, titre, texte }: { icone: string; titre: string; texte: string }) {
   return (
     <div className="rounded-lg bg-surface-container-low p-6 text-center">
-      <span className="material-symbols-outlined text-3xl text-on-surface-variant" aria-hidden="true">{icone}</span>
+      <Icone nom={icone} className="text-3xl text-on-surface-variant" />
       <p className="font-label-lg text-label-lg text-on-surface mt-2">{titre}</p>
       <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">{texte}</p>
     </div>
@@ -488,7 +398,7 @@ function FicheSituation({ lignes }: { lignes: { libelle: string; valeur: string 
         <div key={groupe.titre}>
           <h3 className="flex items-center gap-2 font-label-md text-label-md text-on-surface font-semibold">
             <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-surface-container-low text-primary" aria-hidden="true">
-              <span className="material-symbols-outlined text-lg">{groupe.icone}</span>
+              <Icone nom={groupe.icone} className="text-lg" />
             </span>
             {groupe.titre}
           </h3>
@@ -656,7 +566,7 @@ function Laterale({ agent }: { agent: Dossier }) {
     <aside aria-label="Actions et informations complémentaires">
       <section className={CARD}>
         <h2 className="font-headline-sm text-headline-sm text-on-surface font-bold mb-1 flex items-center gap-2">
-          <span className="material-symbols-outlined text-primary text-xl" aria-hidden="true">bolt</span>
+          <Icone nom="bolt" className="text-primary text-xl" />
           Actions administratives
         </h2>
         <p className="font-body-sm text-body-sm text-on-surface-variant mb-4">Actes mis à disposition par la hiérarchie.</p>
@@ -672,13 +582,13 @@ function Laterale({ agent }: { agent: Dossier }) {
               className="w-full flex items-center justify-between gap-3 p-3 bg-surface-container-low hover:bg-surface-container rounded-lg text-left transition-colors disabled:opacity-60"
             >
               <span className="flex items-center gap-3 min-w-0">
-                <span className="material-symbols-outlined text-primary shrink-0" aria-hidden="true">{ICONE_ACTE[acte.domaine] ?? "description"}</span>
+                <Icone nom={ICONE_ACTE[acte.domaine] ?? "description"} className="text-primary shrink-0" />
                 <span className="min-w-0">
                   <span className="font-label-md text-label-md text-on-surface font-bold block leading-tight break-words">{acte.titre}</span>
                   <span className="font-body-sm text-body-sm text-on-surface-variant">{acte.nature} n° {acte.reference}</span>
                 </span>
               </span>
-              <span className="material-symbols-outlined text-on-surface-variant text-lg shrink-0" aria-hidden="true">{enCours === acte.id ? "progress_activity" : "download"}</span>
+              <Icone nom={enCours === acte.id ? "progress_activity" : "download"} className="text-on-surface-variant text-lg shrink-0" />
             </button>
           ))}
           <ActionRapide icone="transfer_within_a_station" titre="Transmettre pour mutation" detail="Initier un dossier d'affectation" />
@@ -742,7 +652,7 @@ function ActeFascicule({ acte, matricule }: { acte: Acte; matricule: string }) {
                 .catch(() => undefined);
             }}
           >
-            <span className="material-symbols-outlined text-base" aria-hidden="true">download</span>
+            <Icone nom="download" className="text-base" />
             <span>PDF certifié</span>
           </button>
         </div>
@@ -765,13 +675,13 @@ function ActionRapide({ icone, titre, detail, longue, faite }: { icone: string; 
   return (
     <button className="w-full flex items-center justify-between gap-3 p-3 bg-surface-container-low hover:bg-surface-container rounded-lg text-left transition-colors" type="button" {...comportement}>
       <span className="flex items-center gap-3">
-        <span className="material-symbols-outlined text-primary" aria-hidden="true">{icone}</span>
+        <Icone nom={icone} className="text-primary" />
         <span>
           <span className="font-label-md text-label-md text-on-surface font-bold block leading-tight">{titre}</span>
           <span className="font-body-sm text-body-sm text-on-surface-variant">{detail}</span>
         </span>
       </span>
-      <span className="material-symbols-outlined text-on-surface-variant text-lg" aria-hidden="true">{longue ? "download" : "schedule"}</span>
+      <Icone nom={longue ? "download" : "schedule"} className="text-on-surface-variant text-lg" />
     </button>
   );
 }

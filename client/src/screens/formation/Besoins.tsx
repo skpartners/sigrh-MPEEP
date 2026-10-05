@@ -5,6 +5,7 @@ import { useFlip } from "../../ui/Motion";
 import { useAction } from "../../ui/useAction";
 import type { Besoin, TableauFormation } from "./types";
 import { BOUTON_ICONE, BOUTON_PRIMAIRE, Badge, CARTE, CHAMP, EnTeteSection, Liste, Modale, Nombre, Texte, Vide, messageErreur, useEnregistrement } from "./ui";
+import { Icone } from "../../ui/Icone";
 
 const PRIORITES = [
   { valeur: "haute", libelle: "Haute" },
@@ -50,7 +51,7 @@ export function Besoins({ data }: { data: TableauFormation }) {
         sousTitre={`${pluriel(data.besoins.length, "besoin")} · ${pluriel(effectif, "agent")} concernés · ${effectif ? Math.round((100 * couverts) / effectif) : 0} % déjà couverts par une session`}
         action={
           <button type="button" className={BOUTON_PRIMAIRE} onClick={() => setEdition("nouveau")}>
-            <span className="material-symbols-outlined text-lg" aria-hidden="true">add</span>
+            <Icone nom="add" className="text-lg" />
             Enregistrer un besoin
           </button>
         }
@@ -103,10 +104,10 @@ export function Besoins({ data }: { data: TableauFormation }) {
                   <td className="py-3 px-4">
                     <div className="flex justify-end">
                       <button type="button" className={BOUTON_ICONE} onClick={() => setEdition(b)} aria-label={`Modifier ${b.intitule}`} title="Modifier">
-                        <span className="material-symbols-outlined text-lg" aria-hidden="true">edit</span>
+                        <Icone nom="edit" className="text-lg" />
                       </button>
                       <button type="button" className={BOUTON_ICONE} onClick={() => supprimer(b)} aria-label={`Supprimer ${b.intitule}`} title="Supprimer">
-                        <span className="material-symbols-outlined text-lg" aria-hidden="true">delete</span>
+                        <Icone nom="delete" className="text-lg" />
                       </button>
                     </div>
                   </td>

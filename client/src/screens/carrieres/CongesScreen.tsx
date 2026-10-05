@@ -8,6 +8,7 @@ import { Skeleton } from "../../ui/Motion";
 import { Pagination, usePagination } from "../../ui/Pagination";
 import { AppChrome } from "../AppChrome";
 import { PlanificationConges } from "./PlanificationConges";
+import { Icone } from "../../ui/Icone";
 
 type Instruction = "pret_signature" | "approbation_auto" | "remplacement" | "conflit_quorum" | "signe" | "rejete" | "decale";
 type DemandeConge = {
@@ -103,15 +104,15 @@ export function CongesScreen() {
   return (
     <AppChrome>
       <div className="flex flex-col w-full">
-        <div className="px-6 py-6 md:px-8 max-w-[1600px] w-full mx-auto space-y-6">
+        <div className="px-6 py-6 md:px-8 w-full mx-auto space-y-6">
           {/* Fil d'Ariane & titre */}
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div className="space-y-1.5">
               <nav className="flex items-center gap-2 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">
                 <span>SD GESTION DES CARRIÈRES</span>
-                <span className="material-symbols-outlined text-xs">chevron_right</span>
+                <Icone nom="chevron_right" className="text-xs" />
                 <span>TEMPS DE SERVICE & CONGÉS</span>
-                <span className="material-symbols-outlined text-xs">chevron_right</span>
+                <Icone nom="chevron_right" className="text-xs" />
                 <span className="text-primary font-bold">PLANIFICATION ANNUELLE DES CONGÉS</span>
               </nav>
               <div className="flex flex-wrap items-baseline gap-3">
@@ -126,7 +127,7 @@ export function CongesScreen() {
             </div>
             <div className="flex flex-wrap items-center gap-2.5 shrink-0">
               <button className="flex items-center gap-2 px-3.5 py-2 rounded bg-surface-container-high hover:bg-surface-container text-on-surface font-label-lg text-label-lg transition-colors shadow-sm" type="button" onClick={() => void exporterEtat()}>
-                <span className="material-symbols-outlined text-lg">download</span>
+                <Icone nom="download" className="text-lg" />
                 <span>Exporter l'état des congés</span>
               </button>
             </div>
@@ -145,7 +146,7 @@ export function CongesScreen() {
                 <>
                   <div className="hidden md:block w-px h-4 bg-outline-variant" />
                   <div className="flex items-center gap-2 text-on-surface-variant font-label-sm text-label-sm">
-                    <span className="material-symbols-outlined text-base text-secondary">verified_user</span>
+                    <Icone nom="verified_user" className="text-base text-secondary" />
                     <span>
                       Continuité de service : <strong className="text-primary font-bold">quorum global {presence.toFixed(1)} %</strong>
                     </span>
@@ -220,7 +221,7 @@ export function CongesScreen() {
                         </div>
                         <p className="font-body-sm text-body-sm text-on-surface-variant">{trimestre.texte}</p>
                         <div className={`flex items-center gap-2 pt-1 font-label-sm text-label-sm font-medium ${trimestre.ton === "attention" ? "text-secondary" : "text-primary"}`}>
-                          <span className="material-symbols-outlined text-sm">{trimestre.ton === "attention" ? "warning" : "check_circle"}</span>
+                          <Icone nom={trimestre.ton === "attention" ? "warning" : "check_circle"} className="text-sm" />
                           <span>{trimestre.etat}</span>
                         </div>
                       </div>
@@ -369,7 +370,7 @@ export function CongesScreen() {
             <div className="p-5 bg-surface-container-lowest rounded-lg shadow-sm space-y-4">
               <div className="flex flex-wrap items-center justify-between gap-2 pb-1">
                 <div className="flex items-center gap-2.5">
-                  <span className="material-symbols-outlined text-secondary text-xl">gavel</span>
+                  <Icone nom="gavel" className="text-secondary text-xl" />
                   <h2 className="font-headline-sm text-headline-sm text-on-surface">Dispositif réglementaire d'apurement des reliquats N-1</h2>
                 </div>
                 {donnees.reliquats.echeance ? (
@@ -393,7 +394,7 @@ export function CongesScreen() {
               </div>
               {donnees.reliquats.circulaire ? (
                 <p className="pt-2 flex items-center gap-2 text-on-surface-variant font-label-sm text-label-sm">
-                  <span className="material-symbols-outlined text-base text-primary">security</span>
+                  <Icone nom="security" className="text-base text-primary" />
                   Référence : {donnees.reliquats.circulaire}
                 </p>
               ) : null}
@@ -412,7 +413,7 @@ function Carte({ titre, icone, teinte, fond = "bg-surface-container-low", titreC
       <div className="flex items-center justify-between gap-2">
         <span className={`font-label-sm text-label-sm uppercase font-semibold ${titreCouleur}`}>{titre}</span>
         <div className={`w-8 h-8 rounded ${fond} ${teinte} flex items-center justify-center shrink-0`}>
-          <span className="material-symbols-outlined text-lg">{icone}</span>
+          <Icone nom={icone} className="text-lg" />
         </div>
       </div>
       <div>{children}</div>
@@ -455,7 +456,7 @@ function LigneConge({ demande, onAction }: { demande: DemandeConge; onAction: (a
       <td className="py-3.5 px-3 font-code-num text-code-num font-bold text-on-surface whitespace-nowrap">{duree(demande)}</td>
       <td className="py-3.5 px-3">
         <div className={`flex items-center gap-1.5 font-label-sm text-label-sm ${conflit ? "text-secondary font-medium" : "text-on-surface"}`}>
-          <span className={`material-symbols-outlined text-sm ${conflit ? "" : "text-primary"}`}>{conflit ? "warning" : "person_check"}</span>
+          <Icone nom={conflit ? "warning" : "person_check"} className={`text-sm ${conflit ? "" : "text-primary"}`} />
           <span>{demande.interim}</span>
         </div>
         <span className={`font-label-sm text-label-sm ${conflit ? "text-secondary" : "text-primary font-medium"}`}>{demande.interim_detail}</span>
@@ -470,24 +471,24 @@ function LigneConge({ demande, onAction }: { demande: DemandeConge; onAction: (a
       <td className="py-3.5 px-4 text-right">
         {close ? (
           <span className="font-label-sm text-label-sm text-on-surface-variant inline-flex items-center gap-1">
-            <span className="material-symbols-outlined text-sm text-primary">{demande.instruction === "approbation_auto" ? "mark_email_read" : "task_alt"}</span>
+            <Icone nom={demande.instruction === "approbation_auto" ? "mark_email_read" : "task_alt"} className="text-sm text-primary" />
             {demande.instruction === "approbation_auto" ? "Notification émise" : "Arbitrée"}
           </span>
         ) : (
           <div className="flex items-center justify-end gap-2">
             {conflit ? (
               <button className="px-2.5 py-1.5 rounded bg-secondary text-on-secondary hover:bg-secondary/90 font-label-sm text-label-sm font-bold transition-colors flex items-center gap-1" type="button" onClick={() => onAction("decaler")}>
-                <span className="material-symbols-outlined text-sm">event_repeat</span>
+                <Icone nom="event_repeat" className="text-sm" />
                 <span>Avis défavorable / décaler</span>
               </button>
             ) : (
               <button className="px-2.5 py-1.5 rounded bg-primary text-on-primary hover:bg-primary/90 font-label-sm text-label-sm font-semibold transition-colors flex items-center gap-1" type="button" onClick={() => onAction("signer")}>
-                <span className="material-symbols-outlined text-sm">draw</span>
+                <Icone nom="draw" className="text-sm" />
                 <span>{demande.instruction === "remplacement" ? "Signer l'arrêté" : "Signer"}</span>
               </button>
             )}
             <button className="p-1.5 rounded hover:bg-surface-container-high text-on-surface-variant transition-colors" title="Rejeter la demande" aria-label={`Rejeter la demande de ${demande.agent.nom_complet}`} type="button" onClick={() => onAction("rejeter")}>
-              <span className="material-symbols-outlined text-base">close</span>
+              <Icone nom="close" className="text-base" />
             </button>
           </div>
         )}
@@ -532,7 +533,7 @@ function ModaleArbitrage({ demande, action, onClose }: { demande: DemandeConge; 
         <>
           <button type="button" className={BOUTON_SECONDAIRE} onClick={onClose} disabled={envoi.isPending}>Annuler</button>
           <button type="submit" className={BOUTON_PRIMAIRE} disabled={envoi.isPending}>
-            {envoi.isPending ? <span className="material-symbols-outlined text-lg motion-spin" aria-hidden="true">progress_activity</span> : null}
+            {envoi.isPending ? <Icone nom="progress_activity" className="text-lg motion-spin" /> : null}
             {titre.bouton}
           </button>
         </>

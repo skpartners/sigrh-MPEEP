@@ -104,6 +104,9 @@ class Command(BaseCommand):
         self._effectifs(drh)
         self._communications(drh)
         self._nomenclature()
+        from personnel.habilitations_defaut import appliquer
+
+        appliquer()
         self.stdout.write(self.style.SUCCESS("Jeu de démonstration SIGRH chargé."))
 
     # --- Référentiels --------------------------------------------------------
@@ -708,7 +711,8 @@ class Command(BaseCommand):
             (2, "Chef de service", "Premier responsable d'un service", "supervisor_account", _droits(["lecture", "lecture", "lecture", "lecture", "validation", "lecture"], "lecture"), ["Sous directeur"]),
             (3, "Sous directeur", "Premier responsable d'une sous-direction", "badge", _droits(["saisie", "validation", "lecture", "lecture", "lecture", "saisie"], "lecture"), ["Directeur"]),
             (4, "Directeur", "Premier responsable d'une direction centrale", "account_balance", _droits(["lecture", "lecture", "lecture", "lecture", "validation", "lecture"], "lecture"), ["Directeur général"]),
-            (5, "Directeur général", "Premier responsable d'une direction générale", "admin_panel_settings", _droits(["validation"] * taille, "validation"), []),
+            (5, "Directeur général", "Premier responsable d'une direction générale", "admin_panel_settings", _droits(["validation"] * taille, "validation"), ["Ministre"]),
+            (6, "Ministre", "Au sommet de la chaîne hiérarchique", "assured_workload", _droits(["validation"] * taille, "validation"), []),
         ]:
             RoleMatrice.objects.create(ordre=ordre, role=role, description=description, icone=icone, droits=droits, superieurs=superieurs)
 
@@ -878,8 +882,8 @@ class Command(BaseCommand):
         maintenant = timezone.now()
         for minutes, categorie, titre, message, lien, urgente, lue in [
             (8, "systeme", "Mettre à jour les informations publiques", "Les annonces de la DRH affichées sur la page d'accueil sont à revoir.", "/app/communication#informations-publiques", False, False),
-            (12, "visa", "Visa urgent : avancement d'échelon", "KOUASSI Jean-Baptiste · échelon 3 vers 4. Délai de rigueur à J-2.", "/app", True, False),
-            (47, "visa", "Visa urgent : prêt immobilier", "YAO Constant Sylvain · prêt bonifié de 8 500 000 FCFA, accord de la commission sociale.", "/app", True, False),
+            (12, "visa", "Visa urgent : avancement d'échelon", "KOUASSI Jean-Baptiste · échelon 3 vers 4. Délai de rigueur à J-2.", "/app/tableau-de-bord", True, False),
+            (47, "visa", "Visa urgent : prêt immobilier", "YAO Constant Sylvain · prêt bonifié de 8 500 000 FCFA, accord de la commission sociale.", "/app/tableau-de-bord", True, False),
             (95, "demande", "Titre de congé à signer", "BAMBA Aïcha épouse DIABY · 30 jours à compter du 10 mars, intérim validé.", "/app/circuits", True, False),
             (180, "demande", "Complément requis", "SORO Karidja · secours médical : facture normalisée manquante.", "/app/dossiers/476112P", False, False),
             (60 * 5, "releve", "Relève à préparer", "Directeur Technique (BNETD) : vivier interne de 1 candidat pour un départ en 2028.", "/app/carrieres", False, False),
@@ -898,10 +902,10 @@ class Command(BaseCommand):
         ("349812K", "Chef de cellule contrôle financier", "Chef de service"),
         ("318490K", "Administrateur civil général", "Agent"),
         ("394812H", "Chargé d'études financières", "Agent"),
-        ("476112P", "Assistante, service de l'action sociale", "SD Action Sociale"),
+        ("476112P", "Assistante, service de l'action sociale", "Sous directeur"),
         ("289043B", "Inspecteur général du Trésor", "Agent"),
         ("340188P", "Administrateur civil", "Agent"),
-        ("411904C", "Responsable RH, PETROCI Holding", "SD Carrières et Actes"),
+        ("411904C", "Responsable RH, PETROCI Holding", "Sous directeur"),
         ("455870T", "Directrice Financière, PETROCI Holding", "Chef de service"),
     ]
 
@@ -967,6 +971,7 @@ class Command(BaseCommand):
             modele.objects.all().delete()
         entites = {}
         Profil.objects.update(structure=None)
+        EntiteTutelle.objects.update(parent=None)
         EntiteTutelle.objects.all().delete()
         PoleMinisteriel.objects.all().delete()
         poles = {}

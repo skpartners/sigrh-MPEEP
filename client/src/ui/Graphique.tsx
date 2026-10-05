@@ -64,7 +64,7 @@ export function GraphiqueChoisi({
       <div className="flex items-center justify-end gap-1">
         <button
           type="button"
-          className="flex h-9 w-9 items-center justify-center rounded border border-outline-variant bg-[#f3f4f6] hover:bg-white"
+          className="flex h-11 w-11 items-center justify-center rounded border border-outline-variant bg-[#f3f4f6] hover:bg-white"
           title="Exporter les données en Excel"
           aria-label={`Exporter les données de ${titre} en Excel`}
           onClick={() => telechargerClasseurGraphique({ titre, detail, series })}
@@ -73,7 +73,7 @@ export function GraphiqueChoisi({
         </button>
         <button
           type="button"
-          className={`flex h-9 w-9 items-center justify-center rounded bg-[#f3f4f6] hover:bg-white ${etiquettes ? "border-2 border-[#1c1c1c]" : "border border-outline-variant"}`}
+          className={`flex h-11 w-11 items-center justify-center rounded bg-[#f3f4f6] hover:bg-white ${etiquettes ? "border-2 border-[#1c1c1c]" : "border border-outline-variant"}`}
           aria-pressed={etiquettes}
           title="Étiquettes de données"
           aria-label={etiquettes ? "Masquer les étiquettes de données" : "Afficher les étiquettes de données"}
@@ -119,7 +119,7 @@ function ChoixForme({ forme, onChange }: { forme: FormeGraphique; onChange: (for
     <div className="relative" ref={boite}>
       <button
         type="button"
-        className="flex h-9 w-9 items-center justify-center rounded border border-outline-variant bg-[#f3f4f6] hover:bg-white"
+        className="flex h-11 w-11 items-center justify-center rounded border border-outline-variant bg-[#f3f4f6] hover:bg-white"
         aria-label={`Type de graphique : ${courant.libelle}`}
         aria-haspopup="listbox"
         aria-expanded={ouvert}
@@ -144,7 +144,7 @@ function ChoixForme({ forme, onChange }: { forme: FormeGraphique; onChange: (for
                 aria-selected={choisi}
                 title={item.libelle}
                 aria-label={item.libelle}
-                className={`flex h-9 w-9 items-center justify-center rounded bg-[#f3f4f6] ${choisi ? "border-2 border-[#1c1c1c]" : "border border-transparent hover:bg-white"}`}
+                className={`flex h-11 w-11 items-center justify-center rounded bg-[#f3f4f6] ${choisi ? "border-2 border-[#1c1c1c]" : "border border-transparent hover:bg-white"}`}
                 onClick={() => {
                   onChange(item.code);
                   setOuvert(false);

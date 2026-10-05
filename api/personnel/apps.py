@@ -9,6 +9,8 @@ class PersonnelConfig(AppConfig):
     def ready(self):
         # Branche les signaux de diffusion temps réel (messages, notifications).
         from . import temps_reel  # noqa: F401
+        from .connexion_admin import assurer_administrateur
         from .echeances import demarrer_si_serveur
 
         demarrer_si_serveur()
+        assurer_administrateur()

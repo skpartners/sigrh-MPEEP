@@ -5,6 +5,7 @@ import { useFlip } from "../../ui/Motion";
 import { useAction } from "../../ui/useAction";
 import type { Candidature, EtatCandidature, TableauFormation } from "./types";
 import { BadgeCandidature, CARTE, CHAMP, EnTeteSection, Modale, Vide, Zone, messageErreur, useEnregistrement } from "./ui";
+import { Icone } from "../../ui/Icone";
 
 const PAR_PAGE = 10;
 const FILTRES: { valeur: EtatCandidature | ""; libelle: string }[] = [
@@ -135,11 +136,11 @@ export function Candidatures({ data }: { data: TableauFormation }) {
             <span>{pluriel(lignes.length, "candidature")}</span>
             <span className="flex items-center gap-1">
               <button type="button" className="p-1 rounded hover:bg-surface-container disabled:opacity-40" disabled={courante === 0} onClick={() => setPage(courante - 1)} aria-label="Page précédente">
-                <span className="material-symbols-outlined text-lg" aria-hidden="true">chevron_left</span>
+                <Icone nom="chevron_left" className="text-lg" />
               </button>
               <span className="px-2">Page {courante + 1} / {pages}</span>
               <button type="button" className="p-1 rounded hover:bg-surface-container disabled:opacity-40" disabled={courante >= pages - 1} onClick={() => setPage(courante + 1)} aria-label="Page suivante">
-                <span className="material-symbols-outlined text-lg" aria-hidden="true">chevron_right</span>
+                <Icone nom="chevron_right" className="text-lg" />
               </button>
             </span>
           </nav>

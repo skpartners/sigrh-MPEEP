@@ -212,6 +212,7 @@ def _structures(lignes, connues, poles, nouveaux_poles, erreurs):
 def _niveau_saisi(valeur, numero: int) -> str:
     cle = _norm(str(valeur))
     niveaux = {
+        "ministere": "ministere",
         "direction generale": "direction-generale",
         "direction centrale": "direction-centrale",
         "direction": "direction-centrale",
@@ -220,7 +221,7 @@ def _niveau_saisi(valeur, numero: int) -> str:
         "cellule": "direction-centrale",
     }
     if cle not in niveaux:
-        raise _Ligne(numero, "Le niveau est direction générale, direction centrale, sous-direction ou service.")
+        raise _Ligne(numero, "Le niveau est ministère, direction générale, direction centrale, sous-direction ou service.")
     return niveaux[cle]
 
 
@@ -396,10 +397,16 @@ def _structure_enregistree(nom: str) -> EntiteTutelle:
 
 def _verifier_rattachement(item: EntiteTutelle) -> None:
     parent = item.parent
-    if parent is None:
+    if item.niveau == "ministere":
+        if parent is not None:
+            raise ImportInvalide(f"« {item.nom} » est le ministère : il est au sommet de la chaîne.")
         return
     if item.niveau == "direction-generale":
-        raise ImportInvalide(f"« {item.nom} » est une direction générale : elle ne se rattache pas à une autre structure.")
+        if parent is None or parent.niveau != "ministere":
+            raise ImportInvalide(f"« {item.nom} » se rattache au ministère.")
+        return
+    if parent is None:
+        return
     if parent.pole_id != item.pole_id:
         raise ImportInvalide(f"« {item.nom} » et « {parent.nom} » n'appartiennent pas au même pôle.")
     if item.niveau == "direction-centrale" and parent.niveau != "direction-generale":

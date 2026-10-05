@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { BOUTON_PRIMAIRE, BOUTON_SECONDAIRE, Modale } from "./Modale";
+import { Icone } from "./Icone";
 
 // Délai avant affichage : une action plus rapide ne fait pas clignoter l'overlay.
 const SHOW_DELAY_MS = 180;
@@ -145,9 +146,7 @@ export function FeedbackProvider({ children }: { children: ReactNode }) {
               className="motion-toast bg-surface-container-lowest shadow-xl rounded-lg p-4 w-[22rem] max-w-[calc(100vw-3rem)] flex items-start gap-3"
             >
               <div className={`p-2 rounded shrink-0 ${TOAST_TONE[item.tone].className}`}>
-                <span className="material-symbols-outlined text-xl" aria-hidden="true">
-                  {TOAST_TONE[item.tone].icon}
-                </span>
+                <Icone nom={TOAST_TONE[item.tone].icon} className="text-xl" />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="font-label-lg text-label-lg text-on-surface font-bold">{item.title}</p>

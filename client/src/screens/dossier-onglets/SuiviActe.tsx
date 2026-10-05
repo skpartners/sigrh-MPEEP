@@ -5,6 +5,7 @@ import type { Acte, Dossier } from "../../api/types";
 import { useFeedback } from "../../ui/Feedback";
 import { BOUTON_PRIMAIRE, BOUTON_SECONDAIRE, Modale } from "../../ui/Modale";
 import { dateFr } from "./commun";
+import { Icone } from "../../ui/Icone";
 
 /**
  * Parcours d'un acte, tel que l'agent doit pouvoir le suivre :
@@ -32,7 +33,7 @@ export function SuiviActe({ acte, matricule }: { acte: Acte; matricule: string }
   const atteinte = etapeActe(acte);
   return (
     <div className="mt-4 space-y-3">
-      <ol className="grid grid-cols-2 gap-2 md:grid-cols-4" aria-label="Avancement de l'acte">
+      <ol className="grid grid-cols-1 min-[480px]:grid-cols-2 gap-2 md:grid-cols-4" aria-label="Avancement de l'acte">
         {ETAPES.map((etape, index) => {
           const faite = index < atteinte;
           const courante = index === atteinte;
@@ -43,13 +44,7 @@ export function SuiviActe({ acte, matricule }: { acte: Acte; matricule: string }
               aria-current={courante ? "step" : undefined}
             >
               <div className="flex items-center gap-2">
-                <span
-                  className={`material-symbols-outlined text-lg ${faite ? "text-primary" : courante ? "text-secondary" : "text-on-surface-variant"}`}
-                  style={faite ? { fontVariationSettings: "'FILL' 1" } : undefined}
-                  aria-hidden="true"
-                >
-                  {faite ? "check_circle" : courante ? "pending" : "radio_button_unchecked"}
-                </span>
+                <Icone nom={faite ? "check_circle" : courante ? "pending" : "radio_button_unchecked"} className={`text-lg ${faite ? "text-primary" : courante ? "text-secondary" : "text-on-surface-variant"}`} />
                 <span className="font-label-md text-label-md font-bold text-on-surface">{etape.titre}</span>
               </div>
               <p className="mt-1 font-body-sm text-body-sm text-on-surface-variant">{etape.detail}</p>
@@ -74,18 +69,18 @@ export function SuiviActe({ acte, matricule }: { acte: Acte; matricule: string }
 
       <div className="flex flex-wrap gap-2">
         <button type="button" className={BOUTON_SECONDAIRE} onClick={() => setFiche(true)}>
-          <span className="material-symbols-outlined text-lg" aria-hidden="true">description</span>
+          <Icone nom="description" className="text-lg" />
           Document qui circule
         </button>
         {acte.statut === "accorde" ? (
           <button type="button" className={BOUTON_PRIMAIRE} onClick={() => setScan(true)}>
-            <span className="material-symbols-outlined text-lg" aria-hidden="true">document_scanner</span>
+            <Icone nom="document_scanner" className="text-lg" />
             Verser le papier à en-tête scanné
           </button>
         ) : null}
         {acte.scan_url ? (
           <a className={BOUTON_SECONDAIRE} href={mediaUrl(acte.scan_url)} target="_blank" rel="noreferrer">
-            <span className="material-symbols-outlined text-lg" aria-hidden="true">verified</span>
+            <Icone nom="verified" className="text-lg" />
             Papier à en-tête versé
           </a>
         ) : null}
@@ -111,7 +106,7 @@ function FicheCirculation({ acte, onClose }: { acte: Acte; onClose: () => void }
         <>
           <button type="button" className={BOUTON_SECONDAIRE} onClick={onClose}>Fermer</button>
           <button type="button" className={BOUTON_PRIMAIRE} onClick={() => window.print()}>
-            <span className="material-symbols-outlined text-lg" aria-hidden="true">print</span>
+            <Icone nom="print" className="text-lg" />
             Imprimer
           </button>
         </>
@@ -135,7 +130,7 @@ function FicheCirculation({ acte, onClose }: { acte: Acte; onClose: () => void }
         <h2 className="mt-6 text-center text-lg font-bold uppercase">{acte.titre}</h2>
         <p className="mt-1 text-center text-sm">{acte.nature}</p>
 
-        <dl className="mt-6 grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
+        <dl className="mt-6 grid grid-cols-1 gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
           <dt className="text-[#0b1c30]/70">Agent</dt>
           <dd className="font-semibold">{agent.nom_complet}</dd>
           <dt className="text-[#0b1c30]/70">Matricule</dt>
@@ -153,7 +148,7 @@ function FicheCirculation({ acte, onClose }: { acte: Acte; onClose: () => void }
         <section className="mt-8">
           <h3 className="text-sm font-bold uppercase tracking-wider">Visas</h3>
           {acte.signatures.length ? (
-            <div className="mt-3 grid grid-cols-2 gap-6">
+            <div className="mt-3 grid grid-cols-1 gap-6 sm:grid-cols-2">
               {acte.signatures.map((signature) => (
                 <div key={signature.signature_url} className="text-sm">
                   <p className="font-semibold">{signature.signataire || "Le Directeur des Ressources Humaines"}</p>

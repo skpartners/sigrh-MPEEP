@@ -3,6 +3,7 @@ import { useState } from "react";
 import { ApiError, api, telecharger } from "../api/client";
 import { useFeedback } from "../ui/Feedback";
 import { BOUTON_PRIMAIRE, BOUTON_SECONDAIRE, Modale } from "../ui/Modale";
+import { Icone } from "../ui/Icone";
 
 const CHAMP = "w-full text-sm file:mr-3 file:h-9 file:rounded file:border-0 file:bg-primary-fixed file:px-3 file:font-label-md file:text-label-md file:text-on-primary-fixed file:cursor-pointer";
 
@@ -47,11 +48,11 @@ export function ActionsImport({ classe = "flex flex-wrap gap-2", ...props }: Imp
     <>
       <div className={classe}>
         <button type="button" className={BOUTON_SECONDAIRE} onClick={modele}>
-          <span className="material-symbols-outlined text-lg" aria-hidden="true">download</span>
+          <Icone nom="download" className="text-lg" />
           Télécharger le modèle
         </button>
         <button type="button" className={BOUTON_PRIMAIRE} onClick={() => setOuvert(true)}>
-          <span className="material-symbols-outlined text-lg" aria-hidden="true">upload_file</span>
+          <Icone nom="upload_file" className="text-lg" />
           Importer un classeur
         </button>
       </div>

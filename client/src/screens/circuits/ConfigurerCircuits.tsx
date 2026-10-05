@@ -4,6 +4,7 @@ import { api } from "../../api/client";
 import type { CircuitConfigure, ConfigurationCircuits, ElementCircuit } from "../../api/types";
 import { useFeedback } from "../../ui/Feedback";
 import { BOUTON_PRIMAIRE, BOUTON_SECONDAIRE, Modale } from "../../ui/Modale";
+import { Icone } from "../../ui/Icone";
 
 const CARD = "rounded-xl bg-surface-container-lowest border border-hairline";
 const CHAMP = "w-full h-10 px-3 rounded border border-outline-variant bg-surface-container-lowest font-body-md text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-primary";
@@ -68,7 +69,7 @@ export function ConfigurerCircuits() {
           onClick={() => ouvrir(null)}
           className="inline-flex items-center gap-2 px-4 py-2 rounded bg-primary text-on-primary font-label-lg text-label-lg hover:bg-primary-container transition-colors shrink-0"
         >
-          <span className="material-symbols-outlined text-lg" aria-hidden="true">add</span>
+          <Icone nom="add" className="text-lg" />
           Nouveau circuit
         </button>
       </div>
@@ -268,10 +269,10 @@ function Editeur({
                 </span>
                 <span className="flex items-center gap-1">
                   <button type="button" aria-label={`Monter l'étape ${index + 1}`} disabled={index === 0} onClick={() => deplacer(edition.etapes, index, -1, etapes)} className="p-1 rounded text-on-surface-variant hover:bg-surface-container disabled:opacity-30">
-                    <span className="material-symbols-outlined text-lg" aria-hidden="true">arrow_upward</span>
+                    <Icone nom="arrow_upward" className="text-lg" />
                   </button>
                   <button type="button" aria-label={`Descendre l'étape ${index + 1}`} disabled={index === edition.etapes.length - 1} onClick={() => deplacer(edition.etapes, index, 1, etapes)} className="p-1 rounded text-on-surface-variant hover:bg-surface-container disabled:opacity-30">
-                    <span className="material-symbols-outlined text-lg" aria-hidden="true">arrow_downward</span>
+                    <Icone nom="arrow_downward" className="text-lg" />
                   </button>
                   <button
                     type="button"
@@ -280,7 +281,7 @@ function Editeur({
                     onClick={() => etapes(edition.etapes.filter((_, position) => position !== index))}
                     className="p-1 rounded text-on-surface-variant hover:bg-surface-container disabled:opacity-30"
                   >
-                    <span className="material-symbols-outlined text-lg" aria-hidden="true">close</span>
+                    <Icone nom="close" className="text-lg" />
                   </button>
                 </span>
               </li>
@@ -293,7 +294,7 @@ function Editeur({
             onClick={() => etapes([...edition.etapes, { instance: "", fonction: "" }])}
             className="inline-flex items-center gap-2 px-3 py-1.5 rounded bg-surface-container text-on-surface font-label-md text-label-md hover:bg-surface-container-high disabled:opacity-40"
           >
-            <span className="material-symbols-outlined text-base" aria-hidden="true">add</span>
+            <Icone nom="add" className="text-base" />
             Ajouter une étape
           </button>
         </fieldset>

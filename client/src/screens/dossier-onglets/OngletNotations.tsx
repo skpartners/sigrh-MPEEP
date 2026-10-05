@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import type { Dossier } from "../../api/types";
 import { Pagination, usePagination } from "../../ui/Pagination";
 import { dateFr, useDocumentAgent } from "./commun";
+import { Icone } from "../../ui/Icone";
 
 type Evaluation = Dossier["evaluations"][number];
 
@@ -39,7 +40,7 @@ export function OngletNotations({ agent }: { agent: Dossier }) {
 
   if (!courante) {
     return (
-      <div className="w-full px-6 py-6 max-w-[1600px] mx-auto">
+      <div className="w-full px-6 py-6 mx-auto">
         <div className="bg-surface-container-lowest rounded-xl p-6 shadow-sm font-body-md text-body-md text-on-surface-variant">Aucune notation n'est versée au dossier de {agent.nom_complet}.</div>
       </div>
     );
@@ -57,7 +58,7 @@ export function OngletNotations({ agent }: { agent: Dossier }) {
     .join(" ");
 
   return (
-    <div className="w-full px-6 py-6 max-w-[1600px] mx-auto flex flex-col gap-6">
+    <div className="w-full px-6 py-6 mx-auto flex flex-col gap-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2">
         <div className="space-y-1">
           <h1 className="font-headline-lg text-headline-lg text-on-surface tracking-tight">Notations & évaluations</h1>
@@ -67,7 +68,7 @@ export function OngletNotations({ agent }: { agent: Dossier }) {
         </div>
         <div className="flex flex-wrap items-center gap-3 shrink-0">
           <button className="px-4 py-2.5 rounded bg-primary text-on-primary hover:bg-primary-container font-label-lg text-label-lg font-semibold shadow-sm transition-all flex items-center gap-2" type="button" onClick={() => telecharger("bulletin")}>
-            <span className="material-symbols-outlined text-lg">download</span>
+            <Icone nom="download" className="text-lg" />
             <span>Bulletin individuel (PDF)</span>
           </button>
         </div>
@@ -81,7 +82,7 @@ export function OngletNotations({ agent }: { agent: Dossier }) {
             <span className="font-headline-sm text-headline-sm text-on-surface-variant font-medium">/ 20</span>
           </div>
           <span className="text-primary font-semibold flex items-center gap-1 font-label-sm text-label-sm">
-            <span className="material-symbols-outlined text-sm">workspace_premium</span>
+            <Icone nom="workspace_premium" className="text-sm" />
             Mention {courante.mention}
           </span>
         </Carte>
@@ -145,7 +146,7 @@ export function OngletNotations({ agent }: { agent: Dossier }) {
                   </div>
                   <div className="pl-9 flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-surface-container">
                     <span className="inline-flex items-center gap-1.5 font-label-sm text-label-sm text-primary font-semibold">
-                      <span className="material-symbols-outlined text-sm">check_circle</span>
+                      <Icone nom="check_circle" className="text-sm" />
                       Mention N+1 : {objectif.mention}
                     </span>
                     <span className="text-xs font-code-num text-on-surface-variant">Taux d'atteinte : {objectif.taux_atteinte} %</span>

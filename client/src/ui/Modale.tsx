@@ -1,5 +1,6 @@
 import { useEffect, useId, useLayoutEffect, useRef, type FormEvent, type ReactNode, type RefObject } from "react";
 import { createPortal } from "react-dom";
+import { Icone } from "./Icone";
 
 /**
  * Fenêtre modale unique de l'application.
@@ -200,7 +201,7 @@ export function Modale({
           {libelleAnnuler}
         </button>
         <button type="submit" className={ton === "danger" ? BOUTON_DANGER : BOUTON_PRIMAIRE} disabled={enCours}>
-          {enCours ? <span className="material-symbols-outlined text-lg motion-spin" aria-hidden="true">progress_activity</span> : null}
+          {enCours ? <Icone nom="progress_activity" className="text-lg motion-spin" /> : null}
           {enCours ? "Enregistrement…" : libelleValider}
         </button>
       </>
@@ -217,7 +218,7 @@ export function Modale({
       <header className={`flex shrink-0 gap-3 px-5 pt-4 pb-3 sm:px-6 sm:pt-5 ${centre ? "flex-col items-center text-center" : "items-start"}`}>
         {icone ? (
           <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${TON[ton]}`} aria-hidden="true">
-            <span className="material-symbols-outlined text-xl">{icone}</span>
+            <Icone nom={icone} className="text-xl" />
           </span>
         ) : null}
         <div className={`min-w-0 pt-0.5 ${centre ? "w-full" : "flex-1"}`}>
@@ -232,14 +233,14 @@ export function Modale({
             onClick={onClose}
             disabled={enCours}
           >
-            <span className="material-symbols-outlined text-xl" aria-hidden="true">close</span>
+            <Icone nom="close" className="text-xl" />
           </button>
         )}
       </header>
       <div className="modale-contenu min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-5 sm:px-6 sm:pb-6">{children}</div>
       {erreur ? (
         <p className="mx-5 mb-4 flex shrink-0 items-start gap-2 rounded-lg bg-error-container/70 px-3 py-2.5 font-body-sm text-body-sm text-on-error-container sm:mx-6" role="alert">
-          <span className="material-symbols-outlined text-lg" aria-hidden="true">error</span>
+          <Icone nom="error" className="text-lg" />
           <span>{erreur}</span>
         </p>
       ) : null}

@@ -9,8 +9,9 @@ import { nombre } from "../ui/format";
 import { useFeedback } from "../ui/Feedback";
 import { BOUTON_PRIMAIRE, BOUTON_SECONDAIRE, Modale } from "../ui/Modale";
 import { AppChrome } from "./AppChrome";
+import { Icone } from "../ui/Icone";
 
-const PAGE = "w-full px-4 sm:px-6 lg:px-8 py-6 max-w-[1600px] mx-auto flex-1 space-y-6";
+const PAGE = "w-full px-4 sm:px-6 lg:px-8 py-6 mx-auto flex-1 space-y-6";
 const CARTE = "rounded-xl bg-surface-container-lowest border border-hairline shadow-sm";
 const CHAMP = "h-10 px-3 rounded border border-outline-variant bg-surface-container-lowest font-body-md text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-primary";
 const APERCU = 4;
@@ -193,19 +194,19 @@ export function StatistiquesScreen() {
             </div>
             <div className="grid w-full grid-cols-1 gap-2 self-end sm:w-fit sm:grid-cols-2">
               <button type="button" className={`${BOUTON_SECONDAIRE} w-full`} onClick={() => void exporter("xlsx")}>
-                <span className="material-symbols-outlined text-lg">table</span>
+                <Icone nom="table" className="text-lg" />
                 Données (XLSX)
               </button>
               <button type="button" className={`${BOUTON_SECONDAIRE} w-full`} onClick={() => void exporter("pdf")}>
-                <span className="material-symbols-outlined text-lg">picture_as_pdf</span>
+                <Icone nom="picture_as_pdf" className="text-lg" />
                 Synthèse (PDF)
               </button>
               <button type="button" className={`${BOUTON_PRIMAIRE} w-full`} onClick={() => void page.refetch()} disabled={page.isFetching}>
-                <span className="material-symbols-outlined text-lg">refresh</span>
+                <Icone nom="refresh" className="text-lg" />
                 Actualiser
               </button>
               <button type="button" className={`${BOUTON_SECONDAIRE} w-full`} onClick={() => { planifier.reset(); setEcheance(aujourdhui()); setObjet(""); setPlan(true); }}>
-                <span className="material-symbols-outlined text-lg">schedule_send</span>
+                <Icone nom="schedule_send" className="text-lg" />
                 Planifier au Cabinet
               </button>
             </div>
@@ -357,7 +358,7 @@ export function StatistiquesScreen() {
                 <div className="flex items-start justify-between gap-3 pb-4">
                   <div>
                     <h2 className="font-headline-sm text-headline-sm text-on-surface flex items-center gap-2">
-                      <span className="material-symbols-outlined text-primary-container">badge</span>
+                      <Icone nom="badge" className="text-primary-container" />
                       Répartition par catégorie
                     </h2>
                     <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">Grades des dossiers du filtre.</p>
@@ -371,7 +372,7 @@ export function StatistiquesScreen() {
               </article>
               <article className={`${CARTE} p-6`}>
                 <h2 className="font-headline-sm text-headline-sm text-on-surface flex items-center gap-2">
-                  <span className="material-symbols-outlined text-secondary">hourglass_top</span>
+                  <Icone nom="hourglass_top" className="text-secondary" />
                   Âges et départs
                 </h2>
                 <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">
@@ -506,7 +507,7 @@ function ListeRepliee({ children, className = "mt-4 space-y-4" }: { children: Re
           onClick={() => setOuvert((valeur) => !valeur)}
         >
           {ouvert ? "Replier" : `Afficher les ${reste} autres`}
-          <span className="material-symbols-outlined">{ouvert ? "expand_less" : "expand_more"}</span>
+          <Icone nom={ouvert ? "expand_less" : "expand_more"} />
         </button>
       )}
     </div>
@@ -516,7 +517,7 @@ function ListeRepliee({ children, className = "mt-4 space-y-4" }: { children: Re
 function BoutonExport({ titre, onClick }: { titre: string; onClick: () => void }) {
   return (
     <button type="button" className={`${BOUTON_SECONDAIRE} shrink-0`} aria-label={`Exporter ${titre} en Excel`} onClick={onClick}>
-      <span className="material-symbols-outlined text-lg">download</span>
+      <Icone nom="download" className="text-lg" />
       Exporter
     </button>
   );
@@ -796,7 +797,7 @@ function Indicateur({ libelle, icone, barre, valeur, detail, gauche, droite }: {
       <div>
         <div className="flex items-center justify-between text-on-surface-variant">
           <span className="font-label-sm text-label-sm uppercase tracking-wider font-bold">{libelle}</span>
-          <span className="material-symbols-outlined">{icone}</span>
+          <Icone nom={icone} />
         </div>
         <p className="mt-3 font-headline-lg text-headline-lg text-on-surface">{valeur}</p>
         <p className="mt-1 font-body-sm text-body-sm text-on-surface-variant">{detail}</p>
@@ -920,7 +921,7 @@ function BlocCompositions() {
           </p>
         </div>
         <button type="button" className={BOUTON_PRIMAIRE} onClick={() => setBrouillon(BROUILLON_VIDE)}>
-          <span className="material-symbols-outlined text-lg">add</span>
+          <Icone nom="add" className="text-lg" />
           Composer
         </button>
       </div>

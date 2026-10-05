@@ -211,7 +211,7 @@ def decision_avancement(request, pk: int):
                 objet=f"Avancement {ligne.mode.lower()} : {ligne.grade_echelon} vers {ligne.proposition.lower()}",
                 echeance=f"Transmis le {aujourd_hui:%d/%m/%Y}", visa_amont="Visa SD Carrières OK",
             )
-            _notifier(request.user, "visa", "Nouveau visa à apposer", f"{agent.nom_complet} · avancement vers {ligne.proposition.lower()}.", "/app")
+            _notifier(request.user, "visa", "Nouveau visa à apposer", f"{agent.nom_complet} · avancement vers {ligne.proposition.lower()}.", "/app/tableau-de-bord")
         else:
             ligne.statut = STATUT_PIECES
             _notifier(

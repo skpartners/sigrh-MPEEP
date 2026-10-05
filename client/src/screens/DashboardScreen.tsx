@@ -9,6 +9,7 @@ import { useFeedback, wait } from "../ui/Feedback";
 import { useAction } from "../ui/useAction";
 import { EASE_IN, EASE_OUT, Skeleton, reducedMotion, useFlip } from "../ui/Motion";
 import { AppChrome } from "./AppChrome";
+import { Icone } from "../ui/Icone";
 
 const PAR_PAGE = 6;
 const CARD = "bg-surface-container-lowest rounded-xl border border-hairline";
@@ -59,14 +60,14 @@ export function DashboardScreen() {
 
   return (
     <AppChrome>
-      <div className="w-full px-4 sm:px-6 lg:px-8 py-6 max-w-[1600px] mx-auto flex-1">
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-6 mx-auto flex-1">
         <div className="flex flex-col w-full space-y-6">
           {/* Bandeau d'accueil */}
           <div className={`${CARD} p-6`}>
             <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="flex items-start gap-4 min-w-0">
               <div className="w-14 h-14 rounded-lg bg-primary-container text-on-primary flex items-center justify-center shrink-0">
-                <span className="material-symbols-outlined text-3xl" aria-hidden="true">verified_user</span>
+                <Icone nom="verified_user" className="text-3xl" />
               </div>
               <div className="space-y-1">
                 <h1 className="font-headline-lg text-headline-lg text-on-surface tracking-tight">
@@ -90,7 +91,7 @@ export function DashboardScreen() {
                 className="inline-flex items-center gap-2 h-10 px-4 rounded-lg bg-primary text-on-primary font-label-md text-label-md shrink-0"
                 onClick={() => void exporterPilotage()}
               >
-                <span className="material-symbols-outlined text-lg" aria-hidden="true">picture_as_pdf</span>
+                <Icone nom="picture_as_pdf" className="text-lg" />
                 Rapport 360
               </button>
             </div>
@@ -105,25 +106,6 @@ export function DashboardScreen() {
               </button>
             </div>
           ) : null}
-
-          <section aria-labelledby="titre-modules">
-            <h2 id="titre-modules" className="font-headline-sm text-headline-sm text-on-surface">Registres en cours</h2>
-            <p className="font-body-sm text-body-sm text-on-surface-variant mt-1 mb-4">Chaque chiffre est lu dans le registre du module.</p>
-            <div className="grid grid-cols-1 min-[480px]:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">
-              {data
-                ? data.modules.map((module) => (
-                    <Link key={module.cle} to={module.lien} className={`${CARD} p-4 hover:bg-surface-container-low flex flex-col gap-2 min-h-28`}>
-                      <span className="flex items-center gap-2 font-label-sm text-label-sm text-on-surface-variant font-bold uppercase tracking-wider">
-                        <span className="material-symbols-outlined text-lg text-primary" aria-hidden="true">{module.icone}</span>
-                        {module.libelle}
-                      </span>
-                      <span className="font-headline-lg text-headline-lg text-on-surface font-bold">{module.valeur}</span>
-                      <span className="font-body-sm text-body-sm text-on-surface-variant">{module.detail}</span>
-                    </Link>
-                  ))
-                : [0, 1, 2, 3, 4].map((index) => <Skeleton key={index} className="h-28 rounded-xl" />)}
-            </div>
-          </section>
 
           {/* Indicateurs clés */}
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
@@ -150,7 +132,7 @@ function CarteKpi({ kpi }: { kpi: Kpi }) {
           {kpi.libelle}
         </span>
         <div className={`p-2 rounded ${TON_ICONE[kpi.ton]}`}>
-          <span className="material-symbols-outlined text-xl" aria-hidden="true">{kpi.icone}</span>
+          <Icone nom={kpi.icone} className="text-xl" />
         </div>
       </div>
       <div>
@@ -204,7 +186,7 @@ function FileVisas({ visas, signatureUrl }: { visas: Dashboard["visas"] | undefi
     <section className={`xl:col-span-8 ${CARD} overflow-hidden flex flex-col`} aria-labelledby="titre-visas">
       <div className="p-5 flex flex-wrap items-center justify-between gap-3 bg-surface-container-low/40">
         <div className="flex items-center gap-2.5">
-          <span className="material-symbols-outlined text-primary text-2xl" aria-hidden="true">rule</span>
+          <Icone nom="rule" className="text-primary text-2xl" />
           <div>
             <h2 id="titre-visas" className="font-headline-sm text-headline-sm text-on-surface">Actes en attente de votre visa</h2>
             <p className="font-body-sm text-body-sm text-on-surface-variant">Le document circule pour signature. Le papier à en-tête n'est établi qu'après l'accord, puis scanné pour ouvrir le droit.</p>
@@ -226,7 +208,7 @@ function FileVisas({ visas, signatureUrl }: { visas: Dashboard["visas"] | undefi
         {visas === undefined ? [0, 1, 2].map((index) => <li key={index}><Skeleton className="h-24 rounded-lg" /></li>) : null}
         {visas && restants.length === 0 ? (
           <li className="motion-content p-6 text-center">
-            <span className="material-symbols-outlined text-3xl text-primary" aria-hidden="true">task_alt</span>
+            <Icone nom="task_alt" className="text-3xl text-primary" />
             <p className="font-label-lg text-label-lg text-on-surface mt-1">Aucun acte n'attend votre visa</p>
             <p className="font-body-sm text-body-sm text-on-surface-variant">La file est à jour.</p>
           </li>
@@ -305,17 +287,17 @@ function VisaLigne({ visa, signatureUrl, onTraite }: { visa: Visa; signatureUrl:
             <span className="font-label-sm text-label-sm px-2 py-0.5 rounded bg-surface-container text-primary font-bold">{visa.agent.organisme_sigle}</span>
           </div>
           <p className="font-body-sm text-body-sm text-on-surface font-medium flex items-start gap-1.5">
-            <span className="material-symbols-outlined text-base text-primary" aria-hidden="true">{CATEGORIE_ICONE[visa.categorie] ?? "description"}</span>
+            <Icone nom={CATEGORIE_ICONE[visa.categorie] ?? "description"} className="text-base text-primary" />
             {visa.objet}
           </p>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 font-label-sm text-label-sm text-on-surface-variant">
             <span className={`flex items-center gap-1 ${visa.urgent ? "text-error font-bold" : ""}`}>
-              <span className="material-symbols-outlined text-sm" aria-hidden="true">schedule</span>
+              <Icone nom="schedule" className="text-sm" />
               {visa.echeance}
             </span>
             <span aria-hidden="true">•</span>
             <span className="text-primary font-semibold flex items-center gap-1">
-              <span className="material-symbols-outlined text-sm" aria-hidden="true">check_circle</span>
+              <Icone nom="check_circle" className="text-sm" />
               {visa.visa_amont}
             </span>
           </div>
@@ -333,7 +315,7 @@ function VisaLigne({ visa, signatureUrl, onTraite }: { visa: Visa; signatureUrl:
           {signatureUrl ? (
             <img src={mediaUrl(signatureUrl)} alt="" className="h-5 max-w-[4.5rem] object-contain bg-white rounded-sm" />
           ) : (
-            <span className="material-symbols-outlined text-sm" aria-hidden="true">draw</span>
+            <Icone nom="draw" className="text-sm" />
           )}
           <span>Apposer le visa</span>
         </button>
@@ -346,7 +328,7 @@ function VisaLigne({ visa, signatureUrl, onTraite }: { visa: Visa; signatureUrl:
           {sceau === "visa" && signatureApposee ? (
             <img src={signatureApposee} alt="" className="h-10 max-w-[9rem] object-contain" />
           ) : (
-            <span className="material-symbols-outlined text-2xl" aria-hidden="true">{sceau === "visa" ? "verified" : "undo"}</span>
+            <Icone nom={sceau === "visa" ? "verified" : "undo"} className="text-2xl" />
           )}
           {SCEAU[sceau].libelle}
         </span>
@@ -359,7 +341,7 @@ function ChargesSousDirections({ charges }: { charges: Dashboard["charges"] | un
   return (
     <section className={`xl:col-span-4 ${CARD} p-5`} aria-labelledby="titre-charges">
       <h2 id="titre-charges" className="font-headline-sm text-headline-sm text-on-surface flex items-center gap-2 pb-2">
-        <span className="material-symbols-outlined text-primary" aria-hidden="true">account_tree</span>
+        <Icone nom="account_tree" className="text-primary" />
         Charge des sous-directions
       </h2>
       <p className="font-body-sm text-body-sm text-on-surface-variant mb-4">Dossiers en cours avant transfert au cabinet du DRH.</p>
@@ -369,7 +351,7 @@ function ChargesSousDirections({ charges }: { charges: Dashboard["charges"] | un
           <li key={charge.titre} className="motion-content p-3.5 rounded-lg bg-surface-container-low flex flex-col gap-2">
             <div className="flex items-center justify-between gap-2">
               <span className="font-label-md text-label-md text-on-surface font-semibold flex items-center gap-1.5">
-                <span className={`material-symbols-outlined text-base ${charge.ton === "secondary" ? "text-secondary" : "text-primary"}`} aria-hidden="true">{charge.icone}</span>
+                <Icone nom={charge.icone} className={`text-base ${charge.ton === "secondary" ? "text-secondary" : "text-primary"}`} />
                 {charge.titre}
               </span>
               <span className="font-code-num text-code-num px-2 py-0.5 rounded bg-surface-container text-on-surface font-bold">{charge.volume}</span>
@@ -382,7 +364,7 @@ function ChargesSousDirections({ charges }: { charges: Dashboard["charges"] | un
         ))}
       </ul>
       <div className="mt-4 p-3 rounded bg-surface-container-high/60 flex items-start gap-2.5">
-        <span className="material-symbols-outlined text-primary text-xl mt-0.5" aria-hidden="true">sync_alt</span>
+        <Icone nom="sync_alt" className="text-primary text-xl mt-0.5" />
         <p className="font-body-sm text-body-sm text-on-surface-variant">
           <strong className="text-on-surface">Interopérabilité SIGFAE.</strong> Les actes visés sont transmis au ministère de la Fonction publique.
         </p>
@@ -498,7 +480,7 @@ function RegistreActes({ actes }: { actes: Acte[] | undefined }) {
                       data-long-action="Génération de l'acte en PDF…"
                       data-long-action-done="Acte téléchargé"
                     >
-                      <span className="material-symbols-outlined text-lg" aria-hidden="true">download</span>
+                      <Icone nom="download" className="text-lg" />
                     </button>
                   </td>
                 </tr>
@@ -533,7 +515,7 @@ function RegistreActes({ actes }: { actes: Acte[] | undefined }) {
           </span>
           <div className="flex items-center gap-1">
             <button className="p-1 rounded text-on-surface-variant hover:text-on-surface hover:bg-surface-container disabled:opacity-40" disabled={courante === 0} type="button" aria-label="Page précédente" onClick={() => setPage(courante - 1)}>
-              <span className="material-symbols-outlined text-lg" aria-hidden="true">chevron_left</span>
+              <Icone nom="chevron_left" className="text-lg" />
             </button>
             {Array.from({ length: pages }, (_, index) => (
               <button
@@ -547,7 +529,7 @@ function RegistreActes({ actes }: { actes: Acte[] | undefined }) {
               </button>
             ))}
             <button className="p-1 rounded text-on-surface-variant hover:text-on-surface hover:bg-surface-container disabled:opacity-40" disabled={courante >= pages - 1} type="button" aria-label="Page suivante" onClick={() => setPage(courante + 1)}>
-              <span className="material-symbols-outlined text-lg" aria-hidden="true">chevron_right</span>
+              <Icone nom="chevron_right" className="text-lg" />
             </button>
           </div>
         </nav>
@@ -567,7 +549,7 @@ function Filtre({ libelle, valeur, onChange, options }: { libelle: string; valeu
       >
         {options.map(([cle, texte]) => <option key={cle} value={cle}>{texte}</option>)}
       </select>
-      <span className="material-symbols-outlined text-base text-on-surface-variant absolute right-2.5 top-2.5 pointer-events-none" aria-hidden="true">expand_more</span>
+      <Icone nom="expand_more" className="text-base text-on-surface-variant absolute right-2.5 top-2.5 pointer-events-none" />
     </label>
   );
 }

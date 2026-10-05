@@ -65,6 +65,8 @@ export type Acte = {
 export type Accueil = {
   exercice: number;
   marque: { sigle: string; ministere: string; devise: string };
+  photo_ministre_url: string;
+  ministre: { civilite: string; nom: string };
   titre: string;
   chapo: string;
   chiffres: Chiffre[];
@@ -81,6 +83,7 @@ export type SessionUser = {
   organisme: string;
   organisme_sigle: string;
   signature_url: string;
+  photo_url: string;
   acces?: { modules: Record<string, string>; fonctions: Record<string, string> };
 };
 
@@ -621,4 +624,5 @@ export type AnnuaireUtilisateurs = {
   roles: { role: string; description: string; superieurs: string[]; droits: string[]; precisions: Record<string, string> }[];
   structures: EntiteTutelle[];
   organismes: Organisme[];
+  administrateur?: boolean;
 };

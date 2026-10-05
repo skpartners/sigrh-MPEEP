@@ -6,6 +6,7 @@ import { useFeedback } from "../../ui/Feedback";
 import { BOUTON_PRIMAIRE, BOUTON_SECONDAIRE, Modale } from "../../ui/Modale";
 import { Pagination, usePagination } from "../../ui/Pagination";
 import { CircuitDemande, absenceEnCours, demandeClose, jour, periode, pluriel, useDocumentAgent, type Absence } from "./commun";
+import { Icone } from "../../ui/Icone";
 
 function valeurs(agent: Dossier) {
   const { acquis, consommes, reliquat, report, autorisations, autorisations_restantes } = agent.conges;
@@ -54,7 +55,7 @@ export function OngletConges({ agent }: { agent: Dossier }) {
   const pageRegistre = usePagination(registre, filtre);
   return (
     <>
-      <div className="px-6 py-6 lg:px-8 space-y-8 max-w-[1600px] mx-auto w-full">
+      <div className="px-6 py-6 lg:px-8 space-y-8 mx-auto w-full">
         {/* Top Sovereign Sub-header & Module Navigation */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2">
           <div className="space-y-1">
@@ -76,12 +77,12 @@ export function OngletConges({ agent }: { agent: Dossier }) {
           </div>
           <div className="flex items-center gap-3 flex-wrap">
             <button className="px-3 py-2 rounded bg-surface-container-high text-on-surface font-label-md text-label-md flex items-center gap-2 hover:bg-surface-variant transition-colors shadow-sm" type="button" onClick={() => telecharger("releve")}>
-              <span className="material-symbols-outlined text-base">print</span>
+              <Icone nom="print" className="text-base" />
               {" "}
               <span>Bilan Trimestriel</span>
             </button>
             <button className="px-4 py-2 rounded bg-primary text-on-primary font-label-md text-label-md flex items-center gap-2 hover:bg-primary-container transition-colors shadow-sm" onClick={() => setFormulaire(true)} type="button">
-              <span className="material-symbols-outlined text-base">add_circle</span>
+              <Icone nom="add_circle" className="text-base" />
               {" "}
               <span>Déclarer un congé ou une absence</span>
             </button>
@@ -103,7 +104,7 @@ export function OngletConges({ agent }: { agent: Dossier }) {
                 </div>
               </div>
               <div className="p-2.5 rounded bg-primary-fixed text-primary flex items-center justify-center">
-                <span className="material-symbols-outlined text-2xl">account_balance_wallet</span>
+                <Icone nom="account_balance_wallet" className="text-2xl" />
               </div>
             </div>
             <div className="space-y-2 mt-4 pt-3 bg-surface-container-low/60 -mx-5 -mb-5 px-5 py-3">
@@ -131,7 +132,7 @@ export function OngletConges({ agent }: { agent: Dossier }) {
                 </div>
               </div>
               <div className="p-2.5 rounded bg-surface-container-high text-on-surface-variant flex items-center justify-center">
-                <span className="material-symbols-outlined text-2xl">gavel</span>
+                <Icone nom="gavel" className="text-2xl" />
               </div>
             </div>
             <div className="mt-4 pt-3 flex items-center justify-between text-on-surface-variant font-body-sm text-body-sm bg-surface-container-low/60 -mx-5 -mb-5 px-5 py-3">
@@ -154,7 +155,7 @@ export function OngletConges({ agent }: { agent: Dossier }) {
                 </div>
               </div>
               <div className="p-2.5 rounded bg-secondary-fixed text-secondary flex items-center justify-center">
-                <span className="material-symbols-outlined text-2xl">event_busy</span>
+                <Icone nom="event_busy" className="text-2xl" />
               </div>
             </div>
             <div className="mt-4 pt-3 flex items-center justify-between font-label-sm text-label-sm bg-surface-container-low/60 -mx-5 -mb-5 px-5 py-3">
@@ -177,7 +178,7 @@ export function OngletConges({ agent }: { agent: Dossier }) {
                 </div>
               </div>
               <div className="p-2.5 rounded bg-tertiary-fixed text-tertiary flex items-center justify-center">
-                <span className="material-symbols-outlined text-2xl">favorite</span>
+                <Icone nom="favorite" className="text-2xl" />
               </div>
             </div>
             <div className="mt-4 pt-3 flex items-center justify-between font-label-sm text-label-sm bg-surface-container-low/60 -mx-5 -mb-5 px-5 py-3">
@@ -256,7 +257,7 @@ export function OngletConges({ agent }: { agent: Dossier }) {
             </div>
             {/* Alerte Continuité Régalienne */}
             <div className="p-3.5 rounded bg-primary-fixed/40 flex items-start gap-3">
-              <span className="material-symbols-outlined text-primary text-xl shrink-0 mt-0.5">verified_user</span>
+              <Icone nom="verified_user" className="text-primary text-xl shrink-0 mt-0.5" />
               <div className="space-y-0.5">
                 <p className="font-label-md text-label-md text-on-surface font-bold">{v.regle}</p>
                 <p className="font-body-sm text-body-sm text-on-surface-variant">{v.phraseQuorum}</p>
@@ -269,7 +270,7 @@ export function OngletConges({ agent }: { agent: Dossier }) {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2">
             <div className="space-y-0.5">
               <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-primary text-xl">folder_managed</span>
+                <Icone nom="folder_managed" className="text-primary text-xl" />
                 <h2 className="font-headline-sm text-headline-sm text-on-surface">
                   Registre Historique des Actes Individuels de Congé ({v.plage})
                 </h2>
@@ -287,12 +288,10 @@ export function OngletConges({ agent }: { agent: Dossier }) {
                   ))}
                 </select>
                 {" "}
-                <span className="material-symbols-outlined absolute right-2 top-2 pointer-events-none text-on-surface-variant text-sm">
-                  expand_more
-                </span>
+                <Icone nom="expand_more" className="absolute right-2 top-2 pointer-events-none text-on-surface-variant text-sm" />
               </div>
               <button className="px-3 py-1.5 rounded bg-surface-container-high text-on-surface font-label-sm text-label-sm flex items-center gap-1.5 hover:bg-surface-variant transition-colors" type="button" onClick={() => setFiltre(exercice)}>
-                <span className="material-symbols-outlined text-sm">filter_list</span>
+                <Icone nom="filter_list" className="text-sm" />
                 {" "}
                 <span>Filtrer</span>
               </button>
@@ -324,7 +323,7 @@ export function OngletConges({ agent }: { agent: Dossier }) {
           {/* Historical Footer Info */}
           <div className="p-4 rounded-lg bg-surface-container-low flex flex-col sm:flex-row items-center justify-between gap-3 text-on-surface-variant font-label-sm text-label-sm">
             <div className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-base text-primary">lock</span>
+              <Icone nom="lock" className="text-base text-primary" />
               {" "}
               <span>
                 Les arrêtés archivés portent le sceau officiel de la République de Côte d'Ivoire et font foi auprès du Trésor Public.
@@ -333,14 +332,14 @@ export function OngletConges({ agent }: { agent: Dossier }) {
             <button className="text-primary font-bold hover:underline flex items-center gap-1" type="button" onClick={() => telecharger("releve")}>
               <span>Exporter le relevé statutaire 3 ans</span>
               {" "}
-              <span className="material-symbols-outlined text-sm">arrow_forward</span>
+              <Icone nom="arrow_forward" className="text-sm" />
             </button>
           </div>
         </div>
         {/* Sovereign Bottom Guarantee Seal */}
         <div className="p-4 rounded-xl bg-surface-container-high/60 flex flex-col md:flex-row items-center justify-between gap-4 text-center md:text-left">
           <div className="flex items-center gap-3">
-            <span className="material-symbols-outlined text-2xl text-primary">policy</span>
+            <Icone nom="policy" className="text-2xl text-primary" />
             <div className="space-y-0.5">
               <p className="font-label-md text-label-md text-on-surface font-bold">Sécurisation Régalienne des Actes RH</p>
               <p className="font-body-sm text-body-sm text-on-surface-variant">Conforme aux règles d'accès de la plateforme.</p>
@@ -414,7 +413,7 @@ function LigneAbsence({ absence }: { absence: Absence }) {
       <td className="py-3.5 px-4">
         <div className="flex items-center gap-3">
           <div className="p-2 rounded bg-primary-fixed text-primary">
-            <span className="material-symbols-outlined text-base" aria-hidden="true">{iconeAbsence(absence.nature)}</span>
+            <Icone nom={iconeAbsence(absence.nature)} className="text-base" />
           </div>
           <div>
             <span className="font-code-num text-on-surface font-bold block">{absence.nature}</span>
@@ -436,7 +435,7 @@ function LigneAbsence({ absence }: { absence: Absence }) {
       </td>
       <td className="py-3.5 px-4 text-right">
         <button className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-surface-container-high text-primary hover:bg-primary hover:text-on-primary font-label-sm text-label-sm transition-colors shadow-sm" type="button" data-soon="Ce document n'est pas encore servi par le dossier.">
-          <span className="material-symbols-outlined text-sm" aria-hidden="true">download</span>
+          <Icone nom="download" className="text-sm" />
           <span>PDF</span>
         </button>
       </td>
@@ -572,7 +571,7 @@ function FormulaireConge({ agent, onClose }: { agent: Dossier; onClose: () => vo
             Enregistrer en brouillon
           </button>
           <button type="submit" className={BOUTON_PRIMAIRE} disabled={enCours}>
-            <span className={`material-symbols-outlined text-lg ${enCours ? "motion-spin" : ""}`} aria-hidden="true">{enCours ? "progress_activity" : "send"}</span>
+            <Icone nom={enCours ? "progress_activity" : "send"} className={`text-lg ${enCours ? "motion-spin" : ""}`} />
             Transmettre pour visa
           </button>
         </>
@@ -615,7 +614,7 @@ function FormulaireConge({ agent, onClose }: { agent: Dossier; onClose: () => vo
         </div>
         <div className="p-3.5 rounded bg-surface-container flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-primary text-xl" aria-hidden="true">calculate</span>
+            <Icone nom="calculate" className="text-primary text-xl" />
             <div>
               <p className="font-label-md text-label-md text-on-surface font-semibold">Décompte des jours ouvrables légaux</p>
               <p className="font-body-sm text-body-sm text-on-surface-variant">Exclut samedis et dimanches</p>

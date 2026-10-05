@@ -8,8 +8,9 @@ import { Modale } from "../../ui/Modale";
 import { AppChrome } from "../AppChrome";
 import { optionsEntites } from "../../ui/Entites";
 import { SelectEmploi, SelectGrade, useNomenclature } from "../../ui/Nomenclature";
+import { Icone } from "../../ui/Icone";
 
-const PAGE = "w-full px-4 sm:px-6 lg:px-8 py-6 max-w-[1600px] mx-auto flex-1 space-y-6";
+const PAGE = "w-full px-4 sm:px-6 lg:px-8 py-6 mx-auto flex-1 space-y-6";
 const CARTE = "rounded-xl bg-surface-container-lowest border border-hairline";
 const CHAMP = "w-full h-10 px-3 rounded border border-outline-variant bg-surface-container-lowest font-body-md text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-primary";
 const PRIMAIRE = "inline-flex items-center gap-2 px-4 py-2 rounded bg-primary text-on-primary hover:bg-primary-container font-label-lg text-label-lg disabled:opacity-50";
@@ -96,7 +97,7 @@ export function BesoinsScreen() {
         <section className={`${CARTE} p-6`}>
           <p className="flex flex-wrap items-center gap-2 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wide">
             <span>GPEC</span>
-            <span className="material-symbols-outlined text-xs" aria-hidden="true">chevron_right</span>
+            <Icone nom="chevron_right" className="text-xs" />
             <span className="font-bold text-primary">Expression des besoins</span>
           </p>
           <div className="mt-3 flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
@@ -109,11 +110,11 @@ export function BesoinsScreen() {
             </div>
             <div className="flex flex-wrap gap-2">
               <button type="button" className={SECOND} onClick={() => void exporter()}>
-                <span className="material-symbols-outlined text-lg" aria-hidden="true">picture_as_pdf</span>
+                <Icone nom="picture_as_pdf" className="text-lg" />
                 Exporter le plan
               </button>
               <button type="button" className={PRIMAIRE} onClick={() => { setFiche(FICHE_VIDE); setPanneau("fiche"); }}>
-                <span className="material-symbols-outlined text-lg" aria-hidden="true">post_add</span>
+                <Icone nom="post_add" className="text-lg" />
                 Nouvelle fiche
               </button>
             </div>
@@ -139,7 +140,7 @@ export function BesoinsScreen() {
               <article key={item.code}>
                 <div className="flex items-baseline justify-between gap-3">
                   <p className="font-label-lg text-label-lg text-on-surface">
-                    <span className="material-symbols-outlined mr-1 align-middle text-lg text-primary" aria-hidden="true">{item.icone}</span>
+                    <Icone nom={item.icone} className="mr-1 align-middle text-lg text-primary" />
                     {item.libelle}
                   </p>
                   <p className="font-code-num text-code-num text-on-surface">{nombre(item.taux)} %</p>

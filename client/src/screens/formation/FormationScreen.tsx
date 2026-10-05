@@ -14,6 +14,7 @@ import { Prestataires } from "./Prestataires";
 import { Sessions } from "./Sessions";
 import { CLE_FORMATION, type TableauFormation } from "./types";
 import { BOUTON_PRIMAIRE, BOUTON_SECONDAIRE, CARTE, EnTeteSection, Modale, Nombre, Vide, messageErreur, useEnregistrement } from "./ui";
+import { Icone } from "../../ui/Icone";
 
 type Vue = "pilotage" | "modules" | "candidatures" | "besoins" | "catalogue" | "prestataires" | "passeport";
 
@@ -49,7 +50,7 @@ export function FormationScreen() {
 
   return (
     <AppChrome>
-      <div className="w-full min-w-0 px-4 sm:px-6 lg:px-8 py-6 max-w-[1600px] mx-auto flex-1 space-y-6">
+      <div className="w-full min-w-0 px-4 sm:px-6 lg:px-8 py-6 mx-auto flex-1 space-y-6">
         <div className={`${CARTE} p-6`}>
           <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-5">
             <div>
@@ -61,15 +62,15 @@ export function FormationScreen() {
             </div>
             <div className="flex flex-wrap gap-2">
               <button type="button" className={BOUTON_SECONDAIRE} onClick={() => setPlan(true)} disabled={!data}>
-                <span className="material-symbols-outlined text-lg" aria-hidden="true">tune</span>
+                <Icone nom="tune" className="text-lg" />
                 Paramètres du plan
               </button>
               <button type="button" className={BOUTON_SECONDAIRE} onClick={exporter} disabled={!data}>
-                <span className="material-symbols-outlined text-lg" aria-hidden="true">download</span>
+                <Icone nom="download" className="text-lg" />
                 Exporter le plan (XLSX)
               </button>
               <button type="button" className={BOUTON_PRIMAIRE} onClick={() => choisir("modules")}>
-                <span className="material-symbols-outlined text-lg" aria-hidden="true">event_available</span>
+                <Icone nom="event_available" className="text-lg" />
                 Gérer les modules
               </button>
             </div>
@@ -85,8 +86,8 @@ export function FormationScreen() {
 
         <Indicateurs data={data} onCandidatures={() => choisir("candidatures")} />
 
-        <div className={`${CARTE} overflow-x-auto`}>
-          <div role="tablist" aria-label="Rubriques de la formation continue" className="flex min-w-max gap-1 p-1">
+        <div className={CARTE}>
+          <div role="tablist" aria-label="Rubriques de la formation continue" className="flex flex-wrap gap-1 p-1">
             {onglets.map((o) => {
               const actif = o.id === vue;
               return (
@@ -99,7 +100,7 @@ export function FormationScreen() {
                   onClick={() => choisir(o.id)}
                   className={`flex items-center gap-2 px-4 py-2.5 rounded font-label-md text-label-md ${actif ? "bg-primary text-on-primary font-semibold" : "text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low"}`}
                 >
-                  <span className="material-symbols-outlined text-base" aria-hidden="true">{o.icone}</span>
+                  <Icone nom={o.icone} className="text-base" />
                   {o.libelle}
                   {o.compteur ? <span className={`px-1.5 rounded font-code-num text-label-sm ${actif ? "bg-on-primary/20" : "bg-surface-container-high text-on-surface"}`}>{o.compteur}</span> : null}
                 </button>
@@ -161,7 +162,7 @@ function Indicateur({ icone, libelle, valeur, jauge, alerte, action, children }:
     <div className={`${CARTE} motion-content p-5 flex flex-col gap-3`}>
       <div className="flex items-center justify-between gap-2">
         <span className="font-label-md text-label-md text-on-surface-variant">{libelle}</span>
-        <span className="p-2 rounded bg-surface-container text-primary"><span className="material-symbols-outlined text-xl" aria-hidden="true">{icone}</span></span>
+        <span className="p-2 rounded bg-surface-container text-primary"><Icone nom={icone} className="text-xl" /></span>
       </div>
       <p className="font-headline-lg text-headline-lg text-on-surface font-bold">{valeur}</p>
       <p className="font-body-sm text-body-sm text-on-surface-variant">{children}</p>
@@ -173,7 +174,7 @@ function Indicateur({ icone, libelle, valeur, jauge, alerte, action, children }:
       {action ? (
         <button type="button" className="mt-auto self-start inline-flex items-center gap-1 font-label-md text-label-md text-primary hover:underline rounded" onClick={action.onClick}>
           {action.libelle}
-          <span className="material-symbols-outlined text-base" aria-hidden="true">arrow_forward</span>
+          <Icone nom="arrow_forward" className="text-base" />
         </button>
       ) : null}
     </div>
@@ -271,7 +272,7 @@ function Pilotage({ data, onVue }: { data: TableauFormation; onVue: (v: Vue) => 
         )}
         <button type="button" className="mt-3 inline-flex items-center gap-1 font-label-md text-label-md text-primary hover:underline rounded" onClick={() => onVue("modules")}>
           Tous les modules
-          <span className="material-symbols-outlined text-base" aria-hidden="true">arrow_forward</span>
+          <Icone nom="arrow_forward" className="text-base" />
         </button>
       </section>
     </div>

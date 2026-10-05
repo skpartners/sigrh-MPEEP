@@ -107,7 +107,7 @@ ROUTES = {
     "action-sociale": "/app/action-sociale",
     "formation-continue": "/app/formation",
     "circuits-validation": "/app/circuits",
-    "statistiques-rbac": "/app/circuits#rbac",
+    "statistiques-rbac": "/app/habilitations",
 }
 NAV_BASE = "flex items-center gap-3 px-3 py-2 rounded transition-colors"
 

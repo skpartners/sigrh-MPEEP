@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../api/client";
 import { useIntervalle } from "../ui/TempsReel";
+import { Icone } from "../ui/Icone";
 
 type Apercu = { id: number; reference: string; intitule: string; nature_libelle: string; etape_visa: string };
 type Compteur = { decompte: number; peut_viser: boolean; visas: Apercu[]; non_lues: Apercu[] };
@@ -69,7 +70,7 @@ export function CommunicationBouton() {
         aria-label={decompte ? `Communication, ${decompte} à traiter` : "Communication, rien à traiter"}
         className={`relative p-2 rounded hover:bg-surface-container-high ${ouvert ? "bg-surface-container-high text-on-surface" : "text-on-surface-variant hover:text-on-surface"}`}
       >
-        <span className="material-symbols-outlined text-xl" aria-hidden="true">campaign</span>
+        <Icone nom="campaign" className="text-xl" />
         {decompte ? (
           <span
             key={rebond}
@@ -85,7 +86,7 @@ export function CommunicationBouton() {
           id="apercu-communication"
           role="dialog"
           aria-labelledby="titre-apercu-communication"
-          className="motion-overlay-card fixed sm:absolute left-4 right-4 sm:left-auto sm:right-0 top-[4.5rem] sm:top-auto sm:mt-2 sm:w-[22rem] z-50 rounded-lg border border-hairline bg-surface-container-lowest shadow-xl overflow-hidden"
+          className="motion-overlay-card fixed sm:absolute left-4 right-4 sm:left-auto sm:right-0 top-[7.5rem] sm:top-auto sm:mt-2 sm:w-[22rem] z-50 rounded-lg border border-hairline bg-surface-container-lowest shadow-xl overflow-hidden"
         >
           <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-hairline">
             <h2 id="titre-apercu-communication" className="font-headline-sm text-headline-sm text-on-surface">Communication</h2>

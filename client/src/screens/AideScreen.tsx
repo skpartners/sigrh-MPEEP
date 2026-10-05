@@ -1,8 +1,9 @@
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { AppChrome } from "./AppChrome";
+import { Icone } from "../ui/Icone";
 
-const PAGE = "w-full px-4 sm:px-6 lg:px-8 py-6 max-w-[1600px] mx-auto flex-1";
+const PAGE = "w-full px-4 sm:px-6 lg:px-8 py-6 mx-auto flex-1";
 
 type Bloc = { titre: string; lignes: string[] };
 
@@ -76,14 +77,14 @@ const BARRE: Bloc[] = [
 
 const MODULES: ModuleAide[] = [
   {
-    id: "vue-ensemble",
+    id: "tableau-de-bord",
     icone: "dashboard",
-    titre: "Vue d'ensemble",
-    chemin: "/app",
+    titre: "Tableau de bord",
+    chemin: "/app/tableau-de-bord",
     resume: "Le tableau de bord de l'exercice : registres ouverts, indicateurs, file de visas et derniers actes.",
     fait: [
-      "Elle montre, dès l'ouverture, ce qui attend une décision dans votre périmètre : registres encore ouverts, indicateurs de l'exercice et actes à viser.",
-      "Elle sert à traiter les visas urgents sans entrer dans chaque module, et à sortir le rapport 360, la note de pilotage du personnel dont vous avez la charge.",
+      "Il montre, dès l'ouverture, ce qui attend une décision dans votre périmètre : indicateurs de l'exercice et actes à viser.",
+      "Il sert à traiter les visas urgents sans entrer dans chaque module, et à sortir le rapport 360, la note de pilotage du personnel dont vous avez la charge.",
     ],
     cas: [
       "Lundi, douze visas attendent. Vous traitez les urgents, vous renvoyez celui dont la pièce manque, puis vous sortez le rapport 360 pour la réunion de direction.",
@@ -100,13 +101,11 @@ const MODULES: ModuleAide[] = [
       "Le rapport 360 ne contient que les agents de votre périmètre. Seul le DRH y trouve tout le ministère.",
     ],
     fonctionnement: [
-      "Les cartes de registres comptent ce qui est encore ouvert dans chaque module : absences, congés, discipline, social, formation, besoins, recrutement, communication.",
       "Les indicateurs reprennent la photographie de l'exercice (effectifs, visas, notations, action sociale).",
       "La file de visas classe les actes urgents en premier. Vous visez ou vous renvoyez pour complément. L'acte quitte alors la file.",
       "Le registre du bas liste les mouvements déjà versés.",
     ],
     fonctionnalites: [
-      "Ouvrir directement le module depuis une carte de registre.",
       "Viser ou renvoyer un acte depuis la file.",
       "Exporter le rapport 360.",
     ],
@@ -115,7 +114,7 @@ const MODULES: ModuleAide[] = [
       "Il reprend les indicateurs, les observations, les points d'attention, les effectifs, les âges, les visas, les actes, les congés, la discipline et les emplois de votre périmètre.",
     ],
     marche: [
-      "Ouvrez Vue d'ensemble depuis le menu.",
+      "Ouvrez Tableau de bord depuis le menu.",
       "Traitez d'abord les visas urgents. Si la mention de signature manque, déposez-la dans le profil, puis revenez.",
       "Pour une note de pilotage, cliquez Rapport 360. Le fichier se nomme rapport-pilotage-2026.pdf.",
     ],
@@ -123,7 +122,7 @@ const MODULES: ModuleAide[] = [
   {
     id: "dossier",
     icone: "badge",
-    titre: "Dossier agent numérique",
+    titre: "Mon profil",
     chemin: "/app/dossiers",
     resume: "Le dossier individuel : identité, situation, carrière, pièces et exports.",
     fait: [
@@ -145,7 +144,7 @@ const MODULES: ModuleAide[] = [
       "La photo acceptée est une image PNG, JPG ou WEBP, au plus 5 Mo.",
     ],
     fonctionnement: [
-      "L'annuaire liste les agents de votre périmètre. La recherche porte sur le nom, les prénoms et le matricule.",
+      "Mon profil ouvre directement votre dossier, sans passer par une liste.",
       "L'en-tête montre le portrait, le grade, l'échelon, la catégorie, la structure, l'indice, l'ancienneté et la projection de départ à la retraite.",
       "La situation administrative tient les dix-sept rubriques : rattachement, emploi, recrutement, catégorie, grade, prises de service, fonction et position.",
       "Les onglets portent les actes, les notations, les congés, l'action sociale, les formations et les pièces. Les pièces jointes se déposent et s'archivent en ZIP.",
@@ -189,7 +188,7 @@ const MODULES: ModuleAide[] = [
     circuit: [
       "La sous-direction des carrières transmet la ligne : un arrêté d'avancement est créé en instruction et un visa s'ouvre pour le DRH.",
       "Le renvoi retourne le dossier pour pièces. Une ligne déjà transmise ou renvoyée ne se décide plus.",
-      "Le DRH vise ensuite depuis la vue d'ensemble. L'accord autorise le papier à en-tête. Le scan versé au dossier ouvre le droit.",
+      "Le DRH vise ensuite depuis le tableau de bord. L'accord autorise le papier à en-tête. Le scan versé au dossier ouvre le droit.",
     ],
     obligations: [
       "Un avancement transmis part au visa. Un renvoi retourne le dossier au service d'origine avec le motif.",
@@ -691,7 +690,7 @@ const MODULES: ModuleAide[] = [
     id: "habilitations",
     icone: "admin_panel_settings",
     titre: "Habilitations",
-    chemin: "/app/circuits#rbac",
+    chemin: "/app/habilitations",
     resume: "La matrice des droits par rôle, et les exceptions propres à un compte.",
     fait: [
       "Il décide ce que chaque rôle peut voir et faire dans les menus : rien, lire, saisir ou valider.",
@@ -707,7 +706,7 @@ const MODULES: ModuleAide[] = [
       "Une personnalisation de compte s'applique à la reconnexion, sans étape intermédiaire.",
     ],
     obligations: [
-      "Le rôle doit correspondre au niveau de la structure : agent, chef de service, sous-directeur, directeur ou directeur général.",
+      "Le rôle doit correspondre au niveau de la structure : agent, chef de service, sous-directeur, directeur, directeur général ou ministre.",
       "Une délégation ne peut pas dépasser les droits du délégant ni sortir de son équipe.",
       "Le DRH conserve la vue sur l'ensemble des agents.",
     ],
@@ -722,7 +721,7 @@ const MODULES: ModuleAide[] = [
       "Retirer la personnalisation pour revenir au rôle.",
     ],
     marche: [
-      "Ouvrez Habilitations depuis le menu.",
+      "Ouvrez Habilitations dans le menu Paramètres.",
       "Ajustez le rôle, puis, seulement si ce compte doit s'écarter du rôle, enregistrez une personnalisation.",
       "Demandez à l'agent de se reconnecter pour voir le menu à jour.",
     ],
@@ -793,7 +792,7 @@ const MODULES: ModuleAide[] = [
     obligations: [
       "Un agent a pour supérieur le premier responsable de sa structure.",
       "Une structure n'a qu'un premier responsable. Le rôle doit coller au niveau de cette structure.",
-      "Le premier responsable d'une structure racine n'a pas de supérieur.",
+      "Le ministre est au sommet de la chaîne. Les directeurs généraux lui sont rattachés.",
     ],
     fonctionnement: [
       "La création demande le matricule, le nom, la fonction, le rôle, la structure, le supérieur et le mot de passe confirmé.",
@@ -853,6 +852,43 @@ const MODULES: ModuleAide[] = [
       "Rattachez ensuite les comptes dans Gestion des utilisateurs.",
     ],
   },
+  {
+    id: "parametres",
+    icone: "tune",
+    titre: "Paramètres",
+    chemin: "/app/parametres",
+    resume: "Les paramètres de connexion de l'administrateur, puis la civilité, le nom et le portrait de la ministre.",
+    fait: [
+      "Il conserve la civilité, le nom et la photo officielle de la ministre.",
+      "Il sert à les montrer sur la page d'accueil publique, à côté des armoiries.",
+    ],
+    cas: [
+      "La ministre entre en fonction. Vous déposez son portrait : il remplace les armoiries dans le médaillon du portail.",
+      "Le portrait doit être retiré. Vous le retirez depuis Paramètres : le portail retrouve les armoiries.",
+    ],
+    circuit: [
+      "L'enregistrement est immédiat. Il n'y a pas de visa.",
+      "La lecture du menu permet de voir la photo. La saisie ou la validation permet de la remplacer ou de la retirer.",
+    ],
+    obligations: [
+      "La photo acceptée est une image PNG, JPG ou WEBP, au plus 5 Mo.",
+      "Une nouvelle photo remplace la précédente.",
+    ],
+    fonctionnement: [
+      "Le fichier est conservé dans les paramètres du ministère.",
+      "Le portail public lit ce même portrait.",
+    ],
+    fonctionnalites: [
+      "Choisir et enregistrer la photo de la ministre.",
+      "Saisir la civilité et le nom de la ministre.",
+      "Régler, en minutes, l'inactivité après laquelle une session ouverte se ferme.",
+      "Retirer le portrait en vigueur.",
+    ],
+    marche: [
+      "Ouvrez Paramètres depuis le menu.",
+      "Choisissez l'image, puis enregistrez. Le portail se met à jour.",
+    ],
+  },
 ];
 
 function parId(id: string): ModuleAide {
@@ -866,7 +902,7 @@ type Rubrique =
   | { genre: "groupe"; id: string; icone: string; titre: string; chemin: string; resume: string; cas: string[]; enfants: ModuleAide[] };
 
 const RUBRIQUES: Rubrique[] = [
-  { genre: "page", module: parId("vue-ensemble") },
+  { genre: "page", module: parId("tableau-de-bord") },
   { genre: "page", module: parId("dossier") },
   {
     genre: "groupe",
@@ -902,6 +938,7 @@ const RUBRIQUES: Rubrique[] = [
   { genre: "page", module: parId("statistiques") },
   { genre: "page", module: parId("utilisateurs") },
   { genre: "page", module: parId("structures") },
+  { genre: "page", module: parId("parametres") },
 ];
 
 const LIEN_SOMMAIRE = "flex items-start gap-2 rounded px-2 py-1.5 font-body-sm text-body-sm text-on-surface hover:bg-primary-fixed hover:text-on-primary-fixed";
@@ -980,14 +1017,14 @@ export function AideScreen() {
               <div className="p-6 sm:p-8">
                 <h1 className="font-headline-lg text-headline-lg">Comment utiliser le SIGRH</h1>
                 <p className="font-body-md text-body-md text-primary-fixed mt-3 max-w-3xl">
-                  Chaque module dit ce qu'il fait, dans quel cas vous vous en servez, et quel circuit il suit. Les menus qui ont des sous-menus se déplient. Le menu que vous voyez dépend de votre habilitation.
+                  Chaque module dit ce qu'il fait, dans quel cas vous vous en servez, et quel circuit il suit. Le menu ouvre l'accueil du module. S'il a des sous-menus, ils s'affichent dans la barre latérale. Le menu que vous voyez dépend de votre habilitation.
                 </p>
               </div>
             </header>
 
             <section id="communs" className="scroll-mt-24 space-y-4" aria-labelledby="titre-communs">
               <h2 id="titre-communs" className="font-headline-sm text-headline-sm text-on-surface">Règles communes</h2>
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              <div className="flex flex-col gap-4">
                 {COMMUNS.map((bloc, index) => (
                   <Encart key={bloc.titre} ton={TONS_CARTES[index % TONS_CARTES.length]} titre={bloc.titre} lignes={bloc.lignes} />
                 ))}
@@ -996,7 +1033,7 @@ export function AideScreen() {
 
             <section id="barre" className="scroll-mt-24 space-y-4" aria-labelledby="titre-barre">
               <h2 id="titre-barre" className="font-headline-sm text-headline-sm text-on-surface">Barre du haut</h2>
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              <div className="flex flex-col gap-4">
                 {BARRE.map((bloc, index) => (
                   <Encart key={bloc.titre} ton={TONS_CARTES[index % TONS_CARTES.length]} titre={bloc.titre} lignes={bloc.lignes} />
                 ))}
@@ -1057,7 +1094,7 @@ function Partie({ titre, icone, lignes, ton, ordonne = false }: { titre: string;
     <section className={`rounded-lg p-4 ${ton.fond} ${ton.texte}`}>
       <h3 className="flex items-center gap-2 font-label-lg text-label-lg font-bold">
         <span className={`w-8 h-8 rounded-md flex items-center justify-center shrink-0 ${ton.puce}`}>
-          <span className="material-symbols-outlined text-lg" aria-hidden="true">{icone}</span>
+          <Icone nom={icone} className="text-lg" />
         </span>
         {titre}
       </h3>
@@ -1096,13 +1133,13 @@ function GroupeMenu({ groupe }: { groupe: Extract<Rubrique, { genre: "groupe" }>
           <details key={enfant.id} id={enfant.id} className="group scroll-mt-24 border-t border-hairline">
             <summary className="flex cursor-pointer list-none items-center gap-3 px-6 py-4 font-label-lg text-label-lg text-on-surface hover:bg-secondary-fixed [&::-webkit-details-marker]:hidden">
               <span className="w-9 h-9 rounded-md bg-secondary text-on-secondary flex items-center justify-center shrink-0">
-                <span className="material-symbols-outlined text-lg" aria-hidden="true">{enfant.icone}</span>
+                <Icone nom={enfant.icone} className="text-lg" />
               </span>
               <span className="flex-1 min-w-0">
                 <span className="block">{enfant.titre}</span>
                 <span className="block font-body-sm text-body-sm font-normal text-on-surface-variant group-open:text-on-secondary-fixed">{enfant.resume}</span>
               </span>
-              <span className="material-symbols-outlined text-on-surface-variant transition-transform group-open:rotate-180" aria-hidden="true">expand_more</span>
+              <Icone nom="expand_more" className="text-on-surface-variant transition-transform group-open:rotate-180" />
             </summary>
             <div className="px-6 pb-6 bg-surface-container-low/50">
               <Corps module={enfant} entete={false} />
@@ -1119,7 +1156,7 @@ function Entete({ id, icone, titre, resume, chemin }: { id: string; icone: strin
     <div className="flex flex-wrap items-start justify-between gap-3">
       <div className="flex items-start gap-3 min-w-0">
         <span className="w-11 h-11 rounded-lg bg-primary text-on-primary flex items-center justify-center shrink-0">
-          <span className="material-symbols-outlined" aria-hidden="true">{icone}</span>
+          <Icone nom={icone} />
         </span>
         <div className="min-w-0">
           <h2 id={`titre-${id}`} className="font-headline-sm text-headline-sm text-on-surface">{titre}</h2>
@@ -1128,7 +1165,7 @@ function Entete({ id, icone, titre, resume, chemin }: { id: string; icone: strin
       </div>
       <Link to={chemin} className="inline-flex items-center gap-1.5 h-10 px-4 rounded-lg bg-primary text-on-primary font-label-md text-label-md hover:bg-primary-container shrink-0">
         Ouvrir
-        <span className="material-symbols-outlined text-lg" aria-hidden="true">arrow_forward</span>
+        <Icone nom="arrow_forward" className="text-lg" />
       </Link>
     </div>
   );
@@ -1144,20 +1181,14 @@ function Corps({ module, entete = true }: { module: ModuleAide; entete?: boolean
         <div className="flex justify-end pt-2">
           <Link to={module.chemin} className="inline-flex items-center gap-1.5 h-10 px-4 rounded-lg bg-primary text-on-primary font-label-md text-label-md hover:bg-primary-container">
             Ouvrir
-            <span className="material-symbols-outlined text-lg" aria-hidden="true">arrow_forward</span>
+            <Icone nom="arrow_forward" className="text-lg" />
           </Link>
         </div>
       )}
-      <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="lg:col-span-2">
-          <Partie titre="Fait quoi ?" icone="info" lignes={module.fait} ton={TONS.fait} />
-        </div>
-        <div className="lg:col-span-2">
-          <Partie titre="Cas d'usage" icone="forum" lignes={module.cas} ton={TONS.cas} />
-        </div>
-        <div className="lg:col-span-2">
-          <Partie titre="Circuit de validation" icone="conversion_path" lignes={module.circuit} ton={TONS.circuit} ordonne />
-        </div>
+      <div className="mt-6 flex flex-col gap-4">
+        <Partie titre="Fait quoi ?" icone="info" lignes={module.fait} ton={TONS.fait} />
+        <Partie titre="Cas d'usage" icone="forum" lignes={module.cas} ton={TONS.cas} />
+        <Partie titre="Circuit de validation" icone="conversion_path" lignes={module.circuit} ton={TONS.circuit} ordonne />
         <Partie titre="Obligations" icone="gavel" lignes={module.obligations} ton={TONS.obligations} />
         <Partie titre="Fonctionnement" icone="account_tree" lignes={module.fonctionnement} ton={TONS.fonctionnement} />
         <Partie titre="Fonctionnalités" icone="checklist" lignes={module.fonctionnalites} ton={TONS.fonctions} />
@@ -1170,9 +1201,9 @@ function Corps({ module, entete = true }: { module: ModuleAide; entete?: boolean
           {volets.map((volet) => (
             <details key={volet.id} id={volet.id} className="group scroll-mt-24 border-t border-hairline">
               <summary className="flex cursor-pointer list-none items-center gap-3 px-4 py-3 font-label-md text-label-md text-on-surface hover:bg-tertiary-fixed [&::-webkit-details-marker]:hidden">
-                <span className="material-symbols-outlined text-tertiary" aria-hidden="true">subdirectory_arrow_right</span>
+                <Icone nom="subdirectory_arrow_right" className="text-tertiary" />
                 <span className="flex-1">{volet.titre}</span>
-                <span className="material-symbols-outlined text-on-surface-variant transition-transform group-open:rotate-180" aria-hidden="true">expand_more</span>
+                <Icone nom="expand_more" className="text-on-surface-variant transition-transform group-open:rotate-180" />
               </summary>
               <div className="px-4 pb-4 space-y-3">
                 <p className="font-body-sm text-body-sm text-on-surface">{volet.texte}</p>

@@ -3,7 +3,7 @@ import { useLocation } from "react-router-dom";
 
 function texteVisible(cellule: Element): string {
   const copie = cellule.cloneNode(true) as HTMLElement;
-  copie.querySelectorAll(".material-symbols-outlined, .sr-only").forEach((noeud) => noeud.remove());
+  copie.querySelectorAll(".icone, .sr-only").forEach((noeud) => noeud.remove());
   return (copie.textContent ?? "").replace(/\s+/g, " ").trim();
 }
 

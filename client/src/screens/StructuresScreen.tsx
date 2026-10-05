@@ -10,8 +10,9 @@ import { useFeedback } from "../ui/Feedback";
 import { Pagination, usePagination } from "../ui/Pagination";
 import { ActionsImport } from "./ImportAgents";
 import { AppChrome } from "./AppChrome";
+import { Icone } from "../ui/Icone";
 
-const PAGE = "w-full px-4 sm:px-6 lg:px-8 py-6 max-w-[1600px] mx-auto flex-1 space-y-6";
+const PAGE = "w-full px-4 sm:px-6 lg:px-8 py-6 mx-auto flex-1 space-y-6";
 const CARTE = "rounded-xl bg-surface-container-lowest border border-hairline";
 const CHAMP = "w-full h-10 px-3 rounded border border-outline-variant bg-surface-container-lowest font-body-md text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-primary";
 const PRIMAIRE = "inline-flex items-center gap-2 px-4 py-2 rounded bg-primary text-on-primary hover:bg-primary-container font-label-lg text-label-lg";
@@ -22,6 +23,7 @@ type Annuaire = { structures: EntiteTutelle[]; poles: Pole[] };
 const VIDE = { nom: "", pole: "", niveau: "direction-centrale", parent: "" };
 
 const TEINTE_NIVEAU: Record<string, { pastille: string; puce: string }> = {
+  ministere: { pastille: "bg-on-surface text-surface", puce: "bg-on-surface" },
   "direction-generale": { pastille: "bg-primary text-on-primary", puce: "bg-primary" },
   "direction-centrale": { pastille: "bg-primary-fixed text-on-primary-fixed", puce: "bg-primary-container" },
   "sous-direction": { pastille: "bg-tertiary-fixed text-on-tertiary-fixed", puce: "bg-tertiary-container" },
@@ -63,7 +65,7 @@ export function StructuresScreen() {
         nom: formulaire.nom.trim(),
         pole: formulaire.pole,
         niveau: formulaire.niveau,
-        parent: formulaire.niveau === "direction-generale" ? "" : formulaire.parent,
+        parent: formulaire.niveau === "ministere" ? "" : formulaire.parent,
       });
       if (edition) {
         return api<EntiteTutelle>(`/api/v1/structures/${encodeURIComponent(edition)}/`, { method: "PATCH", body: corps });
@@ -165,7 +167,7 @@ export function StructuresScreen() {
         <section className={`${CARTE} p-6`}>
           <p className="flex flex-wrap items-center gap-2 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wide">
             <span>Gouvernance</span>
-            <span className="material-symbols-outlined text-xs" aria-hidden="true">chevron_right</span>
+            <Icone nom="chevron_right" className="text-xs" />
             <span className="font-bold text-primary">Structures du ministère</span>
           </p>
           <div className="mt-3 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
@@ -190,11 +192,11 @@ export function StructuresScreen() {
               {volet === "structures" && (
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                   <button type="button" className={`${PRIMAIRE} w-full justify-center`} onClick={() => ouvrirPole()}>
-                    <span className="material-symbols-outlined text-lg" aria-hidden="true">add</span>
+                    <Icone nom="add" className="text-lg" />
                     Ajouter un pôle
                   </button>
                   <button type="button" className={`${PRIMAIRE} w-full justify-center`} onClick={ouvrirCreation}>
-                    <span className="material-symbols-outlined text-lg" aria-hidden="true">add</span>
+                    <Icone nom="add" className="text-lg" />
                     Ajouter une structure
                   </button>
                 </div>
@@ -345,29 +347,34 @@ export function StructuresScreen() {
                 onChange={(event) => setFormulaire({
                   ...formulaire,
                   niveau: event.target.value,
-                  parent: event.target.value === "direction-generale" ? "" : formulaire.parent,
+                  parent: event.target.value === "ministere" ? "" : formulaire.parent,
                 })}
               >
+                <option value="ministere">Ministère</option>
                 <option value="direction-generale">Direction générale</option>
                 <option value="direction-centrale">Direction centrale</option>
                 <option value="sous-direction">Sous-direction</option>
                 <option value="service">Service</option>
               </select>
             </label>
-            {formulaire.niveau !== "direction-generale" ? (
+            {formulaire.niveau !== "ministere" ? (
               <label className="block space-y-1">
                 <span className="font-label-sm text-label-sm text-on-surface-variant">Rattachement</span>
                 <select
                   className={CHAMP}
+                  required={formulaire.niveau === "direction-generale"}
                   value={formulaire.parent}
                   onChange={(event) => setFormulaire({ ...formulaire, parent: event.target.value })}
                 >
-                  <option value="">Aucun</option>
+                  {formulaire.niveau === "direction-generale" ? null : <option value="">Aucun</option>}
                   {data.structures
-                    .filter((item) => item.pole === formulaire.pole && item.code !== edition && (
-                      formulaire.niveau === "direction-centrale" ? item.niveau === "direction-generale"
-                        : formulaire.niveau === "sous-direction" ? item.niveau === "direction-centrale"
-                          : item.niveau === "sous-direction" || item.niveau === "direction-centrale"
+                    .filter((item) => item.code !== edition && (
+                      formulaire.niveau === "direction-generale" ? item.niveau === "ministere"
+                        : item.pole === formulaire.pole && (
+                          formulaire.niveau === "direction-centrale" ? item.niveau === "direction-generale"
+                            : formulaire.niveau === "sous-direction" ? item.niveau === "direction-centrale"
+                              : item.niveau === "sous-direction" || item.niveau === "direction-centrale"
+                        )
                     ))
                     .map((item) => <option key={item.code} value={item.code}>{item.nom}</option>)}
                 </select>
@@ -458,7 +465,7 @@ function VoletGrades() {
             enregistrer.reset();
           }}
         >
-          <span className="material-symbols-outlined text-lg" aria-hidden="true">add</span>
+          <Icone nom="add" className="text-lg" />
           Ajouter un grade
         </button>
       </div>
@@ -677,7 +684,7 @@ function ListeEmplois({
             {total} emploi{total > 1 ? "s" : ""} affiché{total > 1 ? "s" : ""}. Six familles, du décret de classification. Le choix d'un emploi renseigne le grade dans le dossier.
           </p>
           <button type="button" className={PRIMAIRE} onClick={onCreer}>
-            <span className="material-symbols-outlined text-lg" aria-hidden="true">add</span>
+            <Icone nom="add" className="text-lg" />
             Ajouter un emploi
           </button>
         </div>

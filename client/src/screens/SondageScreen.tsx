@@ -38,7 +38,7 @@ export function SondageScreen() {
 
   return (
     <AppChrome>
-      <div className="w-full max-w-3xl mx-auto px-4 sm:px-6 py-6 space-y-4">
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-6 space-y-4">
         <h1 className="font-headline-sm text-headline-sm text-on-surface">Sondage</h1>
         {data == null ? <p className="font-body-md text-body-md text-on-surface-variant">Aucun sondage n'est ouvert.</p> : null}
         {data ? (

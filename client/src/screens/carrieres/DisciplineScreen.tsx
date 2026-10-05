@@ -6,6 +6,7 @@ import { useFeedback } from "../../ui/Feedback";
 import { BOUTON_PRIMAIRE, BOUTON_SECONDAIRE, Modale } from "../../ui/Modale";
 import { Skeleton } from "../../ui/Motion";
 import { AppChrome } from "../AppChrome";
+import { Icone } from "../../ui/Icone";
 
 type Avis = "instruction" | "recevable" | "attente_reponse" | "visa_rapporteur" | "delibere" | "sanction" | "classee";
 type Procedure = {
@@ -113,13 +114,13 @@ export function DisciplineScreen() {
   return (
     <AppChrome>
       <div className="flex flex-col w-full">
-        <div className="px-6 lg:px-8 py-6 space-y-8 max-w-[1600px] mx-auto w-full">
+        <div className="px-6 lg:px-8 py-6 space-y-8 mx-auto w-full">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div className="space-y-1.5">
               <nav className="flex flex-wrap items-center gap-2 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">
                 {(donnees?.entete.fil ?? []).map((etape, index, fil) => (
                   <Fragment key={etape}>
-                    {index > 0 ? <span className="material-symbols-outlined text-xs">chevron_right</span> : null}
+                    {index > 0 ? <Icone nom="chevron_right" className="text-xs" /> : null}
                     <span className={index === fil.length - 1 ? "text-primary font-bold" : undefined}>{etape}</span>
                   </Fragment>
                 ))}
@@ -138,7 +139,7 @@ export function DisciplineScreen() {
             </div>
             <div className="flex flex-wrap items-center gap-3 shrink-0">
               <button className="inline-flex items-center gap-2 px-5 py-2.5 rounded bg-primary text-on-primary font-label-lg text-label-lg font-semibold shadow-sm hover:bg-primary-container transition-colors" type="button" onClick={() => setSaisie(true)}>
-                <span className="material-symbols-outlined text-lg">add_moderator</span>
+                <Icone nom="add_moderator" className="text-lg" />
                 <span>Saisir la commission paritaire</span>
               </button>
             </div>
@@ -155,7 +156,7 @@ export function DisciplineScreen() {
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3">
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded bg-surface-container-low text-primary flex items-center justify-center font-bold">
-                    <span className="material-symbols-outlined text-xl">balance</span>
+                    <Icone nom="balance" className="text-xl" />
                   </div>
                   <div>
                     <h2 className="font-headline-sm text-headline-sm text-on-surface font-bold">{donnees.echelle.titre}</h2>
@@ -164,7 +165,7 @@ export function DisciplineScreen() {
                 </div>
                 {donnees.echelle.principe ? (
                   <div className="inline-flex items-center gap-2 px-3 py-1 bg-surface-container text-on-surface rounded font-label-sm text-label-sm font-semibold">
-                    <span className="material-symbols-outlined text-sm text-secondary">info</span>
+                    <Icone nom="info" className="text-sm text-secondary" />
                     {donnees.echelle.principe}
                   </div>
                 ) : null}
@@ -204,7 +205,7 @@ export function DisciplineScreen() {
               </div>
               <div className="flex flex-wrap items-center gap-2.5">
                 <div className="relative">
-                  <span className="material-symbols-outlined absolute left-3 top-2.5 text-on-surface-variant text-base pointer-events-none">filter_list</span>
+                  <Icone nom="filter_list" className="absolute left-3 top-2.5 text-on-surface-variant text-base pointer-events-none" />
                   <select aria-label="Filtrer par entité" className="pl-9 pr-8 py-2 bg-surface-container-low text-on-surface font-body-sm text-body-sm rounded focus:outline-none focus:bg-surface-container" value={entite} onChange={(event) => { setEntite(event.target.value); setPage(1); }}>
                     <option value="">Toutes les entités</option>
                     {entites.map((sigle) => (
@@ -272,7 +273,7 @@ export function DisciplineScreen() {
               <div className="flex flex-wrap items-center justify-between gap-3 pb-3">
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded bg-surface-container-low text-primary flex items-center justify-center font-bold">
-                    <span className="material-symbols-outlined text-xl">event_available</span>
+                    <Icone nom="event_available" className="text-xl" />
                   </div>
                   <div>
                     <h2 className="font-headline-sm text-headline-sm text-on-surface font-bold">{donnees?.calendrier.titre}</h2>
@@ -282,7 +283,7 @@ export function DisciplineScreen() {
                 <div className="flex flex-wrap items-center gap-2">
                   {prochaine?.lieu ? <span className="px-2.5 py-1 bg-surface-container text-on-surface rounded font-code-num text-code-num font-semibold">{prochaine.lieu}</span> : null}
                   <button className="inline-flex items-center gap-2 px-3 py-2 rounded bg-primary text-on-primary font-label-md text-label-md font-semibold hover:bg-primary-container transition-colors" type="button" onClick={() => setSeance(true)}>
-                    <span className="material-symbols-outlined text-lg">event</span>
+                    <Icone nom="event" className="text-lg" />
                     Fixer une session
                   </button>
                 </div>
@@ -311,7 +312,7 @@ export function DisciplineScreen() {
                           <span className="text-on-surface-variant font-medium">Composition :</span>
                           {session.composition.map((membre, index) => (
                             <span key={membre} className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-surface-container-lowest text-on-surface font-semibold">
-                              <span className={`material-symbols-outlined text-xs ${index === 0 ? "text-primary" : "text-secondary"}`}>{index === 0 ? "how_to_reg" : "badge"}</span>
+                              <Icone nom={index === 0 ? "how_to_reg" : "badge"} className={`text-xs ${index === 0 ? "text-primary" : "text-secondary"}`} />
                               {membre}
                             </span>
                           ))}
@@ -326,7 +327,7 @@ export function DisciplineScreen() {
               <div className="space-y-4">
                 <div className="flex items-center gap-3 pb-2">
                   <div className="w-9 h-9 rounded bg-surface-container-low text-primary flex items-center justify-center font-bold">
-                    <span className="material-symbols-outlined text-xl">auto_fix_high</span>
+                    <Icone nom="auto_fix_high" className="text-xl" />
                   </div>
                   <div>
                     <h2 className="font-headline-sm text-headline-sm text-on-surface font-bold">{donnees?.amnistie.titre}</h2>
@@ -335,7 +336,7 @@ export function DisciplineScreen() {
                 </div>
                 <div className="p-3.5 bg-surface-container-low rounded space-y-1.5 text-on-surface">
                   <div className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-primary text-base">verified</span>
+                    <Icone nom="verified" className="text-primary text-base" />
                     <span className="font-label-sm text-label-sm font-bold uppercase tracking-wide">{donnees?.amnistie.regle}</span>
                   </div>
                   {donnees?.amnistie.texte ? (
@@ -368,7 +369,7 @@ export function DisciplineScreen() {
             <div className="bg-surface-container-lowest rounded-lg p-5 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded bg-surface-container-low text-primary flex items-center justify-center shrink-0">
-                  <span className="material-symbols-outlined text-2xl">security</span>
+                  <Icone nom="security" className="text-2xl" />
                 </div>
                 <div className="space-y-0.5">
                   <p className="font-label-md text-label-md text-on-surface font-bold uppercase tracking-wide">{donnees.suivi.titre}</p>
@@ -395,7 +396,7 @@ function Indicateur({ titre, icone, liseret, teinte, valeur, valeurCouleur = "te
       <div className="flex items-start justify-between gap-2">
         <span className="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider font-semibold">{titre}</span>
         <span className={`w-8 h-8 rounded bg-surface-container-low flex items-center justify-center shrink-0 ${teinte}`}>
-          <span className="material-symbols-outlined text-lg">{icone}</span>
+          <Icone nom={icone} className="text-lg" />
         </span>
       </div>
       <div className="mt-4 flex items-baseline gap-3">
@@ -470,17 +471,17 @@ function LigneProcedure({ procedure, delai, onOuvrir }: { procedure: Procedure; 
       </td>
       <td className="py-4 px-6 align-top">
         <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded font-label-sm text-label-sm font-semibold ${close ? "bg-surface-container-high text-on-surface" : "bg-secondary-fixed text-on-secondary-fixed-variant"}`}>
-          <span className="material-symbols-outlined text-xs">{ICONE_AVIS[procedure.avis]}</span>
+          <Icone nom={ICONE_AVIS[procedure.avis]} className="text-xs" />
           {procedure.avis_libelle}
         </span>
       </td>
       <td className="py-4 px-6 align-top text-right">
         <div className="flex items-center justify-end gap-1">
           <button className="p-1.5 text-on-surface-variant hover:text-primary hover:bg-surface-container rounded transition-colors" title="Consulter le dossier d'instruction" aria-label={`Consulter le dossier ${procedure.reference}`} type="button" onClick={onOuvrir}>
-            <span className="material-symbols-outlined text-lg">folder_open</span>
+            <Icone nom="folder_open" className="text-lg" />
           </button>
           <button className="p-1.5 text-on-surface-variant hover:text-primary hover:bg-surface-container rounded transition-colors" title="Générer la convocation" aria-label={`Générer la convocation ${procedure.reference}`} type="button" onClick={() => void feedback.run("Préparation de la convocation…", () => convocationDe(procedure), { success: { title: "Convocation prête", message: procedure.reference }, error: "La convocation n'a pas été générée." })}>
-            <span className="material-symbols-outlined text-lg">mark_email_read</span>
+            <Icone nom="mark_email_read" className="text-lg" />
           </button>
         </div>
       </td>
@@ -513,7 +514,7 @@ function DossierInstruction({ procedure, onClose }: { procedure: Procedure; onCl
         <>
           <button type="button" className={BOUTON_SECONDAIRE} onClick={onClose}>Fermer</button>
           <button type="button" className={BOUTON_PRIMAIRE} onClick={() => void feedback.run("Préparation de la convocation…", () => convocationDe(procedure), { success: { title: "Convocation prête", message: procedure.reference }, error: "La convocation n'a pas été générée." })}>
-            <span className="material-symbols-outlined text-lg">mark_email_read</span>
+            <Icone nom="mark_email_read" className="text-lg" />
             Générer la convocation
           </button>
         </>
@@ -622,7 +623,7 @@ function FixerSession({ agents, etats, onClose }: { agents: Registre["agents"]; 
                 return (
                   <button key={matricule} type="button" className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-surface-container text-on-surface font-label-sm text-label-sm font-semibold" onClick={() => setMembres(membres.filter((item) => item !== matricule))}>
                     {agent?.nom_complet ?? matricule}
-                    <span className="material-symbols-outlined text-sm">close</span>
+                    <Icone nom="close" className="text-sm" />
                   </button>
                 );
               })}

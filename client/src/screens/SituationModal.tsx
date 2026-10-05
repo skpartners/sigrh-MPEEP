@@ -4,6 +4,7 @@ import { ApiError, api } from "../api/client";
 import type { Dossier, Organisme } from "../api/types";
 import { BOUTON_PRIMAIRE, BOUTON_SECONDAIRE, Modale } from "../ui/Modale";
 import { SelectEmploi, SelectGrade, useNomenclature } from "../ui/Nomenclature";
+import { Icone } from "../ui/Icone";
 
 const CHAMP = "w-full h-10 px-3 rounded border border-outline-variant bg-surface-container-lowest font-body-md text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-primary";
 
@@ -48,7 +49,7 @@ export function SituationModal({ agent, onClose }: { agent: Dossier; onClose: ()
             Annuler
           </button>
           <button type="submit" className={BOUTON_PRIMAIRE} disabled={enregistrer.isPending || organismes.isError}>
-            {enregistrer.isPending ? <span className="material-symbols-outlined text-lg motion-spin" aria-hidden="true">progress_activity</span> : null}
+            {enregistrer.isPending ? <Icone nom="progress_activity" className="text-lg motion-spin" /> : null}
             {enregistrer.isPending ? "Enregistrement…" : "Enregistrer"}
           </button>
         </>

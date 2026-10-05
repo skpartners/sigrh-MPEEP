@@ -1,15 +1,16 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Fragment, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { ApiError, api } from "../api/client";
 import type { AnnuaireUtilisateurs, CompteUtilisateur } from "../api/types";
 import { optionsEntites, rangerStructures } from "../ui/Entites";
 import { Modale } from "../ui/Modale";
 import { useAction } from "../ui/useAction";
 import { useFeedback } from "../ui/Feedback";
-import { Pagination, usePagination } from "../ui/Pagination";
+import { Pagination, TAILLE_PAGE, usePagination } from "../ui/Pagination";
 import { AppChrome } from "./AppChrome";
+import { Icone } from "../ui/Icone";
 
-const PAGE = "w-full px-4 sm:px-6 lg:px-8 py-6 max-w-[1600px] mx-auto flex-1 space-y-6";
+const PAGE = "w-full px-4 sm:px-6 lg:px-8 py-6 mx-auto flex-1 space-y-6";
 const CARTE = "rounded-xl bg-surface-container-lowest border border-hairline";
 const CHAMP = "w-full h-10 px-3 rounded border border-outline-variant bg-surface-container-lowest font-body-md text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-primary";
 const PRIMAIRE = "inline-flex items-center gap-2 px-4 py-2 rounded bg-primary text-on-primary hover:bg-primary-container font-label-lg text-label-lg";
@@ -63,6 +64,7 @@ function roleDuPoste(poste: "agent" | "responsable", structure: AnnuaireUtilisat
   if (structure.niveau === "service") return "Chef de service";
   if (structure.niveau === "sous-direction") return "Sous directeur";
   if (structure.niveau === "direction-generale") return "Directeur général";
+  if (structure.niveau === "ministere") return "Ministre";
   return "Directeur";
 }
 
@@ -94,13 +96,15 @@ export function UtilisateursScreen() {
   const client = useQueryClient();
   const feedback = useFeedback();
   const { agir } = useAction();
-  const annuaire = useQuery({ queryKey: ["utilisateurs"], queryFn: () => api<AnnuaireUtilisateurs>("/api/v1/utilisateurs/") });
+  const annuaire = useQuery({ queryKey: ["utilisateurs"], queryFn: () => api<AnnuaireUtilisateurs>("/api/v1/utilisateurs/", { cache: "no-store" }) });
   const [recherche, setRecherche] = useState("");
   const [role, setRole] = useState("");
   const [structure, setStructure] = useState("");
   const [formulaire, setFormulaire] = useState<typeof VIDE | null>(null);
   const [edition, setEdition] = useState<string | null>(null);
   const [ecart, setEcart] = useState("");
+  const [motDePasseVisible, setMotDePasseVisible] = useState(false);
+  const [montre, setMontre] = useState<string | null>(null);
 
   const data = annuaire.data;
   const visibles = useMemo(() => {
@@ -123,6 +127,15 @@ export function UtilisateursScreen() {
     });
   }, [visibles, data?.structures]);
   const pageComptes = usePagination(ordonnes, `${recherche}|${role}|${structure}`);
+  const allerPage = pageComptes.aller;
+
+  useEffect(() => {
+    if (!montre) return;
+    const index = ordonnes.findIndex((compte) => compte.matricule === montre);
+    if (index < 0) return;
+    allerPage(Math.floor(index / TAILLE_PAGE));
+    setMontre(null);
+  }, [montre, ordonnes, allerPage]);
 
   const enregistrer = useMutation({
     mutationFn: () => {
@@ -149,11 +162,30 @@ export function UtilisateursScreen() {
       }
       return api<CompteUtilisateur>("/api/v1/utilisateurs/", { method: "POST", body: JSON.stringify(corps) });
     },
-    onSuccess: async () => {
-      await client.invalidateQueries({ queryKey: ["utilisateurs"] });
-      feedback.toast(edition ? "Compte mis à jour" : "Compte créé");
+    onSuccess: (compte) => {
+      client.setQueryData<AnnuaireUtilisateurs>(["utilisateurs"], (actuel) => {
+        if (!actuel) return actuel;
+        const reste = actuel.utilisateurs.filter((item) => item.matricule !== compte.matricule);
+        return { ...actuel, utilisateurs: [...reste, compte] };
+      });
+      const creation = edition === null;
+      feedback.toast(creation ? "Compte créé" : "Compte mis à jour");
       setFormulaire(null);
       setEdition(null);
+      setMotDePasseVisible(false);
+      if (creation) {
+        const texte = `${compte.matricule} ${compte.nom_complet} ${compte.fonction} ${compte.courriel}`.toLowerCase();
+        const cacheParFiltre = (recherche.trim() && !texte.includes(recherche.trim().toLowerCase()))
+          || (role && compte.role !== role)
+          || (structure && compte.structure !== structure);
+        if (cacheParFiltre) {
+          setRecherche("");
+          setRole("");
+          setStructure("");
+        }
+        setMontre(compte.matricule);
+      }
+      void client.refetchQueries({ queryKey: ["utilisateurs"] });
     },
   });
 
@@ -172,10 +204,12 @@ export function UtilisateursScreen() {
     setEdition(null);
     setFormulaire({ ...VIDE, habilitations: droitsDuRole(data?.roles ?? [], "Agent") });
     setEcart("");
+    setMotDePasseVisible(false);
     enregistrer.reset();
   }
 
   function ouvrirEdition(compte: CompteUtilisateur) {
+    setMotDePasseVisible(false);
     setEdition(compte.matricule);
     const structure = data?.structures.find((item) => item.code === compte.structure);
     const chef = structure ? chefAttendu(posteDuCompte(compte.role), structure, data?.utilisateurs ?? [], compte.matricule) : undefined;
@@ -211,7 +245,7 @@ export function UtilisateursScreen() {
   const courant = data;
   const actifs = courant.utilisateurs.filter((compte) => compte.actif).length;
   const moi = courant.utilisateurs.find((compte) => compte.moi)?.matricule ?? "";
-  const peutAttribuer = Boolean(formulaire && formulaire.superieur === moi);
+  const peutAttribuer = Boolean(formulaire && (courant.administrateur || formulaire.superieur === moi));
   const structureChoisie = courant.structures.find((item) => item.code === formulaire?.structure);
   const poste = posteDuCompte(formulaire?.role ?? "Agent");
   const chef = structureChoisie && formulaire ? chefAttendu(poste, structureChoisie, courant.utilisateurs, edition ?? "") : undefined;
@@ -241,7 +275,7 @@ export function UtilisateursScreen() {
         <section className={`${CARTE} p-6`}>
           <p className="flex flex-wrap items-center gap-2 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wide">
             <span>Administration</span>
-            <span className="material-symbols-outlined text-xs" aria-hidden="true">chevron_right</span>
+            <Icone nom="chevron_right" className="text-xs" />
             <span className="font-bold text-primary">Gestion des utilisateurs</span>
           </p>
           <div className="mt-3 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
@@ -249,10 +283,11 @@ export function UtilisateursScreen() {
               <h1 className="font-headline-lg text-headline-lg text-on-surface">Gestion des utilisateurs</h1>
               <p className="mt-2 max-w-3xl font-body-md text-body-md text-on-surface-variant">
                 {actifs} compte{actifs > 1 ? "s" : ""} actif{actifs > 1 ? "s" : ""} sur {data.utilisateurs.length}. Sans habilitations particulières, les droits du rôle s'appliquent.
+                {courant.administrateur ? " Votre compte d'administrateur est à part : tous les droits, sans structure ni supérieur." : ""}
               </p>
             </div>
             <button type="button" className={PRIMAIRE} onClick={ouvrirCreation}>
-              <span className="material-symbols-outlined text-lg" aria-hidden="true">person_add</span>
+              <Icone nom="person_add" className="text-lg" />
               Créer un compte
             </button>
           </div>
@@ -353,7 +388,7 @@ export function UtilisateursScreen() {
           sousTitre={edition ? formulaire.matricule : "Le matricule sert d'identifiant de connexion."}
           icone="manage_accounts"
           taille="lg"
-          onClose={() => { if (!enregistrer.isPending) { setFormulaire(null); setEdition(null); } }}
+          onClose={() => { if (!enregistrer.isPending) { setFormulaire(null); setEdition(null); setMotDePasseVisible(false); } }}
           onSubmit={() => {
             if (!formulaire.structure) {
               setEcart("Choisissez une structure du ministère.");
@@ -479,7 +514,7 @@ export function UtilisateursScreen() {
             {structureChoisie && poste === "agent" && !chef ? (
               <p className="sm:col-span-2 font-body-sm text-body-sm text-on-surface-variant">Désignez d'abord le premier responsable de cette structure.</p>
             ) : null}
-            {structureChoisie && poste === "responsable" && structureChoisie.parent && !chef && formulaire.interimaire !== structureChoisie.parent ? (
+            {structureChoisie && poste === "responsable" && structureChoisie.parent && structureChoisie.niveau !== "direction-generale" && !chef && formulaire.interimaire !== structureChoisie.parent ? (
               <p className="sm:col-span-2 font-body-sm text-body-sm text-on-surface-variant">En l'absence de désignation du premier responsable de {structureChoisie.parent_nom || "la structure de rattachement"}, ce compte assure les fonctions de ce poste dans la limite des compétences de {structureChoisie.nom}, jusqu'à cette désignation. Une note de service le constate.</p>
             ) : null}
             {structureChoisie && chef ? (
@@ -493,12 +528,21 @@ export function UtilisateursScreen() {
                     ? "Intérimaire qui assure pleinement les fonctions de ce poste."
                     : poste === "agent"
                       ? "Premier responsable de la structure choisie."
+                    : chef.role === "Ministre"
+                      ? "Le ministre, au sommet de la chaîne hiérarchique."
                       : `Premier responsable de ${structureChoisie.parent_nom || "la structure de rattachement"}.`}
                 </span>
               </label>
             ) : null}
+            {structureChoisie && poste === "responsable" && structureChoisie.niveau === "direction-generale" && !chef ? (
+              <p className="sm:col-span-2 font-body-sm text-body-sm text-on-surface-variant">Le supérieur hiérarchique est le ministre. Ce poste n'est pas encore désigné.</p>
+            ) : null}
             {structureChoisie && poste === "responsable" && !structureChoisie.parent ? (
-              <p className="sm:col-span-2 font-body-sm text-body-sm text-on-surface-variant">Le premier responsable de cette structure n'a pas de supérieur hiérarchique.</p>
+              <p className="sm:col-span-2 font-body-sm text-body-sm text-on-surface-variant">
+                {structureChoisie.niveau === "ministere"
+                  ? "Le ministre est au sommet de la chaîne hiérarchique."
+                  : "Le premier responsable de cette structure n'a pas de supérieur hiérarchique."}
+              </p>
             ) : null}
             <label className="block space-y-1 sm:col-span-2">
               <span className="font-label-sm text-label-sm text-on-surface-variant">Intérimaire</span>
@@ -620,11 +664,21 @@ export function UtilisateursScreen() {
             </fieldset>
             <label className="block space-y-1">
               <span className="font-label-sm text-label-sm text-on-surface-variant">{edition ? "Nouveau mot de passe" : "Mot de passe"}</span>
-              <input type="password" autoComplete="new-password" className={CHAMP} required={!edition} value={formulaire.mot_de_passe} placeholder={edition ? "Laisser vide pour le conserver" : ""} onChange={(event) => { setEcart(""); setFormulaire({ ...formulaire, mot_de_passe: event.target.value }); }} />
+              <span className="relative block">
+                <input type={motDePasseVisible ? "text" : "password"} autoComplete="new-password" className={`${CHAMP} pr-10`} required={!edition} value={formulaire.mot_de_passe} placeholder={edition ? "Laisser vide pour le conserver" : ""} onChange={(event) => { setEcart(""); setFormulaire({ ...formulaire, mot_de_passe: event.target.value }); }} />
+                <button type="button" className="absolute top-1/2 right-3 -translate-y-1/2 rounded text-on-surface-variant hover:text-on-surface" aria-label={motDePasseVisible ? "Masquer le mot de passe" : "Afficher le mot de passe"} aria-pressed={motDePasseVisible} onClick={() => setMotDePasseVisible((visible) => !visible)}>
+                  <Icone nom={motDePasseVisible ? "visibility_off" : "visibility"} className="text-[18px]" />
+                </button>
+              </span>
             </label>
             <label className="block space-y-1">
               <span className="font-label-sm text-label-sm text-on-surface-variant">Confirmation du mot de passe</span>
-              <input type="password" autoComplete="new-password" className={CHAMP} required={!edition || Boolean(formulaire.mot_de_passe)} value={formulaire.confirmation} placeholder={edition ? "Laisser vide pour le conserver" : ""} onChange={(event) => { setEcart(""); setFormulaire({ ...formulaire, confirmation: event.target.value }); }} />
+              <span className="relative block">
+                <input type={motDePasseVisible ? "text" : "password"} autoComplete="new-password" className={`${CHAMP} pr-10`} required={!edition || Boolean(formulaire.mot_de_passe)} value={formulaire.confirmation} placeholder={edition ? "Laisser vide pour le conserver" : ""} onChange={(event) => { setEcart(""); setFormulaire({ ...formulaire, confirmation: event.target.value }); }} />
+                <button type="button" className="absolute top-1/2 right-3 -translate-y-1/2 rounded text-on-surface-variant hover:text-on-surface" aria-label={motDePasseVisible ? "Masquer le mot de passe" : "Afficher le mot de passe"} aria-pressed={motDePasseVisible} onClick={() => setMotDePasseVisible((visible) => !visible)}>
+                  <Icone nom={motDePasseVisible ? "visibility_off" : "visibility"} className="text-[18px]" />
+                </button>
+              </span>
             </label>
             {edition ? (
               <label className="flex items-center gap-2 sm:col-span-2 font-body-md text-body-md text-on-surface">

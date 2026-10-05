@@ -7,6 +7,7 @@ import { Modale } from "../../ui/Modale";
 import { Skeleton } from "../../ui/Motion";
 import { Pagination, usePagination } from "../../ui/Pagination";
 import { AppChrome } from "../AppChrome";
+import { Icone } from "../../ui/Icone";
 
 type Etat = "commission" | "conforme" | "reserve" | "mandatee";
 type Requete = {
@@ -93,7 +94,7 @@ export function SocialScreen() {
         <section className="w-full px-6 py-5 bg-surface-container-lowest shadow-sm flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
           <div className="flex items-start gap-4">
             <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
-              <span className="material-symbols-outlined text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>volunteer_activism</span>
+              <Icone nom="volunteer_activism" className="text-2xl" />
             </div>
             <div>
               <div className="flex flex-wrap items-center gap-2 mb-1">
@@ -113,12 +114,12 @@ export function SocialScreen() {
           </div>
           <div className="flex flex-wrap items-center gap-2 self-start xl:self-auto shrink-0">
             <span className="px-3.5 py-2 rounded bg-surface-container-low text-primary text-label-md font-label-md flex items-center gap-2">
-              <span className="material-symbols-outlined text-base">gavel</span>
+              <Icone nom="gavel" className="text-base" />
               <span>Commission d'arbitrage</span>
               <span className="px-1.5 py-0.2 rounded-full bg-secondary text-on-secondary text-[10px] font-bold">{donnees?.commission ?? 0}</span>
             </span>
             <button className="px-4 py-2 rounded bg-primary hover:bg-primary-container text-on-primary text-label-md font-label-md transition-all shadow-sm flex items-center gap-2" type="button" onClick={() => setDemandeOuverte(true)}>
-              <span className="material-symbols-outlined text-base">add_circle</span>
+              <Icone nom="add_circle" className="text-base" />
               <span>Nouvelle demande de secours</span>
             </button>
           </div>
@@ -155,7 +156,7 @@ export function SocialScreen() {
                       <div>
                         <div className="flex items-center justify-between gap-2 mb-3">
                           <span className="w-9 h-9 rounded-lg bg-surface-container-high text-primary flex items-center justify-center">
-                            <span className="material-symbols-outlined text-xl">{guichet.icone}</span>
+                            <Icone nom={guichet.icone} className="text-xl" />
                           </span>
                           <span className="px-2 py-0.5 rounded text-[10px] font-label-sm font-bold bg-primary-fixed text-on-primary-fixed">{guichet.plafond}</span>
                         </div>
@@ -188,7 +189,7 @@ export function SocialScreen() {
           <section className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             <div className="lg:col-span-5 bg-surface-container-lowest rounded-xl p-5 shadow-sm">
               <div className="flex items-center gap-2 pb-3">
-                <span className="material-symbols-outlined text-primary text-xl">calculate</span>
+                <Icone nom="calculate" className="text-primary text-xl" />
                 <h3 className="font-headline-sm text-headline-sm font-bold text-on-surface">Calculateur de quotité cessible (33 %)</h3>
               </div>
               <p className="font-body-sm text-body-sm text-on-surface-variant mb-4">Contrôle d'éligibilité pour les avances sur salaire, prêts et conventions d'équipement.</p>
@@ -218,7 +219,7 @@ export function SocialScreen() {
             <div className="lg:col-span-7 bg-surface-container-lowest rounded-xl p-5 shadow-sm">
               <div className="flex items-center justify-between gap-2 pb-3">
                 <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-primary text-xl">apartment</span>
+                  <Icone nom="apartment" className="text-primary text-xl" />
                   <h3 className="font-headline-sm text-headline-sm font-bold text-on-surface">Conventions partenariales & protection sociale</h3>
                 </div>
                 <span className="text-label-sm font-semibold text-primary whitespace-nowrap">{donnees?.partenaires?.length ?? 0} protocoles actifs</span>
@@ -299,7 +300,7 @@ export function SocialScreen() {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
               <div>
                 <h2 className="font-headline-sm text-headline-sm font-bold text-on-surface flex items-center gap-2">
-                  <span className="material-symbols-outlined text-primary">rule</span>
+                  <Icone nom="rule" className="text-primary" />
                   Registre des requêtes sociales en instance
                 </h2>
                 <p className="font-body-sm text-body-sm text-on-surface-variant">Demandes d'aides, avances statutaires et secours médicaux</p>
@@ -357,7 +358,7 @@ export function SocialScreen() {
               <div className="lg:col-span-8 bg-surface-container-lowest rounded-xl p-5 shadow-sm space-y-4">
                 <div>
                   <h3 className="font-headline-sm text-headline-sm font-bold text-on-surface flex items-center gap-2">
-                    <span className="material-symbols-outlined text-primary">celebration</span>
+                    <Icone nom="celebration" className="text-primary" />
                     Activités sociales, éducatives & culturelles {exercice}
                   </h3>
                   <p className="font-body-sm text-body-sm text-on-surface-variant">Cohésion, arbre de Noël, colonies de vacances et tournoi inter-entreprises</p>
@@ -387,7 +388,7 @@ export function SocialScreen() {
             {donnees?.ecoute ? (
               <div className="lg:col-span-4 bg-surface-container-lowest rounded-xl p-5 shadow-sm">
                 <div className="flex items-center gap-2 pb-3">
-                  <span className="material-symbols-outlined text-secondary text-xl">support_agent</span>
+                  <Icone nom="support_agent" className="text-secondary text-xl" />
                   <h3 className="font-headline-sm text-headline-sm font-bold text-on-surface">Permanence d'écoute sociale</h3>
                 </div>
                 <p className="font-body-sm text-body-sm text-on-surface-variant mb-3">Soutien confidentiel aux agents en difficulté personnelle, deuil ou surendettement.</p>
@@ -417,7 +418,7 @@ function CarteBudget({ titre, icone, teinte, valeur, valeurCouleur = "text-on-su
     <div className="p-4 rounded-xl bg-surface-container-lowest shadow-sm flex flex-col justify-between">
       <div className="flex items-center justify-between gap-2">
         <span className="font-label-sm text-label-sm text-on-surface-variant uppercase font-semibold">{titre}</span>
-        <span className={`p-1.5 rounded-lg bg-surface-container-low material-symbols-outlined text-lg ${teinte}`}>{icone}</span>
+        <Icone nom={icone} className={`p-1.5 rounded-lg bg-surface-container-low text-lg ${teinte}`} />
       </div>
       <div className="mt-3 flex items-baseline gap-1">
         <span className={`font-headline-lg text-headline-lg font-bold tracking-tight ${valeurCouleur}`}>{valeur}</span>
@@ -440,7 +441,7 @@ function Panneau({ icone, titre, badge, children }: { icone: string; titre: stri
     <div className="bg-surface-container-lowest rounded-xl p-5 shadow-sm">
       <div className="flex items-center justify-between gap-2 pb-3">
         <div className="flex items-center gap-2">
-          <span className="material-symbols-outlined text-primary text-xl">{icone}</span>
+          <Icone nom={icone} className="text-primary text-xl" />
           <h3 className="font-headline-sm text-headline-sm font-bold text-on-surface">{titre}</h3>
         </div>
         <span className="px-2 py-0.5 rounded text-[10px] font-label-sm font-bold bg-primary-fixed text-on-primary-fixed whitespace-nowrap">{badge}</span>
@@ -453,7 +454,7 @@ function Panneau({ icone, titre, badge, children }: { icone: string; titre: stri
 function Encart({ icone, titre, texte }: { icone: string; titre: string; texte: string }) {
   return (
     <div className="p-3 bg-surface-container-low rounded-lg flex items-start gap-3">
-      <span className="material-symbols-outlined text-primary mt-0.5">{icone}</span>
+      <Icone nom={icone} className="text-primary mt-0.5" />
       <div>
         <p className="font-label-md text-label-md font-bold text-on-surface">{titre}</p>
         <p className="font-body-sm text-body-sm text-on-surface-variant">{texte}</p>
@@ -492,7 +493,7 @@ function LigneRequete({ requete }: { requete: Requete }) {
       <td className="py-3.5 px-4">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-full bg-surface-container-high flex items-center justify-center font-bold text-on-surface text-label-md shrink-0">{requete.agent.initiales}</div>
-          <div className="min-w-[170px]">
+          <div className="min-w-0">
             <span className="font-label-md text-label-md font-bold text-on-surface block">{requete.agent.nom_complet}</span>
             <span className="font-code-num text-xs text-on-surface-variant">Mat. {requete.agent.matricule}</span>
           </div>
@@ -500,36 +501,36 @@ function LigneRequete({ requete }: { requete: Requete }) {
       </td>
       <td className="py-3.5 px-4 font-semibold text-on-surface">{requete.agent.organisme_sigle}</td>
       <td className="py-3.5 px-4">
-        <span className={`px-2 py-0.5 rounded text-[11px] font-bold flex items-center gap-1 w-max ${requete.urgent ? "bg-error-container text-error" : "bg-surface-container-high text-on-surface"}`}>
+        <span className={`px-2 py-0.5 rounded font-label-sm text-label-sm font-bold flex items-center gap-1 w-max max-w-full ${requete.urgent ? "bg-error-container text-error" : "bg-surface-container-high text-on-surface"}`}>
           {requete.urgent ? <span className="w-1.5 h-1.5 rounded-full bg-error animate-ping" /> : null}
           {requete.nature}
         </span>
-        <span className="block text-[11px] text-on-surface-variant mt-0.5">Ayant droit : {requete.ayant_droit}</span>
+        <span className="block font-label-sm text-label-sm text-on-surface-variant mt-0.5">Ayant droit : {requete.ayant_droit}</span>
       </td>
       <td className="py-3.5 px-4 font-code-num font-bold text-on-surface whitespace-nowrap">{fcfa(requete.montant)} FCFA</td>
       <td className="py-3.5 px-4">
         <span className={`px-2 py-0.5 rounded bg-surface-container-low text-[11px] font-semibold flex items-center gap-1 w-max ${reserve ? "text-secondary" : "text-primary"}`}>
-          <span className="material-symbols-outlined text-xs">{reserve ? "warning" : "task"}</span>
+          <Icone nom={reserve ? "warning" : "task"} className="text-xs" />
           {requete.pieces}
         </span>
       </td>
       <td className="py-3.5 px-4">
-        <span className={`inline-block min-w-[140px] px-2 py-0.5 rounded text-[11px] leading-snug font-semibold ${requete.etat === "conforme" || requete.etat === "mandatee" ? "bg-primary text-on-primary" : "bg-surface-container-high text-on-surface"}`}>{requete.avis_commission}</span>
+        <span className={`inline-block max-w-full px-2 py-0.5 rounded font-label-sm text-label-sm leading-snug font-semibold ${requete.etat === "conforme" || requete.etat === "mandatee" ? "bg-primary text-on-primary" : "bg-surface-container-high text-on-surface"}`}>{requete.avis_commission}</span>
       </td>
       <td className="py-3.5 px-4 text-right">
         {requete.etat === "conforme" ? (
           <button type="button" disabled={action.isPending} onClick={() => action.mutate("mandater")} className="px-2.5 py-1 rounded bg-primary text-on-primary font-label-sm text-[11px] hover:bg-primary-container transition-colors inline-flex items-center gap-1 disabled:opacity-50">
-            <span className="material-symbols-outlined text-sm" aria-hidden="true">check</span>
+            <Icone nom="check" className="text-sm" />
             Mandater
           </button>
         ) : reserve ? (
           <button type="button" disabled={action.isPending} onClick={() => action.mutate("relancer")} className="px-2.5 py-1 rounded bg-surface-container-high text-on-surface font-label-sm text-[11px] hover:bg-surface-container transition-colors inline-flex items-center gap-1 disabled:opacity-50">
-            <span className="material-symbols-outlined text-sm" aria-hidden="true">attachment</span>
+            <Icone nom="attachment" className="text-sm" />
             Relancer
           </button>
         ) : (
           <span className={`inline-flex items-center gap-1 font-label-sm text-[11px] font-semibold ${requete.etat === "mandatee" ? "text-primary" : "text-on-surface-variant"}`}>
-            <span className="material-symbols-outlined text-sm" aria-hidden="true">{requete.etat === "mandatee" ? "done_all" : "hourglass_top"}</span>
+            <Icone nom={requete.etat === "mandatee" ? "done_all" : "hourglass_top"} className="text-sm" />
             {requete.etat_libelle}
           </span>
         )}

@@ -5,6 +5,7 @@ import type { ConversationItem, Conversations, Fil, MessageItem, Personne, Sessi
 import { useFeedback } from "../ui/Feedback";
 import { reducedMotion } from "../ui/Motion";
 import { useIntervalle, useTempsReel } from "../ui/TempsReel";
+import { Icone } from "../ui/Icone";
 
 const CLE_LISTE = ["messagerie"];
 const cleFil = (id: number) => ["messagerie", "fil", id];
@@ -46,7 +47,7 @@ function Avatar({ conversation, taille = "w-10 h-10" }: { conversation: Pick<Con
   if (conversation.groupe) {
     return (
       <span className={`${taille} rounded-full bg-secondary-fixed text-secondary flex items-center justify-center shrink-0`} aria-hidden="true">
-        <span className="material-symbols-outlined text-xl">groups</span>
+        <Icone nom="groups" className="text-xl" />
       </span>
     );
   }
@@ -145,7 +146,7 @@ export function MessagerieProvider({ children, actif }: { children: ReactNode; a
           role="dialog"
           aria-modal="false"
           aria-label="Messagerie interne"
-          className={`${sortie ? "motion-chat-out" : "motion-chat-in"} fixed z-[60] inset-x-2 top-20 bottom-60 sm:inset-x-auto sm:top-auto sm:bottom-48 sm:right-6 sm:w-[24rem] sm:h-[min(36rem,calc(100vh-18rem))] lg:bottom-40 rounded-xl border border-hairline bg-surface-container-lowest shadow-2xl flex flex-col overflow-hidden`}
+          className={`${sortie ? "motion-chat-out" : "motion-chat-in"} fixed z-[60] inset-x-2 top-[7.5rem] bottom-60 sm:inset-x-auto sm:top-auto sm:bottom-48 sm:right-6 sm:w-[24rem] sm:h-[min(36rem,calc(100vh-18rem))] lg:bottom-40 rounded-xl border border-hairline bg-surface-container-lowest shadow-2xl flex flex-col overflow-hidden`}
         >
           {vue.type === "liste" ? <VueListe onOuvrir={(id) => setVue({ type: "fil", id })} onNouveau={() => setVue({ type: "nouveau" })} /> : null}
           {vue.type === "nouveau" ? <VueNouveau onRetour={() => setVue({ type: "liste" })} onOuvrir={(id) => setVue({ type: "fil", id })} /> : null}
@@ -162,7 +163,7 @@ export function MessagerieProvider({ children, actif }: { children: ReactNode; a
           aria-label={ouvert ? "Fermer la messagerie" : "Ouvrir la messagerie"}
           className="fixed z-[60] bottom-40 right-6 sm:bottom-28 lg:bottom-20 w-14 h-14 rounded-full bg-primary text-on-primary shadow-xl hover:bg-primary-container flex items-center justify-center"
         >
-          <span className="material-symbols-outlined text-2xl" aria-hidden="true">{ouvert && !sortie ? "close" : "forum"}</span>
+          <Icone nom={ouvert && !sortie ? "close" : "forum"} className="text-2xl" />
         </button>
       ) : null}
     </MessagerieContext.Provider>
@@ -225,7 +226,7 @@ export function MessagerieBouton() {
         aria-label={nonLus ? `Messagerie, ${nonLus} message${nonLus > 1 ? "s" : ""} non lu${nonLus > 1 ? "s" : ""}` : "Messagerie, aucun message non lu"}
         className={`relative p-2 rounded hover:bg-surface-container-high ${deroule ? "bg-surface-container-high text-on-surface" : "text-on-surface-variant hover:text-on-surface"}`}
       >
-        <span className="material-symbols-outlined text-xl" aria-hidden="true">{nonLus ? "mark_chat_unread" : "chat_bubble"}</span>
+        <Icone nom={nonLus ? "mark_chat_unread" : "chat_bubble"} className="text-xl" />
         {nonLus ? (
           <span
             key={rebond}
@@ -241,7 +242,7 @@ export function MessagerieBouton() {
           id="apercu-messagerie"
           role="dialog"
           aria-labelledby="titre-apercu-messagerie"
-          className="motion-overlay-card fixed sm:absolute left-4 right-4 sm:left-auto sm:right-0 top-[4.5rem] sm:top-auto sm:mt-2 sm:w-[22rem] z-50 rounded-lg border border-hairline bg-surface-container-lowest shadow-xl overflow-hidden"
+          className="motion-overlay-card fixed sm:absolute left-4 right-4 sm:left-auto sm:right-0 top-[7.5rem] sm:top-auto sm:mt-2 sm:w-[22rem] z-50 rounded-lg border border-hairline bg-surface-container-lowest shadow-xl overflow-hidden"
         >
           <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-hairline">
             <h2 id="titre-apercu-messagerie" className="font-headline-sm text-headline-sm text-on-surface">Messages</h2>
@@ -275,7 +276,7 @@ export function MessagerieBouton() {
           </ul>
           <button type="button" onClick={() => aller()} className="w-full px-4 py-2.5 border-t border-hairline bg-surface-container-low/60 font-label-md text-label-md text-primary hover:bg-surface-container-low text-left flex items-center justify-between">
             Ouvrir la messagerie
-            <span className="material-symbols-outlined text-base" aria-hidden="true">arrow_forward</span>
+            <Icone nom="arrow_forward" className="text-base" />
           </button>
         </div>
       ) : null}
@@ -288,7 +289,7 @@ function EnTete({ titre, sousTitre, onRetour, action, avatar }: { titre: string;
     <div className="flex items-center gap-2 px-3 py-3 border-b border-hairline bg-surface-container-low/60 shrink-0">
       {onRetour ? (
         <button type="button" onClick={onRetour} aria-label="Retour aux conversations" className="p-1.5 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface">
-          <span className="material-symbols-outlined text-xl" aria-hidden="true">arrow_back</span>
+          <Icone nom="arrow_back" className="text-xl" />
         </button>
       ) : null}
       {avatar}
@@ -321,7 +322,7 @@ function VueListe({ onOuvrir, onNouveau }: { onOuvrir: (id: number) => void; onN
         sousTitre="Échanges internes du ministère"
         action={
           <button type="button" onClick={onNouveau} className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-primary text-on-primary font-label-md text-label-md hover:bg-primary-container">
-            <span className="material-symbols-outlined text-base" aria-hidden="true">edit_square</span>
+            <Icone nom="edit_square" className="text-base" />
             Nouveau
           </button>
         }
@@ -329,7 +330,7 @@ function VueListe({ onOuvrir, onNouveau }: { onOuvrir: (id: number) => void; onN
       <label className="block px-3 pt-3 shrink-0">
         <span className="sr-only">Filtrer les conversations</span>
         <span className="relative block">
-          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-lg pointer-events-none" aria-hidden="true">search</span>
+          <Icone nom="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-lg pointer-events-none" />
         <input
           ref={recherche}
           type="search"
@@ -352,7 +353,7 @@ function VueListe({ onOuvrir, onNouveau }: { onOuvrir: (id: number) => void; onN
         ) : null}
         {liste.data && conversations.length === 0 ? (
           <li className="px-6 py-10 text-center">
-            <span className="material-symbols-outlined text-3xl text-on-surface-variant" aria-hidden="true">forum</span>
+            <Icone nom="forum" className="text-3xl text-on-surface-variant" />
             <p className="font-label-lg text-label-lg text-on-surface mt-1">{q ? "Aucune conversation trouvée" : "Aucune conversation"}</p>
             <p className="font-body-sm text-body-sm text-on-surface-variant">Écrivez à un collègue avec « Nouveau ».</p>
           </li>
@@ -650,7 +651,7 @@ function VueFil({ id, onRetour }: { id: number; onRetour: () => void }) {
           aria-label="Envoyer le message"
           className="w-10 h-10 rounded-full bg-primary text-on-primary hover:bg-primary-container flex items-center justify-center shrink-0 disabled:bg-surface-container-high disabled:text-on-surface-variant"
         >
-          <span className="material-symbols-outlined text-xl" aria-hidden="true">send</span>
+          <Icone nom="send" className="text-xl" />
         </button>
       </form>
       <p className="sr-only">Entrée pour envoyer, Maj + Entrée pour aller à la ligne.</p>

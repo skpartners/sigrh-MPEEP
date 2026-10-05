@@ -7,8 +7,9 @@ import { Skeleton } from "../../ui/Motion";
 import { Portrait } from "../../ui/PhotoProfil";
 import { AppChrome } from "../AppChrome";
 import { SituationModal } from "../SituationModal";
+import { Icone } from "../../ui/Icone";
 
-const PAGE = "w-full px-4 sm:px-6 lg:px-8 py-6 max-w-[1600px] mx-auto flex-1 space-y-6";
+const PAGE = "w-full px-4 sm:px-6 lg:px-8 py-6 mx-auto flex-1 space-y-6";
 const TAILLE = 8;
 
 type Famille = "activite" | "detachement" | "disponibilite" | "hors";
@@ -110,9 +111,9 @@ export function SituationScreen() {
           <div className="relative z-10 flex flex-col gap-3">
             <p className="flex flex-wrap items-center gap-2 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wide">
               <span className="font-semibold text-primary">Carrières</span>
-              <span className="material-symbols-outlined text-xs" aria-hidden="true">chevron_right</span>
+              <Icone nom="chevron_right" className="text-xs" />
               <span>Gestion administrative et postes</span>
-              <span className="material-symbols-outlined text-xs" aria-hidden="true">chevron_right</span>
+              <Icone nom="chevron_right" className="text-xs" />
               <span className="text-secondary font-bold">Positions statutaires</span>
             </p>
             <h1 className="font-headline-lg text-headline-lg text-on-surface tracking-tight">
@@ -127,7 +128,7 @@ export function SituationScreen() {
                 Régime général et conventions d'État
               </span>
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-surface-container-low text-secondary font-label-sm text-label-sm rounded-lg font-bold">
-                <span className="material-symbols-outlined text-sm" aria-hidden="true">event_repeat</span>
+                <Icone nom="event_repeat" className="text-sm" />
                 Exercice réglementaire 2026
               </span>
             </div>
@@ -155,7 +156,7 @@ export function SituationScreen() {
                     <p className="font-headline-xl text-headline-xl text-on-surface font-bold tracking-tight mt-1">{agents.isPending ? "—" : nombre}</p>
                   </div>
                   <span className={`w-12 h-12 rounded-xl bg-surface-container-low flex items-center justify-center shrink-0 ${ton.icone}`}>
-                    <span className="material-symbols-outlined text-2xl" aria-hidden="true">{item.icone}</span>
+                    <Icone nom={item.icone} className="text-2xl" />
                   </span>
                 </div>
                 <p className="font-body-sm text-body-sm text-on-surface-variant mt-3">{item.texte}</p>
@@ -231,7 +232,7 @@ export function SituationScreen() {
                       <td className="py-3.5 px-4">
                         <span className="font-semibold text-on-surface block truncate">{agent.organisme}</span>
                         <span className="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-1">
-                          <span className="material-symbols-outlined text-xs" aria-hidden="true">arrow_upward</span>
+                          <Icone nom="arrow_upward" className="text-xs" />
                           {agent.structure}
                         </span>
                       </td>
@@ -247,7 +248,7 @@ export function SituationScreen() {
                           onClick={() => setMatricule(agent.matricule)}
                           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-primary-container text-on-primary font-label-sm text-label-sm font-semibold hover:bg-primary"
                         >
-                          <span className="material-symbols-outlined text-lg" aria-hidden="true">edit_note</span>
+                          <Icone nom="edit_note" className="text-lg" />
                           Modifier
                         </button>
                       </td>

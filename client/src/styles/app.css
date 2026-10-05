@@ -3,8 +3,6 @@
 @import "@fontsource/public-sans/500.css";
 @import "@fontsource/public-sans/600.css";
 @import "@fontsource/public-sans/700.css";
-@import "material-symbols/outlined.css";
-
 @theme {
   --font-sans: "Public Sans", ui-sans-serif, system-ui, sans-serif;
   --font-headline-xl: var(--font-sans);
@@ -165,11 +163,6 @@ input[type="checkbox"]:focus-visible {
   cursor: help;
 }
 
-.material-symbols-outlined {
-  font-variation-settings: "FILL" 0, "wght" 500, "GRAD" 0, "opsz" 24;
-  vertical-align: middle;
-}
-
 @layer base {
   button:not(:disabled),
   [role="button"]:not([aria-disabled="true"]) {
@@ -298,10 +291,10 @@ input[type="checkbox"]:focus-visible {
   main .rounded-xl.border-hairline:hover {
     box-shadow: 0 2px 4px -1px rgb(15 23 42 / 0.05), 0 1px 2px -1px rgb(15 23 42 / 0.03);
   }
-  aside nav a .material-symbols-outlined {
+  aside nav a .icone {
     transition: transform var(--dur-base) var(--ease-out);
   }
-  aside nav a:hover .material-symbols-outlined {
+  aside nav a:hover .icone {
     transform: translateX(2px) scale(1.08);
   }
 }
@@ -351,7 +344,8 @@ a[class*="rounded"]:active {
 .tab-indicator {
   transition:
     transform 320ms var(--ease-out),
-    width 320ms var(--ease-out);
+    width 320ms var(--ease-out),
+    height 320ms var(--ease-out);
 }
 
  count-bump {
@@ -597,10 +591,9 @@ a[class*="rounded"]:active {
 }
 
 /* --- Mobile et tablette -------------------------------------------------------
-   Sous 1280 px (téléphone, tablette portrait et paysage avec le menu), les
-   registres deviennent des cartes. Chaque ligne ne garde que l'identité, les
-   colonnes marquées data-min, et la dernière cellule (statut ou action).
-   Les grilles (calendrier, matrice de droits) restent des tableaux défilants. */
+   Sous 1280 px, les registres deviennent des cartes : chaque colonne reste
+   visible, avec le libellé de l'en-tête. Les grilles (calendrier, matrice de
+   droits) restent des tableaux que l'on fait défiler. */
 @media screen and (max-width: 1279px) {
   .px-margin-desktop {
     padding-left: 1rem;
@@ -616,6 +609,13 @@ a[class*="rounded"]:active {
 
   header .h-16 > div:first-child {
     min-width: 0;
+    flex: 1 1 auto;
+  }
+
+  header .h-16 .font-label-lg {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   header .h-16 .bg-surface-container-high {
@@ -685,7 +685,8 @@ a[class*="rounded"]:active {
   }
 
   table:not(.tableau-fixe) > tbody > tr > * {
-    display: none !important;
+    display: block !important;
+    flex: 1 1 100%;
     min-width: 0;
     max-width: 100%;
     padding: 0 !important;
@@ -701,40 +702,11 @@ a[class*="rounded"]:active {
     white-space: normal;
   }
 
-  table:not(.tableau-fixe) > tbody > tr > :first-child,
-  table:not(.tableau-fixe) > tbody > tr > :last-child,
-  table:not(.tableau-fixe) > tbody > tr > [colspan],
-  table:not(.tableau-fixe) > tbody > tr:not(:has(> :nth-child(4))) > * {
-    display: block !important;
+  table:not(.tableau-fixe) > tbody > tr > :not([colspan]):empty {
+    display: none !important;
   }
 
-  table:not(.tableau-fixe):has(thead > tr > :nth-child(2)[data-min]) > tbody > tr > :nth-child(2),
-  table:not(.tableau-fixe):has(thead > tr > :nth-child(3)[data-min]) > tbody > tr > :nth-child(3),
-  table:not(.tableau-fixe):has(thead > tr > :nth-child(4)[data-min]) > tbody > tr > :nth-child(4),
-  table:not(.tableau-fixe):has(thead > tr > :nth-child(5)[data-min]) > tbody > tr > :nth-child(5),
-  table:not(.tableau-fixe):has(thead > tr > :nth-child(6)[data-min]) > tbody > tr > :nth-child(6),
-  table:not(.tableau-fixe):has(thead > tr > :nth-child(7)[data-min]) > tbody > tr > :nth-child(7),
-  table:not(.tableau-fixe):has(thead > tr > :nth-child(8)[data-min]) > tbody > tr > :nth-child(8),
-  table:not(.tableau-fixe):has(thead > tr > :nth-child(9)[data-min]) > tbody > tr > :nth-child(9),
-  table:not(.tableau-fixe):has(thead > tr > :nth-child(10)[data-min]) > tbody > tr > :nth-child(10),
-  table:not(.tableau-fixe):has(thead > tr > :nth-child(11)[data-min]) > tbody > tr > :nth-child(11),
-  table:not(.tableau-fixe):has(thead > tr > :nth-child(12)[data-min]) > tbody > tr > :nth-child(12) {
-    display: block !important;
-  }
-
-  table:not(.tableau-fixe) > tbody > tr > :first-child:not([colspan]) {
-    flex: 1 1 100%;
-  }
-
-  table:not(.tableau-fixe) > tbody > tr > :not(:first-child):not([colspan]) {
-    flex: 0 1 auto;
-  }
-
-  table:not(.tableau-fixe) > tbody > tr > [colspan] {
-    flex: 1 1 100%;
-  }
-
-  table:not(.tableau-fixe) > tbody > tr > :not(:first-child):not([colspan])[data-label]::before {
+  table:not(.tableau-fixe) > tbody > tr > [data-label]::before {
     content: attr(data-label);
     display: block;
     margin-bottom: 0.125rem;
@@ -744,15 +716,151 @@ a[class*="rounded"]:active {
     color: var(--color-on-surface-variant);
   }
 
-  table:not(.tableau-fixe) > tbody > tr > :last-child button {
+  table:not(.tableau-fixe) > tbody > tr > :last-child:not([colspan]) {
+    display: flex !important;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  table:not(.tableau-fixe) > tbody > tr > :last-child:not([colspan])[data-label]::before {
+    flex-basis: 100%;
+  }
+
+  table:not(.tableau-fixe) > tbody > tr > :last-child button,
+  table:not(.tableau-fixe) > tbody > tr > :last-child a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     min-width: 2.75rem;
     min-height: 2.75rem;
+    padding: 0.5rem 0.75rem;
+  }
+
+  .overflow-x-auto:has(table.tableau-fixe) {
+    max-width: 100%;
+    -webkit-overflow-scrolling: touch;
   }
 }
 
-@media (min-width: 640px) and (max-width: 1279px) {
-  table:not(.tableau-fixe) > tbody > tr > :first-child:not([colspan]) {
-    flex-basis: 14rem;
+/* Cibles tactiles, barre d'outils et onglets : téléphone et tablette. */
+@media screen and (max-width: 1023px) {
+  button,
+  [role="tab"],
+  [role="menuitem"],
+  summary {
+    min-height: 2.75rem;
+  }
+
+  header button,
+  header a,
+  footer a,
+  aside a,
+  aside button {
+    min-height: 2.75rem;
+  }
+
+  header .outils a,
+  header .outils button,
+  header .barre-app > div:first-child > button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  header button,
+  header a.inline-flex,
+  button:has(> svg.icone:only-child),
+  a:has(> svg.icone:only-child) {
+    min-width: 2.75rem;
+  }
+
+  footer a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2.75rem;
+    padding-inline: 0.65rem;
+  }
+
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]),
+  select,
+  textarea {
+    min-height: 2.75rem;
+    max-width: 100%;
+  }
+
+  [role="tablist"] {
+    flex-wrap: wrap;
+    width: 100%;
+    min-width: 0 !important;
+  }
+
+  [role="tab"] {
+    white-space: normal;
+    text-align: left;
+  }
+
+  main button,
+  main a,
+  .modale-carte button,
+  .modale-carte a {
+    max-width: 100%;
+  }
+
+  .text-headline-xl {
+    font-size: 1.75rem;
+    line-height: 2.25rem;
+  }
+
+  .text-headline-lg {
+    font-size: 1.5rem;
+    line-height: 2rem;
+  }
+
+  label:has(input[type="checkbox"]),
+  label:has(input[type="radio"]) {
+    min-height: 2.75rem;
+    align-items: center;
+  }
+
+  .text-\[11px\] {
+    font-size: 12px;
+    line-height: 16px;
+  }
+}
+
+@media screen and (max-width: 767px) {
+  main .flex:not(.flex-col):not(.flex-nowrap),
+  .modale-carte .flex:not(.flex-col):not(.flex-nowrap) {
+    flex-wrap: wrap;
+  }
+}
+
+/* Sur téléphone, la barre d'outils passe sur une deuxième ligne pour garder
+   chaque bouton à portée de doigt. */
+@media screen and (max-width: 639px) {
+  header .barre-app {
+    height: auto;
+    min-height: 4rem;
+    flex-wrap: wrap;
+    align-items: center;
+    row-gap: 0.125rem;
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+  }
+
+  header .barre-app > .outils {
+    flex: 1 1 100%;
+    justify-content: flex-end;
+  }
+
+  main.zone-app {
+    padding-top: calc(7.25rem + env(safe-area-inset-top));
+  }
+
+  #app-sidebar {
+    padding-top: 7.5rem;
   }
 }
 

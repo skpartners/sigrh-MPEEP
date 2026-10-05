@@ -9,6 +9,7 @@ import { Pagination, usePagination } from "../ui/Pagination";
 import { ActionsImport } from "./ImportAgents";
 import { AppChrome } from "./AppChrome";
 import { CLE_COMMUNICATION } from "./CommunicationBouton";
+import { Icone } from "../ui/Icone";
 
 type CodeLibelle = { code: string; libelle: string };
 type Publication = {
@@ -178,7 +179,7 @@ export function CommunicationScreen() {
 
   return (
     <AppChrome>
-      <div className="w-full px-4 sm:px-6 lg:px-8 py-6 max-w-[1600px] mx-auto flex-1 space-y-6">
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-6 mx-auto flex-1 space-y-6">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 bg-surface-container-lowest p-6 rounded-lg border border-hairline">
           <div className="space-y-1.5 min-w-0">
             <p className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Pilotage central · Communication</p>
@@ -199,7 +200,7 @@ export function CommunicationScreen() {
               invalidations={[["communication"], ["communication-compteur"]]}
             />
             <button type="button" className={BOUTON_PRIMAIRE} onClick={() => setCompose(true)}>
-              <span className="material-symbols-outlined text-lg">edit_note</span>
+              <Icone nom="edit_note" className="text-lg" />
               Rédiger une communication
             </button>
           </div>
@@ -272,7 +273,7 @@ export function CommunicationScreen() {
                   <button type="button" className={BOUTON_SECONDAIRE} onClick={() => { noterLecture(item.id); void telecharger(`/api/v1/communication/${item.id}/pdf/`, `publication-${item.id}.pdf`); }}>Acte PDF</button>
                   {item.piece_nom ? (
                     <button type="button" className={BOUTON_SECONDAIRE} onClick={() => { noterLecture(item.id); void telecharger(`/api/v1/communication/${item.id}/piece/`, item.piece_nom); }}>
-                      <span className="material-symbols-outlined text-lg">attach_file</span>
+                      <Icone nom="attach_file" className="text-lg" />
                       {item.piece_nom}
                     </button>
                   ) : null}
@@ -361,7 +362,7 @@ export function CommunicationScreen() {
           <p className="mt-3 font-body-md text-body-md text-on-surface whitespace-pre-wrap">{detail.corps}</p>
           {detail.piece_nom ? (
             <button type="button" className={`${BOUTON_SECONDAIRE} mt-4`} onClick={() => void telecharger(`/api/v1/communication/${detail.id}/piece/`, detail.piece_nom)}>
-              <span className="material-symbols-outlined text-lg">attach_file</span>
+              <Icone nom="attach_file" className="text-lg" />
               {detail.piece_nom}
             </button>
           ) : null}
@@ -497,7 +498,7 @@ function Carte({ libelle, valeur, detail, droite, icone, barre, accent = false }
           <p className={`font-label-sm text-label-sm uppercase tracking-wider font-semibold ${accent ? "text-secondary" : "text-on-surface-variant"}`}>{libelle}</p>
           <p className={`mt-2 font-headline-lg text-headline-lg ${accent ? "text-secondary" : "text-on-surface"}`}>{valeur}</p>
         </div>
-        <span className="material-symbols-outlined text-primary">{icone}</span>
+        <Icone nom={icone} className="text-primary" />
       </div>
       {barre !== undefined && (
         <div className="mt-3 h-1.5 rounded-full bg-surface-container-high overflow-hidden">

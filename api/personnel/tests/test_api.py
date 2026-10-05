@@ -962,6 +962,9 @@ def test_photo_de_profil_de_l_agent(api, tmp_path, settings):
     )
     assert depot.status_code == 200
     assert depot.json()["photo_url"].startswith("/sigrh/media/")
+    session = api.post("/api/v1/auth/login/", {"matricule": "340188P", "password": "Sigrh-Dev-2026"}, format="json")
+    assert session.status_code == 200
+    assert session.json()["user"]["photo_url"] == depot.json()["photo_url"]
     portrait = api.get(depot.json()["photo_url"])
     assert portrait.status_code == 200
     assert b"".join(portrait.streaming_content).startswith(b"\x89PNG")
@@ -973,6 +976,187 @@ def test_photo_de_profil_de_l_agent(api, tmp_path, settings):
     assert dossier_avec_photo.content.count(b"/Subtype /Image") == dossier_sans_photo.content.count(b"/Subtype /Image") + 1
 
 
+def test_photo_de_la_ministre_dans_les_parametres(api, tmp_path, settings):
+    import base64
+
+    from django.core.files.uploadedfile import SimpleUploadedFile
+
+    settings.MEDIA_ROOT = tmp_path
+    auth = _auth(api)
+    png = base64.b64decode(
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
+    )
+    assert api.get("/api/v1/public/accueil/").json()["photo_ministre_url"] == ""
+    depart = api.get("/api/v1/parametres/", **auth).json()
+    assert depart["photo_url"] == ""
+    assert depart["peut_modifier"] is True
+    assert depart["inactivite_minutes"] == 15
+    assert depart["civilite"] == ""
+    assert depart["nom"] == ""
+
+    agent = api.post("/api/v1/auth/login/", {"matricule": "340188P", "password": "Sigrh-Dev-2026"}, format="json")
+    assert agent.status_code == 200
+    agent_auth = {"HTTP_AUTHORIZATION": f"Token {agent.json()['token']}"}
+    refuse = api.post(
+        "/api/v1/parametres/photo/",
+        {"fichier": SimpleUploadedFile("portrait.png", png, content_type="image/png")},
+        format="multipart",
+        **agent_auth,
+    )
+    assert refuse.status_code == 403
+
+    vide = api.post("/api/v1/parametres/photo/", {}, format="multipart", **auth)
+    assert vide.status_code == 400
+    texte = api.post(
+        "/api/v1/parametres/photo/",
+        {"fichier": SimpleUploadedFile("note.txt", b"pas une image", content_type="text/plain")},
+        format="multipart",
+        **auth,
+    )
+    assert texte.status_code == 400
+
+    depot = api.post(
+        "/api/v1/parametres/photo/",
+        {"fichier": SimpleUploadedFile("portrait.png", png, content_type="image/png")},
+        format="multipart",
+        **auth,
+    )
+    assert depot.status_code == 200
+    assert depot.json()["photo_url"].startswith("/sigrh/media/")
+    assert api.get("/api/v1/public/accueil/").json()["photo_ministre_url"] == depot.json()["photo_url"]
+    portrait = api.get(depot.json()["photo_url"])
+    assert portrait.status_code == 200
+    assert b"".join(portrait.streaming_content).startswith(b"\x89PNG")
+
+    retire = api.delete("/api/v1/parametres/photo/retirer/", **auth)
+    assert retire.status_code == 200
+    assert retire.json()["photo_url"] == ""
+    assert api.get("/api/v1/public/accueil/").json()["photo_ministre_url"] == ""
+
+    refuse_nom = api.post(
+        "/api/v1/parametres/identite/",
+        {"civilite": "Madame", "nom": "Koné Mariétou"},
+        format="json",
+        **agent_auth,
+    )
+    assert refuse_nom.status_code == 403
+    invalide = api.post("/api/v1/parametres/identite/", {"civilite": "Docteur", "nom": "Koné"}, format="json", **auth)
+    assert invalide.status_code == 400
+    identite = api.post(
+        "/api/v1/parametres/identite/",
+        {"civilite": "Madame", "nom": "  Koné Mariétou  "},
+        format="json",
+        **auth,
+    )
+    assert identite.status_code == 200
+    assert identite.json()["civilite"] == "Madame"
+    assert identite.json()["nom"] == "Koné Mariétou"
+    refuse_delai = api.post("/api/v1/parametres/inactivite/", {"minutes": 30}, format="json", **agent_auth)
+    assert refuse_delai.status_code == 403
+    delai_invalide = api.post("/api/v1/parametres/inactivite/", {"minutes": 0}, format="json", **auth)
+    assert delai_invalide.status_code == 400
+    delai = api.post("/api/v1/parametres/inactivite/", {"minutes": 20}, format="json", **auth)
+    assert delai.status_code == 200
+    assert delai.json()["inactivite_minutes"] == 20
+    publique = api.get("/api/v1/public/accueil/").json()["ministre"]
+    assert publique == {"civilite": "Madame", "nom": "Koné Mariétou"}
+    efface = api.post("/api/v1/parametres/identite/", {"civilite": "", "nom": ""}, format="json", **auth)
+    assert efface.status_code == 200
+    assert efface.json()["civilite"] == ""
+    assert efface.json()["nom"] == ""
+
+
+def test_la_connexion_suit_les_parametres_admin(api, settings):
+    from django.contrib.auth.models import User
+
+    from personnel.connexion_admin import assurer_administrateur
+    from personnel.models import ParametresMinistere
+
+    settings.CONNEXION_OUVERTE = False
+    settings.ADMIN_MATRICULE = ""
+    settings.ADMIN_MOT_DE_PASSE = ""
+    ParametresMinistere.objects.update_or_create(pk=1, defaults={"connexion_active": False, "admin_matricule": ""})
+    ferme = api.get("/api/v1/public/connexion/")
+    assert ferme.status_code == 200
+    assert ferme.json()["active"] is False
+    compte = api.post(
+        "/api/v1/auth/login/",
+        {"matricule": "DRH-2018-044", "password": "Sigrh-Dev-2026"},
+        format="json",
+    )
+    assert compte.status_code == 200
+
+    settings.ADMIN_MATRICULE = "ADM-2026-001"
+    settings.ADMIN_MOT_DE_PASSE = "Cabinet-Admin-2026"
+    settings.ADMIN_NOM = "Koné"
+    settings.ADMIN_PRENOMS = "Awa"
+    settings.ADMIN_FONCTION = "Administrateur"
+    settings.ADMIN_ORGANISME = "dgpe"
+    assurer_administrateur()
+    ouverte = api.get("/api/v1/public/connexion/")
+    assert ouverte.json()["active"] is True
+    login = api.post(
+        "/api/v1/auth/login/",
+        {"matricule": "ADM-2026-001", "password": "Cabinet-Admin-2026", "organisme": "dgpe"},
+        format="json",
+    )
+    assert login.status_code == 200
+    auth = {"HTTP_AUTHORIZATION": f"Token {login.json()['token']}"}
+    session = api.get("/api/v1/me/", **auth).json()
+    assert session["acces"]["fonctions"]["Statistiques & RBAC|Paramètres"] == "validation"
+    assert session["acces"]["fonctions"]["Statistiques & RBAC|Habilitations"] == "validation"
+    annuaire = api.get("/api/v1/utilisateurs/", **auth).json()
+    assert annuaire["administrateur"] is True
+    assert "ADM-2026-001" not in {item["matricule"] for item in annuaire["utilisateurs"]}
+    admin = User.objects.select_related("profil").get(username="ADM-2026-001")
+    assert admin.profil.role == "Administrateur"
+    assert admin.profil.structure_id is None
+    assert admin.profil.superieur_id is None
+    assert api.patch("/api/v1/utilisateurs/ADM-2026-001/", {"nom": "Koné"}, format="json", **auth).status_code == 400
+    agent = api.post("/api/v1/auth/login/", {"matricule": "340188P", "password": "Sigrh-Dev-2026"}, format="json")
+    assert api.post(
+        "/api/v1/parametres/connexion/",
+        {"matricule": "ADM-2026-001", "nom": "Koné", "prenoms": "Awa", "fonction": "Administrateur", "organisme": "dgpe", "mot_de_passe": "Autre-Passe-2026", "confirmation": "Autre-Passe-2026"},
+        format="json",
+        **{"HTTP_AUTHORIZATION": f"Token {agent.json()['token']}"},
+    ).status_code == 403
+
+    enregistre = api.post(
+        "/api/v1/parametres/connexion/",
+        {
+            "matricule": "ADM-2026-002",
+            "nom": "Koné",
+            "prenoms": "Awa",
+            "fonction": "Administrateur général",
+            "organisme": "dgpe",
+            "mot_de_passe": "Autre-Passe-2026",
+            "confirmation": "Autre-Passe-2026",
+        },
+        format="json",
+        **auth,
+    )
+    assert enregistre.status_code == 200
+    assert enregistre.json()["connexion"]["matricule"] == "ADM-2026-002"
+    assert api.post(
+        "/api/v1/auth/login/",
+        {"matricule": "ADM-2026-001", "password": "Cabinet-Admin-2026"},
+        format="json",
+    ).status_code == 401
+    suivant = api.post(
+        "/api/v1/auth/login/",
+        {"matricule": "ADM-2026-002", "password": "Autre-Passe-2026", "organisme": "dgpe"},
+        format="json",
+    )
+    assert suivant.status_code == 200
+    assert User.objects.filter(username="ADM-2026-002", last_name="Koné").exists()
+
+    settings.ADMIN_MATRICULE = "ADM-2026-001"
+    settings.ADMIN_MOT_DE_PASSE = "Cabinet-Admin-2026"
+    assurer_administrateur()
+    assert User.objects.filter(username="ADM-2026-002").exists()
+    assert not User.objects.filter(username="ADM-2026-001").exists()
+
+
 def test_configurer_un_circuit_et_l_attribuer(api):
     auth = _auth(api)
     vide = api.get("/api/v1/circuits/configuration/", **auth).json()
@@ -982,6 +1166,7 @@ def test_configurer_un_circuit_et_l_attribuer(api):
         "Sous directeur",
         "Directeur",
         "Directeur général",
+        "Ministre",
     ]
     assert "Congé annuel" in [item["libelle"] for item in vide["elements"]["conges"]]
     assert "Congé de maternité" in [item["libelle"] for item in vide["elements"]["conges"]]
@@ -1891,7 +2076,10 @@ def test_menu_suit_l_habilitation(api):
     assert moi["acces"]["modules"]["Statistiques & RBAC"] == "validation"
     assert moi["acces"]["fonctions"]["GPEC|Recrutement"] == "validation"
     assert moi["acces"]["fonctions"]["Dossier Agent|Consultation du dossier"] == "validation"
-    assert moi["acces"]["fonctions"]["Statistiques & RBAC|Vue d'ensemble"] == "validation"
+    assert moi["acces"]["fonctions"]["Statistiques & RBAC|Tableau de bord"] == "validation"
+    assert moi["acces"]["fonctions"]["Statistiques & RBAC|Paramètres"] == "validation"
+    assert moi["acces"]["fonctions"]["Statistiques & RBAC|Habilitations"] == "validation"
+    assert moi["acces"]["fonctions"]["Statistiques & RBAC|Comptes utilisateurs"] == "validation"
 
     chef = api.post(
         "/api/v1/utilisateurs/",
@@ -1910,6 +2098,30 @@ def test_menu_suit_l_habilitation(api):
         **auth,
     )
     assert chef.status_code == 201
+    jeton_chef = api.post("/api/v1/auth/login/", {"matricule": "USR-MENU-01", "password": "Sigrh-Dev-2026"}, format="json")
+    session_chef = api.get("/api/v1/me/", HTTP_AUTHORIZATION=f"Token {jeton_chef.json()['token']}").json()
+    assert session_chef["acces"]["fonctions"]["Statistiques & RBAC|Paramètres"] == "refus"
+    assert session_chef["acces"]["fonctions"]["Statistiques & RBAC|Circuits et habilitations"] == "lecture"
+    assert session_chef["acces"]["fonctions"]["Statistiques & RBAC|Habilitations"] == "refus"
+    assert session_chef["acces"]["fonctions"]["Statistiques & RBAC|Comptes utilisateurs"] == "refus"
+    assert session_chef["acces"]["fonctions"]["Statistiques & RBAC|Structures du ministère"] == "lecture"
+    assert session_chef["acces"]["fonctions"]["Statistiques & RBAC|Tableau de bord"] == "validation"
+    matrice = api.get("/api/v1/circuits/", **auth).json()["matrice"]
+    fonctions = {item["libelle"]: item["id"] for colonne in matrice["fonctions"] for item in colonne}
+    index = matrice["colonnes"].index("Statistiques & RBAC")
+
+    def rubrique(role: str, libelle: str) -> str:
+        ligne = next(item for item in matrice["roles"] if item["role"] == role)
+        return ligne["precisions"].get(str(fonctions[libelle]), ligne["droits"][index])
+
+    assert rubrique("Sous directeur", "Paramètres") == "refus"
+    assert rubrique("Sous directeur", "Comptes utilisateurs") == "lecture"
+    assert rubrique("Sous directeur", "Structures du ministère") == "saisie"
+    assert rubrique("Directeur", "Paramètres") == "refus"
+    assert rubrique("Directeur", "Habilitations") == "lecture"
+    assert rubrique("Directeur", "Circuits et habilitations") == "validation"
+    assert rubrique("Directeur général", "Paramètres") == "validation"
+    assert rubrique("Ministre", "Paramètres") == "validation"
     agent = api.post(
         "/api/v1/utilisateurs/",
         {
@@ -2019,7 +2231,7 @@ def test_ajout_de_structure(api):
     assert cree.json()["pole_libelle"] == "DGPE"
     assert cree.json()["niveau"] == "direction-centrale"
     cabinet = next(item for item in corps["structures"] if item["code"] == "cabinet")
-    assert cabinet["niveau"] == "direction-generale"
+    assert cabinet["niveau"] == "direction-generale" and cabinet["parent"] == "ministere"
     drh = next(item for item in corps["structures"] if item["code"] == "drh")
     assert drh["niveau"] == "direction-centrale" and drh["parent"] == "cabinet"
     marches = next(item for item in corps["structures"] if item["code"] == "cmp")

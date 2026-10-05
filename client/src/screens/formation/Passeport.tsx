@@ -6,6 +6,7 @@ import type { AgentBrief, Dossier, SessionUser } from "../../api/types";
 import { dateCourte, dateLongue, nombre, pluriel } from "../../ui/format";
 import { Skeleton } from "../../ui/Motion";
 import { BOUTON_PRIMAIRE, CARTE, CHAMP, EnTeteSection, Modale, Vide } from "./ui";
+import { Icone } from "../../ui/Icone";
 
 /** Passeport de formation : formations suivies par un agent, heures cumulées, attestation imprimable. */
 export function Passeport() {
@@ -89,7 +90,7 @@ function Fiche({ matricule }: { matricule: string }) {
                 <p className="font-body-sm text-body-sm text-on-surface-variant">{f.organisme} · du {dateCourte(f.debut)} au {dateCourte(f.fin)} · {pluriel(f.heures, "heure")}</p>
               </div>
               <button type="button" className="inline-flex items-center gap-1.5 h-8 px-3 rounded border border-outline-variant font-label-md text-label-md hover:bg-surface-container" onClick={() => setAttestation(f)}>
-                <span className="material-symbols-outlined text-base" aria-hidden="true">print</span>
+                <Icone nom="print" className="text-base" />
                 Attestation
               </button>
             </li>
@@ -103,7 +104,7 @@ function Fiche({ matricule }: { matricule: string }) {
       ) : null}
       <Link to={`/app/dossiers/${encodeURIComponent(agent.matricule)}?onglet=formation`} className="mt-4 inline-flex items-center gap-1 font-label-md text-label-md text-primary hover:underline rounded">
         Ouvrir le dossier de l'agent
-        <span className="material-symbols-outlined text-base" aria-hidden="true">arrow_forward</span>
+        <Icone nom="arrow_forward" className="text-base" />
       </Link>
       {attestation ? <Attestation agent={agent} formation={attestation} onClose={() => setAttestation(null)} /> : null}
     </div>
@@ -120,7 +121,7 @@ function Attestation({ agent, formation, onClose }: { agent: Dossier; formation:
       largeur="max-w-3xl"
       pied={
         <button type="button" className={`${BOUTON_PRIMAIRE} mr-auto`} onClick={() => window.print()}>
-          <span className="material-symbols-outlined text-lg" aria-hidden="true">print</span>
+          <Icone nom="print" className="text-lg" />
           Imprimer
         </button>
       }

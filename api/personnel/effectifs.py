@@ -813,23 +813,29 @@ def _saisie_structure(data, actuelle=None):
         return None, "Choisissez le niveau de la structure."
     parent = None
     parent_code = str(data.get("parent") or "").strip()
-    if niveau == "direction-generale":
+    if niveau == "ministere":
         if parent_code:
-            return None, "Une direction générale ne se rattache pas à une autre structure."
-    elif parent_code:
+            return None, "Le ministère est au sommet de la chaîne : il ne se rattache pas."
+    elif parent_code or niveau == "direction-generale":
+        if not parent_code:
+            return None, "Une direction générale se rattache au ministère."
         parent = EntiteTutelle.objects.select_related("pole", "parent").filter(code=parent_code).first()
         if parent is None:
             return None, "Choisissez la structure de rattachement."
-        if parent.pole_id != pole.pk:
-            return None, "La structure de rattachement appartient à un autre pôle."
         if actuelle is not None and parent.pk == actuelle.pk:
             return None, "Une structure ne peut pas se rattacher à elle-même."
-        if niveau == "direction-centrale" and parent.niveau != "direction-generale":
-            return None, "Une direction centrale se rattache à une direction générale."
-        if niveau == "sous-direction" and parent.niveau != "direction-centrale":
-            return None, "Une sous-direction se rattache à une direction centrale."
-        if niveau == "service" and parent.niveau not in {"sous-direction", "direction-centrale"}:
-            return None, "Un service se rattache à une sous-direction ou, à défaut, à une direction centrale."
+        if niveau == "direction-generale":
+            if parent.niveau != "ministere":
+                return None, "Une direction générale se rattache au ministère."
+        else:
+            if parent.pole_id != pole.pk:
+                return None, "La structure de rattachement appartient à un autre pôle."
+            if niveau == "direction-centrale" and parent.niveau != "direction-generale":
+                return None, "Une direction centrale se rattache à une direction générale."
+            if niveau == "sous-direction" and parent.niveau != "direction-centrale":
+                return None, "Une sous-direction se rattache à une direction centrale."
+            if niveau == "service" and parent.niveau not in {"sous-direction", "direction-centrale"}:
+                return None, "Un service se rattache à une sous-direction ou, à défaut, à une direction centrale."
         if actuelle is not None and _remonte_a(parent, actuelle.pk):
             return None, "Ce rattachement formerait une boucle."
     return {"nom": nom, "pole": pole, "niveau": niveau, "parent": parent}, None

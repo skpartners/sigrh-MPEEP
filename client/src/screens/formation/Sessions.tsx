@@ -8,6 +8,7 @@ import { Pagination, usePagination } from "../../ui/Pagination";
 import { useAction } from "../../ui/useAction";
 import { RefusCandidature } from "./Candidatures";
 import type { Candidature, EtatSession, Session, TableauFormation } from "./types";
+import { Icone } from "../../ui/Icone";
 import {
   BOUTON_ICONE,
   BOUTON_PRIMAIRE,
@@ -94,7 +95,7 @@ export function Sessions({ data }: { data: TableauFormation }) {
         sousTitre={`${pluriel(data.indicateurs.sessions, "module")} au plan ${data.exercice} · ${data.indicateurs.sessions_ouvertes} ouvert(s) aux inscriptions · ${data.indicateurs.sessions_en_cours} en cours`}
         action={
           <button type="button" className={BOUTON_PRIMAIRE} onClick={() => setEdition("nouvelle")}>
-            <span className="material-symbols-outlined text-lg" aria-hidden="true">add_circle</span>
+            <Icone nom="add_circle" className="text-lg" />
             Planifier un module
           </button>
         }
@@ -102,7 +103,7 @@ export function Sessions({ data }: { data: TableauFormation }) {
       <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 mb-5">
         <label className="sm:col-span-6 relative">
           <span className="sr-only">Rechercher un module</span>
-          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-lg pointer-events-none" aria-hidden="true">search</span>
+          <Icone nom="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-lg pointer-events-none" />
           <input type="search" className={`${CHAMP} pl-10`} placeholder="Module, lieu, formateur, prestataire…" value={recherche} onChange={(e) => setRecherche(e.target.value)} />
         </label>
         <label className="sm:col-span-3">
@@ -201,7 +202,7 @@ function CarteSession({
         )}
         {s.a_traiter ? (
           <p className="flex items-center gap-1.5 font-label-md text-label-md text-secondary font-semibold">
-            <span className="material-symbols-outlined text-base" aria-hidden="true">pending_actions</span>
+            <Icone nom="pending_actions" className="text-base" />
             {pluriel(s.a_traiter, "candidature")} à contrôler par la SD
           </p>
         ) : null}
@@ -214,7 +215,7 @@ function CarteSession({
       </div>
       <div className="flex flex-wrap items-center gap-2 border-t border-hairline bg-surface-container-low/50 px-4 py-3">
         <button type="button" className="inline-flex items-center gap-1.5 h-9 px-3 rounded bg-primary text-on-primary font-label-md text-label-md hover:bg-primary-container" onClick={onGerer}>
-          <span className="material-symbols-outlined text-base" aria-hidden="true">groups</span>
+          <Icone nom="groups" className="text-base" />
           Participants
         </button>
         {actif && s.etat !== "en_cours" ? (
@@ -233,16 +234,16 @@ function CarteSession({
         {actif ? (
           <>
             <button type="button" className={BOUTON_ICONE} onClick={onModifier} aria-label={`Modifier ${s.libelle}`} title="Modifier">
-              <span className="material-symbols-outlined text-lg" aria-hidden="true">edit</span>
+              <Icone nom="edit" className="text-lg" />
             </button>
             <button type="button" className={BOUTON_ICONE} onClick={onAnnuler} aria-label={`Annuler ${s.libelle}`} title="Annuler le module">
-              <span className="material-symbols-outlined text-lg" aria-hidden="true">event_busy</span>
+              <Icone nom="event_busy" className="text-lg" />
             </button>
           </>
         ) : null}
         {s.candidatures === 0 ? (
           <button type="button" className={BOUTON_ICONE} onClick={onSupprimer} aria-label={`Supprimer ${s.libelle}`} title="Supprimer">
-            <span className="material-symbols-outlined text-lg" aria-hidden="true">delete</span>
+            <Icone nom="delete" className="text-lg" />
           </button>
         ) : null}
       </div>
@@ -254,7 +255,7 @@ function Info({ icone, libelle, children }: { icone: string; libelle: string; ch
   return (
     <div className="flex items-start gap-2">
       <dt className="sr-only">{libelle}</dt>
-      <span className="material-symbols-outlined text-base text-on-surface-variant mt-px" aria-hidden="true">{icone}</span>
+      <Icone nom={icone} className="text-base text-on-surface-variant mt-px" />
       <dd className="min-w-0">{children}</dd>
     </div>
   );
@@ -403,7 +404,7 @@ function GestionParticipants({ data, session, onClose }: { data: TableauFormatio
       pied={
         session.ouverte && !fige ? (
           <button type="button" className={`${BOUTON_SECONDAIRE} mr-auto`} onClick={() => setAjout(true)}>
-            <span className="material-symbols-outlined text-lg" aria-hidden="true">group_add</span>
+            <Icone nom="group_add" className="text-lg" />
             Inscrire des agents
           </button>
         ) : null
@@ -523,7 +524,7 @@ function AjoutAgents({ session, dejaInscrits, onClose }: { session: Session; dej
         <ul className="space-y-2">
           {resultats.map((r) => (
             <li key={r.matricule} className="flex items-start gap-2 font-body-sm text-body-sm">
-              <span className={`material-symbols-outlined text-lg ${r.ok ? "text-primary" : "text-error"}`} aria-hidden="true">{r.ok ? "check_circle" : "error"}</span>
+              <Icone nom={r.ok ? "check_circle" : "error"} className={`text-lg ${r.ok ? "text-primary" : "text-error"}`} />
               <span><strong className="text-on-surface">{r.nom ?? r.matricule}</strong> — {r.message}</span>
             </li>
           ))}
@@ -553,7 +554,7 @@ function AjoutAgents({ session, dejaInscrits, onClose }: { session: Session; dej
             <li key={matricule}>
               <button type="button" className="inline-flex items-center gap-1 h-7 pl-2.5 pr-1.5 rounded-full bg-primary-fixed text-on-primary-fixed font-label-sm text-label-sm" onClick={() => setChoisis((m) => { const s = new Map(m); s.delete(matricule); return s; })} aria-label={`Retirer ${nom}`}>
                 {nom}
-                <span className="material-symbols-outlined text-sm" aria-hidden="true">close</span>
+                <Icone nom="close" className="text-sm" />
               </button>
             </li>
           ))}

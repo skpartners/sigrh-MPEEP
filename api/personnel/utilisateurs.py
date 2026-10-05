@@ -86,6 +86,12 @@ def _droit_fonction(droits: list[str], precisions: dict[str, str], index: int, f
 
 
 def _precisions_resolues(profil: Profil) -> dict[str, str]:
+    if profil.administrateur:
+        return {
+            str(fonction.pk): "validation"
+            for module in _modules()
+            for fonction in module.fonctions.all()
+        }
     droits = _effectives(profil)
     precisions = _precisions_compte(profil) if profil.habilitations is not None else _precisions_role(profil.role)
     return {
@@ -95,8 +101,15 @@ def _precisions_resolues(profil: Profil) -> dict[str, str]:
     }
 
 
+def est_administrateur(user: User) -> bool:
+    profil = getattr(user, "profil", None)
+    return bool(profil and profil.administrateur)
+
+
 def _effectives(profil: Profil) -> list[str]:
     taille = len(_modules())
+    if profil.administrateur:
+        return ["validation"] * taille
     defaut = _defaut_role(profil.role, taille)
     if profil.habilitations is None:
         droits = defaut
@@ -144,7 +157,7 @@ def perimetre_ids(user: User) -> set[int] | None:
     """None : tout le ministère. Sinon les personnes sous la supervision du chef de ce compte."""
     if not hasattr(user, "profil"):
         return {user.pk}
-    if _racine_ministere(user):
+    if user.profil.administrateur or _racine_ministere(user):
         return None
     descendants = _descendants(user.pk)
     if descendants:
@@ -177,6 +190,8 @@ def _role_responsable(structure) -> str:
         return "Sous directeur"
     if structure.niveau == "direction-generale":
         return "Directeur général"
+    if structure.niveau == "ministere":
+        return "Ministre"
     return "Directeur"
 
 
@@ -209,6 +224,8 @@ def _alerte_hierarchie(profil: Profil) -> str:
             return f"Le supérieur doit être {responsable.get_full_name()}, premier responsable de {parent.nom}."
         return ""
     if superieur is not None:
+        if structure.niveau == "ministere":
+            return "Le ministre est au sommet de la chaîne hiérarchique."
         return "Le premier responsable de cette structure n'a pas de supérieur hiérarchique."
     return ""
 
@@ -219,6 +236,8 @@ def _poste_couvert(profil: Profil):
     if structure is None or profil.role == "Agent" or profil.superieur_id or not structure.parent_id:
         return None
     parent = structure.parent
+    if parent.niveau == "ministere":
+        return None
     if profil.interim_id == parent.pk:
         return None
     if _referent(parent, profil.user.username) is not None:
@@ -250,7 +269,7 @@ def _constater_interim(user: User, structure, grantor: User) -> None:
             statut=Publication.Statut.CLOTURE,
         ).update(statut=Publication.Statut.CLOTURE)
     parent = structure.parent if profil.role != "Agent" and not profil.superieur_id else None
-    if parent is None or profil.interim_id == parent.pk or _referent(parent) is not None:
+    if parent is None or parent.niveau == "ministere" or profil.interim_id == parent.pk or _referent(parent) is not None:
         return
     marque = f"interim:{parent.code}:{user.username}"[:200]
     if Publication.objects.filter(perimetre_detail=marque).exclude(statut=Publication.Statut.CLOTURE).exists():
@@ -297,7 +316,7 @@ def _constater_interim(user: User, structure, grantor: User) -> None:
 
 def _responsable(structure, sauf: str = ""):
     comptes = User.objects.filter(
-        is_active=True, profil__structure=structure,
+        is_active=True, profil__structure=structure, profil__administrateur=False,
     ).exclude(profil__role="Agent").select_related("profil", "profil__structure", "profil__structure__pole")
     if sauf:
         comptes = comptes.exclude(username=sauf)
@@ -305,7 +324,7 @@ def _responsable(structure, sauf: str = ""):
 
 
 def _interimaire(structure, sauf: str = ""):
-    comptes = User.objects.filter(is_active=True, profil__interim=structure).select_related("profil")
+    comptes = User.objects.filter(is_active=True, profil__interim=structure, profil__administrateur=False).select_related("profil")
     if sauf:
         comptes = comptes.exclude(username=sauf)
     return comptes.order_by("pk").first()
@@ -503,16 +522,20 @@ def _valider(data, creation: bool, grantor: User) -> tuple[dict | None, Response
         if structure.parent_id:
             responsable = _referent(structure.parent, matricule)
             if responsable is None:
+                if structure.parent.niveau == "ministere" and matricule_superieur:
+                    return None, Response({"detail": "Le supérieur d'un directeur général est le ministre."}, status=400)
                 if matricule_superieur:
                     return None, Response({"detail": "Le supérieur est le premier responsable de la structure de rattachement."}, status=400)
                 superieur = None
             elif matricule_superieur != responsable.username:
-                return None, Response({"detail": "Le supérieur est le premier responsable de la structure de rattachement."}, status=400)
+                detail = "Le supérieur d'un directeur général est le ministre." if structure.parent.niveau == "ministere" else "Le supérieur est le premier responsable de la structure de rattachement."
+                return None, Response({"detail": detail}, status=400)
             else:
                 superieur = responsable
         else:
             if matricule_superieur:
-                return None, Response({"detail": "Le premier responsable de cette structure n'a pas de supérieur hiérarchique."}, status=400)
+                detail = "Le ministre est au sommet de la chaîne hiérarchique." if structure.niveau == "ministere" else "Le premier responsable de cette structure n'a pas de supérieur hiérarchique."
+                return None, Response({"detail": detail}, status=400)
             superieur = None
     organisme, _cree = Organisme.objects.get_or_create(
         code=structure.pole.code,
@@ -532,7 +555,7 @@ def _valider(data, creation: bool, grantor: User) -> tuple[dict | None, Response
                 {"detail": "Vous ne pouvez ouvrir un compte que pour une personne sous votre supervision."},
                 status=400,
             )
-    if habilitations is not None and (superieur is None or superieur.pk != grantor.pk):
+    if habilitations is not None and not est_administrateur(grantor) and (superieur is None or superieur.pk != grantor.pk):
         return None, Response(
             {"detail": "Seul le supérieur hiérarchique peut écarter ce compte du rôle par défaut."},
             status=400,
@@ -572,7 +595,7 @@ def _valider(data, creation: bool, grantor: User) -> tuple[dict | None, Response
 @permission_classes([IsAuthenticated])
 def utilisateurs(request):
     if request.method == "GET":
-        comptes = User.objects.filter(profil__isnull=False).select_related(
+        comptes = User.objects.filter(profil__isnull=False, profil__administrateur=False).select_related(
             "profil", "profil__organisme", "profil__structure", "profil__structure__pole",
             "profil__structure__parent", "profil__superieur", "profil__interim",
         ).order_by("last_name", "first_name")
@@ -605,6 +628,7 @@ def utilisateurs(request):
                 for item in EntiteTutelle.objects.select_related("pole", "parent")
             ],
             "organismes": [{"code": item.code, "nom": item.nom, "sigle": item.sigle} for item in Organisme.objects.all()],
+            "administrateur": est_administrateur(request.user),
         })
 
     saisie, erreur = _valider(request.data, creation=True, grantor=request.user)
@@ -641,13 +665,15 @@ def utilisateur(request, matricule: str):
     user = User.objects.filter(username=matricule, profil__isnull=False).select_related("profil", "profil__organisme", "profil__structure", "profil__superieur").first()
     if user is None or (perimetre_ids(request.user) is not None and user.pk not in perimetre_ids(request.user)):
         return Response({"detail": "Compte introuvable."}, status=404)
+    if user.profil.administrateur:
+        return Response({"detail": "Le compte administrateur se gère dans les paramètres de connexion."}, status=400)
     if request.method == "DELETE":
         return _supprimer(request, user)
     saisie, erreur = _valider({**_actuel(user), **request.data}, creation=False, grantor=request.user)
     if erreur:
         return erreur
     if not _attributions_identiques(user.profil, saisie["habilitations"], saisie["precisions"]):
-        if user.profil.superieur_id != request.user.pk:
+        if not est_administrateur(request.user) and user.profil.superieur_id != request.user.pk:
             return Response(
                 {"detail": "Seul le supérieur hiérarchique peut modifier les attributions de ce compte."},
                 status=400,

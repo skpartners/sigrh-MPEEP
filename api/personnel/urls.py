@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import absences, action_sociale, actions, communication, communications, discipline, effectifs, fin_carriere, formation, import_communications, import_structures, messagerie, planification, utilisateurs, views
+from . import absences, action_sociale, actions, communication, communications, discipline, effectifs, fin_carriere, formation, import_communications, import_structures, messagerie, parametres, planification, utilisateurs, views
 
 urlpatterns = [
     path("health/", views.health, name="health"),
@@ -9,9 +9,16 @@ urlpatterns = [
     path("communications/", communications.communications, name="communications"),
     path("communications/<int:pk>/", communications.communication_detail, name="communication-detail"),
     path("public/organismes/", views.organismes, name="organismes"),
+    path("public/connexion/", views.etat_connexion, name="etat-connexion"),
     path("auth/login/", views.login, name="login"),
     path("auth/logout/", views.logout, name="logout"),
     path("me/", views.me, name="me"),
+    path("parametres/", parametres.parametres, name="parametres"),
+    path("parametres/identite/", parametres.enregistrer_identite_ministre, name="parametres-identite"),
+    path("parametres/connexion/", parametres.enregistrer_connexion, name="parametres-connexion"),
+    path("parametres/inactivite/", parametres.enregistrer_inactivite, name="parametres-inactivite"),
+    path("parametres/photo/", parametres.deposer_photo_ministre, name="parametres-photo"),
+    path("parametres/photo/retirer/", parametres.retirer_photo_ministre, name="parametres-photo-retirer"),
     path("me/signature/", views.deposer_signature, name="me-signature"),
     path("notifications/", views.notifications, name="notifications"),
     path("notifications/tout-lu/", views.notifications_toutes_lues, name="notifications-tout-lu"),

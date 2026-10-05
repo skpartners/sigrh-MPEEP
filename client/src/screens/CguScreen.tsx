@@ -1,12 +1,13 @@
 import { Link } from "react-router-dom";
 import { PublicHeaderNav } from "./PublicHeaderNav";
+import { Icone } from "../ui/Icone";
 
 export function CguScreen() {
   return (
     <>
     <header className={"fixed top-0 w-full z-50 bg-surface/95 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]"}>
       <div className={"w-full bg-primary text-on-primary px-margin-desktop py-space-xs"}>
-        <div className={"max-w-[1600px] mx-auto flex items-center justify-between font-label-sm text-label-sm"}>
+        <div className={"mx-auto flex items-center justify-between font-label-sm text-label-sm"}>
           <div className={"flex items-center gap-space-md"}>
             <span>
               RÉPUBLIQUE DE CÔTE D'IVOIRE
@@ -25,7 +26,7 @@ export function CguScreen() {
           </div>
         </div>
       </div>
-      <div className={"h-16 max-w-[1600px] mx-auto px-margin-desktop flex items-center justify-between gap-space-md"}>
+      <div className={"h-16 mx-auto px-margin-desktop flex items-center justify-between gap-space-md"}>
         <div className={"flex items-center gap-space-md"}>
           <img alt="Armoiries de la République de Côte d'Ivoire" className="h-12 w-12 object-contain" src={`${import.meta.env.BASE_URL}logo.png`} />
           <div className={"flex flex-col"}>
@@ -45,22 +46,18 @@ export function CguScreen() {
             </span>
           </div>
           <div className={"w-8 h-8 rounded-full bg-primary flex items-center justify-center"}>
-            <span className={"material-symbols-outlined text-on-primary text-[18px]"}>
-              person
-            </span>
+            <Icone nom="person" className="text-on-primary text-[18px]" />
           </div>
         </div>
       </div>
     </header>
-    <main className={"w-full pt-20 bg-surface"}>
+    <main className={"w-full pt-28 sm:pt-24 bg-surface"}>
       <div className={"flex flex-col w-full"}>
         <div className={"w-full bg-surface-container-high/60 backdrop-blur-md"}>
-          <div className={"max-w-[1600px] mx-auto px-margin-desktop py-space-md"}>
+          <div className={"mx-auto px-margin-desktop py-space-md"}>
             <nav aria-label={"Fil d'Ariane"} className={"flex items-center gap-space-xs font-label-sm text-label-sm text-on-surface-variant mb-space-sm"}>
               <Link className={"hover:text-primary transition-colors flex items-center gap-1"} to="/">
-                <span className={"material-symbols-outlined text-[16px]"}>
-                  home
-                </span>
+                <Icone nom="home" className="text-[16px]" />
                 <span>
                   Accueil
                 </span>
@@ -106,17 +103,13 @@ export function CguScreen() {
               </div>
               <div className={"flex flex-wrap sm:flex-nowrap items-center gap-space-sm"}>
                 <button className={"px-space-md py-space-sm rounded bg-surface-container hover:bg-surface-container-highest text-on-surface font-label-md text-label-md transition-colors flex items-center gap-space-xs shadow-sm"} type="button" onClick={() => window.print()}>
-                  <span className={"material-symbols-outlined text-[18px]"}>
-                    print
-                  </span>
+                  <Icone nom="print" className="text-[18px]" />
                   <span>
                     Imprimer
                   </span>
                 </button>
                 <a className={"px-space-md py-space-sm rounded bg-primary hover:bg-primary-container text-on-primary font-label-md text-label-md transition-all shadow-sm flex items-center gap-space-xs"} href={"#telecharger-cgu"}>
-                  <span className={"material-symbols-outlined text-[18px]"}>
-                    download_for_offline
-                  </span>
+                  <Icone nom="download_for_offline" className="text-[18px]" />
                   <span>
                     Télécharger
                   </span>
@@ -159,15 +152,13 @@ export function CguScreen() {
             </div>
           </div>
         </div>
-        <div className={"max-w-[1600px] mx-auto px-margin-desktop py-space-lg w-full"}>
+        <div className={"mx-auto px-margin-desktop py-space-lg w-full"}>
           <div className={"grid grid-cols-1 lg:grid-cols-12 gap-gutter-desktop items-start"}>
             <aside className={"hidden lg:block lg:col-span-3 sticky top-24 space-y-space-md"}>
               <div className={"bg-surface-container-lowest p-space-md rounded shadow-sm"}>
                 <div className={"flex items-center justify-between pb-space-xs mb-space-sm"}>
                   <div className={"flex items-center gap-space-xs text-primary"}>
-                    <span className={"material-symbols-outlined text-[20px]"}>
-                      account_tree
-                    </span>
+                    <Icone nom="account_tree" className="text-[20px]" />
                     <span className={"font-label-lg text-label-lg tracking-wide uppercase"}>
                       Sommaire des Articles
                     </span>
@@ -229,9 +220,7 @@ export function CguScreen() {
               </div>
               <div className={"bg-primary/5 p-space-md rounded space-y-space-xs"}>
                 <div className={"flex items-center gap-space-xs text-primary"}>
-                  <span className={"material-symbols-outlined text-[20px]"}>
-                    shield
-                  </span>
+                  <Icone nom="shield" className="text-[20px]" />
                   <span className={"font-label-md text-label-md uppercase"}>
                     Sécurité Souveraine
                   </span>
@@ -246,18 +235,14 @@ export function CguScreen() {
                     <span>
                       Signaler une anomalie d'habilitation
                     </span>
-                    <span className={"material-symbols-outlined text-[14px]"}>
-                      arrow_forward
-                    </span>
+                    <Icone nom="arrow_forward" className="text-[14px]" />
                   </a>
                 </div>
               </div>
               <div className={"bg-surface-container-low p-space-md rounded space-y-space-sm"}>
                 <div className={"flex items-center gap-space-sm"}>
                   <div className={"w-10 h-10 rounded-full bg-secondary-container/20 text-secondary flex items-center justify-center font-bold"}>
-                    <span className={"material-symbols-outlined text-[20px]"}>
-                      gavel
-                    </span>
+                    <Icone nom="gavel" className="text-[20px]" />
                   </div>
                   <div>
                     <span className={"font-label-sm text-label-sm text-on-surface-variant block"}>
@@ -280,9 +265,7 @@ export function CguScreen() {
                 <div className={"flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm bg-surface-container-low p-space-md rounded"}>
                   <div className={"flex items-center gap-space-md"}>
                     <div className={"w-12 h-12 rounded bg-primary text-on-primary flex items-center justify-center shrink-0"}>
-                      <span className={"material-symbols-outlined text-[28px]"}>
-                        policy
-                      </span>
+                      <Icone nom="policy" className="text-[28px]" />
                     </div>
                     <div>
                       <h2 className={"font-headline-sm text-headline-sm text-on-surface"}>
@@ -352,9 +335,7 @@ export function CguScreen() {
                   </p>
                   <div className={"grid grid-cols-1 md:grid-cols-3 gap-space-sm my-space-md"}>
                     <div className={"bg-surface-container-low p-space-sm rounded space-y-1"}>
-                      <span className={"material-symbols-outlined text-primary text-[20px]"}>
-                        apartment
-                      </span>
+                      <Icone nom="apartment" className="text-primary text-[20px]" />
                       <h3 className={"font-label-lg text-label-lg text-on-surface"}>
                         Sociétés d'État
                       </h3>
@@ -363,9 +344,7 @@ export function CguScreen() {
                       </p>
                     </div>
                     <div className={"bg-surface-container-low p-space-sm rounded space-y-1"}>
-                      <span className={"material-symbols-outlined text-primary text-[20px]"}>
-                        pie_chart
-                      </span>
+                      <Icone nom="pie_chart" className="text-primary text-[20px]" />
                       <h3 className={"font-label-lg text-label-lg text-on-surface"}>
                         Sociétés d'Économie Mixte
                       </h3>
@@ -374,9 +353,7 @@ export function CguScreen() {
                       </p>
                     </div>
                     <div className={"bg-surface-container-low p-space-sm rounded space-y-1"}>
-                      <span className={"material-symbols-outlined text-primary text-[20px]"}>
-                        assured_workload
-                      </span>
+                      <Icone nom="assured_workload" className="text-primary text-[20px]" />
                       <h3 className={"font-label-lg text-label-lg text-on-surface"}>
                         Établissements Publics
                       </h3>
@@ -428,18 +405,14 @@ export function CguScreen() {
                   </p>
                   <div className={"bg-surface-container p-space-md rounded space-y-space-sm"}>
                     <div className={"flex items-center gap-space-xs text-primary font-label-lg text-label-lg"}>
-                      <span className={"material-symbols-outlined text-[20px]"}>
-                        fingerprint
-                      </span>
+                      <Icone nom="fingerprint" className="text-[20px]" />
                       <span>
                         Conditions d'Accès Cumulatives Obligatoires
                       </span>
                     </div>
                     <ul className={"space-y-2 font-body-sm text-body-sm text-on-surface"}>
                       <li className={"flex items-start gap-space-xs"}>
-                        <span className={"material-symbols-outlined text-primary text-[18px] shrink-0"}>
-                          check_circle
-                        </span>
+                        <Icone nom="check_circle" className="text-primary text-[18px] shrink-0" />
                         <span>
                           <strong>
                             Matricule et mot de passe :
@@ -450,9 +423,7 @@ export function CguScreen() {
                     </ul>
                   </div>
                   <div className={"p-space-md rounded bg-secondary-container/15 flex items-start gap-space-sm"}>
-                    <span className={"material-symbols-outlined text-secondary text-[24px] shrink-0 mt-0.5"}>
-                      warning
-                    </span>
+                    <Icone nom="warning" className="text-secondary text-[24px] shrink-0 mt-0.5" />
                     <div className={"space-y-1"}>
                       <span className={"font-label-lg text-label-lg text-on-surface block"}>
                         Stricte Incessibilité des Identifiants
@@ -501,9 +472,7 @@ export function CguScreen() {
                   <div className={"grid grid-cols-1 md:grid-cols-2 gap-space-md pt-space-xs"}>
                     <div className={"bg-surface-container-low p-space-md rounded space-y-space-xs"}>
                       <div className={"flex items-center gap-space-xs text-primary"}>
-                        <span className={"material-symbols-outlined text-[20px]"}>
-                          verified
-                        </span>
+                        <Icone nom="verified" className="text-[20px]" />
                         <h3 className={"font-label-lg text-label-lg text-on-surface"}>
                           Sincérité des Éléments de Carrière
                         </h3>
@@ -516,9 +485,7 @@ export function CguScreen() {
                     </div>
                     <div className={"bg-surface-container-low p-space-md rounded space-y-space-xs"}>
                       <div className={"flex items-center gap-space-xs text-primary"}>
-                        <span className={"material-symbols-outlined text-[20px]"}>
-                          lock
-                        </span>
+                        <Icone nom="lock" className="text-[20px]" />
                         <h3 className={"font-label-lg text-label-lg text-on-surface"}>
                           Secret Professionnel Renforcé
                         </h3>
@@ -531,9 +498,7 @@ export function CguScreen() {
                     </div>
                     <div className={"bg-surface-container-low p-space-md rounded space-y-space-xs"}>
                       <div className={"flex items-center gap-space-xs text-primary"}>
-                        <span className={"material-symbols-outlined text-[20px]"}>
-                          history_toggle_off
-                        </span>
+                        <Icone nom="history_toggle_off" className="text-[20px]" />
                         <h3 className={"font-label-lg text-label-lg text-on-surface"}>
                           Respect des Délais Réglementaires
                         </h3>
@@ -546,9 +511,7 @@ export function CguScreen() {
                     </div>
                     <div className={"bg-surface-container-low p-space-md rounded space-y-space-xs"}>
                       <div className={"flex items-center gap-space-xs text-primary"}>
-                        <span className={"material-symbols-outlined text-[20px]"}>
-                          cloud_sync
-                        </span>
+                        <Icone nom="cloud_sync" className="text-[20px]" />
                         <h3 className={"font-label-lg text-label-lg text-on-surface"}>
                           Dépôt Numérique des Originaux
                         </h3>
@@ -690,9 +653,7 @@ export function CguScreen() {
                   <div className={"grid grid-cols-1 md:grid-cols-2 gap-space-sm"}>
                     <div className={"p-space-md rounded bg-surface-container-low space-y-1"}>
                       <div className={"flex items-center gap-space-xs text-primary"}>
-                        <span className={"material-symbols-outlined text-[18px]"}>
-                          build
-                        </span>
+                        <Icone nom="build" className="text-[18px]" />
                         <span className={"font-label-lg text-label-lg text-on-surface"}>
                           Fenêtres de Maintenance Régulière
                         </span>
@@ -705,9 +666,7 @@ export function CguScreen() {
                     </div>
                     <div className={"p-space-md rounded bg-surface-container-low space-y-1"}>
                       <div className={"flex items-center gap-space-xs text-primary"}>
-                        <span className={"material-symbols-outlined text-[18px]"}>
-                          emergency_home
-                        </span>
+                        <Icone nom="emergency_home" className="text-[18px]" />
                         <span className={"font-label-lg text-label-lg text-on-surface"}>
                           Plan de Reprise d'Activité (PRA)
                         </span>
@@ -755,9 +714,7 @@ export function CguScreen() {
                   </p>
                   <div className={"p-space-md rounded bg-error-container/20 space-y-space-sm"}>
                     <div className={"flex items-center gap-space-xs text-error font-label-lg text-label-lg"}>
-                      <span className={"material-symbols-outlined text-[22px]"}>
-                        gavel
-                      </span>
+                      <Icone nom="gavel" className="text-[22px]" />
                       <span>
                         Rappel Sévère des Sanctions Prévues par la Loi N° 2013-451
                       </span>
@@ -817,9 +774,7 @@ export function CguScreen() {
                     </p>
                   </div>
                   <button className={"px-space-lg py-space-sm bg-primary hover:bg-primary-container text-on-primary font-label-md text-label-md rounded flex items-center gap-space-xs transition-colors shrink-0 shadow-sm"} type="button" data-soon>
-                    <span className={"material-symbols-outlined text-[20px]"}>
-                      verified_user
-                    </span>
+                    <Icone nom="verified_user" className="text-[20px]" />
                     <span>
                       Télécharger
                     </span>
@@ -833,9 +788,7 @@ export function CguScreen() {
               </section>
               <section className={"bg-surface-container-lowest p-space-lg rounded shadow-sm space-y-space-md"} id={"assistance-dsi"}>
                 <div className={"flex items-center gap-space-xs pb-space-xs"}>
-                  <span className={"material-symbols-outlined text-primary text-[22px]"}>
-                    contact_support
-                  </span>
+                  <Icone nom="contact_support" className="text-primary text-[22px]" />
                   <h2 className={"font-headline-sm text-headline-sm text-on-surface"}>
                     
               Contact Régalien & Délégué à la Protection des Données (DPO)
@@ -898,13 +851,11 @@ export function CguScreen() {
       </div>
     </main>
     <footer className={"w-full bg-surface-container-low mt-space-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]"}>
-      <div className={"max-w-[1600px] mx-auto px-margin-desktop py-space-xl"}>
+      <div className={"mx-auto px-margin-desktop py-space-xl"}>
         <div className={"grid grid-cols-1 md:grid-cols-4 gap-space-lg mb-space-lg"}>
           <div className={"space-y-space-sm"}>
             <div className={"flex items-center gap-space-sm"}>
-              <span className={"material-symbols-outlined text-primary text-[24px]"}>
-                account_balance
-              </span>
+              <Icone nom="account_balance" className="text-primary text-[24px]" />
               <span className={"font-headline-sm text-headline-sm text-primary"}>
                 MPEEP - SIGRH
               </span>

@@ -1,10 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { api } from "../api/client";
+import { api, mediaUrl } from "../api/client";
 import type { Accueil, CommunicationPublique } from "../api/types";
 import { dateLongue } from "../ui/format";
 import { useSlideNavigate } from "../ui/Motion";
 import { PublicHeaderNav } from "./PublicHeaderNav";
+import { Icone } from "../ui/Icone";
 
 const TONS_CHIFFRE = ["text-primary", "text-primary-container", "text-tertiary"];
 
@@ -15,15 +16,23 @@ export function HomeScreen() {
     queryFn: () => api<Accueil>("/api/v1/public/accueil/"),
   });
   const chiffres = accueil.data?.chiffres ?? [];
+  const portrait = mediaUrl(accueil.data?.photo_ministre_url);
+  const nomMinistre = [accueil.data?.ministre?.civilite, accueil.data?.ministre?.nom].filter(Boolean).join(" ");
   const annonces = useQuery({
     queryKey: ["communications-publiques"],
     queryFn: () => api<CommunicationPublique[]>("/api/v1/public/communications/"),
   });
   return (
     <>
-    <header className={"fixed top-0 w-full z-50 bg-surface/95 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]"}>
+    <img
+      src={`${import.meta.env.BASE_URL}DGPE%20siege.jpg`}
+      alt=""
+      className="pointer-events-none fixed inset-0 z-0 h-dvh w-full object-cover object-center"
+    />
+    <div className="relative z-10">
+    <header className={"fixed top-0 w-full z-50 bg-surface/80 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]"}>
       <div className={"w-full bg-primary text-on-primary px-margin-desktop py-space-xs"}>
-        <div className={"max-w-[1600px] mx-auto flex items-center justify-between font-label-sm text-label-sm"}>
+        <div className={"mx-auto flex items-center justify-between font-label-sm text-label-sm"}>
           <div className={"flex items-center gap-space-md"}>
             <span>
               RÉPUBLIQUE DE CÔTE D'IVOIRE
@@ -42,7 +51,7 @@ export function HomeScreen() {
           </div>
         </div>
       </div>
-      <div className={"h-16 max-w-[1600px] mx-auto px-margin-desktop flex items-center justify-between gap-space-md"}>
+      <div className={"h-16 mx-auto px-margin-desktop flex items-center justify-between gap-space-md"}>
         <div className={"flex items-center gap-space-md"}>
           <img alt="Armoiries de la République de Côte d'Ivoire" className="h-12 w-12 object-contain" src={`${import.meta.env.BASE_URL}logo.png`} />
           <div className={"flex flex-col"}>
@@ -62,17 +71,15 @@ export function HomeScreen() {
             </span>
           </div>
           <div className={"w-8 h-8 rounded-full bg-primary flex items-center justify-center"}>
-            <span className={"material-symbols-outlined text-on-primary text-[18px]"}>
-              person
-            </span>
+            <Icone nom="person" className="text-on-primary text-[18px]" />
           </div>
         </div>
       </div>
     </header>
-    <main className={"w-full pt-20 bg-surface"}>
+    <main className={"w-full pt-28 sm:pt-24"}>
       <div className={"flex flex-col w-full"}>
         {/* BANNIÈRE D'ACCUEIL RÉGALIENNE & PRESTIGIEUSE */}
-        <section className={"relative overflow-hidden bg-primary text-on-primary"}>
+        <section className={"relative overflow-hidden bg-primary/75 text-on-primary"}>
           {/* Motif décoratif souverain inspiré des tissages ivoiriens */}
           <div className={"absolute inset-0 opacity-10 pointer-events-none"}>
             <svg className={"w-full h-full"} height={"100%"} width={"100%"} xmlns={"http://www.w3.org/2000/svg"}>
@@ -88,7 +95,7 @@ export function HomeScreen() {
             </svg>
           </div>
           {/* Voile lumineux dégradé */}
-          <div className={"relative max-w-[1600px] mx-auto px-margin-desktop py-space-xl"}>
+          <div className={"relative mx-auto px-margin-desktop py-space-xl"}>
             <div className={"grid grid-cols-1 lg:grid-cols-12 gap-space-xl items-center"}>
               {/* Contenu textuel solennel */}
               <div className={"lg:col-span-8 min-w-0 space-y-space-md"}>
@@ -111,10 +118,8 @@ export function HomeScreen() {
                 </p>
                 {/* Groupe de CTAs */}
                 <div className={"pt-space-sm flex flex-wrap items-center gap-space-md"}>
-                  <button className={"flex items-center gap-space-sm bg-surface-container-lowest text-primary px-space-lg py-space-sm rounded font-label-lg text-label-lg shadow-md hover:bg-primary-fixed transition-all transform hover:-translate-y-0.5"} type="button" onClick={() => slideTo("/connexion", "forward")}>
-                    <span className={"material-symbols-outlined text-[20px]"}>
-                      lock
-                    </span>
+                  <button className={"flex max-w-full flex-wrap items-center justify-center gap-space-sm bg-surface-container-lowest text-primary px-space-lg py-space-sm rounded font-label-lg text-label-lg shadow-md hover:bg-primary-fixed transition-colors"} type="button" onClick={() => slideTo("/connexion", "forward")}>
+                    <Icone nom="lock" className="text-[20px]" />
                     <span>
                       Accéder à l'Espace Sécurisé (Connexion)
                     </span>
@@ -124,11 +129,15 @@ export function HomeScreen() {
               {/* Visuel symbolique solennel : Armoiries & Sceau Étatique Numérique */}
               <div className={"lg:col-span-4 flex flex-col items-center gap-4"}>
                 <div className={"relative w-full max-w-xs aspect-square overflow-hidden rounded-full bg-primary-container border border-primary-fixed/20 shadow-xl"}>
-                  <img alt="Armoiries de la République de Côte d'Ivoire" className={"absolute inset-0 h-full w-full object-cover"} src={`${import.meta.env.BASE_URL}logo.png`} />
+                  <img
+                    alt={nomMinistre ? `Portrait de ${nomMinistre}` : portrait ? "Portrait de la ministre" : "Armoiries de la République de Côte d'Ivoire"}
+                    className={"absolute inset-0 h-full w-full object-cover"}
+                    src={portrait || `${import.meta.env.BASE_URL}logo.png`}
+                  />
                 </div>
                 <div className={"text-center"}>
                   <span className={"font-headline-sm text-headline-sm text-on-primary uppercase tracking-wide"}>
-                    MPEEP
+                    {nomMinistre || (portrait ? "La Ministre" : "MPEEP")}
                   </span>
                   <span className={"font-label-sm text-label-sm text-primary-fixed mt-2 block max-w-[15rem] leading-snug"}>
                     Ministère du Portefeuille de l'État et des Entreprises Publiques
@@ -139,14 +148,12 @@ export function HomeScreen() {
           </div>
         </section>
         {/* BANDEAU CHIFFRES CLÉS & IMPACT DU PORTEFEUILLE ÉTATIQUE */}
-        <section className={"max-w-[1600px] w-full mx-auto px-margin-desktop -mt-8 relative z-20"}>
+        <section className={"w-full mx-auto px-margin-desktop -mt-8 relative z-20"}>
           <div className={"grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-space-md"}>
             {(chiffres.length > 0 ? chiffres : [0, 1, 2].map(() => null)).map((chiffre, index) => (
               <div key={chiffre?.libelle ?? index} className={"bg-surface-container-lowest rounded-xl p-space-md shadow-md flex items-start gap-space-md"}>
                 <div className={`w-12 h-12 rounded-lg bg-surface-container-low flex items-center justify-center shrink-0 ${TONS_CHIFFRE[index] ?? "text-primary"}`}>
-                  <span className={"material-symbols-outlined text-[26px]"}>
-                    {chiffre?.icone ?? "hourglass_empty"}
-                  </span>
+                  <Icone nom={chiffre?.icone ?? "hourglass_empty"} className="text-[26px]" />
                 </div>
                 <div className={"space-y-0.5"}>
                   <span className={`font-headline-lg text-headline-lg tracking-tight ${TONS_CHIFFRE[index] ?? "text-primary"}`}>
@@ -163,13 +170,11 @@ export function HomeScreen() {
             ))}
           </div>
         </section>
-        <section className={"bg-surface-container-low py-space-xl"}>
-          <div className={"max-w-[1600px] mx-auto px-margin-desktop"}>
+        <section className={"bg-surface-container-low/55 py-space-xl"}>
+          <div className={"mx-auto px-margin-desktop"}>
             <div className={"space-y-space-md"}>
               <div className={"flex items-center gap-space-xs"}>
-                <span className={"material-symbols-outlined text-primary text-[24px]"}>
-                  campaign
-                </span>
+                <Icone nom="campaign" className="text-primary text-[24px]" />
                 <h2 className={"font-headline-sm text-headline-sm text-on-surface"}>
                   Informations de la Direction des ressources humaines
                 </h2>
@@ -201,14 +206,12 @@ export function HomeScreen() {
           </div>
         </section>
         {/* MODALITÉS D'ACCÈS SÉCURISÉ & PROTOCOLE RÉGALIEN */}
-        <section className={"max-w-[1600px] w-full mx-auto px-margin-desktop py-space-xl"}>
+        <section className={"w-full mx-auto px-margin-desktop py-space-xl"}>
           {/* Bannière support technique de la DSI */}
           <div className={"mt-space-lg bg-surface-container rounded-xl p-space-md flex flex-col sm:flex-row items-center justify-between gap-space-md"}>
             <div className={"flex items-center gap-space-md"}>
               <div className={"w-12 h-12 rounded-full bg-primary flex items-center justify-center text-on-primary shrink-0"}>
-                <span className={"material-symbols-outlined text-[24px]"}>
-                  support_agent
-                </span>
+                <Icone nom="support_agent" className="text-[24px]" />
               </div>
               <div>
                 <h4 className={"font-label-lg text-label-lg text-on-surface"}>
@@ -236,14 +239,12 @@ export function HomeScreen() {
         {/* MICRO-INTERACTIONS JS NATIVES */}
       </div>
     </main>
-    <footer className={"w-full bg-surface-container-low mt-space-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]"}>
-      <div className={"max-w-[1600px] mx-auto px-margin-desktop py-space-xl"}>
+    <footer className={"relative w-full bg-surface-container-low/70 mt-space-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]"}>
+      <div className={"mx-auto px-margin-desktop py-space-xl"}>
         <div className={"grid grid-cols-1 md:grid-cols-4 gap-space-lg mb-space-lg"}>
           <div className={"space-y-space-sm"}>
             <div className={"flex items-center gap-space-sm"}>
-              <span className={"material-symbols-outlined text-primary text-[24px]"}>
-                account_balance
-              </span>
+              <Icone nom="account_balance" className="text-primary text-[24px]" />
               <span className={"font-headline-sm text-headline-sm text-primary"}>
                 MPEEP - SIGRH
               </span>
@@ -318,6 +319,7 @@ export function HomeScreen() {
         </div>
       </div>
     </footer>
+    </div>
     </>
   );
 }

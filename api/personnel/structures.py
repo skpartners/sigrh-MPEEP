@@ -7,6 +7,7 @@ POLES = (
 )
 
 NIVEAUX = (
+    ("ministere", "Ministère"),
     ("direction-generale", "Direction générale"),
     ("direction-centrale", "Direction centrale"),
     ("sous-direction", "Sous-direction"),
@@ -32,6 +33,8 @@ RATTACHEMENTS = (
 def niveau_depuis_nom(nom: str) -> str:
     """Déduit le rang. Une cellule prend le rang de direction centrale ; on peut ensuite la placer en sous-direction."""
     texte = nom.casefold().replace("é", "e").replace("è", "e")
+    if texte.startswith("ministere"):
+        return "ministere"
     if texte.startswith("direction generale") or texte.startswith("direction générale"):
         return "direction-generale"
     if texte.startswith("direction centrale"):
@@ -49,9 +52,10 @@ def niveau_depuis_nom(nom: str) -> str:
 
 # (code, pôle, nom, niveau, parent) — la direction générale contient les directions centrales, qui contiennent les sous-directions, qui contiennent les services.
 STRUCTURES = (
-    ("cabinet", "cabinet", "Cabinet", "direction-generale", ""),
-    ("dgpe", "dgpe", "Direction Générale du Portefeuille de l'État", "direction-generale", ""),
-    ("dgpn", "dgpn", "DGPN", "direction-generale", ""),
+    ("ministere", "cabinet", "Ministère", "ministere", ""),
+    ("cabinet", "cabinet", "Cabinet", "direction-generale", "ministere"),
+    ("dgpe", "dgpe", "Direction Générale du Portefeuille de l'État", "direction-generale", "ministere"),
+    ("dgpn", "dgpn", "DGPN", "direction-generale", "ministere"),
     ("ig", "cabinet", "Inspection Générale", "direction-centrale", "cabinet"),
     ("daf", "cabinet", "Direction des Affaires Financières", "direction-centrale", "cabinet"),
     ("drh", "cabinet", "Direction des Ressources Humaines", "direction-centrale", "cabinet"),

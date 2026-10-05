@@ -5,6 +5,7 @@ import { api, mediaUrl } from "../api/client";
 import type { SessionUser } from "../api/types";
 import { useFeedback } from "./Feedback";
 import { BOUTON_PRIMAIRE, BOUTON_SECONDAIRE, Modale } from "./Modale";
+import { Icone } from "./Icone";
 
 /** Ouvre le cadre où le responsable dessine sa signature, puis enregistre ce tracé. */
 export function EditeurSignature({ user, onClose }: { user: SessionUser | undefined; onClose: () => void }) {
@@ -73,7 +74,7 @@ export function EditeurSignature({ user, onClose }: { user: SessionUser | undefi
       pied={
         <>
           <label className="mr-auto inline-flex cursor-pointer items-center gap-1.5 font-label-md text-label-md font-semibold text-primary">
-            <span className="material-symbols-outlined text-lg" aria-hidden="true">upload</span>
+            <Icone nom="upload" className="text-lg" />
             Importer une image
             <input
               type="file"

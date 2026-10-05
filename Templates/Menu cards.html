@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+
+<html lang="fr"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_standard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "on-primary-container": "#8ad5a7", "on-tertiary": "#ffffff", "secondary-container": "#fe7b28", "on-primary": "#ffffff", "on-tertiary-container": "#bdc4de", "outline-variant": "#bfc9c0", "tertiary": "#333a4f", "on-background": "#0b1c30", "surface-bright": "#f8f9ff", "secondary-fixed-dim": "#ffb691", "inverse-surface": "#213145", "surface-variant": "#d3e4fe", "on-surface": "#0b1c30", "surface-tint": "#1e6b46", "on-primary-fixed-variant": "#005231", "primary-fixed": "#a7f3c3", "on-secondary-fixed-variant": "#783100", "on-tertiary-fixed-variant": "#3f465c", "tertiary-fixed": "#dae2fd", "on-primary-fixed": "#002111", "inverse-on-surface": "#eaf1ff", "surface-container-high": "#dce9ff", "on-secondary": "#ffffff", "primary": "#004428", "error": "#ba1a1a", "on-secondary-container": "#602600", "background": "#f8f9ff", "on-error-container": "#93000a", "inverse-primary": "#8cd6a9", "primary-container": "#0a5e3a", "on-surface-variant": "#3f4942", "surface-dim": "#cbdbf5", "tertiary-container": "#495167", "error-container": "#ffdad6", "tertiary-fixed-dim": "#bec6e0", "outline": "#707a71", "surface-container": "#e5eeff", "on-tertiary-fixed": "#131b2e", "secondary": "#9e4300", "surface": "#f8f9ff", "secondary-fixed": "#ffdbcb", "surface-container-lowest": "#ffffff", "primary-fixed-dim": "#8cd6a9", "on-secondary-fixed": "#341100", "surface-container-low": "#eff4ff", "surface-container-highest": "#d3e4fe", "on-error": "#ffffff" }, "borderRadius": { "DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem" }, "spacing": { "gutter-desktop": "1.5rem", "gutter": "1.25rem", "margin-desktop": "2rem", "space-xl": "2rem", "space-xs": "0.25rem", "space-sm": "0.5rem", "margin": "1rem", "space-md": "1rem", "space-lg": "1.5rem", "margin-tablet": "1.5rem" }, "fontFamily": { "headline-lg-mobile": ["Public Sans"], "headline-sm": ["Public Sans"], "headline-xl-mobile": ["Public Sans"], "label-sm": ["Public Sans"], "label-lg": ["Public Sans"], "headline-md": ["Public Sans"], "headline-lg": ["Public Sans"], "body-lg": ["Public Sans"], "headline-xl": ["Public Sans"], "body-md": ["Public Sans"], "code-num": ["Public Sans"], "label-md": ["Public Sans"], "body-sm": ["Public Sans"] }, "fontSize": { "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "700"}], "headline-sm": ["18px", {"lineHeight": "24px", "fontWeight": "600"}], "headline-xl-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "700"}], "label-sm": ["11px", {"lineHeight": "14px", "fontWeight": "500"}], "label-lg": ["14px", {"lineHeight": "20px", "fontWeight": "600"}], "headline-md": ["22px", {"lineHeight": "28px", "fontWeight": "600"}], "headline-lg": ["30px", {"lineHeight": "38px", "fontWeight": "700"}], "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}], "headline-xl": ["36px", {"lineHeight": "44px", "fontWeight": "700"}], "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}], "code-num": ["13px", {"lineHeight": "18px", "fontWeight": "600"}], "label-md": ["12px", {"lineHeight": "16px", "fontWeight": "600"}], "body-sm": ["13px", {"lineHeight": "18px", "fontWeight": "400"}] } } } };</script></head><body class="bg-surface font-body-md text-on-surface antialiased"><header class="fixed top-0 left-0 w-full z-50 bg-surface-container-lowest/95 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-16 w-full max-w-[1600px] mx-auto px-margin-desktop flex items-center justify-between gap-space-md"><div class="flex items-center gap-space-md"><img alt="Official national coat of arms emblem of the Republic of Côte d'Ivoire, featuring the iconic elephant head in gold/bronze crest framed by two palm trees and national ribbon banner, with text &quot;RÉPUBLIQUE DE CÔTE D'IVOIRE - MINISTÈRE DU PORTEFEUILLE DE L'ÉTAT&quot;, prestigious governmental emblem style, clean crisp vector aesthetic, official heraldic insignia, colors orange, white and forest green with gold accents.. Design context: - Primary color: #0a5e3a - Font: publicSans - Mode: light - Roundness: rounded-sm . The logo should be visually consistent with these brand tokens." class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1WnJfn5SmvAHhBBgOqypKkgpj-B7_ytDEXMOqQ_zGJEnRJWJef59KAfbx2nFUMJWJOi4rsKVXvGkPk22rEL1-OIwoJXj_YhCjwE81XYHDAma2YtBDyEaGzvkh4_DzqiQ14bEw8t9YADAqD8OLmWCbQv_rQ3kWg-vLuYJD7hBmqW-ghiQlE-9wLzPcp6IFBTtiNGiysANWdnofidudgEw0uFLiJBZaMpWMYZ3CnDJHqE_Kw1gU6dEKL4bA"/><div class="flex flex-col"><div class="flex items-center gap-space-xs"><span class="font-label-lg text-label-lg text-primary tracking-wide uppercase">SIGRH État</span><span class="px-space-xs py-0.5 rounded bg-secondary-fixed text-on-secondary-fixed font-label-sm text-label-sm font-semibold tracking-wider uppercase">MPE</span></div><span class="font-body-sm text-body-sm text-on-surface-variant hidden sm:inline">Ministère du Portefeuille de l'État</span></div></div><nav class="hidden lg:flex items-center gap-space-sm" data-active-classes="bg-primary-container text-on-primary font-bold rounded-lg"><a aria-current="page" class="px-space-md py-space-sm transition-colors bg-primary-container text-on-primary font-bold rounded-lg" data-path="hub-des-modules" href="#">Hub des Modules</a><a class="px-space-md py-space-sm font-label-lg text-label-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface rounded-lg transition-colors" data-path="annuaire-institutions" href="#">Entreprises &amp; Établissements</a><a class="px-space-md py-space-sm font-label-lg text-label-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface rounded-lg transition-colors" data-path="statistiques-globales" href="#">Consolidation RH</a><a class="px-space-md py-space-sm font-label-lg text-label-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface rounded-lg transition-colors" data-path="bulletins-officiels" href="#">Textes &amp; Décrets</a></nav><div class="flex items-center gap-space-md"><div class="relative hidden md:block w-72"><div class="absolute inset-y-0 left-0 pl-space-sm flex items-center pointer-events-none text-outline"><span class="material-symbols-outlined text-[20px]">search</span></div><input class="w-full pl-9 pr-space-md py-space-xs font-body-sm text-body-sm bg-surface-container-low text-on-surface placeholder:text-outline rounded border-0 focus:outline-none focus:ring-1 focus:ring-primary" placeholder="Rechercher un module, agent, décret..." type="search"/></div><div class="flex items-center gap-space-xs text-on-surface-variant"><button aria-label="Notifications ministérielles" class="p-space-xs rounded-full hover:bg-surface-container hover:text-on-surface transition-colors relative" type="button"><span class="material-symbols-outlined text-[22px]">notifications</span><span class="absolute top-1 right-1 w-2 h-2 rounded-full bg-secondary"></span></button><button aria-label="Aide et assistance juridique" class="p-space-xs rounded-full hover:bg-surface-container hover:text-on-surface transition-colors" type="button"><span class="material-symbols-outlined text-[22px]">help_outline</span></button></div><div class="h-8 w-px bg-surface-container-high hidden sm:block"></div><div class="flex items-center gap-space-sm pl-space-xs"><div class="flex flex-col text-right hidden xl:block"><span class="font-label-lg text-label-lg text-on-surface font-semibold leading-tight">M. Kouassi Jean-Arsène</span><span class="font-label-sm text-label-sm text-primary font-medium">Directeur des Ressources Humaines</span></div><img alt="Profile" class="w-8 h-8 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida/AEtjO1UNgwl-GQWJGM1W74L_0z4yUvTvIKdXmJh8PlR_mrHdMYE3ZLcsqg__bgMtWB-MsRubpd3WpOSNe8bZP9WHvsdc1OiybqGCcGiaeCe1EU5HWgQOHoPlZZ5rA1vND9RBciTCSbm3OSR1Myig7yfYHKvWHgmEX3fJkHIn1cRJyal7Es145eG6CXARrEy3fOwlQW-WkUbzCoG9YFMhtFm-3v-PUJ5MWjFTEunnI7kXr87qL2r9t73zouigkw"/><span class="material-symbols-outlined text-outline text-[18px] hidden sm:block">expand_more</span></div></div></div></header><main class="w-full pt-16 bg-surface min-h-[calc(100vh-64px)] flex flex-col justify-between"><div class="flex flex-col w-full">
+<!-- Subtle decorative ambient background glows (strictly bounded) -->
+<div class="relative w-full overflow-hidden">
+<div class="pointer-events-none absolute -top-24 -left-20 w-96 h-96 rounded-full bg-primary-fixed/25 blur-3xl"></div>
+<div class="pointer-events-none absolute top-12 right-0 w-[420px] h-[420px] rounded-full bg-secondary-fixed/20 blur-3xl"></div>
+<div class="pointer-events-none absolute top-96 left-1/3 w-[500px] h-64 rounded-full bg-surface-container-highest/60 blur-3xl"></div>
+<div class="w-full max-w-[1600px] mx-auto px-margin md:px-margin-tablet lg:px-margin-desktop py-space-lg md:py-space-xl flex flex-col gap-space-xl relative z-10">
+<!-- TOP BANNER & INSTITUTIONAL CONTEXT -->
+<section class="flex flex-col gap-space-lg">
+<!-- Republic Overline Banner -->
+<div class="flex flex-wrap items-center justify-between gap-space-sm">
+<div class="flex flex-wrap items-center gap-space-sm">
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-secondary-fixed text-on-secondary-fixed font-label-md text-label-md uppercase tracking-wider shadow-sm">
+<span class="w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
+              Console Ministérielle
+            </span>
+<span class="text-outline-variant hidden sm:inline">•</span>
+<span class="font-label-md text-label-md text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px] text-primary">verified_user</span>
+              Session active : <strong class="text-on-surface font-semibold ml-1">Direction des Ressources Humaines • DGPE Côte d'Ivoire</strong>
+</span>
+</div>
+<!-- Quick state indicators -->
+<div class="flex items-center gap-space-sm">
+<span class="px-2.5 py-1 rounded bg-surface-container text-on-surface-variant font-label-sm text-label-sm flex items-center gap-1">
+<span class="material-symbols-outlined text-[15px] text-primary">domain</span>
+              28 Entreprises d'État
+            </span>
+<span class="px-2.5 py-1 rounded bg-surface-container text-on-surface-variant font-label-sm text-label-sm hidden md:flex items-center gap-1">
+<span class="material-symbols-outlined text-[15px] text-secondary">groups</span>
+              4 826 Agents suivis
+            </span>
+<span class="px-2.5 py-1 rounded bg-primary-fixed text-on-primary-fixed-variant font-label-sm text-label-sm flex items-center gap-1">
+<span class="material-symbols-outlined text-[15px] text-primary">cloud_done</span>
+              100% Dématérialisé
+            </span>
+</div>
+</div>
+<!-- Main Title & Description -->
+<div class="flex flex-col lg:flex-row lg:items-end justify-between gap-space-lg">
+<div class="max-w-3xl">
+<div class="flex items-center gap-2 mb-1">
+<span class="w-8 h-1 rounded bg-gradient-to-r from-secondary via-surface-container-lowest to-primary"></span>
+<span class="font-label-sm text-label-sm uppercase tracking-widest text-secondary font-bold">Portefeuille Souverain de l'État</span>
+</div>
+<h1 class="font-headline-xl text-headline-xl text-on-surface tracking-tight leading-tight">
+              Hub Central des Applications &amp; Services SIGRH
+            </h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant mt-2 max-w-2xl">
+              Sélectionnez un pôle républicain pour ouvrir votre espace de gouvernance statutaire. Chaque module déploie sa console opérationnelle et sa téléprocédure dédiée.
+            </p>
+</div>
+<!-- Filter & Search Toolbar -->
+<div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-space-sm min-w-[320px] lg:w-auto">
+<!-- Search bar with Ctrl+K -->
+<div class="relative flex-1 sm:w-80">
+<div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-outline">
+<span class="material-symbols-outlined text-[20px]">search</span>
+</div>
+<input class="w-full pl-9 pr-14 py-2.5 rounded-lg bg-surface-container-lowest text-on-surface placeholder:text-outline font-body-sm text-body-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-primary" id="moduleSearchInput" placeholder="Rechercher un module, un acte, un matricule..." type="text"/>
+<div class="absolute inset-y-0 right-0 pr-2 flex items-center pointer-events-none">
+<kbd class="px-1.5 py-0.5 rounded bg-surface-container text-on-surface-variant font-code-num text-label-sm shadow-xs">Ctrl+K</kbd>
+</div>
+</div>
+<!-- Sort dropdown mockup -->
+<div class="relative">
+<button aria-label="Trier par fréquence d'utilisation" class="w-full sm:w-auto px-4 py-2.5 rounded-lg bg-surface-container-lowest text-on-surface font-label-md text-label-md flex items-center justify-between sm:justify-start gap-2 shadow-sm hover:bg-surface-container-low transition-colors" type="button">
+<span class="text-on-surface-variant">Trier par :</span>
+<span class="font-semibold text-primary">Fréquence d'utilisation</span>
+<span class="material-symbols-outlined text-[18px] text-outline">expand_more</span>
+</button>
+</div>
+</div>
+</div>
+</section>
+<!-- MODULAR GRID OF 6 VIBRANT CARDS -->
+<section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-space-lg">
+<!-- CARTE 1 : Dotation & Recrutement [Vert Émeraude / Sarcelle] -->
+<article class="group relative flex flex-col justify-between p-space-lg rounded-xl bg-surface-container-lowest shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden" data-card-module="dotation">
+<!-- Institutional color accent top bar -->
+<div class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-primary to-primary-container"></div>
+<div>
+<!-- Header card: Icon + Badge -->
+<div class="flex items-start justify-between gap-2 mb-space-md">
+<div class="w-12 h-12 rounded-lg bg-primary-fixed flex items-center justify-center text-primary shadow-xs group-hover:scale-105 transition-transform">
+<span class="material-symbols-outlined text-[26px]">how_to_reg</span>
+</div>
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary-fixed/80 text-on-primary-fixed-variant font-label-sm text-label-sm font-semibold tracking-wide">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+                Actif • 142k agents
+              </span>
+</div>
+<!-- Title & Body -->
+<h2 class="font-headline-sm text-headline-sm text-on-surface group-hover:text-primary transition-colors flex items-center gap-1">
+              Dotation &amp; Recrutement
+            </h2>
+<p class="font-body-md text-body-md text-on-surface-variant mt-2 leading-relaxed">
+              Gestion prévisionnelle des effectifs, affectations interministérielles et intégrations suite aux concours administratifs et ENA.
+            </p>
+</div>
+<!-- Card Footer : Metric + Action -->
+<div class="pt-space-md mt-space-md bg-gradient-to-t from-surface-container-low/40 to-transparent flex items-center justify-between">
+<span class="inline-flex items-center gap-1.5 font-label-md text-label-md text-secondary font-semibold">
+<span class="material-symbols-outlined text-[18px]">pending_actions</span>
+              8 dossiers urgents
+            </span>
+<a class="inline-flex items-center gap-1 font-label-lg text-label-lg font-bold text-primary group-hover:translate-x-1 transition-transform" href="#">
+<span>Ouvrir l'espace</span>
+<span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+</a>
+</div>
+</article>
+<!-- CARTE 2 : Situation Administrative & Actes [Orange Chaleureux / Ambre] -->
+<article class="group relative flex flex-col justify-between p-space-lg rounded-xl bg-surface-container-lowest shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden" data-card-module="actes">
+<!-- Accent bar -->
+<div class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-secondary-container to-secondary"></div>
+<div>
+<!-- Header card: Icon + Badge -->
+<div class="flex items-start justify-between gap-2 mb-space-md">
+<div class="w-12 h-12 rounded-lg bg-secondary-fixed flex items-center justify-center text-secondary shadow-xs group-hover:scale-105 transition-transform">
+<span class="material-symbols-outlined text-[26px]">edit_document</span>
+</div>
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-secondary-fixed/80 text-on-secondary-fixed font-label-sm text-label-sm font-semibold tracking-wide">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+                En validation
+              </span>
+</div>
+<!-- Title & Body -->
+<h2 class="font-headline-sm text-headline-sm text-on-surface group-hover:text-secondary transition-colors">
+              Situation Administrative &amp; Actes
+            </h2>
+<p class="font-body-md text-body-md text-on-surface-variant mt-2 leading-relaxed">
+              Avancements d'échelon, promotions au choix, titularisations statutaires et signatures d'arrêtés ministériels.
+            </p>
+</div>
+<!-- Card Footer -->
+<div class="pt-space-md mt-space-md flex items-center justify-between">
+<span class="inline-flex items-center gap-1 font-body-sm text-body-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px] text-outline">schedule</span>
+              Mis à jour il y a 10 min
+            </span>
+<a class="inline-flex items-center gap-1 font-label-lg text-label-lg font-bold text-secondary group-hover:translate-x-1 transition-transform" href="#">
+<span>Gérer les actes</span>
+<span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+</a>
+</div>
+</article>
+<!-- CARTE 3 : Congés, Absences & Maternité [Bleu Saphir / Azur] -->
+<article class="group relative flex flex-col justify-between p-space-lg rounded-xl bg-surface-container-lowest shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden" data-card-module="conges">
+<!-- Accent bar -->
+<div class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-surface-variant to-tertiary"></div>
+<div>
+<!-- Header card: Icon + Badge -->
+<div class="flex items-start justify-between gap-2 mb-space-md">
+<div class="w-12 h-12 rounded-lg bg-surface-container flex items-center justify-center text-tertiary shadow-xs group-hover:scale-105 transition-transform">
+<span class="material-symbols-outlined text-[26px]">calendar_month</span>
+</div>
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-container-high text-on-tertiary-fixed font-label-sm text-label-sm font-semibold tracking-wide">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+                Solde moyen 18j
+              </span>
+</div>
+<!-- Title & Body -->
+<h2 class="font-headline-sm text-headline-sm text-on-surface group-hover:text-tertiary transition-colors">
+              Congés, Absences &amp; Maternité
+            </h2>
+<p class="font-body-md text-body-md text-on-surface-variant mt-2 leading-relaxed">
+              Validation hiérarchique, pointage des autorisations exceptionnelles, suivi médical et réintégrations administratives.
+            </p>
+</div>
+<!-- Card Footer -->
+<div class="pt-space-md mt-space-md flex items-center justify-between">
+<span class="inline-flex items-center gap-1 font-code-num text-code-num text-primary font-semibold">
+<span class="material-symbols-outlined text-[16px]">check_circle</span>
+              99.4% conformité
+            </span>
+<a class="inline-flex items-center gap-1 font-label-lg text-label-lg font-bold text-tertiary group-hover:translate-x-1 transition-transform" href="#">
+<span>Consulter</span>
+<span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+</a>
+</div>
+</article>
+<!-- CARTE 4 : Discipline & Conseil d'Enquête [Rouge Rubis Régalien / Confidentiel] -->
+<article class="group relative flex flex-col justify-between p-space-lg rounded-xl bg-surface-container-lowest shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden" data-card-module="discipline">
+<!-- Accent bar -->
+<div class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-error to-error-container"></div>
+<div>
+<!-- Header card: Icon + Badge -->
+<div class="flex items-start justify-between gap-2 mb-space-md">
+<div class="w-12 h-12 rounded-lg bg-error-container/60 flex items-center justify-center text-error shadow-xs group-hover:scale-105 transition-transform">
+<span class="material-symbols-outlined text-[26px]">gavel</span>
+</div>
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-error-container text-on-error-container font-label-sm text-label-sm font-semibold tracking-wide">
+<span class="material-symbols-outlined text-[13px]">lock</span>
+                Confidentiel • Loi 2013
+              </span>
+</div>
+<!-- Title & Body -->
+<h2 class="font-headline-sm text-headline-sm text-on-surface group-hover:text-error transition-colors">
+              Discipline &amp; Conseil d'Enquête
+            </h2>
+<p class="font-body-md text-body-md text-on-surface-variant mt-2 leading-relaxed">
+              Dossiers d'avertissement, blâmes, suspensions conservatoires et commissions paritaires d'arbitrage contentieux.
+            </p>
+</div>
+<!-- Card Footer -->
+<div class="pt-space-md mt-space-md flex items-center justify-between">
+<span class="inline-flex items-center gap-1.5 font-label-md text-label-md text-error font-semibold">
+<span class="material-symbols-outlined text-[17px]">event</span>
+              2 séances programmées
+            </span>
+<a class="inline-flex items-center gap-1 font-label-lg text-label-lg font-bold text-error group-hover:translate-x-1 transition-transform" href="#">
+<span>Accès Sécurisé 🔒</span>
+<span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+</a>
+</div>
+</article>
+<!-- CARTE 5 : [CARTE VEDETTE - FIN DE CARRIÈRE & RETRAITE - CELLE DU CLIC PRINCIPAL] -->
+<article class="group relative flex flex-col justify-between p-space-lg rounded-xl bg-gradient-to-br from-surface-container-lowest via-surface-container-lowest to-primary-fixed/20 shadow-lg hover:shadow-2xl transition-all duration-300 cursor-pointer overflow-hidden transform hover:-translate-y-1" data-card-module="retraite" data-path="fin-de-carriere-retraite" id="featuredModuleCard" style="outline: 2px solid #0a5e3a; outline-offset: 1px;">
+<!-- Special Republic Bicolor Gradient Accent -->
+<div class="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-primary via-secondary-container to-secondary"></div>
+<!-- Pulsing Focus Tag -->
+<div class="absolute -right-12 top-6 bg-secondary text-on-secondary px-12 py-0.5 font-label-sm text-label-sm font-bold rotate-45 shadow-sm uppercase tracking-wider text-center">
+            Pôle Prioritaire
+          </div>
+<div>
+<!-- Header card: Icon + Badges -->
+<div class="flex items-start justify-between gap-2 mb-space-md pr-10">
+<div class="w-14 h-14 rounded-xl bg-primary flex items-center justify-center text-on-primary shadow-md group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-[30px]" style="font-variation-settings: 'FILL' 1;">military_tech</span>
+</div>
+<div class="flex flex-col items-end gap-1">
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-secondary-fixed text-on-secondary-fixed font-label-sm text-label-sm font-bold tracking-wide shadow-xs">
+<span class="material-symbols-outlined text-[14px]">account_balance</span>
+                  CGRAE Direct
+                </span>
+<span class="font-label-sm text-label-sm text-primary font-bold hidden sm:inline">
+                  👉 Module démonstrateur
+                </span>
+</div>
+</div>
+<!-- Title & Body -->
+<div class="flex items-center gap-2">
+<h2 class="font-headline-md text-headline-md text-primary font-bold group-hover:text-primary-container transition-colors">
+                Fin de Carrière &amp; Retraite
+              </h2>
+</div>
+<p class="font-body-md text-body-md text-on-surface font-medium mt-2 leading-relaxed">
+              Liquidation des droits à retraite, capital décès, secours immédiats, contrôle indiciaire et arrêtés de cessation définitive de paiement.
+            </p>
+<!-- Key metrics row embedded in card -->
+<div class="mt-4 p-3 rounded-lg bg-surface-container/60 flex items-center justify-between">
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase font-medium">Bordereau actif</span>
+<span class="font-code-num text-code-num text-on-surface font-bold">#8812 - MPE/DGE</span>
+</div>
+<div class="h-6 w-px bg-outline-variant"></div>
+<div class="flex flex-col text-right">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase font-medium">Éligibles 2025</span>
+<span class="font-code-num text-code-num text-secondary font-bold">1 284 agents</span>
+</div>
+</div>
+</div>
+<!-- Bottom CTA Area -->
+<div class="pt-space-md mt-space-md flex flex-col gap-2">
+<div class="flex items-center justify-between text-primary font-label-md text-label-md">
+<span class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">sync_alt</span>
+                Passez au mode console
+              </span>
+<span class="font-code-num text-code-num font-semibold">Portefeuille 100% à jour</span>
+</div>
+<button class="w-full py-3 px-4 rounded-lg bg-primary hover:bg-primary-container text-on-primary font-label-lg text-label-lg font-bold flex items-center justify-center gap-2 shadow-md transition-colors" type="button">
+<span>Entrer dans le module Fin de Carrière</span>
+<span class="material-symbols-outlined text-[20px] group-hover:translate-x-1.5 transition-transform">arrow_forward</span>
+</button>
+</div>
+</article>
+<!-- CARTE 6 : Observatoire & Statistiques RH [Violet / Indigo Profond] -->
+<article class="group relative flex flex-col justify-between p-space-lg rounded-xl bg-surface-container-lowest shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden" data-card-module="observatoire">
+<!-- Accent bar -->
+<div class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-tertiary-container via-tertiary to-tertiary-fixed-dim"></div>
+<div>
+<!-- Header card: Icon + Badge -->
+<div class="flex items-start justify-between gap-2 mb-space-md">
+<div class="w-12 h-12 rounded-lg bg-tertiary-fixed flex items-center justify-center text-tertiary shadow-xs group-hover:scale-105 transition-transform">
+<span class="material-symbols-outlined text-[26px]">pie_chart</span>
+</div>
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-tertiary-fixed/70 text-on-tertiary-fixed font-label-sm text-label-sm font-semibold tracking-wide">
+<span class="material-symbols-outlined text-[13px]">insights</span>
+                Analytique Ministérielle
+              </span>
+</div>
+<!-- Title & Body -->
+<h2 class="font-headline-sm text-headline-sm text-on-surface group-hover:text-tertiary transition-colors">
+              Observatoire &amp; Données RH
+            </h2>
+<p class="font-body-md text-body-md text-on-surface-variant mt-2 leading-relaxed">
+              Pyramide des âges, ventilation statutaire par catégories A/B/C/D, cartographie territoriale et indicateurs de parité décisionnelle.
+            </p>
+</div>
+<!-- Card Footer -->
+<div class="pt-space-md mt-space-md flex items-center justify-between">
+<span class="inline-flex items-center gap-1 font-label-md text-label-md text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px] text-tertiary">query_stats</span>
+              Indicateurs T1 2025
+            </span>
+<a class="inline-flex items-center gap-1 font-label-lg text-label-lg font-bold text-tertiary group-hover:translate-x-1 transition-transform" href="#">
+<span>Explorer les stats</span>
+<span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+</a>
+</div>
+</article>
+</section>
+<!-- EXPLANATORY WORKFLOW SECTION (2 STEPS) -->
+<section class="p-space-lg rounded-xl bg-surface-container-low shadow-sm flex flex-col md:flex-row items-center justify-between gap-space-lg">
+<div class="flex items-center gap-space-md">
+<div class="w-12 h-12 rounded-full bg-primary-fixed text-primary flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[26px]">touch_app</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-lg text-label-lg text-on-surface font-bold">Architecture de navigation républicaine à 2 niveaux</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">
+              1. Choisissez une carte sur ce Hub Central  ➔  2. Votre espace s'ouvre avec sa barre latérale contextuelle pour piloter les dossiers et actes officiels.
+            </p>
+</div>
+</div>
+<!-- Quick actions buttons -->
+<div class="flex items-center gap-space-sm shrink-0">
+<button class="px-4 py-2 rounded-lg bg-surface-container-lowest hover:bg-surface-container text-on-surface font-label-md text-label-md shadow-xs transition-colors flex items-center gap-1.5" onclick="document.getElementById('featuredModuleCard').scrollIntoView({ behavior: 'smooth' }); document.getElementById('featuredModuleCard').classList.add('ring-4', 'ring-secondary'); setTimeout(() =&gt; document.getElementById('featuredModuleCard').classList.remove('ring-4', 'ring-secondary'), 1600);" type="button">
+<span class="material-symbols-outlined text-[18px] text-secondary">stars</span>
+            Démo : Retraites (Carte 5)
+          </button>
+<a class="px-4 py-2 rounded-lg bg-primary hover:bg-primary-container text-on-primary font-label-md text-label-md shadow-xs transition-colors flex items-center gap-1.5" data-path="bulletins-officiels" href="#">
+<span class="material-symbols-outlined text-[18px]">description</span>
+            Journal Officiel RH
+          </a>
+</div>
+</section>
+<!-- INSTITUTIONAL FOOTNOTE / PROTOCOL DETAILS -->
+<section class="grid grid-cols-1 md:grid-cols-3 gap-space-md py-space-sm text-on-surface-variant font-body-sm text-body-sm">
+<div class="flex items-start gap-space-sm p-space-sm rounded-lg bg-surface-container-lowest/70">
+<span class="material-symbols-outlined text-primary text-[20px] shrink-0">policy</span>
+<div>
+<span class="font-semibold text-on-surface block">Décret n° 2021-432</span>
+            Conformité au statut général de la fonction publique et gouvernance du portefeuille de l'État.
+          </div>
+</div>
+<div class="flex items-start gap-space-sm p-space-sm rounded-lg bg-surface-container-lowest/70">
+<span class="material-symbols-outlined text-secondary text-[20px] shrink-0">security</span>
+<div>
+<span class="font-semibold text-on-surface block">Chiffrement Souverain DGSI</span>
+            Données cryptées et hébergées sur le Cloud National de Côte d'Ivoire (GouvCI).
+          </div>
+</div>
+<div class="flex items-start gap-space-sm p-space-sm rounded-lg bg-surface-container-lowest/70">
+<span class="material-symbols-outlined text-tertiary text-[20px] shrink-0">support_agent</span>
+<div>
+<span class="font-semibold text-on-surface block">Assistance DAAF &amp; DRH</span>
+            Permanence numérique disponible du lundi au vendredi de 07h30 à 17h30 GMT.
+          </div>
+</div>
+</section>
+</div>
+</div>
+</div>
+<script>
+  (function initHubInteractivity() {
+    // Search filter interaction across modular cards
+    const searchInput = document.getElementById('moduleSearchInput');
+    const cards = document.querySelectorAll('[data-card-module]');
+
+    if (searchInput) {
+      searchInput.addEventListener('input', function(e) {
+        const query = e.target.value.toLowerCase().trim();
+        cards.forEach(card => {
+          const text = card.textContent.toLowerCase();
+          if (!query || text.includes(query)) {
+            card.style.display = 'flex';
+          } else {
+            card.style.display = 'none';
+          }
+        });
+      });
+
+      // Quick keydown listener for Ctrl+K
+      window.addEventListener('keydown', function(e) {
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+          e.preventDefault();
+          searchInput.focus();
+        }
+      });
+    }
+
+    // Interactive click on Card 5 (Fin de Carrière)
+    const featuredCard = document.getElementById('featuredModuleCard');
+    if (featuredCard) {
+      featuredCard.addEventListener('click', function(e) {
+        // Look for navigation standard or alert
+        const targetPath = this.getAttribute('data-path') || 'fin-de-carriere-retraite';
+        console.log('Transition vers le sous-système:', targetPath);
+        // Visual feedback before action
+        featuredCard.classList.add('scale-[0.99]');
+        setTimeout(() => featuredCard.classList.remove('scale-[0.99]'), 150);
+      });
+    }
+  })();
+</script><footer class="w-full bg-surface-container-lowest shadow-[0_1px_8px_rgba(0,0,0,0.04)] mt-space-xl"><div class="w-full max-w-[1600px] mx-auto px-margin-desktop py-space-lg flex flex-col md:flex-row items-center justify-between gap-space-md font-body-sm text-body-sm text-on-surface-variant"><div><span class="font-semibold text-primary">République de Côte d'Ivoire</span> • Union - Discipline - Travail • Ministère du Portefeuille de l'État</div><div class="flex items-center gap-space-lg font-label-md text-label-md"><a class="hover:text-primary transition-colors" href="#">Mentions Légales</a><a class="hover:text-primary transition-colors" href="#">Sécurité Numérique DGSI</a><a class="hover:text-primary transition-colors" href="#">Assistance SIGRH</a></div></div></footer></main></body></html>

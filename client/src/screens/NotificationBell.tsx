@@ -5,6 +5,7 @@ import { api } from "../api/client";
 import type { NotificationItem, Notifications } from "../api/types";
 import { Skeleton } from "../ui/Motion";
 import { useIntervalle } from "../ui/TempsReel";
+import { Icone } from "../ui/Icone";
 
 const CLE = ["notifications"];
 
@@ -124,7 +125,7 @@ export function NotificationBell() {
         aria-label={nonLues ? `Notifications, ${nonLues} non lue${nonLues > 1 ? "s" : ""}` : "Notifications, aucune non lue"}
         className={`relative p-2 rounded hover:bg-surface-container-high ${ouvert ? "bg-surface-container-high text-on-surface" : "text-on-surface-variant hover:text-on-surface"}`}
       >
-        <span className="material-symbols-outlined text-xl" aria-hidden="true">{nonLues ? "notifications_active" : "notifications"}</span>
+        <Icone nom={nonLues ? "notifications_active" : "notifications"} className="text-xl" />
         {nonLues ? (
           <span
             key={rebond}
@@ -141,7 +142,7 @@ export function NotificationBell() {
           id="panneau-notifications"
           role="dialog"
           aria-labelledby="titre-notifications"
-          className="motion-overlay-card fixed sm:absolute left-4 right-4 sm:left-auto sm:right-0 top-[4.5rem] sm:top-auto sm:mt-2 sm:w-[24rem] z-50 rounded-lg border border-hairline bg-surface-container-lowest shadow-xl overflow-hidden"
+          className="motion-overlay-card fixed sm:absolute left-4 right-4 sm:left-auto sm:right-0 top-[7.5rem] sm:top-auto sm:mt-2 sm:w-[24rem] z-50 rounded-lg border border-hairline bg-surface-container-lowest shadow-xl overflow-hidden"
         >
           <div className="px-4 pt-4 pb-3 border-b border-hairline">
             <div className="flex items-center justify-between gap-3">
@@ -191,7 +192,7 @@ export function NotificationBell() {
             ) : null}
             {requete.data && liste.length === 0 ? (
               <div className="motion-content p-8 text-center">
-                <span className="material-symbols-outlined text-3xl text-primary" aria-hidden="true">task_alt</span>
+                <Icone nom="task_alt" className="text-3xl text-primary" />
                 <p className="font-label-lg text-label-lg text-on-surface mt-1">{nonLuesSeules ? "Tout est lu" : "Aucune notification"}</p>
                 <p className="font-body-sm text-body-sm text-on-surface-variant">Vous êtes à jour.</p>
               </div>
@@ -207,7 +208,7 @@ export function NotificationBell() {
                       className={`w-full flex items-start gap-3 px-4 py-3 text-left hover:bg-surface-container-low ${item.lue ? "" : "bg-primary-fixed/15"}`}
                     >
                       <span className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${style.teinte}`} aria-hidden="true">
-                        <span className="material-symbols-outlined text-lg">{style.icone}</span>
+                        <Icone nom={style.icone} className="text-lg" />
                       </span>
                       <span className="min-w-0 flex-1">
                         <span className="flex items-center gap-2">

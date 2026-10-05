@@ -3,6 +3,7 @@ import { pluriel } from "../../ui/format";
 import { useAction } from "../../ui/useAction";
 import type { TableauFormation, TypeFormation } from "./types";
 import { BOUTON_ICONE, BOUTON_PRIMAIRE, BOUTON_SECONDAIRE, CARTE, Case, EnTeteSection, Modale, Texte, Vide, messageErreur, useEnregistrement } from "./ui";
+import { Icone } from "../../ui/Icone";
 
 /** Catalogue : cycles de formation, publics concernés, pièce exigée à la candidature. */
 export function Catalogue({ data }: { data: TableauFormation }) {
@@ -28,7 +29,7 @@ export function Catalogue({ data }: { data: TableauFormation }) {
         sousTitre="Chaque module du plan relève d'un cycle ; le cycle fixe les publics et la pièce exigée."
         action={
           <button type="button" className={BOUTON_PRIMAIRE} onClick={() => setEdition("nouveau")}>
-            <span className="material-symbols-outlined text-lg" aria-hidden="true">add</span>
+            <Icone nom="add" className="text-lg" />
             Nouveau cycle
           </button>
         }
@@ -46,7 +47,7 @@ export function Catalogue({ data }: { data: TableauFormation }) {
                 </div>
                 <div className="flex shrink-0">
                   <button type="button" className={BOUTON_ICONE} onClick={() => setEdition(t)} aria-label={`Modifier ${t.libelle}`} title="Modifier">
-                    <span className="material-symbols-outlined text-lg" aria-hidden="true">edit</span>
+                    <Icone nom="edit" className="text-lg" />
                   </button>
                   <button
                     type="button"
@@ -56,7 +57,7 @@ export function Catalogue({ data }: { data: TableauFormation }) {
                     aria-label={`Retirer ${t.libelle}`}
                     title={t.sessions ? "Utilisé par des modules : retrait impossible" : "Retirer"}
                   >
-                    <span className="material-symbols-outlined text-lg" aria-hidden="true">delete</span>
+                    <Icone nom="delete" className="text-lg" />
                   </button>
                 </div>
               </div>
@@ -130,13 +131,13 @@ function FormulaireType({ type, onClose }: { type: TypeFormation | null; onClose
                 onChange={(e) => setPublics((liste) => liste.map((x, i) => (i === index ? e.target.value : x)))}
               />
               <button type="button" className={BOUTON_ICONE} onClick={() => setPublics((liste) => liste.filter((_, i) => i !== index))} aria-label={`Retirer le public ${index + 1}`} disabled={publics.length === 1}>
-                <span className="material-symbols-outlined text-lg" aria-hidden="true">remove_circle</span>
+                <Icone nom="remove_circle" className="text-lg" />
               </button>
             </li>
           ))}
         </ul>
         <button type="button" className={`${BOUTON_SECONDAIRE} mt-2 h-9`} onClick={() => setPublics((liste) => [...liste, ""])}>
-          <span className="material-symbols-outlined text-base" aria-hidden="true">add</span>
+          <Icone nom="add" className="text-base" />
           Ajouter un public
         </button>
       </fieldset>

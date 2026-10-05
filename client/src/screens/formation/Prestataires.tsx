@@ -3,6 +3,7 @@ import { dateCourte, nombre, pluriel } from "../../ui/format";
 import { useAction } from "../../ui/useAction";
 import type { Prestataire, TableauFormation } from "./types";
 import { BOUTON_ICONE, BOUTON_PRIMAIRE, Badge, CARTE, Case, DateChamp, EnTeteSection, Liste, Modale, Texte, Vide, messageErreur, useEnregistrement } from "./ui";
+import { Icone } from "../../ui/Icone";
 
 const CATEGORIES = [
   { valeur: "ecole", libelle: "École publique de formation" },
@@ -39,7 +40,7 @@ export function Prestataires({ data }: { data: TableauFormation }) {
           <div className="flex flex-wrap items-center gap-4">
             <Case libelle="Afficher les inactifs" coche={inactifs} onChange={setInactifs} />
             <button type="button" className={BOUTON_PRIMAIRE} onClick={() => setEdition("nouveau")}>
-              <span className="material-symbols-outlined text-lg" aria-hidden="true">post_add</span>
+              <Icone nom="post_add" className="text-lg" />
               Nouveau prestataire
             </button>
           </div>
@@ -59,11 +60,11 @@ export function Prestataires({ data }: { data: TableauFormation }) {
                 </div>
                 <div className="flex shrink-0">
                   <button type="button" className={BOUTON_ICONE} onClick={() => setEdition(p)} aria-label={`Modifier ${p.nom}`} title="Modifier">
-                    <span className="material-symbols-outlined text-lg" aria-hidden="true">edit</span>
+                    <Icone nom="edit" className="text-lg" />
                   </button>
                   {p.sessions === 0 ? (
                     <button type="button" className={BOUTON_ICONE} onClick={() => supprimer(p)} aria-label={`Supprimer ${p.nom}`} title="Supprimer">
-                      <span className="material-symbols-outlined text-lg" aria-hidden="true">delete</span>
+                      <Icone nom="delete" className="text-lg" />
                     </button>
                   ) : null}
                 </div>

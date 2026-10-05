@@ -43,6 +43,7 @@ from .models import (
     VisaEnAttente,
 )
 from .circuits_config import enregistrer, lister
+from .parametres import identite_ministre, portrait_url
 from .utilisateurs import acces_menu, perimetre_matricules
 from .statistiques import FiltreInconnu, calculer, classeur, diaporama, lire_echeance, synthese
 from .statistiques_dynamiques import (
@@ -80,6 +81,7 @@ def _me(user, request) -> dict:
     signature = ""
     if profil.signature:
         signature = profil.signature.url
+    agent = Agent.objects.filter(matricule=user.username).only("photo").first()
     return {
         "matricule": user.username,
         "nom": user.last_name,
@@ -89,6 +91,7 @@ def _me(user, request) -> dict:
         "organisme": profil.organisme.nom,
         "organisme_sigle": profil.organisme.sigle,
         "signature_url": signature,
+        "photo_url": agent.photo.url if agent and agent.photo else "",
         "acces": acces_menu(profil),
     }
 
@@ -140,6 +143,8 @@ def accueil(_request):
                 "ministere": "Ministère du Portefeuille de l'État et des Entreprises Publiques",
                 "devise": "Union - Discipline - Travail",
             },
+            "photo_ministre_url": portrait_url(),
+            "ministre": identite_ministre(),
             **snap.accueil,
             "chiffres": _chiffres_intro(),
             "actes_recents": [acte_row(acte) for acte in actes],
@@ -157,9 +162,21 @@ def organismes(_request):
     return Response(rows)
 
 
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def etat_connexion(_request):
+    from .connexion_admin import assurer_administrateur, connexion_active, detail_ouverture
+
+    assurer_administrateur()
+    return Response({"active": connexion_active(), "detail": detail_ouverture()})
+
+
 @api_view(["POST"])
 @permission_classes([AllowAny])
 def login(request):
+    from .connexion_admin import assurer_administrateur
+
+    assurer_administrateur()
     matricule = str(request.data.get("matricule") or "").strip()
     password = str(request.data.get("password") or "")
     organisme_code = str(request.data.get("organisme") or "").strip()
@@ -463,7 +480,7 @@ def _n(valeur: int) -> str:
 
 
 def _activite() -> list[dict]:
-    """Compteurs lus dans les registres, pour la vue d'ensemble."""
+    """Compteurs lus dans les registres, pour le tableau de bord."""
     conges_clos = [
         Absence.Instruction.SIGNE,
         Absence.Instruction.REJETE,
@@ -639,9 +656,36 @@ def importer_agents(request):
         return Response(corps, status=400)
 
 
+def _dossier_personnel(user, matricule: str) -> Agent | None:
+    """Le profil du compte connecté, créé à la première ouverture s'il n'a pas encore de dossier."""
+    if user.username != matricule or not hasattr(user, "profil"):
+        return None
+    existant = Agent.objects.filter(matricule=matricule).first()
+    if existant is not None:
+        return existant
+    nom = (user.last_name or matricule)[:80]
+    prenoms = (user.first_name or "")[:120]
+    initiales = "".join(morceau[:1] for morceau in f"{prenoms} {nom}".split())[:4].upper() or matricule[:4].upper()
+    structure = getattr(user.profil.structure, "nom", "") or user.profil.fonction
+    return Agent.objects.create(
+        matricule=matricule,
+        nom=nom,
+        prenoms=prenoms,
+        initiales=initiales,
+        corps="—",
+        grade="—",
+        echelon="—",
+        structure=structure[:240],
+        organisme=user.profil.organisme,
+        fonction=user.profil.fonction,
+    )
+
+
 @api_view(["GET", "PATCH"])
 @permission_classes([IsAuthenticated])
 def agent_detail_view(request, matricule: str):
+    if not Agent.objects.filter(matricule=matricule).exists():
+        _dossier_personnel(request.user, matricule)
     agent = get_object_or_404(
         Agent.objects.select_related("organisme").prefetch_related(
             "actes",
@@ -898,7 +942,7 @@ CATALOGUE_FONCTIONS = {
         "Communication",
         "Exports",
         "Compositions",
-        "Vue d'ensemble",
+        "Tableau de bord",
     ),
     "GPEC": (
         "GPEC",

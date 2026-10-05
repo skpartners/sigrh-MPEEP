@@ -5,6 +5,7 @@ import type { Dossier } from "../api/types";
 import { dateCourte } from "../ui/format";
 import { BOUTON_PRIMAIRE, BOUTON_SECONDAIRE, Modale } from "../ui/Modale";
 import { TitreOnglet } from "./dossier-onglets/TitreOnglet";
+import { Icone } from "../ui/Icone";
 
 const QUOTA_KO = 50 * 1024;
 const PAR_PAGE = 8;
@@ -99,15 +100,15 @@ export function OngletPieces({ agent }: { agent: Dossier }) {
             </div>
             <div className="flex flex-wrap items-center gap-2.5">
               <button type="button" onClick={() => setVersementOuvert(true)} className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded bg-primary hover:bg-primary-container text-on-primary font-label-md text-label-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2">
-                <span className="material-symbols-outlined text-lg" aria-hidden="true">cloud_upload</span>
+                <Icone nom="cloud_upload" className="text-lg" />
                 Téléverser une pièce
               </button>
               <button type="button" onClick={exporter} disabled={exportEnCours || agent.pieces.length === 0} className="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 rounded bg-surface-container-low hover:bg-surface-container text-on-surface font-label-md text-label-md disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
-                <span className="material-symbols-outlined text-lg text-primary" aria-hidden="true">inventory_2</span>
+                <Icone nom="inventory_2" className="text-lg text-primary" />
                 {exportEnCours ? "Préparation…" : "Exporter les pièces"}
               </button>
               <button type="button" className="p-2.5 rounded bg-surface-container-low hover:bg-surface-container text-on-surface-variant hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" title="Calculer l'empreinte du coffre" data-soon={`Le calcul d'empreinte du coffre de ${agent.nom_complet} arrive dans une prochaine version.`}>
-                <span className="material-symbols-outlined text-xl" aria-hidden="true">fingerprint</span>
+                <Icone nom="fingerprint" className="text-xl" />
                 <span className="sr-only">Calculer l'empreinte du coffre</span>
               </button>
             </div>
@@ -125,7 +126,7 @@ export function OngletPieces({ agent }: { agent: Dossier }) {
 
       <section className="bg-surface-container-lowest p-4 rounded-xl border border-hairline space-y-4" aria-label="Recherche dans le coffre">
         <div className="relative">
-          <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant text-xl pointer-events-none" aria-hidden="true">search</span>
+          <Icone nom="search" className="absolute left-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant text-xl pointer-events-none" />
           <input
             className="w-full pl-11 pr-4 py-2.5 bg-surface-container-low rounded-lg font-body-sm text-body-sm text-on-surface placeholder:text-on-surface-variant/70 focus:outline-none focus:ring-2 focus:ring-primary"
             placeholder="Rechercher par intitulé ou catégorie…"
@@ -153,7 +154,7 @@ export function OngletPieces({ agent }: { agent: Dossier }) {
           <section className="bg-surface-container-lowest rounded-xl border border-hairline overflow-hidden" aria-labelledby="titre-inventaire">
             <div className="px-6 py-4 bg-surface-container-low flex items-center justify-between gap-3">
               <div className="flex items-center gap-3 min-w-0">
-                <span className="material-symbols-outlined text-primary text-xl shrink-0" aria-hidden="true">folder_managed</span>
+                <Icone nom="folder_managed" className="text-primary text-xl shrink-0" />
                 <h3 id="titre-inventaire" className="font-headline-sm text-headline-sm font-bold text-on-surface">Inventaire des pièces</h3>
               </div>
               <span className="font-code-num text-label-sm text-on-surface-variant shrink-0">{vue.length} sur {filtre.length}</span>
@@ -197,7 +198,7 @@ export function OngletPieces({ agent }: { agent: Dossier }) {
             <div className="flex items-center justify-between">
               <h3 className="font-headline-sm text-headline-sm font-bold text-on-surface">Répartition</h3>
               <span className="p-1 rounded bg-primary/10 text-primary" aria-hidden="true">
-                <span className="material-symbols-outlined text-xl">folder_zip</span>
+                <Icone nom="folder_zip" className="text-xl" />
               </span>
             </div>
             {compteurs.size === 0 ? (
@@ -216,7 +217,7 @@ export function OngletPieces({ agent }: { agent: Dossier }) {
 
           <section className="bg-surface-container-lowest p-6 rounded-xl border border-hairline space-y-4">
             <div className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-primary text-xl" aria-hidden="true">policy</span>
+              <Icone nom="policy" className="text-primary text-xl" />
               <h3 className="font-headline-sm text-headline-sm font-bold text-on-surface">Derniers versements</h3>
             </div>
             <p className="font-body-sm text-body-sm text-on-surface-variant">Les pièces les plus récemment déposées dans ce coffre.</p>
@@ -243,11 +244,11 @@ export function OngletPieces({ agent }: { agent: Dossier }) {
             <p className="font-body-sm text-body-sm text-on-surface-variant">{agent.situation_saisie.fonction || agent.structure}</p>
             <div className="pt-1 flex flex-col gap-1.5 font-label-sm text-label-sm text-on-surface-variant">
               <span className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-base text-primary" aria-hidden="true">mail</span>
+                <Icone nom="mail" className="text-base text-primary" />
                 {agent.coordonnees.courriel || "Courriel non renseigné"}
               </span>
               <span className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-base text-primary" aria-hidden="true">phone</span>
+                <Icone nom="phone" className="text-base text-primary" />
                 {agent.coordonnees.telephone || "Téléphone non renseigné"}
               </span>
             </div>
@@ -277,7 +278,7 @@ function Synthese({ icone, ton, libelle, valeur, detail, badge, compact }: {
   return (
     <section className="bg-surface-container-lowest p-5 rounded-xl border border-hairline flex items-start gap-4">
       <div className={`w-12 h-12 rounded-lg bg-surface-container-low ${ton} flex items-center justify-center shrink-0`} aria-hidden="true">
-        <span className="material-symbols-outlined text-2xl">{icone}</span>
+        <Icone nom={icone} className="text-2xl" />
       </div>
       <div className="space-y-1 min-w-0">
         <h3 className="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-bold">{libelle}</h3>
@@ -305,7 +306,7 @@ function LignePiece({ piece }: { piece: Piece }) {
     <li className="p-5 hover:bg-surface-container-low/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
       <div className="flex items-start gap-4 min-w-0">
         <div className="w-11 h-11 rounded-lg bg-surface-container flex items-center justify-center text-primary shrink-0" aria-hidden="true">
-          <span className="material-symbols-outlined text-2xl">{ICONE[piece.categorie] ?? "description"}</span>
+          <Icone nom={ICONE[piece.categorie] ?? "description"} className="text-2xl" />
         </div>
         <div className="space-y-1 min-w-0">
           <div className="flex flex-wrap items-center gap-2">
@@ -326,28 +327,28 @@ function LignePiece({ piece }: { piece: Piece }) {
       <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-center">
         {href ? (
           <a className="p-2 rounded hover:bg-surface-container text-on-surface-variant hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" href={href} target="_blank" rel="noreferrer" title="Ouvrir la pièce">
-            <span className="material-symbols-outlined text-xl" aria-hidden="true">visibility</span>
+            <Icone nom="visibility" className="text-xl" />
             <span className="sr-only">Ouvrir {piece.intitule}</span>
           </a>
         ) : (
           <button type="button" className="p-2 rounded hover:bg-surface-container text-on-surface-variant hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" title="Aperçu" data-soon="Le scan de cette pièce n'est pas encore versé au coffre.">
-            <span className="material-symbols-outlined text-xl" aria-hidden="true">visibility</span>
+            <Icone nom="visibility" className="text-xl" />
             <span className="sr-only">Aperçu de {piece.intitule}</span>
           </button>
         )}
         {href ? (
           <a className="p-2 rounded hover:bg-surface-container text-on-surface-variant hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" href={href} download title="Télécharger la pièce">
-            <span className="material-symbols-outlined text-xl" aria-hidden="true">download</span>
+            <Icone nom="download" className="text-xl" />
             <span className="sr-only">Télécharger {piece.intitule}</span>
           </a>
         ) : (
           <button type="button" className="p-2 rounded hover:bg-surface-container text-on-surface-variant hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" title="Télécharger" data-soon="Le fichier n'est pas joint. L'archive ZIP contient la fiche de la pièce.">
-            <span className="material-symbols-outlined text-xl" aria-hidden="true">download</span>
+            <Icone nom="download" className="text-xl" />
             <span className="sr-only">Télécharger {piece.intitule}</span>
           </button>
         )}
         <button type="button" className="p-2 rounded hover:bg-surface-container text-on-surface-variant hover:text-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" title="Contrôler l'empreinte" data-soon="Le contrôle d'empreinte de cette pièce arrive dans une prochaine version.">
-          <span className="material-symbols-outlined text-xl" aria-hidden="true">verified</span>
+          <Icone nom="verified" className="text-xl" />
           <span className="sr-only">Contrôler l'empreinte de {piece.intitule}</span>
         </button>
       </div>
@@ -405,7 +406,7 @@ function DepotPiece({ agent, onClose, onEnregistre }: {
             Annuler
           </button>
           <button type="submit" className={BOUTON_PRIMAIRE} disabled={depot.isPending || !fichier || !acte}>
-            <span className={`material-symbols-outlined text-lg ${depot.isPending ? "motion-spin" : ""}`} aria-hidden="true">{depot.isPending ? "progress_activity" : "verified"}</span>
+            <Icone nom={depot.isPending ? "progress_activity" : "verified"} className={`text-lg ${depot.isPending ? "motion-spin" : ""}`} />
             {depot.isPending ? "Versement…" : "Verser au coffre"}
           </button>
         </>
@@ -428,7 +429,7 @@ function DepotPiece({ agent, onClose, onEnregistre }: {
           onDrop={deposerFichier}
         >
           <div className="w-14 h-14 mx-auto rounded-full bg-surface-container-lowest text-primary flex items-center justify-center" aria-hidden="true">
-            <span className="material-symbols-outlined text-3xl">cloud_upload</span>
+            <Icone nom="cloud_upload" className="text-3xl" />
           </div>
           <p className="font-label-lg text-label-lg font-bold text-on-surface">
             Glissez le document, ou{" "}
@@ -447,7 +448,7 @@ function DepotPiece({ agent, onClose, onEnregistre }: {
           />
         </div>
         <div className="p-4 rounded-lg bg-surface-container flex items-start gap-3">
-          <span className="material-symbols-outlined text-secondary text-xl shrink-0" aria-hidden="true">warning</span>
+          <Icone nom="warning" className="text-secondary text-xl shrink-0" />
           <p className="font-body-sm text-body-sm text-on-surface-variant">
             Le déposant répond de l'authenticité du scan versé au dossier de {agent.nom_complet}.
           </p>

@@ -16,12 +16,28 @@ def _lire_fichier_env(path: Path) -> None:
         os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
 
 
+def _completer_admin_local(path: Path) -> None:
+    """Le développement local ne charge pas tout le .env : seulement le compte administrateur."""
+    if not path.is_file():
+        return
+    for raw in path.read_text(encoding="utf-8").splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        key = key.strip()
+        if key.startswith("SIGRH_ADMIN_"):
+            os.environ.setdefault(key, value.strip().strip('"').strip("'"))
+
+
 _fichier_env = os.environ.get("SIGRH_ENV_FILE", "").strip()
 if _fichier_env:
     _chemin_env = Path(_fichier_env)
     if not _chemin_env.is_file():
         raise ImproperlyConfigured(f"Fichier d'environnement introuvable : {_chemin_env}")
     _lire_fichier_env(_chemin_env)
+else:
+    _completer_admin_local(BASE_DIR / ".env")
 
 
 def _env(name: str, default: str = "") -> str:
@@ -39,6 +55,15 @@ def _publics(valeurs: list[str]) -> list[str]:
 
 
 SECRET_KEY = _env("DJANGO_SECRET_KEY", "sigrh-dev-only-not-for-production")
+# Compte qui ouvre la connexion. Vide : la page de connexion reste fermée.
+ADMIN_MATRICULE = _env("SIGRH_ADMIN_MATRICULE")
+ADMIN_MOT_DE_PASSE = _env("SIGRH_ADMIN_MOT_DE_PASSE")
+ADMIN_NOM = _env("SIGRH_ADMIN_NOM")
+ADMIN_PRENOMS = _env("SIGRH_ADMIN_PRENOMS")
+ADMIN_FONCTION = _env("SIGRH_ADMIN_FONCTION", "Administrateur")
+ADMIN_ORGANISME = _env("SIGRH_ADMIN_ORGANISME", "dgpe")
+# Réservé aux tests : ouvre la connexion sans les variables d'environnement.
+CONNEXION_OUVERTE = False
 DEBUG = _env("DJANGO_DEBUG", "true").lower() in {"1", "true", "yes"}
 ALLOWED_HOSTS = _publics([
     h.strip()

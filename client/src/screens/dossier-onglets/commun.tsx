@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { mediaUrl, telecharger } from "../../api/client";
 import type { Dossier } from "../../api/types";
 import { useFeedback } from "../../ui/Feedback";
+import { Icone } from "../../ui/Icone";
 
 export type Demande = Dossier["demandes"][number];
 export type Absence = Dossier["absences"][number];
@@ -90,7 +91,7 @@ export function CircuitDemande({ demande, clos = false, suite }: { demande: Dema
         </div>
         <div className="flex items-center gap-2">
           <span className="px-2.5 py-1 rounded bg-secondary-fixed text-on-secondary-fixed-variant font-label-sm text-label-sm font-bold flex items-center gap-1">
-            <span className="material-symbols-outlined text-sm" aria-hidden="true">schedule</span> {demande.echeance}
+            <Icone nom="schedule" className="text-sm" /> {demande.echeance}
           </span>
         </div>
       </div>
@@ -116,13 +117,7 @@ function CarteEtape({ visa, courant }: { visa: Demande["visas"][number]; courant
         <span className={`font-code-num text-code-num px-2 py-0.5 rounded ${badge} font-bold`}>
           {encours ? `Étape ${visa.ordre} • En cours` : `Étape ${visa.ordre}`}
         </span>
-        <span
-          className={`material-symbols-outlined ${couleur} text-lg${encours ? " animate-spin" : ""}`}
-          style={passe ? { fontVariationSettings: "'FILL' 1" } : undefined}
-          aria-hidden="true"
-        >
-          {encours ? "sync" : passe ? "check_circle" : "radio_button_unchecked"}
-        </span>
+        <Icone nom={encours ? "sync" : passe ? "check_circle" : "radio_button_unchecked"} className={`${couleur} text-lg${encours ? " animate-spin" : ""}`} />
       </div>
       <div>
         <p className="font-label-md text-label-md text-on-surface font-bold">{visa.instance}</p>

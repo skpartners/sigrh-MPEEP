@@ -1,6 +1,7 @@
 import type { Dossier } from "../../api/types";
 import { Pagination, usePagination } from "../../ui/Pagination";
 import { CircuitDemande, RubriqueVide, dateFr, demandeClose, estPret, groupe, pourcent, useDocumentAgent } from "./commun";
+import { Icone } from "../../ui/Icone";
 
 /** Valeurs de l'agent affichées aux emplacements de la fiche sociale (la maquette tient lieu de repli). */
 function valeurs(agent: Dossier) {
@@ -67,7 +68,7 @@ export function OngletSocial({ agent }: { agent: Dossier }) {
   const pagePrestations = usePagination(agent.prestations, String(agent.prestations.length));
   return (
     <>
-      <div className="px-6 py-6 max-w-[1600px] w-full mx-auto space-y-6">
+      <div className="px-6 py-6 w-full mx-auto space-y-6">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-2">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
@@ -88,12 +89,12 @@ export function OngletSocial({ agent }: { agent: Dossier }) {
           </div>
           <div className="flex items-center gap-3 shrink-0">
             <button type="button" className="inline-flex items-center gap-2 px-3 py-2 rounded bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-label-md transition-colors shadow-sm" onClick={() => telecharger("rapport")}>
-              <span className="material-symbols-outlined text-lg">download</span>
+              <Icone nom="download" className="text-lg" />
               {" "}
               <span>Rapport Annuel Social (PDF)</span>
             </button>
             <button type="button" className="inline-flex items-center gap-2 px-4 py-2 rounded bg-secondary-container hover:bg-secondary text-on-secondary font-label-lg text-label-lg font-semibold shadow-md transition-all" data-soon={`Cette action porte sur le dossier de ${v.nom}. Elle sera versée à son circuit de validation.`}>
-              <span className="material-symbols-outlined text-lg">add_circle</span>
+              <Icone nom="add_circle" className="text-lg" />
               {" "}
               <span>Nouvelle demande d'aide ou prêt</span>
             </button>
@@ -107,7 +108,7 @@ export function OngletSocial({ agent }: { agent: Dossier }) {
                 Enveloppe Allouée 2026
               </span>
               {" "}
-              <span className="material-symbols-outlined text-primary bg-primary-container/10 p-2 rounded">account_balance</span>
+              <Icone nom="account_balance" className="text-primary bg-primary-container/10 p-2 rounded" />
             </div>
             <div className="mt-3">
               <span className="font-headline-lg text-headline-lg font-bold text-on-surface block font-code-num">
@@ -129,7 +130,7 @@ export function OngletSocial({ agent }: { agent: Dossier }) {
                 {"Crédits Engagés & Validés"}
               </span>
               {" "}
-              <span className="material-symbols-outlined text-secondary bg-secondary-fixed/50 p-2 rounded">payments</span>
+              <Icone nom="payments" className="text-secondary bg-secondary-fixed/50 p-2 rounded" />
             </div>
             <div className="mt-3">
               <span className="font-headline-lg text-headline-lg font-bold text-secondary font-code-num">{v.envEngagee}</span>
@@ -149,7 +150,7 @@ export function OngletSocial({ agent }: { agent: Dossier }) {
                 Reliquat Disponible
               </span>
               {" "}
-              <span className="material-symbols-outlined text-primary bg-surface-container-high p-2 rounded">savings</span>
+              <Icone nom="savings" className="text-primary bg-surface-container-high p-2 rounded" />
             </div>
             <div className="mt-3">
               <span className="font-headline-lg text-headline-lg font-bold text-primary font-code-num">{v.envReliquat}</span>
@@ -188,7 +189,7 @@ export function OngletSocial({ agent }: { agent: Dossier }) {
         <div className="space-y-4">
               <div className="flex items-center justify-between pb-3 bg-surface-container-low p-3 rounded">
                 <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-secondary text-xl">pending_actions</span>
+                  <Icone nom="pending_actions" className="text-secondary text-xl" />
                   <span className="font-headline-sm text-headline-sm text-on-surface">Demande de prêt en cours</span>
                 </div>
                 <span className="px-2 py-0.5 rounded-full bg-secondary text-on-secondary font-code-num text-code-num font-bold">{prets.filter((demande) => !demandeClose(demande)).length}</span>
@@ -208,7 +209,7 @@ export function OngletSocial({ agent }: { agent: Dossier }) {
             <div className="bg-surface-container-lowest p-6 rounded shadow-sm space-y-5">
               <div className="flex items-center justify-between pb-2">
                 <div className="flex items-center gap-2.5">
-                  <span className="material-symbols-outlined text-secondary-container">emergency</span>
+                  <Icone nom="emergency" className="text-secondary-container" />
                   <h2 className="font-headline-sm text-headline-sm text-on-surface font-bold">
                     {"Secours & Aides Exceptionnelles"}
                   </h2>
@@ -226,7 +227,7 @@ export function OngletSocial({ agent }: { agent: Dossier }) {
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex gap-3">
                       <div className="p-2 bg-surface-container-lowest rounded shrink-0">
-                        <span className="material-symbols-outlined text-primary">deceased</span>
+                        <Icone nom="deceased" className="text-primary" />
                       </div>
                       <div>
                         <h3 className="font-label-lg text-label-lg font-bold text-on-surface">{"Secours Décès & Obsèques (1er Degré)"}</h3>
@@ -250,7 +251,7 @@ export function OngletSocial({ agent }: { agent: Dossier }) {
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex gap-3">
                       <div className="p-2 bg-surface-container-lowest rounded shrink-0">
-                        <span className="material-symbols-outlined text-secondary">local_hospital</span>
+                        <Icone nom="local_hospital" className="text-secondary" />
                       </div>
                       <div>
                         <h3 className="font-label-lg text-label-lg font-bold text-on-surface">
@@ -276,7 +277,7 @@ export function OngletSocial({ agent }: { agent: Dossier }) {
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex gap-3">
                       <div className="p-2 bg-surface-container-lowest rounded shrink-0">
-                        <span className="material-symbols-outlined text-primary">school</span>
+                        <Icone nom="school" className="text-primary" />
                       </div>
                       <div>
                         <h3 className="font-label-lg text-label-lg font-bold text-on-surface">Allocation Rentrée Scolaire Pupilles</h3>
@@ -298,7 +299,7 @@ export function OngletSocial({ agent }: { agent: Dossier }) {
               </div>
               <div className="p-4 rounded bg-surface-container flex items-center justify-between text-on-surface">
                 <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-primary text-xl">contact_support</span>
+                  <Icone nom="contact_support" className="text-primary text-xl" />
                   {" "}
                   <span className="font-body-sm text-body-sm">Permanence Assistant Social DGPE :</span>
                 </div>
@@ -309,7 +310,7 @@ export function OngletSocial({ agent }: { agent: Dossier }) {
             <div className="bg-surface-container-lowest p-6 rounded shadow-sm space-y-4">
               <div className="flex items-center justify-between pb-1">
                 <h3 className="font-headline-sm text-headline-sm text-on-surface font-bold flex items-center gap-2">
-                  <span className="material-symbols-outlined text-primary">calculate</span>
+                  <Icone nom="calculate" className="text-primary" />
                   {" "}{"Barème & Quotité Cessible (Décret 2013-481)"}
                 </h3>
                 <span className="font-code-num text-label-sm text-on-surface-variant font-bold">Seuil Max : 33.33%</span>
@@ -346,7 +347,7 @@ export function OngletSocial({ agent }: { agent: Dossier }) {
             <div className="bg-surface-container-lowest p-6 rounded shadow-sm space-y-5">
               <div className="flex items-center justify-between pb-2">
                 <div className="flex items-center gap-2.5">
-                  <span className="material-symbols-outlined text-primary-container">real_estate_agent</span>
+                  <Icone nom="real_estate_agent" className="text-primary-container" />
                   <div>
                     <h2 className="font-headline-sm text-headline-sm text-on-surface font-bold">
                       {"Prêts Bonifiés & Avances d'Équipement"}
@@ -366,7 +367,7 @@ export function OngletSocial({ agent }: { agent: Dossier }) {
                   <div>
                     <div className="flex items-center justify-between">
                       <span className="p-2 rounded bg-surface-container-lowest text-primary">
-                        <span className="material-symbols-outlined">home_work</span>
+                        <Icone nom="home_work" />
                       </span>
                       {" "}
                       <span className="px-2 py-0.5 rounded bg-primary text-on-primary font-label-sm text-label-sm font-semibold">
@@ -400,7 +401,7 @@ export function OngletSocial({ agent }: { agent: Dossier }) {
                   <button type="button" className="w-full py-2 px-3 rounded bg-primary text-on-primary hover:bg-primary-container font-label-md text-label-md font-semibold transition-colors flex items-center justify-center gap-1.5 shadow-sm" data-soon={`Cette action porte sur le dossier de ${v.nom}. Elle sera versée à son circuit de validation.`}>
                     <span>Simuler le plan de prêt</span>
                     {" "}
-                    <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                    <Icone nom="arrow_forward" className="text-sm" />
                   </button>
                 </div>
                 {/* Avance sur solde / Réhabilitation habitat */}
@@ -408,7 +409,7 @@ export function OngletSocial({ agent }: { agent: Dossier }) {
                   <div>
                     <div className="flex items-center justify-between">
                       <span className="p-2 rounded bg-surface-container-lowest text-secondary">
-                        <span className="material-symbols-outlined">construction</span>
+                        <Icone nom="construction" />
                       </span>
                       {" "}
                       <span className="px-2 py-0.5 rounded bg-surface-container text-on-surface font-label-sm text-label-sm font-semibold">
@@ -442,14 +443,14 @@ export function OngletSocial({ agent }: { agent: Dossier }) {
                   <button type="button" className="w-full py-2 px-3 rounded bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-label-md font-semibold transition-colors flex items-center justify-center gap-1.5 shadow-sm" data-soon={`Cette action porte sur le dossier de ${v.nom}. Elle sera versée à son circuit de validation.`}>
                     <span>Demander formulaire officiel</span>
                     {" "}
-                    <span className="material-symbols-outlined text-sm">assignment</span>
+                    <Icone nom="assignment" className="text-sm" />
                   </button>
                 </div>
               </div>
               {/* Prêts Équipement & Véhicule de Fonctionnaire */}
               <div className="p-4 rounded bg-surface-container-high flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
-                  <span className="material-symbols-outlined text-2xl text-primary">directions_car</span>
+                  <Icone nom="directions_car" className="text-2xl text-primary" />
                   <div>
                     <h4 className="font-label-lg text-label-lg font-bold text-on-surface">
                       Programme Équipement Mobilité Cadres de l'État
@@ -468,13 +469,13 @@ export function OngletSocial({ agent }: { agent: Dossier }) {
             <div className="bg-surface-container-lowest p-6 rounded shadow-sm space-y-4">
               <div className="flex items-center justify-between pb-1">
                 <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-primary">family_restroom</span>
+                  <Icone nom="family_restroom" className="text-primary" />
                   <h3 className="font-headline-sm text-headline-sm text-on-surface font-bold">
                     {"Ayants Droit & Couverture Maladie Universelle (CMU)"}
                   </h3>
                 </div>
                 <button type="button" className="inline-flex items-center gap-1 text-primary hover:text-primary-container font-label-sm text-label-sm font-bold transition-colors" data-soon={`Cette action porte sur le dossier de ${v.nom}. Elle sera versée à son circuit de validation.`}>
-                  <span className="material-symbols-outlined text-base">person_add</span>
+                  <Icone nom="person_add" className="text-base" />
                   {" "}
                   <span>Ajouter un ayant droit</span>
                 </button>
@@ -487,7 +488,7 @@ export function OngletSocial({ agent }: { agent: Dossier }) {
               {/* Suivi Médical Périodique & Prévention */}
               <div className="p-4 rounded bg-surface-container flex flex-col sm:flex-row items-center justify-between gap-3 text-on-surface">
                 <div className="flex items-center gap-3">
-                  <span className="material-symbols-outlined text-primary text-2xl">medical_services</span>
+                  <Icone nom="medical_services" className="text-primary text-2xl" />
                   <div>
                     <span className="font-label-md text-label-md font-bold block">Visite Médicale Annuelle Périodique Obligatoire</span>
                     {" "}
@@ -506,7 +507,7 @@ export function OngletSocial({ agent }: { agent: Dossier }) {
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
               <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-primary">pending_actions</span>
+                <Icone nom="pending_actions" className="text-primary" />
                 <h3 className="font-headline-sm text-headline-sm text-on-surface font-bold">
                   {"Registre d'Instruction des Requêtes Sociales & Prêts"}
                 </h3>
@@ -517,7 +518,7 @@ export function OngletSocial({ agent }: { agent: Dossier }) {
             </div>
             <div className="flex items-center gap-2 flex-wrap">
               <div className="relative">
-                <span className="material-symbols-outlined absolute left-3 top-2.5 text-on-surface-variant text-base">search</span>
+                <Icone nom="search" className="absolute left-3 top-2.5 text-on-surface-variant text-base" />
                 <input className="pl-8 pr-3 py-1.5 rounded bg-surface-container-low font-body-sm text-body-sm text-on-surface focus:outline-none" placeholder="Filtrer par Réf. ou Motif..." type="text" />
               </div>
               <select className="px-3 py-1.5 rounded bg-surface-container-low text-on-surface font-label-sm text-label-sm focus:outline-none">
@@ -567,7 +568,7 @@ export function OngletSocial({ agent }: { agent: Dossier }) {
         {/* Official Protocol Certification Footer Note */}
         <div className="p-4 rounded bg-surface-container-lowest shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <span className="material-symbols-outlined text-primary text-2xl">verified_user</span>
+            <Icone nom="verified_user" className="text-primary text-2xl" />
             <div>
               <span className="font-label-md text-label-md font-bold text-on-surface block">
                 {"Visa Contrôle Financier & Direction de la Solde"}
@@ -627,10 +628,10 @@ function LignePrestation({ prestation, nom }: { prestation: Dossier["prestations
       <td className="py-3 px-4 text-right">
         <div className="flex items-center justify-end gap-1">
           <button className="p-1 rounded hover:bg-surface-container text-on-surface-variant hover:text-primary transition-colors" title="Voir bordereau d'instruction" type="button" data-soon={`La consultation s'ouvre dans le dossier de ${nom}.`}>
-            <span className="material-symbols-outlined text-lg">visibility</span>
+            <Icone nom="visibility" className="text-lg" />
           </button>
           <button className="p-1 rounded bg-primary-container text-on-primary hover:bg-primary transition-colors" title="Visa Direct DRH" type="button" data-soon={`Le visa de cette prestation sera versé au circuit de ${nom}.`}>
-            <span className="material-symbols-outlined text-lg">done</span>
+            <Icone nom="done" className="text-lg" />
           </button>
         </div>
       </td>

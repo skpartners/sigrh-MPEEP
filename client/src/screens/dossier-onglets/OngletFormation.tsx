@@ -8,6 +8,7 @@ import { Skeleton } from "../../ui/Motion";
 import { Pagination, usePagination } from "../../ui/Pagination";
 import { CLE_FORMATION, type TableauFormation } from "../formation/types";
 import { CircuitDemande, RubriqueVide, demandeClose, etapeCourante, type Demande } from "./commun";
+import { Icone } from "../../ui/Icone";
 
 /** Formation & parcours de l'agent : catalogue des types, arbitrages en cours et candidature. */
 export function OngletFormation({ agent }: { agent: Dossier }) {
@@ -54,7 +55,7 @@ export function OngletFormation({ agent }: { agent: Dossier }) {
 
   return (
     <>
-      <div className="p-6 max-w-[1600px] w-full mx-auto space-y-6">
+      <div className="p-6 w-full mx-auto space-y-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2">
           <div className="space-y-1">
             <div className="flex items-center gap-2 flex-wrap">
@@ -75,12 +76,12 @@ export function OngletFormation({ agent }: { agent: Dossier }) {
           </div>
           <div className="flex items-center gap-2.5 shrink-0">
             <button className="inline-flex items-center gap-2 px-3.5 py-2 rounded bg-surface-container-low text-primary font-label-lg text-label-lg hover:bg-surface-container transition-colors" type="button" data-soon="Ce document n'est pas encore servi par le dossier.">
-              <span className="material-symbols-outlined text-lg">description</span>
+              <Icone nom="description" className="text-lg" />
               {" "}
               <span>Télécharger le bilan (PDF)</span>
             </button>
             <button className="inline-flex items-center gap-2 px-4 py-2 rounded bg-primary text-on-primary font-label-lg text-label-lg font-semibold hover:bg-primary-container shadow-sm transition-all" onClick={() => setInscription("")} type="button">
-              <span className="material-symbols-outlined text-lg">person_add</span>
+              <Icone nom="person_add" className="text-lg" />
               {" "}
               <span>S'inscrire</span>
             </button>
@@ -98,7 +99,7 @@ export function OngletFormation({ agent }: { agent: Dossier }) {
                 </div>
               </div>
               <div className="w-12 h-12 rounded bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                <span className="material-symbols-outlined text-2xl">query_stats</span>
+                <Icone nom="query_stats" className="text-2xl" />
               </div>
             </div>
             <div className="mt-4 space-y-2">
@@ -121,7 +122,7 @@ export function OngletFormation({ agent }: { agent: Dossier }) {
                 </div>
               </div>
               <div className="w-12 h-12 rounded bg-secondary-container/20 text-secondary flex items-center justify-center shrink-0">
-                <span className="material-symbols-outlined text-2xl">account_balance_wallet</span>
+                <Icone nom="account_balance_wallet" className="text-2xl" />
               </div>
             </div>
             <div className="mt-4 pt-3 bg-surface-container-low p-2 rounded flex items-center justify-between gap-2 font-label-sm text-label-sm">
@@ -141,7 +142,7 @@ export function OngletFormation({ agent }: { agent: Dossier }) {
                 </div>
               </div>
               <div className="w-12 h-12 rounded bg-surface-container text-on-surface-variant flex items-center justify-center shrink-0">
-                <span className="material-symbols-outlined text-2xl">hub</span>
+                <Icone nom="hub" className="text-2xl" />
               </div>
             </div>
             <div className="mt-4 flex flex-wrap gap-1.5">
@@ -161,7 +162,7 @@ export function OngletFormation({ agent }: { agent: Dossier }) {
                 </div>
               </div>
               <div className="w-12 h-12 rounded bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                <span className="material-symbols-outlined text-2xl">verified</span>
+                <Icone nom="verified" className="text-2xl" />
               </div>
             </div>
             <div className="mt-4 font-label-sm text-label-sm text-on-surface-variant">
@@ -175,7 +176,7 @@ export function OngletFormation({ agent }: { agent: Dossier }) {
           <div className="space-y-4">
             <div className="flex items-center justify-between pb-3 bg-surface-container-low p-3 rounded">
               <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-secondary text-xl">pending_actions</span>
+                <Icone nom="pending_actions" className="text-secondary text-xl" />
                 {" "}
                 <span className="font-headline-sm text-headline-sm text-on-surface">Demande de formation en cours</span>
               </div>
@@ -201,7 +202,7 @@ export function OngletFormation({ agent }: { agent: Dossier }) {
             <div className="bg-surface-container-lowest rounded shadow-sm p-6 space-y-5">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 bg-surface-container-low px-4 py-3 rounded gap-2">
                 <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-primary text-xl">event_available</span>
+                  <Icone nom="event_available" className="text-primary text-xl" />
                   <span className="font-headline-sm text-headline-sm text-on-surface">Prochaines sessions programmées</span>
                 </div>
                 <span className="font-label-sm text-label-sm text-on-surface-variant bg-surface-container-lowest px-2.5 py-1 rounded font-medium">
@@ -322,12 +323,12 @@ export function OngletFormation({ agent }: { agent: Dossier }) {
             </div>
             <div className="flex items-center gap-2 self-start lg:self-auto">
               <button className="inline-flex items-center gap-1.5 px-3 py-2 rounded bg-surface-container text-primary font-label-sm text-label-sm font-bold hover:bg-primary hover:text-on-primary transition-colors" type="button" data-soon="Ce document n'est pas encore servi par le dossier.">
-                <span className="material-symbols-outlined text-base">verified_user</span>
+                <Icone nom="verified_user" className="text-base" />
                 {" "}
                 <span>Générer Passeport Certifié</span>
               </button>
               <button className="inline-flex items-center gap-1.5 px-3 py-2 rounded bg-surface-container text-on-surface font-label-sm text-label-sm font-bold hover:bg-surface-container-high transition-colors" type="button">
-                <span className="material-symbols-outlined text-base">history_edu</span>
+                <Icone nom="history_edu" className="text-base" />
                 {" "}
                 <span>Historique Évaluations</span>
               </button>
@@ -337,7 +338,7 @@ export function OngletFormation({ agent }: { agent: Dossier }) {
           <div className="space-y-3">
             <div className="flex flex-col items-start gap-1.5">
               <h3 className="font-headline-sm text-headline-sm text-on-surface flex items-start gap-2">
-                <span className="material-symbols-outlined text-primary shrink-0">workspace_premium</span>
+                <Icone nom="workspace_premium" className="text-primary shrink-0" />
                 {" "}
                 <span>{"Parcours Professionnel Certifié & Évaluations Régaliennes"}</span>
               </h3>
@@ -376,7 +377,7 @@ export function OngletFormation({ agent }: { agent: Dossier }) {
                         <td className="py-3.5 px-4">
                           {item.certification ? (
                             <span className="inline-flex items-center gap-1 font-label-sm text-label-sm text-primary font-medium">
-                              <span className="material-symbols-outlined text-base">verified</span>
+                              <Icone nom="verified" className="text-base" />
                               {item.certification}
                             </span>
                           ) : (
@@ -533,7 +534,7 @@ function Inscription({ agent, typeInitial, onClose }: { agent: Dossier; typeInit
         <>
           <button type="button" className={BOUTON_SECONDAIRE} onClick={onClose} disabled={enCours}>Annuler</button>
           <button type="submit" className={BOUTON_PRIMAIRE} disabled={enCours || !choisi}>
-            {enCours ? <span className="material-symbols-outlined text-lg motion-spin" aria-hidden="true">progress_activity</span> : null}
+            {enCours ? <Icone nom="progress_activity" className="text-lg motion-spin" /> : null}
             Transmettre la candidature
           </button>
         </>

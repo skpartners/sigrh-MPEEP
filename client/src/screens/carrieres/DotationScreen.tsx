@@ -8,8 +8,9 @@ import { Modale } from "../../ui/Modale";
 import { useAction } from "../../ui/useAction";
 import { AppChrome } from "../AppChrome";
 import { optionsEntites } from "../../ui/Entites";
+import { Icone } from "../../ui/Icone";
 
-const PAGE = "w-full px-4 sm:px-6 lg:px-8 py-6 max-w-[1600px] mx-auto flex-1 space-y-6";
+const PAGE = "w-full px-4 sm:px-6 lg:px-8 py-6 mx-auto flex-1 space-y-6";
 const CARTE = "rounded-xl bg-surface-container-lowest border border-hairline";
 const CHAMP = "w-full h-10 px-3 rounded border border-outline-variant bg-surface-container-lowest font-body-md text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-primary";
 const PRIMAIRE = "inline-flex items-center gap-2 px-4 py-2 rounded bg-primary text-on-primary hover:bg-primary-container font-label-lg text-label-lg disabled:opacity-50";
@@ -237,7 +238,7 @@ export function DotationScreen() {
         <section className={`${CARTE} p-6`}>
           <p className="flex flex-wrap items-center gap-2 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wide">
             <span>GPEC</span>
-            <span className="material-symbols-outlined text-xs" aria-hidden="true">chevron_right</span>
+            <Icone nom="chevron_right" className="text-xs" />
             <span className="font-bold text-primary">Recrutement</span>
           </p>
           <div className="mt-3 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
@@ -249,15 +250,15 @@ export function DotationScreen() {
             </div>
             <div className="flex flex-wrap gap-2">
               <button type="button" className={SECOND} onClick={() => void exporter()}>
-                <span className="material-symbols-outlined text-lg" aria-hidden="true">download</span>
+                <Icone nom="download" className="text-lg" />
                 Exporter le registre
               </button>
               <button type="button" className={SECOND} onClick={() => void exporterPdf()}>
-                <span className="material-symbols-outlined text-lg" aria-hidden="true">picture_as_pdf</span>
+                <Icone nom="picture_as_pdf" className="text-lg" />
                 Gestion (PDF)
               </button>
               <button type="button" className={SECOND} onClick={() => setPanneau("historique")}>
-                <span className="material-symbols-outlined text-lg" aria-hidden="true">history</span>
+                <Icone nom="history" className="text-lg" />
                 Historique
               </button>
             </div>
@@ -271,7 +272,7 @@ export function DotationScreen() {
         </section>
 
         <section className={`${CARTE} overflow-hidden`}>
-          <div role="tablist" aria-label="Onglets de la dotation en personnel" className="flex gap-1 overflow-x-auto border-b border-hairline p-2">
+          <div role="tablist" aria-label="Onglets de la dotation en personnel" className="flex flex-wrap gap-1 border-b border-hairline p-2">
             {ONGLETS.map((item) => {
               const actif = item.id === onglet;
               const compte = (data.demandes ?? []).filter((demande) => demande.nature === item.id).length;
@@ -281,10 +282,10 @@ export function DotationScreen() {
                   type="button"
                   role="tab"
                   aria-selected={actif}
-                  className={`flex shrink-0 items-center gap-2 rounded px-3 py-2 font-label-md text-label-md ${actif ? "bg-primary font-semibold text-on-primary" : "text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface"}`}
+                  className={`flex items-center gap-2 rounded px-3 py-2 font-label-md text-label-md ${actif ? "bg-primary font-semibold text-on-primary" : "text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface"}`}
                   onClick={() => { setOnglet(item.id); setPage(1); }}
                 >
-                  <span className="material-symbols-outlined text-base" aria-hidden="true">{item.icone}</span>
+                  <Icone nom={item.icone} className="text-base" />
                   {item.libelle}
                   <span className={`rounded px-1.5 font-code-num text-label-sm ${actif ? "bg-on-primary/20" : "bg-surface-container-high text-on-surface"}`}>{compte}</span>
                 </button>
@@ -298,7 +299,7 @@ export function DotationScreen() {
             </div>
             <div className="flex flex-wrap gap-2">
               <button type="button" className={PRIMAIRE} onClick={() => ouvrirSaisie()}>
-                <span className="material-symbols-outlined text-lg" aria-hidden="true">add_circle</span>
+                <Icone nom="add_circle" className="text-lg" />
                 {ongletActif.saisie}
               </button>
             </div>
@@ -397,7 +398,7 @@ export function DotationScreen() {
               <p className="font-body-sm text-body-sm text-on-surface-variant">Effectif en poste rapporté au plafond de la branche.</p>
             </div>
             <button type="button" className={SECOND} onClick={() => { setQuota({ code: data.branches[0]?.code ?? "", plafond: String(data.branches[0]?.plafond ?? ""), motif: "" }); setPanneau("quota"); }}>
-              <span className="material-symbols-outlined text-lg" aria-hidden="true">tune</span>
+              <Icone nom="tune" className="text-lg" />
               Ajuster un plafond
             </button>
           </div>
@@ -406,7 +407,7 @@ export function DotationScreen() {
               <div key={branche.code}>
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
                   <p className="font-label-lg text-label-lg text-on-surface">
-                    <span className="material-symbols-outlined mr-1 align-middle text-lg text-primary" aria-hidden="true">{branche.icone}</span>
+                    <Icone nom={branche.icone} className="mr-1 align-middle text-lg text-primary" />
                     {branche.libelle}
                   </p>
                   <p className="font-code-num text-code-num text-on-surface">{nombre(branche.effectif)} / {nombre(branche.plafond)} · {nombre(branche.taux, 1)} %</p>
@@ -428,7 +429,7 @@ export function DotationScreen() {
             <h2 className="font-headline-sm text-headline-sm text-on-surface">Postes critiques non pourvus</h2>
             <div className="flex flex-wrap gap-2">
               <button type="button" className={SECOND} onClick={() => ouvrirAlerte()}>
-                <span className="material-symbols-outlined text-lg" aria-hidden="true">add_circle</span>
+                <Icone nom="add_circle" className="text-lg" />
                 Signaler un poste
               </button>
               <button
@@ -444,7 +445,7 @@ export function DotationScreen() {
                   detail: (reponse) => `${reponse.total} plan${reponse.total > 1 ? "s" : ""} créé${reponse.total > 1 ? "s" : ""}.`,
                 })}
               >
-                <span className="material-symbols-outlined text-lg" aria-hidden="true">campaign</span>
+                <Icone nom="campaign" className="text-lg" />
                 Lancer un appel à candidatures
               </button>
             </div>

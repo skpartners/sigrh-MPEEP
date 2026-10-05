@@ -9,6 +9,7 @@ import { Skeleton, useFlip } from "../ui/Motion";
 import { useAction } from "../ui/useAction";
 import { useFeedback } from "../ui/Feedback";
 import { AppChrome } from "./AppChrome";
+import { Icone } from "../ui/Icone";
 
 const CARD = "rounded-xl bg-surface-container-lowest border border-hairline";
 const PAR_PAGE = 6;
@@ -61,7 +62,7 @@ export function CarrieresScreen() {
 
   return (
     <AppChrome>
-      <div className="w-full px-4 sm:px-6 lg:px-8 py-6 max-w-[1600px] mx-auto flex-1">
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-6 mx-auto flex-1">
         <div className="flex flex-col w-full">
           {/* Bandeau */}
           <div className={`${CARD} p-6 sm:p-8`}>
@@ -89,7 +90,7 @@ export function CarrieresScreen() {
                     })
                   }
                 >
-                  <span className="material-symbols-outlined text-lg" aria-hidden="true">campaign</span>
+                  <Icone nom="campaign" className="text-lg" />
                   Publier les avis de mutation
                 </button>
                 <button
@@ -97,7 +98,7 @@ export function CarrieresScreen() {
                   type="button"
                   onClick={() => void genererTableau()}
                 >
-                  <span className="material-symbols-outlined text-lg" aria-hidden="true">task_alt</span>
+                  <Icone nom="task_alt" className="text-lg" />
                   Générer le tableau d'avancement 2026
                 </button>
               </div>
@@ -125,7 +126,7 @@ export function CarrieresScreen() {
                         <p className="font-label-sm text-label-sm text-primary font-semibold">{compteur.detail}</p>
                       </div>
                       <div className="w-12 h-12 rounded-xl bg-primary-fixed flex items-center justify-center text-primary shrink-0">
-                        <span className="material-symbols-outlined text-2xl" aria-hidden="true">{compteur.icone}</span>
+                        <Icone nom={compteur.icone} className="text-2xl" />
                       </div>
                     </div>
                     <div className="motion-fill absolute bottom-0 left-0 h-1 bg-primary" style={{ width: `${compteur.pourcentage}%` }} aria-hidden="true"></div>
@@ -192,7 +193,7 @@ function TableauAvancement({ lignes }: { lignes: Ligne[] | undefined }) {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h2 className="font-headline-sm text-headline-sm text-on-surface flex items-center gap-2">
-              <span className="material-symbols-outlined text-primary" aria-hidden="true">rule</span>
+              <Icone nom="rule" className="text-primary" />
               Campagne annuelle d'avancement
             </h2>
             <p className="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Ancienneté d'échelon certifiée et notation de service.</p>
@@ -217,7 +218,7 @@ function TableauAvancement({ lignes }: { lignes: Ligne[] | undefined }) {
         <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
           <label className="sm:col-span-8 relative">
             <span className="sr-only">Rechercher un dossier d'avancement</span>
-            <span className="material-symbols-outlined absolute left-3.5 top-2.5 text-on-surface-variant text-lg" aria-hidden="true">search</span>
+            <Icone nom="search" className="absolute left-3.5 top-2.5 text-on-surface-variant text-lg" />
             <input
               value={recherche}
               onChange={(event) => {
@@ -296,7 +297,7 @@ function TableauAvancement({ lignes }: { lignes: Ligne[] | undefined }) {
                     <td className="py-3.5 px-3 text-center whitespace-nowrap">
                       <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-primary-fixed text-primary font-code-num text-code-num font-bold">
                         {ligne.proposition}
-                        <span className="material-symbols-outlined text-sm" aria-hidden="true">arrow_upward</span>
+                        <Icone nom="arrow_upward" className="text-sm" />
                       </span>
                       <span className="block font-label-sm text-label-sm text-primary font-medium mt-0.5">{ligne.mode}</span>
                     </td>
@@ -314,7 +315,7 @@ function TableauAvancement({ lignes }: { lignes: Ligne[] | undefined }) {
                     </td>
                     <td className="py-3.5 px-3">
                       <span className={`flex items-center gap-1.5 font-label-sm text-label-sm font-medium ${certifie ? "text-primary" : "text-secondary"}`}>
-                        <span className="material-symbols-outlined text-base" aria-hidden="true">{certifie ? "verified" : "pending"}</span>
+                        <Icone nom={certifie ? "verified" : "pending"} className="text-base" />
                         {ligne.statut}
                       </span>
                     </td>
@@ -330,7 +331,7 @@ function TableauAvancement({ lignes }: { lignes: Ligne[] | undefined }) {
                             type="button"
                             onClick={() => decider(ligne, "transmettre")}
                           >
-                            <span className="material-symbols-outlined text-base block" aria-hidden="true">check_circle</span>
+                            <Icone nom="check_circle" className="text-base block" />
                           </button>
                           <button
                             className="p-1.5 rounded bg-surface-container hover:bg-surface-container-high text-on-surface-variant transition-colors"
@@ -339,7 +340,7 @@ function TableauAvancement({ lignes }: { lignes: Ligne[] | undefined }) {
                             type="button"
                             onClick={() => decider(ligne, "renvoyer")}
                           >
-                            <span className="material-symbols-outlined text-base block" aria-hidden="true">reply</span>
+                            <Icone nom="reply" className="text-base block" />
                           </button>
                         </div>
                       )}
@@ -392,7 +393,7 @@ function Mouvements({ mouvements }: { mouvements: Carrieres["mouvements"] | unde
       <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
         <div className="flex items-center gap-2.5">
           <span className="p-2 rounded-lg bg-surface-container text-primary">
-            <span className="material-symbols-outlined text-xl" aria-hidden="true">move_up</span>
+            <Icone nom="move_up" className="text-xl" />
           </span>
           <div>
             <h2 id="titre-mouvements" className="font-headline-sm text-headline-sm text-on-surface font-bold">Mouvements stratégiques</h2>
@@ -423,7 +424,7 @@ function Mouvements({ mouvements }: { mouvements: Carrieres["mouvements"] | unde
               </div>
               <div className="flex items-center justify-between gap-2 pt-1">
                 <span className={`flex items-center gap-1.5 font-label-sm text-label-sm ${signe ? "text-primary" : "text-secondary"}`}>
-                  <span className="material-symbols-outlined text-sm" aria-hidden="true">{signe ? "check_circle" : "pending"}</span>
+                  <Icone nom={signe ? "check_circle" : "pending"} className="text-sm" />
                   {mouvement.statut}
                 </span>
                 <Link
@@ -456,7 +457,7 @@ function Pyramide({ data }: { data: Carrieres }) {
     <section className={`${CARD} motion-content p-6 flex flex-col`} aria-labelledby="titre-pyramide">
       <div className="flex items-center justify-between gap-2 mb-2">
         <h2 id="titre-pyramide" className="font-headline-sm text-headline-sm text-on-surface font-bold flex items-center gap-2">
-          <span className="material-symbols-outlined text-primary text-xl" aria-hidden="true">analytics</span>
+          <Icone nom="analytics" className="text-primary text-xl" />
           <span><abbr title="Gestion prévisionnelle des emplois, des effectifs et des compétences">GPEEC</abbr> & démographie</span>
         </h2>
         <span className="px-2 py-0.5 rounded bg-surface-container-high font-code-num text-code-num text-primary font-bold">2026-2030</span>
@@ -492,7 +493,7 @@ function Pyramide({ data }: { data: Carrieres }) {
         </svg>
       </div>
       <div className="mt-6 rounded-lg bg-error-container/40 p-4 flex items-start gap-3">
-        <span className="material-symbols-outlined text-error text-xl shrink-0 mt-0.5" aria-hidden="true">notification_important</span>
+        <Icone nom="notification_important" className="text-error text-xl shrink-0 mt-0.5" />
         <div>
           <h3 className="font-label-lg text-label-lg text-error font-bold">{data.departs.nombre} départs à la retraite dans les 12 mois</h3>
           <p className="font-body-sm text-body-sm text-on-surface mt-1">{data.departs.detail}</p>
@@ -507,7 +508,7 @@ function AlertesReleve({ alertes }: { alertes: Alerte[] | undefined }) {
     <section className={`${CARD} p-6 flex flex-col gap-4`} aria-labelledby="titre-releve">
       <div className="flex items-center justify-between gap-2">
         <h2 id="titre-releve" className="font-headline-sm text-headline-sm text-on-surface font-bold flex items-center gap-2">
-          <span className="material-symbols-outlined text-secondary text-xl" aria-hidden="true">shield_person</span>
+          <Icone nom="shield_person" className="text-secondary text-xl" />
           Relève des postes clés
         </h2>
       </div>

@@ -4,6 +4,7 @@ import { ApiError, api } from "../../api/client";
 import { useFeedback } from "../../ui/Feedback";
 import { BOUTON_PRIMAIRE, BOUTON_SECONDAIRE, Modale as ModaleCommune, type ModaleProps } from "../../ui/Modale";
 import type { EtatCandidature, EtatSession } from "./types";
+import { Icone } from "../../ui/Icone";
 
 export const CHAMP =
   "w-full h-10 px-3 rounded border border-outline-variant bg-surface-container-lowest font-body-md text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-primary disabled:bg-surface-container-low disabled:text-on-surface-variant";
@@ -48,7 +49,7 @@ export function EnTeteSection({ icone, titre, sousTitre, action }: { icone: stri
     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
       <div>
         <h2 className="font-headline-sm text-headline-sm text-on-surface font-bold flex items-center gap-2">
-          <span className="material-symbols-outlined text-primary text-xl" aria-hidden="true">{icone}</span>
+          <Icone nom={icone} className="text-primary text-xl" />
           {titre}
         </h2>
         {sousTitre ? <p className="font-body-sm text-body-sm text-on-surface-variant mt-0.5">{sousTitre}</p> : null}
@@ -61,7 +62,7 @@ export function EnTeteSection({ icone, titre, sousTitre, action }: { icone: stri
 export function Vide({ icone, titre, texte, action }: { icone: string; titre: string; texte: string; action?: ReactNode }) {
   return (
     <div className="motion-content rounded-xl border border-dashed border-outline-variant p-8 text-center">
-      <span className="material-symbols-outlined text-3xl text-on-surface-variant" aria-hidden="true">{icone}</span>
+      <Icone nom={icone} className="text-3xl text-on-surface-variant" />
       <p className="font-label-lg text-label-lg text-on-surface mt-2">{titre}</p>
       <p className="font-body-sm text-body-sm text-on-surface-variant mt-1 max-w-md mx-auto">{texte}</p>
       {action ? <div className="mt-4 flex justify-center">{action}</div> : null}
@@ -228,7 +229,7 @@ export function Modale({
           </button>
           {onSubmit ? (
             <button type="submit" className={BOUTON_PRIMAIRE} disabled={enCours}>
-              {enCours ? <span className="material-symbols-outlined text-lg motion-spin" aria-hidden="true">progress_activity</span> : null}
+              {enCours ? <Icone nom="progress_activity" className="text-lg motion-spin" /> : null}
               {enCours ? "Enregistrement…" : libelleValider}
             </button>
           ) : null}

@@ -6,6 +6,7 @@ import { useFeedback } from "../../ui/Feedback";
 import { BOUTON_PRIMAIRE, BOUTON_SECONDAIRE, Modale } from "../../ui/Modale";
 import { Skeleton } from "../../ui/Motion";
 import { AppChrome } from "../AppChrome";
+import { Icone } from "../../ui/Icone";
 
 type Sens = "valider" | "invalider";
 type TypeAutorisation = "autorisation" | "autorisation-speciale" | "permission-speciale";
@@ -98,7 +99,7 @@ export function AbsencesScreen() {
   return (
     <AppChrome>
       <div className="flex flex-col w-full">
-        <div className="px-6 py-6 max-w-[1600px] w-full mx-auto space-y-6">
+        <div className="px-6 py-6 w-full mx-auto space-y-6">
           {/* En-tête de section régalienne */}
           <div className="bg-surface-container-lowest p-6 rounded-xl shadow-sm relative overflow-hidden">
             <div className="absolute -right-16 -top-16 w-64 h-64 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
@@ -108,11 +109,11 @@ export function AbsencesScreen() {
                 <div className="flex items-center gap-2 text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wider">
                   <span className="hover:text-primary transition-colors">SD Gestion des Carrières</span>
                   {" "}
-                  <span className="material-symbols-outlined text-xs">chevron_right</span>
+                  <Icone nom="chevron_right" className="text-xs" />
                   {" "}
                   <span className="hover:text-primary transition-colors">{"Temps de Service & Suivi"}</span>
                   {" "}
-                  <span className="material-symbols-outlined text-xs">chevron_right</span>
+                  <Icone nom="chevron_right" className="text-xs" />
                   {" "}
                   <span className="text-primary font-bold">Validation des autorisations</span>
                 </div>
@@ -126,7 +127,7 @@ export function AbsencesScreen() {
               {/* Actions rapides de haut de page */}
               <div className="flex flex-wrap sm:flex-nowrap items-center gap-3 shrink-0">
                 <button className="inline-flex items-center gap-2 px-4 py-2.5 rounded bg-surface-container text-primary font-label-lg text-label-lg hover:bg-surface-container-high transition-colors" type="button" onClick={() => void exporterAssiduite()}>
-                  <span className="material-symbols-outlined text-lg">picture_as_pdf</span>
+                  <Icone nom="picture_as_pdf" className="text-lg" />
                   {" "}
                   <span>Rapport d'Assiduité Mensuel (PDF)</span>
                 </button>
@@ -140,14 +141,14 @@ export function AbsencesScreen() {
               <div className="flex items-center justify-between mb-3">
                 <span className="font-label-md text-label-md text-on-surface-variant uppercase font-semibold">Taux de Présentéisme Global</span>
                 <span className="w-8 h-8 rounded bg-primary-fixed text-on-primary-fixed flex items-center justify-center">
-                  <span className="material-symbols-outlined text-lg">how_to_reg</span>
+                  <Icone nom="how_to_reg" className="text-lg" />
                 </span>
               </div>
               <div className="flex items-baseline gap-2">
                 <span className="font-headline-xl text-headline-xl text-on-surface tracking-tight font-bold">{presence?.taux != null ? `${presence.taux.toFixed(1)}%` : "—"}</span>
                 {presence?.evolution != null ? (
                   <span className={`inline-flex items-center text-xs font-semibold ${presence.evolution >= 0 ? "text-primary" : "text-error"}`}>
-                    <span className="material-symbols-outlined text-sm">{presence.evolution >= 0 ? "trending_up" : "trending_down"}</span>
+                    <Icone nom={presence.evolution >= 0 ? "trending_up" : "trending_down"} className="text-sm" />
                     {presence.evolution >= 0 ? "+" : ""}
                     {presence.evolution.toFixed(1)}%
                   </span>
@@ -226,7 +227,7 @@ export function AbsencesScreen() {
               </div>
               <div className="pt-4 flex items-center justify-between text-on-surface-variant font-label-sm text-label-sm bg-surface-container-low p-3 rounded-lg">
                 <span className="flex items-center gap-1.5">
-                  <span className="material-symbols-outlined text-base text-primary">verified</span>
+                  <Icone nom="verified" className="text-base text-primary" />
                   {" "}Toutes les autorisations de plus de 72h requièrent le visa du Directeur des Ressources Humaines.
                 </span>
                 {" "}
@@ -237,7 +238,7 @@ export function AbsencesScreen() {
             <div className="lg:col-span-4 bg-surface-container-low p-6 rounded-xl shadow-sm flex flex-col justify-between">
               <div className="space-y-3">
                 <div className="flex items-center gap-2 text-secondary">
-                  <span className="material-symbols-outlined text-2xl">policy</span>
+                  <Icone nom="policy" className="text-2xl" />
                   {" "}
                   <span className="font-headline-sm text-headline-sm text-on-surface font-bold">Règle du Service Fait</span>
                 </div>
@@ -267,7 +268,7 @@ export function AbsencesScreen() {
               </div>
               <div className="pt-4">
                 <button className="w-full py-2 px-3 rounded bg-secondary-container text-on-secondary-container font-label-md text-label-md font-bold flex items-center justify-center gap-2 hover:opacity-90 transition-opacity" type="button">
-                  <span className="material-symbols-outlined text-base">warning</span>
+                  <Icone nom="warning" className="text-base" />
                   {" "}Émettre un Avis d'Avertissement Solde
                 </button>
               </div>
@@ -383,7 +384,7 @@ export function AbsencesScreen() {
               <div className="flex items-center justify-between pb-2">
                 <div className="flex items-center gap-2">
                   <span className="w-8 h-8 rounded bg-primary text-on-primary flex items-center justify-center">
-                    <span className="material-symbols-outlined text-base">cloud_upload</span>
+                    <Icone nom="cloud_upload" className="text-base" />
                   </span>
                   <div>
                     <h3 className="font-headline-sm text-headline-sm text-on-surface">
@@ -403,7 +404,7 @@ export function AbsencesScreen() {
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-2 min-w-0">
                   <span className="w-8 h-8 rounded bg-surface-container-high text-on-surface flex items-center justify-center shrink-0">
-                    <span className="material-symbols-outlined text-base">history</span>
+                    <Icone nom="history" className="text-base" />
                   </span>
                   <div className="min-w-0">
                     <h3 className="font-headline-sm text-headline-sm text-on-surface">{"Contrôle Biométrique & Écarts"}</h3>
@@ -411,7 +412,7 @@ export function AbsencesScreen() {
                   </div>
                 </div>
                 <span className="inline-flex items-center gap-1 px-2 py-1 rounded bg-secondary-fixed text-on-secondary-fixed font-label-sm text-label-sm font-semibold whitespace-nowrap shrink-0">
-                  <span className="material-symbols-outlined text-[14px]">schedule</span>
+                  <Icone nom="schedule" className="text-[14px]" />
                   {" "}Version ultérieure
                 </span>
               </div>
@@ -438,7 +439,7 @@ function Indicateur({ titre, icone, valeur, unite, detail, part, ton }: { titre:
       <div className="flex items-center justify-between mb-3">
         <span className={`font-label-md text-label-md ${couleurs.titre} uppercase font-semibold`}>{titre}</span>
         <span className={`w-8 h-8 rounded ${couleurs.pastille} flex items-center justify-center`}>
-          <span className="material-symbols-outlined text-lg">{icone}</span>
+          <Icone nom={icone} className="text-lg" />
         </span>
       </div>
       <div className="flex items-baseline gap-2">
@@ -475,7 +476,7 @@ function LigneAutorisation({ autorisation, onChoisir }: { autorisation: Autorisa
       <td className="py-4 px-4">
         <div className="font-semibold text-on-surface">{autorisation.type_libelle}</div>
         <div className="text-xs text-on-surface-variant flex items-center gap-1 mt-0.5">
-          <span className="material-symbols-outlined text-xs text-primary" aria-hidden="true">{ICONE_TYPE[autorisation.type]}</span>
+          <Icone nom={ICONE_TYPE[autorisation.type]} className="text-xs text-primary" />
           {autorisation.justificatif}
         </div>
       </td>
@@ -530,7 +531,7 @@ function ActionsDecision({ autorisation, onChoisir }: { autorisation: Autorisati
     return (
       <div className="text-right">
         <span className={`inline-flex items-center gap-1 font-label-sm text-label-sm font-semibold ${valide ? "text-primary" : "text-error"}`}>
-          <span className="material-symbols-outlined text-base" aria-hidden="true">{valide ? "check_circle" : "cancel"}</span>
+          <Icone nom={valide ? "check_circle" : "cancel"} className="text-base" />
           {valide ? "Validée" : "Invalidée"}
         </span>
         <p className="text-xs text-on-surface-variant mt-1 max-w-[220px] ml-auto">Motif : {autorisation.motif_decision}</p>
@@ -581,7 +582,7 @@ function ModaleDecision({ autorisation, sens, onClose }: { autorisation: Autoris
         <>
           <button type="button" className={BOUTON_SECONDAIRE} onClick={onClose} disabled={decision.isPending}>Annuler</button>
           <button type="submit" className={BOUTON_PRIMAIRE} disabled={decision.isPending}>
-            {decision.isPending ? <span className="material-symbols-outlined text-lg motion-spin" aria-hidden="true">progress_activity</span> : null}
+            {decision.isPending ? <Icone nom="progress_activity" className="text-lg motion-spin" /> : null}
             Enregistrer la décision
           </button>
         </>
@@ -690,12 +691,12 @@ function FormulaireRegularisation({ agents, types }: { agents: Registre["agents"
       {agent ? <p className="font-label-md text-label-md text-primary font-semibold">{agent.nom_complet}</p> : null}
       {/* Pièce justificative */}
       <label className="block p-4 rounded-xl bg-surface-container-low text-center space-y-2 cursor-pointer hover:bg-surface-container transition-colors">
-        <span className="material-symbols-outlined text-3xl text-primary" aria-hidden="true">note_add</span>
+        <Icone nom="note_add" className="text-3xl text-primary" />
         <span className="block font-label-lg text-label-lg font-semibold text-on-surface">{fichier ? fichier.name : "Déposez le document probant"}</span>
         <span className="block font-body-sm text-body-sm text-on-surface-variant">PDF ou image : certificat médical, ordre de mission ou acte d'état civil</span>
         <input key={cle} className="sr-only" type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,application/pdf,image/png,image/jpeg,image/webp" onChange={(event) => setFichier(event.target.files?.[0] ?? null)} />
         <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-surface-container text-primary font-label-sm text-label-sm font-semibold">
-          <span className="material-symbols-outlined text-base" aria-hidden="true">attach_file</span>
+          <Icone nom="attach_file" className="text-base" />
           Parcourir les fichiers
         </span>
       </label>

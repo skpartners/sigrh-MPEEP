@@ -1,9 +1,10 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { ApiError, api, mediaUrl } from "../api/client";
-import type { Dossier } from "../api/types";
+import type { Dossier, SessionUser } from "../api/types";
 import { useFeedback } from "./Feedback";
 import { BOUTON_PRIMAIRE, BOUTON_SECONDAIRE, Modale } from "./Modale";
+import { Icone } from "./Icone";
 
 type Identite = { matricule: string; nom_complet: string; initiales: string; photo_url?: string };
 
@@ -114,6 +115,10 @@ export function EditeurPhoto({ agent, onClose }: { agent: Identite; onClose: () 
       );
       client.setQueryData(["agent", agent.matricule], dossier);
       void client.invalidateQueries({ queryKey: ["agents"] });
+      const moi = client.getQueryData<SessionUser>(["me"]);
+      if (moi?.matricule === agent.matricule) {
+        client.setQueryData<SessionUser>(["me"], { ...moi, photo_url: dossier.photo_url });
+      }
       onClose();
     } catch (cause) {
       setErreur(cause instanceof ApiError ? cause.message : "La photo n'a pas pu être enregistrée.");
@@ -138,28 +143,28 @@ export function EditeurPhoto({ agent, onClose }: { agent: Identite; onClose: () 
               Retour
             </button>
             <button type="button" className={BOUTON_SECONDAIRE} onClick={() => void ouvrirCamera(face === "user" ? "environment" : "user")}>
-              <span className="material-symbols-outlined text-lg" aria-hidden="true">cameraswitch</span>
+              <Icone nom="cameraswitch" className="text-lg" />
               Changer de caméra
             </button>
             <button type="button" className={BOUTON_PRIMAIRE} onClick={() => void capturer()}>
-              <span className="material-symbols-outlined text-lg" aria-hidden="true">photo_camera</span>
+              <Icone nom="photo_camera" className="text-lg" />
               Prendre la photo
             </button>
           </>
         ) : (
           <>
             <button type="button" className={BOUTON_SECONDAIRE} onClick={() => fichierRef.current?.click()}>
-              <span className="material-symbols-outlined text-lg" aria-hidden="true">image</span>
+              <Icone nom="image" className="text-lg" />
               Choisir une image
             </button>
             {appareil ? (
               <button type="button" className={BOUTON_SECONDAIRE} onClick={() => void ouvrirCamera(face)}>
-                <span className="material-symbols-outlined text-lg" aria-hidden="true">photo_camera</span>
+                <Icone nom="photo_camera" className="text-lg" />
                 Prendre une photo
               </button>
             ) : null}
             <button type="button" className={BOUTON_PRIMAIRE} disabled={!fichier || enCours} onClick={() => void enregistrer()}>
-              {enCours ? <span className="material-symbols-outlined text-lg motion-spin" aria-hidden="true">progress_activity</span> : null}
+              {enCours ? <Icone nom="progress_activity" className="text-lg motion-spin" /> : null}
               {enCours ? "Enregistrement…" : "Enregistrer"}
             </button>
           </>

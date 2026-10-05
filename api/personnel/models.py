@@ -31,6 +31,8 @@ class Profil(models.Model):
     interim = models.ForeignKey(
         "EntiteTutelle", null=True, blank=True, on_delete=models.PROTECT, related_name="interimaires",
     )
+    # Le compte qui ouvre la connexion : tous les droits, hors hiérarchie et hors structure.
+    administrateur = models.BooleanField(default=False)
     # Null : les droits du rôle s'appliquent. Une liste : délégation propre à ce compte.
     habilitations = models.JSONField(null=True, blank=True)
     # Exceptions par fonction, seulement si les habilitations sont personnalisées.
@@ -848,9 +850,10 @@ class PoleMinisteriel(models.Model):
 
 
 class EntiteTutelle(models.Model):
-    """Direction générale, direction centrale, sous-direction ou service du ministère."""
+    """Ministère, direction générale, direction centrale, sous-direction ou service."""
 
     class Niveau(models.TextChoices):
+        MINISTERE = "ministere", "Ministère"
         DIRECTION_GENERALE = "direction-generale", "Direction générale"
         DIRECTION_CENTRALE = "direction-centrale", "Direction centrale"
         SOUS_DIRECTION = "sous-direction", "Sous-direction"
@@ -1494,6 +1497,29 @@ class RappelEcheance(models.Model):
             models.UniqueConstraint(fields=["campagne", "destinataire", "cle"], name="rappel_echeance_unique"),
         ]
         verbose_name = "rappel d'échéance"
+
+
+class ParametresMinistere(models.Model):
+    """Réglages uniques du ministère : identité et portrait officiel de la ministre."""
+
+    class Civilite(models.TextChoices):
+        MADAME = "Madame", "Madame"
+        MONSIEUR = "Monsieur", "Monsieur"
+
+    civilite = models.CharField(max_length=20, blank=True, choices=Civilite.choices)
+    nom = models.CharField(max_length=160, blank=True)
+    photo = models.FileField(upload_to="ministere", blank=True)
+    connexion_active = models.BooleanField(default=False)
+    admin_matricule = models.CharField(max_length=150, blank=True)
+    inactivite_minutes = models.PositiveSmallIntegerField(default=15)
+
+    class Meta:
+        verbose_name = "paramètres du ministère"
+        verbose_name_plural = "paramètres du ministère"
+
+    def save(self, *args, **kwargs):
+        self.pk = 1
+        super().save(*args, **kwargs)
 
 
 class RappelRetour(models.Model):

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { NavLink } from "react-router-dom";
+import { Icone } from "../ui/Icone";
 
 const idle =
   "px-space-md py-space-xs text-on-surface-variant hover:text-on-surface transition-colors font-label-md text-label-md";
@@ -25,7 +26,7 @@ export function PublicHeaderNav() {
         aria-expanded={ouvert}
         onClick={() => setOuvert((valeur) => !valeur)}
       >
-        <span className="material-symbols-outlined text-2xl" aria-hidden="true">{ouvert ? "close" : "menu"}</span>
+        <Icone nom={ouvert ? "close" : "menu"} className="text-2xl" />
       </button>
       <nav className="hidden lg:flex items-center gap-space-sm" aria-label="Pages publiques">
         {links.map((link) => (
