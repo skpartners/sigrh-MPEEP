@@ -126,7 +126,7 @@ export function CongesScreen() {
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-2.5 shrink-0">
-              <button className="flex items-center gap-2 px-3.5 py-2 rounded bg-surface-container-high hover:bg-surface-container text-on-surface font-label-lg text-label-lg transition-colors shadow-sm" type="button" onClick={() => void exporterEtat()}>
+              <button className="flex items-center gap-2 px-3 py-1.5 rounded bg-surface-container-high hover:bg-surface-container text-on-surface font-label-md text-label-md transition-colors" type="button" onClick={() => void exporterEtat()}>
                 <Icone nom="download" className="text-lg" />
                 <span>Exporter l'état des congés</span>
               </button>
@@ -424,7 +424,7 @@ function Carte({ titre, icone, teinte, fond = "bg-surface-container-low", titreC
 function Barre({ part, couleur }: { part: number; couleur: string }) {
   return (
     <div className="mt-3 h-1.5 w-full bg-surface-container-high rounded-full overflow-hidden">
-      <div className={`h-full ${couleur} rounded-full`} style={{ width: `${Math.min(part, 100)}%` }} />
+      <div className={`motion-fill h-full ${couleur} rounded-full`} style={{ width: `${Math.min(part, 100)}%` }} />
     </div>
   );
 }

@@ -140,7 +140,7 @@ export function OngletSocial({ agent }: { agent: Dossier }) {
               </span>
             </div>
             <div className="mt-4 w-full bg-surface-container-high h-2 rounded-full overflow-hidden">
-              <div className="bg-secondary-container h-full rounded-full" style={{ width: `${v.envExecution}%` }} />
+              <div className="motion-fill bg-secondary-container h-full rounded-full" style={{ width: `${v.envExecution}%` }} />
             </div>
             <div className="absolute left-0 bottom-0 top-0 w-1.5 bg-secondary-container" />
           </div>
@@ -332,7 +332,7 @@ export function OngletSocial({ agent }: { agent: Dossier }) {
                   <span className="font-code-num text-primary">{v.qNette} FCFA</span>
                 </div>
                 <div className="w-full bg-surface-container-high h-2 rounded-full overflow-hidden my-1">
-                  <div className="bg-primary h-full rounded-full" style={{ width: `${v.qPart}%` }} />
+                  <div className="motion-fill bg-primary h-full rounded-full" style={{ width: `${v.qPart}%` }} />
                 </div>
                 <div className="flex justify-between text-label-sm font-label-sm text-on-surface-variant">
                   <span>Prélèvements en cours ({v.qEngagements}%)</span>

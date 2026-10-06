@@ -13,8 +13,8 @@ import { Icone } from "../../ui/Icone";
 const PAGE = "w-full px-4 sm:px-6 lg:px-8 py-6 mx-auto flex-1 space-y-6";
 const CARTE = "rounded-xl bg-surface-container-lowest border border-hairline";
 const CHAMP = "w-full h-10 px-3 rounded border border-outline-variant bg-surface-container-lowest font-body-md text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-primary";
-const PRIMAIRE = "inline-flex items-center gap-2 px-4 py-2 rounded bg-primary text-on-primary hover:bg-primary-container font-label-lg text-label-lg disabled:opacity-50";
-const SECOND = "inline-flex items-center gap-2 px-4 py-2 rounded bg-surface-container-low text-primary hover:bg-surface-container font-label-lg text-label-lg disabled:opacity-50";
+const PRIMAIRE = "inline-flex items-center gap-2 px-3 py-1.5 rounded bg-primary text-on-primary hover:bg-primary-container font-label-md text-label-md disabled:opacity-50";
+const SECOND = "inline-flex items-center gap-2 px-3 py-1.5 rounded bg-surface-container-low text-primary hover:bg-surface-container font-label-md text-label-md disabled:opacity-50";
 const TAILLE = 4;
 
 const ONGLETS = [
@@ -461,7 +461,7 @@ export function DotationScreen() {
                 <div className="mt-3 flex flex-wrap gap-2">
                   <button type="button" className={SECOND} onClick={() => { setAlerte(item); setPanneau("alerte"); }}>Consulter</button>
                   <button type="button" className={SECOND} onClick={() => ouvrirAlerte(item)}>Modifier</button>
-                  <button type="button" className="inline-flex items-center gap-2 px-4 py-2 rounded bg-surface-container-low text-error hover:bg-surface-container font-label-lg text-label-lg" onClick={() => agir({
+                  <button type="button" className="inline-flex items-center gap-2 px-3 py-1.5 rounded bg-surface-container-low text-error hover:bg-surface-container font-label-md text-label-md" onClick={() => agir({
                     confirmation: `Retirer l'alerte « ${item.intitule} » ?`,
                     confirmLabel: "Supprimer",
                     attente: "Suppression…",
@@ -660,7 +660,7 @@ export function DotationScreen() {
             <Ligne k="Suite" v={alerte.traitee ? "Un plan a été ouvert" : "Alerte ouverte"} />
           </dl>
           <div className="mt-4 flex flex-wrap justify-end gap-2">
-            <button type="button" className="inline-flex items-center gap-2 px-4 py-2 rounded bg-surface-container-low text-error hover:bg-surface-container font-label-lg text-label-lg" onClick={() => {
+            <button type="button" className="inline-flex items-center gap-2 px-3 py-1.5 rounded bg-surface-container-low text-error hover:bg-surface-container font-label-md text-label-md" onClick={() => {
               void agir({
                 confirmation: `Retirer l'alerte « ${alerte.intitule} » ?`,
                 confirmLabel: "Supprimer",

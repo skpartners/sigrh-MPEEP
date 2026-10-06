@@ -1,13 +1,15 @@
 import { useIsFetching, useIsMutating } from "@tanstack/react-query";
-import { useEffect, useLayoutEffect, useRef, type ReactNode, type RefObject } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from "react";
 import { flushSync } from "react-dom";
 import { useLocation, useNavigate } from "react-router-dom";
 
-// Blocs animés à l'apparition. Un bloc déjà inclus dans un bloc animé est ignoré,
-// sinon les translations s'additionnent.
+// Blocs animés à l'apparition. Un bloc déjà inclus dans un bloc animé est ignoré.
 const REVEAL_SELECTOR = "section, .grid > *, .rounded-xl, [data-reveal]";
-const STAGGER_MS = 40;
-const MAX_STAGGER_MS = 200;
+const STAGGER_MS = 45;
+const MAX_STAGGER_MS = 280;
+// Délai de base pour les éléments déjà visibles au chargement
+// (laisse le temps à motion-page de se terminer).
+const INITIAL_DELAY_MS = 80;
 
 export const EASE_OUT = "cubic-bezier(0.16, 1, 0.3, 1)";
 export const EASE_IN = "cubic-bezier(0.4, 0, 1, 1)";
@@ -16,7 +18,8 @@ export function reducedMotion(): boolean {
   return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
-/** Fait apparaître les blocs de `root` au défilement, en cascade. Relancé à chaque changement de page. */
+/** Fait apparaître les blocs de `root` au défilement, en cascade.
+ *  Les éléments visibles au chargement sont aussi animés avec un délai de base. */
 export function useAutoReveal(root: RefObject<HTMLElement | null>, actif = true) {
   const { pathname } = useLocation();
 
@@ -27,42 +30,47 @@ export function useAutoReveal(root: RefObject<HTMLElement | null>, actif = true)
     const targets = Array.from(container.querySelectorAll<HTMLElement>(REVEAL_SELECTOR)).filter(
       (el) => !el.closest("header, aside, footer, nav") && !el.matches("[data-no-reveal]"),
     );
+
     const marked = new Set<HTMLElement>();
-    const skipped = new Set<HTMLElement>();
+    const initiallyVisible = new Set<HTMLElement>();
+
     for (const el of targets) {
       let parent = el.parentElement;
       let nested = false;
       while (parent && parent !== container) {
-        if (marked.has(parent) || skipped.has(parent)) {
-          nested = true;
-          break;
-        }
+        if (marked.has(parent)) { nested = true; break; }
         parent = parent.parentElement;
       }
-      // Déjà visible au chargement : on l'affiche tel quel, sans animation.
-      if (!nested && el.getBoundingClientRect().top < window.innerHeight) {
-        skipped.add(el);
-        continue;
+      if (nested) continue;
+      marked.add(el);
+      if (el.getBoundingClientRect().top < window.innerHeight) {
+        initiallyVisible.add(el);
       }
-      if (!nested) marked.add(el);
     }
 
-    let batch = 0;
+    // Deux compteurs séparés : les éléments visibles au chargement
+    // et les éléments révélés au défilement ne partagent pas le même batch.
+    let batchInit = 0;
+    let batchScroll = 0;
     let frame = 0;
+
     const observer = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
           if (!entry.isIntersecting) continue;
           const el = entry.target as HTMLElement;
-          el.style.setProperty("--reveal-delay", `${Math.min(batch * STAGGER_MS, MAX_STAGGER_MS)}ms`);
+          const isInit = initiallyVisible.has(el);
+          const batch = isInit ? batchInit : batchScroll;
+          const base = isInit ? INITIAL_DELAY_MS : 0;
+          el.style.setProperty("--reveal-delay", `${base + Math.min(batch * STAGGER_MS, MAX_STAGGER_MS)}ms`);
           el.classList.add("is-revealed");
           observer.unobserve(el);
-          batch += 1;
+          if (isInit) batchInit += 1; else batchScroll += 1;
         }
         cancelAnimationFrame(frame);
-        frame = requestAnimationFrame(() => (batch = 0));
+        frame = requestAnimationFrame(() => { batchScroll = 0; });
       },
-      { rootMargin: "0px 0px -8% 0px", threshold: 0.05 },
+      { rootMargin: "0px 0px -6% 0px", threshold: 0.04 },
     );
 
     for (const el of marked) {
@@ -82,15 +90,14 @@ export function useAutoReveal(root: RefObject<HTMLElement | null>, actif = true)
 }
 
 /**
- * Contenu de page. `reveal` : apparition des blocs au défilement, réservée aux pages publiques ;
- * dans l'application (outil de travail), le contenu est là sans chorégraphie.
+ * Contenu de page.
+ * `reveal=true`  → animation des blocs au défilement (toutes les pages).
+ * `reveal=false` → motion-page global uniquement (pages avec transitions propres).
  */
 export function PageMotion({ children, className = "", reveal = true }: { children: ReactNode; className?: string; reveal?: boolean }) {
   const ref = useRef<HTMLDivElement>(null);
   const { pathname, hash } = useLocation();
 
-  // Avant useAutoReveal : la mesure des blocs visibles suppose la page en haut.
-  // Avec une ancre (#rbac), on descend jusqu'à la section visée.
   useEffect(() => {
     const cible = hash ? document.getElementById(decodeURIComponent(hash.slice(1))) : null;
     if (cible) cible.scrollIntoView({ behavior: reducedMotion() ? "auto" : "smooth", block: "start" });
@@ -100,7 +107,7 @@ export function PageMotion({ children, className = "", reveal = true }: { childr
   useAutoReveal(ref, reveal);
 
   return (
-    <div ref={ref} key={pathname} className={className}>
+    <div ref={ref} key={pathname} className={`${className} motion-page`}>
       {children}
     </div>
   );
@@ -128,12 +135,6 @@ export function Skeleton({ className = "" }: { className?: string }) {
 
 export type SlideDirection = "forward" | "back";
 
-/**
- * Navigation avec glissement latéral (View Transitions API).
- * L'option `viewTransition` de React Router n'agit qu'avec un routeur « data » ;
- * avec <BrowserRouter useTransitions={false}>, on lance la transition nous-mêmes
- * et flushSync rend la nouvelle page dans le rappel.
- */
 export function useSlideNavigate() {
   const navigate = useNavigate();
   return (to: string, direction: SlideDirection) => {
@@ -152,10 +153,45 @@ export function useSlideNavigate() {
 }
 
 /**
+ * Anime un nombre de 0 vers sa valeur au montage (quand `valeur` devient disponible).
+ * Extrait le préfixe numérique de la chaîne : "1 247 agents" → compte jusqu'à 1247.
+ * Respecte prefers-reduced-motion.
+ */
+export function useCounterOnReveal(valeur: string | undefined): string {
+  const [affiche, setAffiche] = useState(valeur ?? "—");
+  const rafRef = useRef(0);
+
+  useEffect(() => {
+    if (!valeur) { setAffiche("—"); return; }
+
+    const match = valeur.match(/^([\d \s]+)(.*)/u);
+    if (!match || reducedMotion()) { setAffiche(valeur); return; }
+
+    const cible = parseInt(match[1].replace(/[ \s]/g, ""), 10);
+    const suffixe = match[2];
+    if (isNaN(cible) || cible <= 0) { setAffiche(valeur); return; }
+
+    const duree = Math.min(900 + cible * 0.04, 1_600); // plus long pour les grands nombres
+    let debut: number | null = null;
+
+    const step = (t: number) => {
+      if (!debut) debut = t;
+      const progress = Math.min((t - debut) / duree, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      const courant = Math.round(eased * cible);
+      setAffiche(`${courant.toLocaleString("fr-FR")}${suffixe}`);
+      if (progress < 1) rafRef.current = requestAnimationFrame(step);
+    };
+
+    rafRef.current = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, [valeur]);
+
+  return affiche;
+}
+
+/**
  * Réarrangement animé (FLIP) des enfants directs portant `data-flip="<clé>"`.
- * Quand `signature` change (filtre, page…), une ligne conservée glisse de son ancienne
- * position vers la nouvelle et une ligne nouvelle apparaît en fondu, en léger décalé.
- * Le premier rendu n'est pas animé : le contenu arrive avec .motion-content.
  */
 export function useFlip<T extends HTMLElement>(signature: unknown) {
   const ref = useRef<T>(null);

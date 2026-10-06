@@ -79,11 +79,11 @@ function DossierAgent({ matricule }: { matricule: string }) {
           </p>
           <div className="mt-5 flex flex-wrap gap-3">
             {introuvable ? null : (
-              <button type="button" className="h-10 px-4 rounded bg-primary-container text-on-primary font-label-lg text-label-lg hover:bg-primary" onClick={() => dossier.refetch()}>
+              <button type="button" className="h-8 px-3 rounded bg-primary-container text-on-primary font-label-md text-label-md hover:bg-primary" onClick={() => dossier.refetch()}>
                 Réessayer
               </button>
             )}
-            <Link to="/app/dossiers" className="h-10 px-4 inline-flex items-center rounded border border-outline-variant font-label-lg text-label-lg text-on-surface hover:bg-surface-container-low">
+            <Link to="/app/dossiers" className="h-8 px-3 inline-flex items-center rounded border border-outline-variant font-label-md text-label-md text-on-surface hover:bg-surface-container-low">
               Mon profil
             </Link>
           </div>
@@ -238,7 +238,7 @@ function DossierContenu({ agent }: { agent: Dossier }) {
                 </p>
                 <button
                   type="button"
-                  className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-on-primary font-label-md text-label-md"
+                  className="mt-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-primary text-on-primary font-label-md text-label-md"
                   onClick={() => void exporterDossier()}
                 >
                   <Icone nom="picture_as_pdf" className="text-lg" />

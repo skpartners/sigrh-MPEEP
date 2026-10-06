@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { ApiError, api, mediaUrl } from "../api/client";
 import { useFeedback } from "../ui/Feedback";
 import { BOUTON_DANGER, BOUTON_PRIMAIRE, BOUTON_SECONDAIRE } from "../ui/Modale";
@@ -237,7 +237,7 @@ export function ParametresScreen() {
   return (
     <AppChrome>
       <div className={PAGE}>
-        <div className="bg-surface-container-lowest p-6 rounded-lg border border-hairline space-y-1.5">
+        <div className="motion-rise bg-surface-container-lowest p-6 rounded-lg border border-hairline space-y-1.5">
           <p className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Gouvernance · Paramètres</p>
           <h1 className="font-headline-lg text-headline-lg text-on-surface">Paramètres du ministère</h1>
           <p className="font-body-md text-body-md text-on-surface-variant max-w-3xl">
@@ -251,7 +251,7 @@ export function ParametresScreen() {
           </p>
         ) : null}
 
-        <section className="rounded-xl border border-hairline bg-surface-container-lowest p-6" aria-labelledby="titre-connexion">
+        <section className="motion-rise rounded-xl border border-hairline bg-surface-container-lowest p-6" style={{ "--delay": "80ms" } as CSSProperties} aria-labelledby="titre-connexion">
           <h2 id="titre-connexion" className="font-headline-sm text-headline-sm text-on-surface">Paramètres de connexion</h2>
           <p className="mt-1 font-body-sm text-body-sm text-on-surface-variant">
             Le matricule et le mot de passe initiaux viennent du fichier d'environnement. L'administrateur peut les modifier ici. Laissez le mot de passe vide pour le conserver.
@@ -346,7 +346,7 @@ export function ParametresScreen() {
           ) : null}
         </section>
 
-        <section className="rounded-xl border border-hairline bg-surface-container-lowest p-6" aria-labelledby="titre-identite-ministre">
+        <section className="motion-rise rounded-xl border border-hairline bg-surface-container-lowest p-6" style={{ "--delay": "160ms" } as CSSProperties} aria-labelledby="titre-identite-ministre">
           <h2 id="titre-identite-ministre" className="font-headline-sm text-headline-sm text-on-surface">Identité de la ministre</h2>
           <p className="mt-1 font-body-sm text-body-sm text-on-surface-variant">
             La civilité et le nom accompagnent le portrait sur le portail.
@@ -401,7 +401,7 @@ export function ParametresScreen() {
           )}
         </section>
 
-        <section className="rounded-xl border border-hairline bg-surface-container-lowest p-6" aria-labelledby="titre-photo-ministre">
+        <section className="motion-rise rounded-xl border border-hairline bg-surface-container-lowest p-6" style={{ "--delay": "240ms" } as CSSProperties} aria-labelledby="titre-photo-ministre">
           <h2 id="titre-photo-ministre" className="font-headline-sm text-headline-sm text-on-surface">Photo de la ministre</h2>
           <p className="mt-1 font-body-sm text-body-sm text-on-surface-variant">Image PNG, JPG ou WEBP, au plus 5 Mo.</p>
 

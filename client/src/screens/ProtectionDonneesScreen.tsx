@@ -51,7 +51,7 @@ export function ProtectionDonneesScreen() {
         </div>
       </div>
     </header>
-    <main className={"w-full pt-28 sm:pt-24 bg-surface"}>
+    <main className={"w-full pt-28 sm:pt-24 bg-surface motion-rise"}>
       <div className={"flex flex-col w-full"}>
         {/* Fil d'ariane & Contexte Régalien */}
         <section className={"w-full bg-surface-container-low py-space-md"}>

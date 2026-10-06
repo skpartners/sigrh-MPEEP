@@ -114,7 +114,7 @@ export function OngletConges({ agent }: { agent: Dossier }) {
                 <span className="font-code-num text-on-surface font-bold">{v.consommes} / {v.acquis} j ({v.part}%)</span>
               </div>
               <div className="w-full bg-surface-container-high h-2 rounded-full overflow-hidden">
-                <div className="bg-primary h-full rounded-full" style={{ width: `${v.partBornee}%` }} />
+                <div className="motion-fill bg-primary h-full rounded-full" style={{ width: `${v.partBornee}%` }} />
               </div>
             </div>
           </div>

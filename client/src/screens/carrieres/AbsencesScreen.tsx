@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState, type FormEvent } from "react";
+import { useMemo, useState, type CSSProperties, type FormEvent } from "react";
 import { ApiError, api, telecharger } from "../../api/client";
 import type { AgentBrief } from "../../api/types";
 import { useFeedback } from "../../ui/Feedback";
@@ -101,7 +101,7 @@ export function AbsencesScreen() {
       <div className="flex flex-col w-full">
         <div className="px-6 py-6 w-full mx-auto space-y-6">
           {/* En-tête de section régalienne */}
-          <div className="bg-surface-container-lowest p-6 rounded-xl shadow-sm relative overflow-hidden">
+          <div className="bg-surface-container-lowest p-6 rounded-xl shadow-sm relative overflow-hidden motion-rise">
             <div className="absolute -right-16 -top-16 w-64 h-64 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
               <div className="space-y-2">
@@ -126,7 +126,7 @@ export function AbsencesScreen() {
               </div>
               {/* Actions rapides de haut de page */}
               <div className="flex flex-wrap sm:flex-nowrap items-center gap-3 shrink-0">
-                <button className="inline-flex items-center gap-2 px-4 py-2.5 rounded bg-surface-container text-primary font-label-lg text-label-lg hover:bg-surface-container-high transition-colors" type="button" onClick={() => void exporterAssiduite()}>
+                <button className="inline-flex items-center gap-2 px-3 py-1.5 rounded bg-surface-container text-primary font-label-md text-label-md hover:bg-surface-container-high transition-colors" type="button" onClick={() => void exporterAssiduite()}>
                   <Icone nom="picture_as_pdf" className="text-lg" />
                   {" "}
                   <span>Rapport d'Assiduité Mensuel (PDF)</span>
@@ -137,7 +137,7 @@ export function AbsencesScreen() {
           {/* KPIs Métriques d'Assiduité */}
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
             {/* KPI 1 : le présentéisme provient du pointage (indicateur de pilotage) */}
-            <div className="bg-surface-container-lowest p-5 rounded-xl shadow-sm flex flex-col justify-between relative overflow-hidden">
+            <div className="bg-surface-container-lowest p-5 rounded-xl shadow-sm flex flex-col justify-between relative overflow-hidden motion-card-appear" style={{ "--delay": "80ms" } as CSSProperties}>
               <div className="flex items-center justify-between mb-3">
                 <span className="font-label-md text-label-md text-on-surface-variant uppercase font-semibold">Taux de Présentéisme Global</span>
                 <span className="w-8 h-8 rounded bg-primary-fixed text-on-primary-fixed flex items-center justify-center">
@@ -159,10 +159,11 @@ export function AbsencesScreen() {
                 <span className="font-bold text-primary">{presence?.objectif != null ? `≥ ${presence.objectif.toFixed(1)}%` : "—"}</span>
               </div>
               <div className="w-full bg-surface-container-high h-1.5 rounded-full mt-2 overflow-hidden">
-                <div className="bg-primary h-full rounded-full" style={{ width: `${presence?.taux ?? 0}%` }} />
+                <div className="motion-fill bg-primary h-full rounded-full" style={{ width: `${presence?.taux ?? 0}%` }} />
               </div>
             </div>
             <Indicateur
+              index={0}
               titre="Autorisations validées"
               icone="assignment_turned_in"
               valeur={donnees?.indicateurs.validee}
@@ -172,6 +173,7 @@ export function AbsencesScreen() {
               ton="neutre"
             />
             <Indicateur
+              index={1}
               titre="En attente de décision"
               icone="alarm"
               valeur={donnees?.indicateurs.en_attente}
@@ -181,6 +183,7 @@ export function AbsencesScreen() {
               ton="attention"
             />
             <Indicateur
+              index={2}
               titre="Retenues sur solde (tantièmes)"
               icone="gavel"
               valeur={donnees?.indicateurs.invalidee}
@@ -220,7 +223,7 @@ export function AbsencesScreen() {
                           </span>
                         </div>
                         <div className="w-full bg-surface-container-high h-2 rounded-full overflow-hidden">
-                          <div className={`${COULEUR_TYPE[ligne.code]} h-full rounded-full`} style={{ width: `${ligne.part}%` }} />
+                          <div className={`motion-fill ${COULEUR_TYPE[ligne.code]} h-full rounded-full`} style={{ width: `${ligne.part}%` }} />
                         </div>
                       </div>
                     ))}
@@ -428,14 +431,14 @@ export function AbsencesScreen() {
   );
 }
 
-function Indicateur({ titre, icone, valeur, unite, detail, part, ton }: { titre: string; icone: string; valeur: number | undefined; unite: string; detail: string; part: string; ton: "neutre" | "attention" | "erreur" }) {
+function Indicateur({ titre, icone, valeur, unite, detail, part, ton, index = 0 }: { titre: string; icone: string; valeur: number | undefined; unite: string; detail: string; part: string; ton: "neutre" | "attention" | "erreur"; index?: number }) {
   const couleurs = {
     neutre: { titre: "text-on-surface-variant", pastille: "bg-surface-container-high text-on-surface", valeur: "text-on-surface", barre: "bg-surface-tint" },
     attention: { titre: "text-secondary", pastille: "bg-secondary-fixed text-on-secondary-fixed", valeur: "text-secondary", barre: "bg-secondary-container" },
     erreur: { titre: "text-error", pastille: "bg-error-container text-on-error-container", valeur: "text-error", barre: "bg-error" },
   }[ton];
   return (
-    <div className="bg-surface-container-lowest p-5 rounded-xl shadow-sm flex flex-col justify-between relative">
+    <div className="bg-surface-container-lowest p-5 rounded-xl shadow-sm flex flex-col justify-between relative motion-card-appear" style={{ "--delay": `${(index + 1) * 80}ms` } as CSSProperties}>
       <div className="flex items-center justify-between mb-3">
         <span className={`font-label-md text-label-md ${couleurs.titre} uppercase font-semibold`}>{titre}</span>
         <span className={`w-8 h-8 rounded ${couleurs.pastille} flex items-center justify-center`}>
@@ -448,7 +451,7 @@ function Indicateur({ titre, icone, valeur, unite, detail, part, ton }: { titre:
       </div>
       <div className="mt-3 font-label-sm text-label-sm text-on-surface-variant line-clamp-1">{detail}</div>
       <div className="w-full bg-surface-container-high h-1.5 rounded-full mt-2 overflow-hidden">
-        <div className={`${couleurs.barre} h-full rounded-full`} style={{ width: part }} />
+        <div className={`motion-fill ${couleurs.barre} h-full rounded-full`} style={{ width: part }} />
       </div>
     </div>
   );
@@ -710,7 +713,7 @@ function FormulaireRegularisation({ agents, types }: { agents: Registre["agents"
           <input checked={saisie.notifier} className="rounded text-primary focus:ring-primary" type="checkbox" onChange={(event) => setSaisie({ ...saisie, notifier: event.target.checked })} />
           Notifier le gestionnaire chargé de statuer
         </label>
-        <button className="px-5 py-2.5 rounded bg-primary text-on-primary font-label-lg text-label-lg font-bold shadow hover:bg-primary-container transition-colors disabled:opacity-60" type="submit" disabled={envoi.isPending}>
+        <button className="px-3 py-1.5 rounded bg-primary text-on-primary font-label-md text-label-md font-bold hover:bg-primary-container transition-colors disabled:opacity-60" type="submit" disabled={envoi.isPending}>
           {envoi.isPending ? "Versement…" : "Soumettre la régularisation"}
         </button>
       </div>

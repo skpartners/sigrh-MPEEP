@@ -165,7 +165,7 @@ export function SituationScreen() {
                   <span className="text-on-surface-variant font-code-num">{item.detail}</span>
                 </div>
                 <div className="w-full bg-surface-container-high h-1.5 mt-2 rounded-full overflow-hidden">
-                  <div className={`h-full rounded-full ${ton.barre}`} style={{ width: `${part}%` }} />
+                  <div className={`motion-fill h-full rounded-full ${ton.barre}`} style={{ width: `${part}%` }} />
                 </div>
               </button>
             );

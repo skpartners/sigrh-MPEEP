@@ -1,13 +1,87 @@
 import { useQuery } from "@tanstack/react-query";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { api, mediaUrl } from "../api/client";
 import type { Accueil, CommunicationPublique } from "../api/types";
 import { dateLongue } from "../ui/format";
-import { useSlideNavigate } from "../ui/Motion";
+import { reducedMotion, useSlideNavigate } from "../ui/Motion";
 import { PublicHeaderNav } from "./PublicHeaderNav";
 import { Icone } from "../ui/Icone";
 
-const TONS_CHIFFRE = ["text-primary", "text-primary-container", "text-tertiary"];
+/** Extrait l'entier de tête d'une chaîne (ex : "1 247 agents" → 1247) et anime le comptage.
+ *  Si la valeur ne commence pas par un chiffre, elle s'affiche directement sans animation. */
+function useCounterReveal(valeur: string | undefined): string {
+  const [affiche, setAffiche] = useState<string>("—");
+  const ref = useRef<ReturnType<typeof requestAnimationFrame>>(0);
+
+  useEffect(() => {
+    if (!valeur) return;
+    const match = valeur.match(/^([\d\s ]+)(.*)/u);
+    if (!match || reducedMotion()) {
+      setAffiche(valeur);
+      return;
+    }
+    const cible = parseInt(match[1].replace(/\s/g, ""), 10);
+    const suffixe = match[2];
+    if (isNaN(cible)) {
+      setAffiche(valeur);
+      return;
+    }
+    const duree = 1_200;
+    let debut: number | null = null;
+    const step = (t: number) => {
+      if (!debut) debut = t;
+      const progress = Math.min((t - debut) / duree, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      const courant = Math.round(eased * cible);
+      setAffiche(`${courant.toLocaleString("fr-FR")}${suffixe}`);
+      if (progress < 1) ref.current = requestAnimationFrame(step);
+    };
+    ref.current = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(ref.current);
+  }, [valeur]);
+
+  return affiche;
+}
+
+function ChiffreAnime({ chiffre, ton }: { chiffre: { valeur: string; libelle: string; detail?: string; icone?: string } | null; ton: string }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
+  const valeur = visible ? chiffre?.valeur : undefined;
+  const affiche = useCounterReveal(valeur);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) { setVisible(true); observer.disconnect(); } },
+      { threshold: 0.3 },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <div ref={containerRef} className={"bg-white/70 backdrop-blur-xl border border-white/40 rounded-xl p-space-md shadow-[0_4px_24px_rgba(61,0,122,0.10)] flex items-start gap-space-md"}>
+      <div className={`w-12 h-12 rounded-lg bg-white/60 flex items-center justify-center shrink-0 ${ton}`}>
+        <Icone nom={chiffre?.icone ?? "hourglass_empty"} className="text-[26px]" />
+      </div>
+      <div className={"space-y-0.5"}>
+        <span className={`font-headline-lg text-headline-lg tracking-tight ${ton}`}>
+          {visible ? affiche : (chiffre ? "—" : "—")}
+        </span>
+        <p className={"font-label-md text-label-md text-on-surface"}>
+          {chiffre?.libelle ?? "Chargement"}
+        </p>
+        <span className={"font-label-sm text-label-sm text-on-surface-variant block"}>
+          {chiffre?.detail ?? ""}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+const TONS_CHIFFRE = ["text-secondary", "text-primary", "text-tertiary"];
 
 export function HomeScreen() {
   const slideTo = useSlideNavigate();
@@ -100,24 +174,36 @@ export function HomeScreen() {
               {/* Contenu textuel solennel */}
               <div className={"lg:col-span-8 min-w-0 space-y-space-md"}>
                 {/* Badge souverain */}
-                <div className={"inline-flex max-w-full flex-wrap items-center gap-space-sm bg-surface-container-lowest/15 backdrop-blur-md px-space-md py-space-xs rounded-full"}>
+                <div
+                  className={"motion-hero inline-flex max-w-full flex-wrap items-center gap-space-sm bg-surface-container-lowest/15 backdrop-blur-md px-space-md py-space-xs rounded-full"}
+                  style={{ "--delay": "0ms" } as React.CSSProperties}
+                >
                   <span className={"inline-block w-2.5 h-2.5 rounded-full bg-secondary-container shrink-0"}></span>
                   <span className={"min-w-0 font-label-sm text-label-sm tracking-wider uppercase text-on-primary"}>
                     Portail Numérique Souverain · République de Côte d'Ivoire
                   </span>
                 </div>
-                <h1 className={"font-headline-xl text-headline-xl tracking-tight text-on-primary max-w-4xl"}>
-                  
+                <h1
+                  className={"motion-hero font-headline-xl text-headline-xl tracking-tight text-on-primary max-w-4xl"}
+                  style={{ "--delay": "80ms" } as React.CSSProperties}
+                >
+
             Système Intégré de Gestion des Ressources Humaines du Portefeuille de l'État
-          
+
                 </h1>
-                <p className={"font-body-lg text-body-lg text-on-primary/85 max-w-3xl leading-relaxed"}>
-                  
+                <p
+                  className={"motion-hero font-body-lg text-body-lg text-on-primary/85 max-w-3xl leading-relaxed"}
+                  style={{ "--delay": "160ms" } as React.CSSProperties}
+                >
+
             Le socle numérique régalien unifié pour le pilotage stratégique des carrières, le suivi des actes administratifs, l'action sociale et le développement des compétences des hauts fonctionnaires et agents des sociétés d'État ivoiriennes.
-          
+
                 </p>
                 {/* Groupe de CTAs */}
-                <div className={"pt-space-sm flex flex-wrap items-center gap-space-md"}>
+                <div
+                  className={"motion-hero pt-space-sm flex flex-wrap items-center gap-space-md"}
+                  style={{ "--delay": "240ms" } as React.CSSProperties}
+                >
                   <button className={"flex max-w-full flex-wrap items-center justify-center gap-space-sm bg-surface-container-lowest text-primary px-space-lg py-space-sm rounded font-label-lg text-label-lg shadow-md hover:bg-primary-fixed transition-colors"} type="button" onClick={() => slideTo("/connexion", "forward")}>
                     <Icone nom="lock" className="text-[20px]" />
                     <span>
@@ -127,7 +213,10 @@ export function HomeScreen() {
                 </div>
               </div>
               {/* Visuel symbolique solennel : Armoiries & Sceau Étatique Numérique */}
-              <div className={"lg:col-span-4 flex flex-col items-center gap-4"}>
+              <div
+                className={"motion-hero-img lg:col-span-4 flex flex-col items-center gap-4"}
+                style={{ "--delay": "120ms" } as React.CSSProperties}
+              >
                 <div className={"relative w-full max-w-xs aspect-square overflow-hidden rounded-full bg-primary-container border border-primary-fixed/20 shadow-xl"}>
                   <img
                     alt={nomMinistre ? `Portrait de ${nomMinistre}` : portrait ? "Portrait de la ministre" : "Armoiries de la République de Côte d'Ivoire"}
@@ -148,29 +237,18 @@ export function HomeScreen() {
           </div>
         </section>
         {/* BANDEAU CHIFFRES CLÉS & IMPACT DU PORTEFEUILLE ÉTATIQUE */}
-        <section className={"w-full mx-auto px-margin-desktop -mt-8 relative z-20"}>
+        <section className={"w-full mx-auto px-margin-desktop -mt-8 relative z-20 motion-rise"} style={{ "--delay": "280ms" } as React.CSSProperties}>
           <div className={"grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-space-md"}>
-            {(chiffres.length > 0 ? chiffres : [0, 1, 2].map(() => null)).map((chiffre, index) => (
-              <div key={chiffre?.libelle ?? index} className={"bg-surface-container-lowest rounded-xl p-space-md shadow-md flex items-start gap-space-md"}>
-                <div className={`w-12 h-12 rounded-lg bg-surface-container-low flex items-center justify-center shrink-0 ${TONS_CHIFFRE[index] ?? "text-primary"}`}>
-                  <Icone nom={chiffre?.icone ?? "hourglass_empty"} className="text-[26px]" />
-                </div>
-                <div className={"space-y-0.5"}>
-                  <span className={`font-headline-lg text-headline-lg tracking-tight ${TONS_CHIFFRE[index] ?? "text-primary"}`}>
-                    {chiffre?.valeur ?? "—"}
-                  </span>
-                  <p className={"font-label-md text-label-md text-on-surface"}>
-                    {chiffre?.libelle ?? "Chargement"}
-                  </p>
-                  <span className={"font-label-sm text-label-sm text-on-surface-variant block"}>
-                    {chiffre?.detail ?? ""}
-                  </span>
-                </div>
-              </div>
+            {(chiffres.length > 0 ? chiffres : [null, null, null]).map((chiffre, index) => (
+              <ChiffreAnime
+                key={chiffre?.libelle ?? index}
+                chiffre={chiffre}
+                ton={TONS_CHIFFRE[index] ?? "text-primary"}
+              />
             ))}
           </div>
         </section>
-        <section className={"bg-surface-container-low/55 py-space-xl"}>
+        <section className={"bg-surface-container-low/55 py-space-xl motion-rise"} style={{ "--delay": "360ms" } as React.CSSProperties}>
           <div className={"mx-auto px-margin-desktop"}>
             <div className={"space-y-space-md"}>
               <div className={"flex items-center gap-space-xs"}>
@@ -183,7 +261,7 @@ export function HomeScreen() {
                 <p className="font-body-md text-body-md text-on-surface-variant">Aucune information publiée pour le moment.</p>
               ) : null}
               {(annonces.data ?? []).map((annonce) => (
-                <article key={`${annonce.source ?? "communication"}-${annonce.id}`} className={"bg-surface-container-lowest p-space-md rounded-xl border border-hairline space-y-1.5"}>
+                <article key={`${annonce.source ?? "communication"}-${annonce.id}`} className={"bg-white/70 backdrop-blur-sm border border-white/40 p-space-md rounded-xl shadow-sm space-y-1.5"}>
                   <div className={"flex flex-wrap items-center gap-space-xs"}>
                     <span className={"px-2 py-0.5 bg-primary-fixed/50 text-on-primary-fixed-variant rounded font-label-sm text-label-sm"}>
                       {annonce.rubrique_libelle}

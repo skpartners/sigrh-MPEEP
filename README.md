@@ -15,21 +15,36 @@ Les maquettes d'origine sont dans `Templates/`. L'interface servie est entièrem
 
 ## Démarrage local
 
-API :
+Les deux serveurs dans un seul terminal (racine du dépôt) :
+
+```powershell
+.\start-dev.ps1
+```
+
+Ctrl+C arrête l’API et le front.
+
+Premier lancement (dépendances et base), une fois :
 
 ```powershell
 cd api
 uv sync
 uv run python manage.py migrate
 uv run python manage.py seed_demo
+cd ..\client
+npm install
+cd ..
+.\start-dev.ps1
+```
+
+Pour lancer chaque serveur à part :
+
+```powershell
+cd api
 uv run python manage.py runserver 127.0.0.1:8101
 ```
 
-Front, dans un second terminal :
-
 ```powershell
 cd client
-npm install
 npm run dev
 ```
 

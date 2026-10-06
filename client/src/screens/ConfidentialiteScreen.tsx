@@ -51,7 +51,7 @@ export function ConfidentialiteScreen() {
         </div>
       </div>
     </header>
-    <main className={"w-full pt-28 sm:pt-24 bg-surface"}>
+    <main className={"w-full pt-28 sm:pt-24 bg-surface motion-rise"}>
       <div className={"flex flex-col w-full"}>
         {/* Bandeau de contexte et fil d'ariane */}
         <section className={"w-full bg-surface-container-low py-space-md"}>

@@ -15,11 +15,11 @@ import { Icone } from "./Icone";
  */
 
 export const BOUTON_PRIMAIRE =
-  "inline-flex items-center justify-center gap-2 h-10 px-4 rounded bg-primary text-on-primary font-label-lg text-label-lg hover:bg-primary-container disabled:opacity-60";
+  "inline-flex items-center justify-center gap-2 h-8 px-3 rounded bg-primary text-on-primary font-label-md text-label-md hover:bg-primary-container disabled:opacity-60";
 export const BOUTON_SECONDAIRE =
-  "inline-flex items-center justify-center gap-2 h-10 px-4 rounded border border-outline-variant bg-surface-container-lowest text-on-surface font-label-lg text-label-lg hover:bg-surface-container-low disabled:opacity-60";
+  "inline-flex items-center justify-center gap-2 h-8 px-3 rounded border border-outline-variant bg-surface-container-lowest text-on-surface font-label-md text-label-md hover:bg-surface-container-low disabled:opacity-60";
 export const BOUTON_DANGER =
-  "inline-flex items-center justify-center gap-2 h-10 px-4 rounded bg-error text-on-error font-label-lg text-label-lg hover:opacity-90 disabled:opacity-60";
+  "inline-flex items-center justify-center gap-2 h-8 px-3 rounded bg-error text-on-error font-label-md text-label-md hover:opacity-90 disabled:opacity-60";
 
 type Taille = "sm" | "md" | "lg" | "xl" | "2xl";
 const LARGEUR: Record<Taille, string> = {

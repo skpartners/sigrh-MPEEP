@@ -1,5 +1,5 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Children, useEffect, useState, type ReactNode } from "react";
+import { Children, useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { ApiError, api, telecharger } from "../api/client";
 import type { EntiteTutelle } from "../api/types";
 import { optionsEntites } from "../ui/Entites";
@@ -8,6 +8,7 @@ import { GraphiqueChoisi, type FormeGraphique } from "../ui/Graphique";
 import { nombre } from "../ui/format";
 import { useFeedback } from "../ui/Feedback";
 import { BOUTON_PRIMAIRE, BOUTON_SECONDAIRE, Modale } from "../ui/Modale";
+import { useCounterOnReveal } from "../ui/Motion";
 import { AppChrome } from "./AppChrome";
 import { Icone } from "../ui/Icone";
 
@@ -168,6 +169,7 @@ export function StatistiquesScreen() {
             </p>
           </div>
           <div className="flex flex-col xl:flex-row xl:items-end gap-3">
+            {/* Filtres */}
             <div className="flex flex-col sm:flex-row gap-3 flex-1">
               <label className="flex flex-col gap-1 font-label-sm text-label-sm text-on-surface-variant">
                 Exercice
@@ -192,22 +194,25 @@ export function StatistiquesScreen() {
                 </select>
               </label>
             </div>
-            <div className="grid w-full grid-cols-1 gap-2 self-end sm:w-fit sm:grid-cols-2">
-              <button type="button" className={`${BOUTON_SECONDAIRE} w-full`} onClick={() => void exporter("xlsx")}>
-                <Icone nom="table" className="text-lg" />
-                Données (XLSX)
-              </button>
-              <button type="button" className={`${BOUTON_SECONDAIRE} w-full`} onClick={() => void exporter("pdf")}>
-                <Icone nom="picture_as_pdf" className="text-lg" />
-                Synthèse (PDF)
-              </button>
-              <button type="button" className={`${BOUTON_PRIMAIRE} w-full`} onClick={() => void page.refetch()} disabled={page.isFetching}>
-                <Icone nom="refresh" className="text-lg" />
+            {/* Actions — action primaire en tête, exports groupés, planification en fin */}
+            <div className="flex flex-wrap items-center gap-2 self-end">
+              <button type="button" className={BOUTON_PRIMAIRE} onClick={() => void page.refetch()} disabled={page.isFetching}>
+                <Icone nom="refresh" className={`text-lg${page.isFetching ? " motion-spin" : ""}`} />
                 Actualiser
               </button>
-              <button type="button" className={`${BOUTON_SECONDAIRE} w-full`} onClick={() => { planifier.reset(); setEcheance(aujourdhui()); setObjet(""); setPlan(true); }}>
+              <div className="h-6 w-px bg-hairline hidden sm:block" aria-hidden="true" />
+              <button type="button" className={BOUTON_SECONDAIRE} onClick={() => void exporter("xlsx")}>
+                <Icone nom="table" className="text-lg" />
+                XLSX
+              </button>
+              <button type="button" className={BOUTON_SECONDAIRE} onClick={() => void exporter("pdf")}>
+                <Icone nom="picture_as_pdf" className="text-lg" />
+                PDF
+              </button>
+              <div className="h-6 w-px bg-hairline hidden sm:block" aria-hidden="true" />
+              <button type="button" className={BOUTON_SECONDAIRE} onClick={() => { planifier.reset(); setEcheance(aujourdhui()); setObjet(""); setPlan(true); }}>
                 <Icone nom="schedule_send" className="text-lg" />
-                Planifier au Cabinet
+                Planifier
               </button>
             </div>
           </div>
@@ -220,6 +225,7 @@ export function StatistiquesScreen() {
           <>
             <section className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
               <Indicateur
+                index={0}
                 libelle="Effectif consolidé"
                 icone="groups"
                 barre="bg-primary-container"
@@ -229,6 +235,7 @@ export function StatistiquesScreen() {
                 droite={data.kpi.occupation != null ? `${nombre(data.kpi.occupation, 1)} % occupés` : "Filtre actif"}
               />
               <Indicateur
+                index={1}
                 libelle="Actes de carrière"
                 icone="military_tech"
                 barre="bg-secondary-container"
@@ -238,6 +245,7 @@ export function StatistiquesScreen() {
                 droite={`${ecartTexte(data.flux.actes_carriere)} vs ${data.exercice - 1}`}
               />
               <Indicateur
+                index={2}
                 libelle="Parité"
                 icone="diversity_3"
                 barre="bg-primary"
@@ -247,6 +255,7 @@ export function StatistiquesScreen() {
                 droite={`${nombre(data.kpi.hommes)} hommes`}
               />
               <Indicateur
+                index={3}
                 libelle="Relève"
                 icone="warning"
                 barre="bg-secondary"
@@ -256,6 +265,7 @@ export function StatistiquesScreen() {
                 droite={data.kpi.vacance != null ? `Vacance ${nombre(data.kpi.vacance, 1)} %` : "Au ministère"}
               />
               <Indicateur
+                index={4}
                 libelle="Disponibilité"
                 icone="task_alt"
                 barre="bg-primary-container"
@@ -782,7 +792,7 @@ function MatriceStructures({ lignes }: { lignes: Ligne[] }) {
   );
 }
 
-function Indicateur({ libelle, icone, barre, valeur, detail, gauche, droite }: {
+function Indicateur({ libelle, icone, barre, valeur, detail, gauche, droite, index = 0 }: {
   libelle: string;
   icone: string;
   barre: string;
@@ -790,16 +800,21 @@ function Indicateur({ libelle, icone, barre, valeur, detail, gauche, droite }: {
   detail: string;
   gauche: string;
   droite: string;
+  index?: number;
 }) {
+  const valeurAnimee = useCounterOnReveal(valeur);
   return (
-    <article className={`${CARTE} p-5 relative overflow-hidden flex flex-col justify-between min-h-[10.5rem]`}>
-      <span className={`absolute top-0 left-0 bottom-0 w-1 ${barre}`} />
+    <article
+      className={`${CARTE} motion-content p-5 relative overflow-hidden flex flex-col justify-between min-h-[10.5rem]`}
+      style={{ "--delay": `${index * 60}ms` } as CSSProperties}
+    >
+      <span className={`absolute top-0 left-0 bottom-0 w-1 rounded-r ${barre}`} />
       <div>
         <div className="flex items-center justify-between text-on-surface-variant">
           <span className="font-label-sm text-label-sm uppercase tracking-wider font-bold">{libelle}</span>
           <Icone nom={icone} />
         </div>
-        <p className="mt-3 font-headline-lg text-headline-lg text-on-surface">{valeur}</p>
+        <p className="mt-3 font-headline-lg text-headline-lg text-on-surface tabular-nums">{valeurAnimee}</p>
         <p className="mt-1 font-body-sm text-body-sm text-on-surface-variant">{detail}</p>
       </div>
       <p className="mt-4 -mx-5 -mb-5 px-5 py-2.5 bg-surface-container-low/60 flex items-center justify-between gap-2 font-label-sm text-label-sm text-on-surface-variant">

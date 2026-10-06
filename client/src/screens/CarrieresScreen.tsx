@@ -5,7 +5,7 @@ import { api, telecharger } from "../api/client";
 import type { Carrieres } from "../api/types";
 import { dateLongue, nombre } from "../ui/format";
 import { Portrait } from "../ui/PhotoProfil";
-import { Skeleton, useFlip } from "../ui/Motion";
+import { Skeleton, useCounterOnReveal, useFlip } from "../ui/Motion";
 import { useAction } from "../ui/useAction";
 import { useFeedback } from "../ui/Feedback";
 import { AppChrome } from "./AppChrome";
@@ -77,7 +77,7 @@ export function CarrieresScreen() {
               </div>
               <div className="flex flex-wrap items-center gap-3 shrink-0">
                 <button
-                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded bg-surface-container text-primary hover:bg-surface-container-high transition-colors font-label-lg text-label-lg"
+                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded bg-surface-container text-primary hover:bg-surface-container-high transition-colors font-label-md text-label-md"
                   type="button"
                   onClick={() =>
                     agir<{ publies: number }>({
@@ -94,7 +94,7 @@ export function CarrieresScreen() {
                   Publier les avis de mutation
                 </button>
                 <button
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded bg-primary text-on-primary hover:bg-primary-container shadow-md transition-colors font-label-lg text-label-lg"
+                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded bg-primary text-on-primary hover:bg-primary-container shadow-sm transition-colors font-label-md text-label-md"
                   type="button"
                   onClick={() => void genererTableau()}
                 >
@@ -108,7 +108,7 @@ export function CarrieresScreen() {
           {carrieres.isError ? (
             <div className={`${CARD} p-6 mt-6`} role="alert">
               <p className="font-label-lg text-label-lg text-error">Les données de la sous-direction n'ont pas pu être chargées.</p>
-              <button type="button" className="mt-3 h-10 px-4 rounded bg-primary-container text-on-primary font-label-lg text-label-lg hover:bg-primary" onClick={() => carrieres.refetch()}>
+              <button type="button" className="mt-3 h-8 px-3 rounded bg-primary-container text-on-primary font-label-md text-label-md hover:bg-primary" onClick={() => carrieres.refetch()}>
                 Réessayer
               </button>
             </div>
@@ -117,20 +117,8 @@ export function CarrieresScreen() {
           {/* Compteurs */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mt-6">
             {data
-              ? data.compteurs.map((compteur) => (
-                  <div key={compteur.libelle} className={`${CARD} motion-content relative overflow-hidden p-5`}>
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="space-y-1">
-                        <p className="font-label-md text-label-md text-on-surface-variant">{compteur.libelle}</p>
-                        <p className="font-headline-xl text-headline-xl text-on-surface font-bold">{compteur.valeur}</p>
-                        <p className="font-label-sm text-label-sm text-primary font-semibold">{compteur.detail}</p>
-                      </div>
-                      <div className="w-12 h-12 rounded-xl bg-primary-fixed flex items-center justify-center text-primary shrink-0">
-                        <Icone nom={compteur.icone} className="text-2xl" />
-                      </div>
-                    </div>
-                    <div className="motion-fill absolute bottom-0 left-0 h-1 bg-primary" style={{ width: `${compteur.pourcentage}%` }} aria-hidden="true"></div>
-                  </div>
+              ? data.compteurs.map((compteur, i) => (
+                  <CarteCompteur key={compteur.libelle} compteur={compteur} index={i} />
                 ))
               : [0, 1, 2, 3].map((index) => <Skeleton key={index} className="h-36 rounded-xl" />)}
           </div>
@@ -148,6 +136,34 @@ export function CarrieresScreen() {
         </div>
       </div>
     </AppChrome>
+  );
+}
+
+type Compteur = Carrieres["compteurs"][number];
+function CarteCompteur({ compteur, index }: { compteur: Compteur; index: number }) {
+  const valeurAnimee = useCounterOnReveal(compteur.valeur);
+  const CARD = "rounded-xl bg-surface-container-lowest border border-hairline";
+  return (
+    <div
+      className={`${CARD} motion-content relative overflow-hidden p-5`}
+      style={{ "--delay": `${index * 60}ms` } as CSSProperties}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="space-y-1">
+          <p className="font-label-md text-label-md text-on-surface-variant">{compteur.libelle}</p>
+          <p className="font-headline-xl text-headline-xl text-on-surface font-bold tabular-nums">{valeurAnimee}</p>
+          <p className="font-label-sm text-label-sm text-primary font-semibold">{compteur.detail}</p>
+        </div>
+        <div className="w-12 h-12 rounded-xl bg-primary-fixed flex items-center justify-center text-primary shrink-0">
+          <Icone nom={compteur.icone} className="text-2xl" />
+        </div>
+      </div>
+      <div
+        className="motion-fill absolute bottom-0 left-0 h-1 bg-primary"
+        style={{ width: `${compteur.pourcentage}%`, "--delay": `${200 + index * 60}ms` } as CSSProperties}
+        aria-hidden="true"
+      />
+    </div>
   );
 }
 

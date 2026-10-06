@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, type CSSProperties } from "react";
 import { ApiError, api } from "../api/client";
 import { useFeedback } from "../ui/Feedback";
 import { dateLongue, nombre } from "../ui/format";
@@ -43,7 +43,7 @@ export function SondageScreen() {
         {data == null ? <p className="font-body-md text-body-md text-on-surface-variant">Aucun sondage n'est ouvert.</p> : null}
         {data ? (
           <form
-            className="rounded-xl border border-hairline bg-surface-container-lowest p-5 space-y-4"
+            className="motion-rise rounded-xl border border-hairline bg-surface-container-lowest p-5 space-y-4"
             onSubmit={(event) => {
               event.preventDefault();
               if (!data.ma_reponse && data.ouverte) repondre.mutate();
@@ -57,14 +57,14 @@ export function SondageScreen() {
                   {data.ma_reponse ? `Votre réponse : ${data.ma_reponse}. ` : "Ce sondage est clos. "}
                   {nombre(data.participants)} réponse{data.participants > 1 ? "s" : ""}.
                 </p>
-                {data.options.map((option) => (
+                {data.options.map((option, index) => (
                   <div key={option.libelle}>
                     <div className="flex justify-between font-label-sm text-label-sm">
                       <span>{option.libelle}</span>
                       <span className="font-code-num">{nombre(option.voix)} · {nombre(option.part, 1)} %</span>
                     </div>
                     <div className="mt-1 h-2 rounded-full bg-surface-container-high overflow-hidden">
-                      <div className="h-2 bg-primary" style={{ width: `${option.part}%` }} />
+                      <div className="motion-fill h-2 bg-primary" style={{ width: `${option.part}%`, "--delay": `${index * 80}ms` } as CSSProperties} />
                     </div>
                   </div>
                 ))}

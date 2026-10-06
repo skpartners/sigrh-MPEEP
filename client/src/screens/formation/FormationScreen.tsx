@@ -51,7 +51,7 @@ export function FormationScreen() {
   return (
     <AppChrome>
       <div className="w-full min-w-0 px-4 sm:px-6 lg:px-8 py-6 mx-auto flex-1 space-y-6">
-        <div className={`${CARTE} p-6`}>
+        <div className={`${CARTE} p-6 motion-rise`}>
           <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-5">
             <div>
               <h1 className="font-headline-lg text-headline-lg text-on-surface tracking-tight">Formation continue</h1>

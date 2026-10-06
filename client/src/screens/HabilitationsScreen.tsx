@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { ApiError, api } from "../api/client";
 import type { Circuits } from "../api/types";
 import { useFeedback } from "../ui/Feedback";
@@ -90,7 +90,7 @@ export function HabilitationsScreen() {
     <AppChrome>
       <div className="w-full px-4 sm:px-6 lg:px-8 py-6 mx-auto flex-1">
         <div className="flex flex-col w-full space-y-8">
-          <div className={`${CARD} p-6`}>
+          <div className={`${CARD} p-6 motion-rise`}>
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
               <div className="space-y-1.5">
                 <h1 className="font-headline-lg text-headline-lg text-on-surface tracking-tight">Habilitations</h1>
@@ -99,7 +99,7 @@ export function HabilitationsScreen() {
                 </p>
               </div>
               <button
-                className="inline-flex items-center gap-2 px-4 py-2 rounded bg-surface-container-high text-on-surface font-label-lg text-label-lg hover:bg-surface-container transition-colors shrink-0"
+                className="inline-flex items-center gap-2 px-3 py-1.5 rounded bg-surface-container-high text-on-surface font-label-md text-label-md hover:bg-surface-container transition-colors shrink-0"
                 type="button"
                 onClick={() => setAuditOpen(true)}
                 aria-haspopup="dialog"
@@ -113,13 +113,13 @@ export function HabilitationsScreen() {
           {circuits.isError ? (
             <div className={`${CARD} p-6`} role="alert">
               <p className="font-label-lg text-label-lg text-error">Les habilitations n'ont pas pu être chargées.</p>
-              <button type="button" className="mt-3 h-10 px-4 rounded bg-primary-container text-on-primary font-label-lg text-label-lg hover:bg-primary" onClick={() => circuits.refetch()}>
+              <button type="button" className="mt-3 h-8 px-3 rounded bg-primary-container text-on-primary font-label-md text-label-md hover:bg-primary" onClick={() => circuits.refetch()}>
                 Réessayer
               </button>
             </div>
           ) : null}
 
-          <section className="space-y-4" aria-labelledby="titre-matrice">
+          <section className="space-y-4 motion-rise" style={{ "--delay": "80ms" } as CSSProperties} aria-labelledby="titre-matrice">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <h2 id="titre-matrice" className="font-headline-md text-headline-md text-on-surface">
                 Matrice des rôles

@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Fragment, useMemo, useState } from "react";
+import { Fragment, useMemo, useState, type CSSProperties } from "react";
 import { ApiError, api, telecharger } from "../../api/client";
 import type { AgentBrief } from "../../api/types";
 import { useFeedback } from "../../ui/Feedback";
@@ -115,7 +115,7 @@ export function DisciplineScreen() {
     <AppChrome>
       <div className="flex flex-col w-full">
         <div className="px-6 lg:px-8 py-6 space-y-8 mx-auto w-full">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 motion-rise">
             <div className="space-y-1.5">
               <nav className="flex flex-wrap items-center gap-2 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">
                 {(donnees?.entete.fil ?? []).map((etape, index, fil) => (
@@ -138,7 +138,7 @@ export function DisciplineScreen() {
               ) : null}
             </div>
             <div className="flex flex-wrap items-center gap-3 shrink-0">
-              <button className="inline-flex items-center gap-2 px-5 py-2.5 rounded bg-primary text-on-primary font-label-lg text-label-lg font-semibold shadow-sm hover:bg-primary-container transition-colors" type="button" onClick={() => setSaisie(true)}>
+              <button className="inline-flex items-center gap-2 px-3 py-1.5 rounded bg-primary text-on-primary font-label-md text-label-md font-semibold hover:bg-primary-container transition-colors" type="button" onClick={() => setSaisie(true)}>
                 <Icone nom="add_moderator" className="text-lg" />
                 <span>Saisir la commission paritaire</span>
               </button>
@@ -146,13 +146,13 @@ export function DisciplineScreen() {
           </div>
           {/* Indicateurs */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Indicateur titre="Dossiers en instruction" icone="pending_actions" liseret="bg-secondary-container" teinte="text-secondary" valeur={deuxChiffres(indicateurs?.instruction)} legende="Phase contradictoire active" legendeCouleur="text-secondary font-semibold" pied={`Délai d'instruction de ${delai} jours`} piedValeur={indicateurs ? `${indicateurs.dans_les_delais} dans les délais` : "—"} piedCouleur="text-primary" />
-            <Indicateur titre={`Sanctions du 1er degré (${donnees?.exercice ?? ""})`} icone="assignment_late" liseret="bg-primary" teinte="text-primary" valeur={deuxChiffres(indicateurs?.sanctions_premier_degre)} legende="Actes notifiés" pied={indicateurs ? `${indicateurs.avertissements} avertissement${indicateurs.avertissements > 1 ? "s" : ""} • ${indicateurs.blames} blâme${indicateurs.blames > 1 ? "s" : ""}` : "—"} piedValeur="Notifiés RH" piedCouleur="text-on-surface" />
-            <Indicateur titre="Sessions paritaires à venir" icone="groups" liseret="bg-secondary" teinte="text-secondary" valeur={deuxChiffres(indicateurs?.sessions)} legende={prochaine ? `Prochaine : ${dateCourte(prochaine.date)}` : "Aucune session fixée"} legendeCouleur="text-secondary font-semibold" pied="Dossiers du 2nd degré" piedValeur={indicateurs ? String(indicateurs.second_degre) : "—"} piedCouleur="text-secondary" />
-            <Indicateur titre="Régularité & contradictoire" icone="fact_check" liseret="bg-primary-container" teinte="text-primary" valeur={donnees?.regularite.taux != null ? `${donnees.regularite.taux}%` : "—"} valeurCouleur="text-primary" legende={donnees?.regularite.detail ?? ""} pied={donnees?.regularite.controle ?? ""} piedValeur={donnees?.regularite.visa ?? ""} piedCouleur="text-primary" />
+            <Indicateur index={0} titre="Dossiers en instruction" icone="pending_actions" liseret="bg-secondary-container" teinte="text-secondary" valeur={deuxChiffres(indicateurs?.instruction)} legende="Phase contradictoire active" legendeCouleur="text-secondary font-semibold" pied={`Délai d'instruction de ${delai} jours`} piedValeur={indicateurs ? `${indicateurs.dans_les_delais} dans les délais` : "—"} piedCouleur="text-primary" />
+            <Indicateur index={1} titre={`Sanctions du 1er degré (${donnees?.exercice ?? ""})`} icone="assignment_late" liseret="bg-primary" teinte="text-primary" valeur={deuxChiffres(indicateurs?.sanctions_premier_degre)} legende="Actes notifiés" pied={indicateurs ? `${indicateurs.avertissements} avertissement${indicateurs.avertissements > 1 ? "s" : ""} • ${indicateurs.blames} blâme${indicateurs.blames > 1 ? "s" : ""}` : "—"} piedValeur="Notifiés RH" piedCouleur="text-on-surface" />
+            <Indicateur index={2} titre="Sessions paritaires à venir" icone="groups" liseret="bg-secondary" teinte="text-secondary" valeur={deuxChiffres(indicateurs?.sessions)} legende={prochaine ? `Prochaine : ${dateCourte(prochaine.date)}` : "Aucune session fixée"} legendeCouleur="text-secondary font-semibold" pied="Dossiers du 2nd degré" piedValeur={indicateurs ? String(indicateurs.second_degre) : "—"} piedCouleur="text-secondary" />
+            <Indicateur index={3} titre="Régularité & contradictoire" icone="fact_check" liseret="bg-primary-container" teinte="text-primary" valeur={donnees?.regularite.taux != null ? `${donnees.regularite.taux}%` : "—"} valeurCouleur="text-primary" legende={donnees?.regularite.detail ?? ""} pied={donnees?.regularite.controle ?? ""} piedValeur={donnees?.regularite.visa ?? ""} piedCouleur="text-primary" />
           </div>
           {donnees?.echelle.titre ? (
-            <div className="bg-surface-container-lowest rounded-lg shadow-sm p-6 space-y-4">
+            <div className="bg-surface-container-lowest rounded-xl shadow-sm p-6 space-y-4">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3">
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded bg-surface-container-low text-primary flex items-center justify-center font-bold">
@@ -194,7 +194,7 @@ export function DisciplineScreen() {
             </div>
           ) : null}
           {/* Registre des procédures */}
-          <div className="bg-surface-container-lowest rounded-lg shadow-sm flex flex-col overflow-hidden">
+          <div className="bg-surface-container-lowest rounded-xl shadow-sm flex flex-col overflow-hidden">
             <div className="p-6 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
@@ -269,7 +269,7 @@ export function DisciplineScreen() {
           </div>
           {/* Sessions paritaires et effacements */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            <div className="lg:col-span-7 bg-surface-container-lowest rounded-lg shadow-sm p-6 space-y-6">
+            <div className="lg:col-span-7 bg-surface-container-lowest rounded-xl shadow-sm p-6 space-y-6">
               <div className="flex flex-wrap items-center justify-between gap-3 pb-3">
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded bg-surface-container-low text-primary flex items-center justify-center font-bold">
@@ -323,7 +323,7 @@ export function DisciplineScreen() {
                 )}
               </div>
             </div>
-            <div className="lg:col-span-5 bg-surface-container-lowest rounded-lg shadow-sm p-6 space-y-6 flex flex-col">
+            <div className="lg:col-span-5 bg-surface-container-lowest rounded-xl shadow-sm p-6 space-y-6 flex flex-col">
               <div className="space-y-4">
                 <div className="flex items-center gap-3 pb-2">
                   <div className="w-9 h-9 rounded bg-surface-container-low text-primary flex items-center justify-center font-bold">
@@ -366,7 +366,7 @@ export function DisciplineScreen() {
             </div>
           </div>
           {donnees?.suivi.titre ? (
-            <div className="bg-surface-container-lowest rounded-lg p-5 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="bg-surface-container-lowest rounded-xl p-5 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded bg-surface-container-low text-primary flex items-center justify-center shrink-0">
                   <Icone nom="security" className="text-2xl" />
@@ -387,11 +387,11 @@ export function DisciplineScreen() {
   );
 }
 
-function Indicateur({ titre, icone, liseret, teinte, valeur, valeurCouleur = "text-on-surface", legende, legendeCouleur = "text-on-surface-variant", pied, piedValeur, piedCouleur }: {
-  titre: string; icone: string; liseret: string; teinte: string; valeur: string; valeurCouleur?: string; legende: string; legendeCouleur?: string; pied: string; piedValeur: string; piedCouleur: string;
+function Indicateur({ titre, icone, liseret, teinte, valeur, valeurCouleur = "text-on-surface", legende, legendeCouleur = "text-on-surface-variant", pied, piedValeur, piedCouleur, index = 0 }: {
+  titre: string; icone: string; liseret: string; teinte: string; valeur: string; valeurCouleur?: string; legende: string; legendeCouleur?: string; pied: string; piedValeur: string; piedCouleur: string; index?: number;
 }) {
   return (
-    <div className="bg-surface-container-lowest p-5 rounded-lg shadow-sm flex flex-col justify-between relative overflow-hidden">
+    <div className="bg-surface-container-lowest p-5 rounded-xl shadow-sm flex flex-col justify-between relative overflow-hidden motion-card-appear" style={{ "--delay": `${index * 80}ms` } as CSSProperties}>
       <div className={`absolute top-0 left-0 w-1.5 h-full ${liseret}`} />
       <div className="flex items-start justify-between gap-2">
         <span className="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider font-semibold">{titre}</span>
@@ -455,7 +455,7 @@ function LigneProcedure({ procedure, delai, onOuvrir }: { procedure: Procedure; 
           ) : (
             <div className="flex items-center gap-2">
               <div className="w-20 bg-surface-container h-1.5 rounded-full overflow-hidden">
-                <div className={`h-full ${restant < 7 ? "bg-error" : "bg-secondary-container"}`} style={{ width: `${ecoule}%` }} />
+                <div className={`motion-fill h-full ${restant < 7 ? "bg-error" : "bg-secondary-container"}`} style={{ width: `${ecoule}%` }} />
               </div>
               <span className={`font-code-num text-label-sm font-bold ${restant < 0 ? "text-error" : "text-secondary"}`}>{restant >= 0 ? `J - ${restant}` : `Dépassé de ${-restant} j`}</span>
             </div>

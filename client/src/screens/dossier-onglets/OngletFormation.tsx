@@ -108,7 +108,7 @@ export function OngletFormation({ agent }: { agent: Dossier }) {
                 <span className="font-code-num text-code-num text-primary font-bold">{plan ? `${plan.objectif_agents} prévus` : ""}</span>
               </div>
               <div className="w-full bg-surface-container rounded-full h-2 overflow-hidden">
-                <div className="bg-primary h-full rounded-full transition-all duration-700" style={{ width: `${Math.min(execution, 100)}%` }} />
+                <div className="motion-fill bg-primary h-full rounded-full" style={{ width: `${Math.min(execution, 100)}%` }} />
               </div>
             </div>
           </div>
@@ -240,7 +240,7 @@ export function OngletFormation({ agent }: { agent: Dossier }) {
                             </span>
                           </div>
                           <div className="w-full bg-surface-container rounded-full h-1.5">
-                            <div className={`h-full rounded-full ${complet ? "bg-secondary" : "bg-primary"}`} style={{ width: `${session.places ? Math.min(100, (session.occupees / session.places) * 100) : 0}%` }} />
+                            <div className={`motion-fill h-full rounded-full ${complet ? "bg-secondary" : "bg-primary"}`} style={{ width: `${session.places ? Math.min(100, (session.occupees / session.places) * 100) : 0}%` }} />
                           </div>
                           <span className="block font-code-num text-code-num text-on-surface-variant">{periodeSession(session.date_debut, session.date_fin)}</span>
                         </div>

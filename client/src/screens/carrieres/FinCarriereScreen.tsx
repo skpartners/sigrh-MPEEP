@@ -138,7 +138,7 @@ export function FinCarriereScreen() {
               ) : null}
             </div>
             <div className="flex flex-wrap items-center gap-2 shrink-0">
-              <button className="inline-flex items-center gap-2 px-3 py-2 rounded bg-surface-container-lowest text-primary font-label-md text-label-md font-semibold shadow-sm hover:bg-surface-container" type="button" onClick={() => setPanneau({ genre: "cadre" })}>
+              <button className="inline-flex items-center gap-2 px-3 py-1.5 rounded bg-surface-container-lowest text-primary font-label-md text-label-md font-semibold shadow-sm hover:bg-surface-container" type="button" onClick={() => setPanneau({ genre: "cadre" })}>
                 <Icone nom="edit" className="text-lg" />
                 Modifier le cadre
               </button>
@@ -176,7 +176,7 @@ export function FinCarriereScreen() {
                             </span>
                           </div>
                           <div className="w-full h-3 bg-surface-container rounded-full overflow-hidden flex">
-                            <div className={`${couleur.barre} h-full rounded-full transition-all duration-500`} style={{ width: `${(tranche.effectif / plusGrande) * 100}%` }} />
+                            <div className={`motion-fill ${couleur.barre} h-full rounded-full`} style={{ width: `${(tranche.effectif / plusGrande) * 100}%` }} />
                           </div>
                           <div className="flex justify-between text-label-sm font-label-sm text-on-surface-variant mt-1">
                             <span>Hommes : {tranche.hommes} • Femmes : {tranche.femmes}</span>

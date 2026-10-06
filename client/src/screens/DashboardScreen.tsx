@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState, type CSSProperties } from "react";
 import { Link } from "react-router-dom";
 import { api, mediaUrl, telecharger } from "../api/client";
 import type { Acte, Dashboard, Kpi, SessionUser, Ton } from "../api/types";
@@ -7,7 +7,7 @@ import { dateCourte, moisAnnee } from "../ui/format";
 import { Portrait } from "../ui/PhotoProfil";
 import { useFeedback, wait } from "../ui/Feedback";
 import { useAction } from "../ui/useAction";
-import { EASE_IN, EASE_OUT, Skeleton, reducedMotion, useFlip } from "../ui/Motion";
+import { EASE_IN, EASE_OUT, Skeleton, reducedMotion, useCounterOnReveal, useFlip } from "../ui/Motion";
 import { AppChrome } from "./AppChrome";
 import { Icone } from "../ui/Icone";
 
@@ -88,7 +88,7 @@ export function DashboardScreen() {
             </div>
               <button
                 type="button"
-                className="inline-flex items-center gap-2 h-10 px-4 rounded-lg bg-primary text-on-primary font-label-md text-label-md shrink-0"
+                className="inline-flex items-center gap-2 h-8 px-3 rounded-lg bg-primary text-on-primary font-label-md text-label-md shrink-0"
                 onClick={() => void exporterPilotage()}
               >
                 <Icone nom="picture_as_pdf" className="text-lg" />
@@ -101,7 +101,7 @@ export function DashboardScreen() {
             <div className={`${CARD} p-6`} role="alert">
               <p className="font-label-lg text-label-lg text-error">Le tableau de bord n'a pas pu être chargé.</p>
               <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">Vérifiez votre connexion au réseau ministériel.</p>
-              <button type="button" className="mt-3 h-10 px-4 rounded bg-primary-container text-on-primary font-label-lg text-label-lg hover:bg-primary" onClick={() => tableau.refetch()}>
+              <button type="button" className="mt-3 h-8 px-3 rounded bg-primary-container text-on-primary font-label-md text-label-md hover:bg-primary" onClick={() => tableau.refetch()}>
                 Réessayer
               </button>
             </div>
@@ -109,7 +109,9 @@ export function DashboardScreen() {
 
           {/* Indicateurs clés */}
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
-            {data ? data.kpis.map((kpi) => <CarteKpi key={kpi.libelle} kpi={kpi} />) : [0, 1, 2, 3].map((index) => <Skeleton key={index} className="h-48 rounded-xl" />)}
+            {data
+              ? data.kpis.map((kpi, i) => <CarteKpi key={kpi.libelle} kpi={kpi} index={i} />)
+              : [0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-48 rounded-xl" />)}
           </div>
 
           <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
@@ -124,21 +126,25 @@ export function DashboardScreen() {
   );
 }
 
-function CarteKpi({ kpi }: { kpi: Kpi }) {
+function CarteKpi({ kpi, index }: { kpi: Kpi; index: number }) {
+  const valeurAnimee = useCounterOnReveal(kpi.valeur);
   return (
-    <div className={`${CARD} motion-content p-5 flex flex-col justify-between`}>
+    <div
+      className={`${CARD} motion-content p-5 flex flex-col justify-between`}
+      style={{ "--delay": `${index * 60}ms` } as CSSProperties}
+    >
       <div className="flex items-center justify-between gap-3 mb-3">
         <span className={`font-label-sm text-label-sm font-bold uppercase tracking-wider ${kpi.ton === "secondary" ? "text-on-secondary-container" : "text-on-surface-variant"}`}>
           {kpi.libelle}
         </span>
-        <div className={`p-2 rounded ${TON_ICONE[kpi.ton]}`}>
+        <div className={`p-2 rounded-lg ${TON_ICONE[kpi.ton]}`}>
           <Icone nom={kpi.icone} className="text-xl" />
         </div>
       </div>
       <div>
         <div className="flex flex-wrap items-baseline gap-2">
-          <span className={`font-headline-xl text-headline-xl tracking-tight font-bold ${kpi.ton === "secondary" && !kpi.unite ? "text-secondary" : "text-on-surface"}`}>
-            {kpi.valeur}
+          <span className={`font-headline-xl text-headline-xl tracking-tight font-bold tabular-nums ${kpi.ton === "secondary" && !kpi.unite ? "text-secondary" : "text-on-surface"}`}>
+            {valeurAnimee}
           </span>
           {kpi.unite ? <span className="font-label-sm text-label-sm text-on-surface-variant font-bold">{kpi.unite}</span> : null}
           {kpi.badge ? <span className={`font-label-sm text-label-sm px-1.5 py-0.5 rounded font-semibold ${TON_BADGE[kpi.badge_ton]}`}>{kpi.badge}</span> : null}
@@ -151,8 +157,11 @@ function CarteKpi({ kpi }: { kpi: Kpi }) {
             <span className={kpi.ton === "primary" ? "text-primary font-semibold" : "text-on-surface-variant"}>{kpi.jauge.gauche}</span>
             <span className={kpi.ton === "secondary" ? "text-secondary font-bold" : "text-on-surface-variant font-medium"}>{kpi.jauge.droite}</span>
           </div>
-          <div className="w-full h-1.5 bg-surface-container rounded-full overflow-hidden" aria-hidden="true">
-            <div className={`${TON_BARRE[kpi.ton]} motion-fill h-full rounded-full`} style={{ width: `${kpi.jauge.pourcentage}%` }}></div>
+          <div className="w-full h-2 bg-surface-container rounded-full overflow-hidden" aria-hidden="true">
+            <div
+              className={`${TON_BARRE[kpi.ton]} motion-fill h-full rounded-full`}
+              style={{ width: `${kpi.jauge.pourcentage}%`, "--delay": `${200 + index * 60}ms` } as CSSProperties}
+            />
           </div>
         </div>
       ) : null}

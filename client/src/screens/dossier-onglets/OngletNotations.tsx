@@ -92,7 +92,7 @@ export function OngletNotations({ agent }: { agent: Dossier }) {
             <span className="font-headline-sm text-headline-sm text-on-surface-variant font-medium">%</span>
           </div>
           <div className="w-full bg-surface-container h-2 rounded-full overflow-hidden">
-            <div className="bg-primary-container h-full rounded-full" style={{ width: `${Math.min(tauxMoyen ?? 0, 100)}%` }} />
+            <div className="motion-fill bg-primary-container h-full rounded-full" style={{ width: `${Math.min(tauxMoyen ?? 0, 100)}%` }} />
           </div>
         </Carte>
         <Carte titre={`Progression ${ancienne.annee}-${courante.annee}`} badge={progression !== null ? `${progression >= 0 ? "+" : ""}${note(progression)} pt` : "—"} badgeTon="bg-primary-fixed text-on-primary-fixed-variant">
@@ -167,7 +167,7 @@ export function OngletNotations({ agent }: { agent: Dossier }) {
                     <span className="font-code-num text-code-num text-primary font-bold">{note(critere.note)} / 20</span>
                   </div>
                   <div className="w-full bg-surface-container h-1.5 rounded-full overflow-hidden">
-                    <div className="bg-primary h-full rounded-full" style={{ width: `${(critere.note / 20) * 100}%` }} />
+                    <div className="motion-fill bg-primary h-full rounded-full" style={{ width: `${(critere.note / 20) * 100}%` }} />
                   </div>
                   <p className="font-body-sm text-body-sm text-on-surface-variant">{critere.commentaire}</p>
                 </div>

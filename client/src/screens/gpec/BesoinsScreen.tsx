@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useMemo, useState, type CSSProperties } from "react";
 import { ApiError, api, telecharger } from "../../api/client";
 import type { Besoins, FicheBesoin } from "../../api/types";
 import { dateCourte, nombre } from "../../ui/format";
@@ -13,8 +13,8 @@ import { Icone } from "../../ui/Icone";
 const PAGE = "w-full px-4 sm:px-6 lg:px-8 py-6 mx-auto flex-1 space-y-6";
 const CARTE = "rounded-xl bg-surface-container-lowest border border-hairline";
 const CHAMP = "w-full h-10 px-3 rounded border border-outline-variant bg-surface-container-lowest font-body-md text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-primary";
-const PRIMAIRE = "inline-flex items-center gap-2 px-4 py-2 rounded bg-primary text-on-primary hover:bg-primary-container font-label-lg text-label-lg disabled:opacity-50";
-const SECOND = "inline-flex items-center gap-2 px-4 py-2 rounded bg-surface-container-low text-primary hover:bg-surface-container font-label-lg text-label-lg";
+const PRIMAIRE = "inline-flex items-center gap-2 px-3 py-1.5 rounded bg-primary text-on-primary hover:bg-primary-container font-label-md text-label-md disabled:opacity-50";
+const SECOND = "inline-flex items-center gap-2 px-3 py-1.5 rounded bg-surface-container-low text-primary hover:bg-surface-container font-label-md text-label-md";
 const TAILLE = 5;
 const FICHE_VIDE = { entite: "", direction: "", profil: "", grade: "", specialite: "", volume: "1", motif: "", nature: "creation", critique: false };
 
@@ -94,7 +94,7 @@ export function BesoinsScreen() {
   return (
     <AppChrome>
       <div className={PAGE}>
-        <section className={`${CARTE} p-6`}>
+        <section className={`${CARTE} p-6 motion-rise`}>
           <p className="flex flex-wrap items-center gap-2 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wide">
             <span>GPEC</span>
             <Icone nom="chevron_right" className="text-xs" />
@@ -122,9 +122,9 @@ export function BesoinsScreen() {
         </section>
 
         <section className="grid gap-4 md:grid-cols-3">
-          <Indicateur libelle="Volume demandé" valeur={nombre(data.volume)} detail={`${nombre(data.entites)} entité${data.entites > 1 ? "s" : ""}${data.variation === null ? "" : ` · ${data.variation > 0 ? "+" : ""}${nombre(data.variation, 1)} % par rapport à l'exercice précédent`}`} />
-          <Indicateur libelle="Postes accordés" valeur={nombre(data.postes_favorables)} detail={`${nombre(data.favorables)} fiche${data.favorables > 1 ? "s" : ""} favorable${data.favorables > 1 ? "s" : ""} · ${nombre(data.taux_favorable, 1)} %`} />
-          <Indicateur libelle="Postes critiques" valeur={nombre(data.critiques)} detail="Volume des fiches signalées comme critiques" />
+          <Indicateur index={0} libelle="Volume demandé" valeur={nombre(data.volume)} detail={`${nombre(data.entites)} entité${data.entites > 1 ? "s" : ""}${data.variation === null ? "" : ` · ${data.variation > 0 ? "+" : ""}${nombre(data.variation, 1)} % par rapport à l'exercice précédent`}`} />
+          <Indicateur index={1} libelle="Postes accordés" valeur={nombre(data.postes_favorables)} detail={`${nombre(data.favorables)} fiche${data.favorables > 1 ? "s" : ""} favorable${data.favorables > 1 ? "s" : ""} · ${nombre(data.taux_favorable, 1)} %`} />
+          <Indicateur index={2} libelle="Postes critiques" valeur={nombre(data.critiques)} detail="Volume des fiches signalées comme critiques" />
         </section>
 
         {data.alerte_retraites > 0 ? (
@@ -133,7 +133,7 @@ export function BesoinsScreen() {
           </p>
         ) : null}
 
-        <section className={`${CARTE} p-6`}>
+        <section className={`${CARTE} p-6 motion-rise`} style={{ "--delay": "160ms" } as CSSProperties}>
           <h2 className="font-headline-sm text-headline-sm text-on-surface">Compétences sous tension</h2>
           <div className="mt-4 grid gap-4 md:grid-cols-2">
             {data.filieres.map((item) => (
@@ -147,7 +147,7 @@ export function BesoinsScreen() {
                 </div>
                 <p className="font-body-sm text-body-sm text-on-surface-variant">{nombre(item.requis)} requis · {nombre(item.couverts)} couverts</p>
                 <div className="mt-1 h-2 overflow-hidden rounded bg-surface-container">
-                  <div className="h-full bg-primary" style={{ width: `${Math.min(100, item.taux)}%` }} />
+                  <div className="motion-fill h-full bg-primary" style={{ width: `${Math.min(100, item.taux)}%` }} />
                 </div>
               </article>
             ))}
@@ -157,7 +157,7 @@ export function BesoinsScreen() {
           </p>
         </section>
 
-        <section className={`${CARTE} overflow-hidden`}>
+        <section className={`${CARTE} overflow-hidden motion-rise`} style={{ "--delay": "240ms" } as CSSProperties}>
           <div className="flex flex-col gap-3 p-6 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <h2 className="font-headline-sm text-headline-sm text-on-surface">Registre des fiches</h2>
@@ -363,9 +363,9 @@ export function BesoinsScreen() {
   );
 }
 
-function Indicateur({ libelle, valeur, detail }: { libelle: string; valeur: string; detail: string }) {
+function Indicateur({ libelle, valeur, detail, index = 0 }: { libelle: string; valeur: string; detail: string; index?: number }) {
   return (
-    <article className={`${CARTE} p-5`}>
+    <article className={`${CARTE} p-5 motion-card-appear`} style={{ "--delay": `${index * 80}ms` } as CSSProperties}>
       <p className="font-label-sm text-label-sm uppercase tracking-wide text-on-surface-variant">{libelle}</p>
       <p className="mt-1 font-headline-md text-headline-md text-on-surface">{valeur}</p>
       <p className="mt-1 font-body-sm text-body-sm text-on-surface-variant">{detail}</p>

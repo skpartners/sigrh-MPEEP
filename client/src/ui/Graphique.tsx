@@ -17,9 +17,9 @@ use([
   CanvasRenderer,
 ]);
 
-const PALETTE = ["#004428", "#0a5e3a", "#9e4300", "#495167", "#8cd6a9", "#fe7b28", "#333a4f"];
-const TRAIT = "#3a4450";
-const ENCRE = "#3b82c4";
+const PALETTE = ["#3D007A", "#7C3AED", "#A78BFA", "#4338CA", "#C4B5FD", "#5B21B6", "#818CF8"];
+const TRAIT = "#64748b";
+const ENCRE = "#7C3AED";
 
 const FORMES = [
   { code: "barre", libelle: "Barres", icone: IconeBarres },
@@ -64,7 +64,7 @@ export function GraphiqueChoisi({
       <div className="flex items-center justify-end gap-1">
         <button
           type="button"
-          className="flex h-11 w-11 items-center justify-center rounded border border-outline-variant bg-[#f3f4f6] hover:bg-white"
+          className="flex h-11 w-11 items-center justify-center rounded border border-white/40 bg-white/60 backdrop-blur-sm hover:bg-white/90"
           title="Exporter les données en Excel"
           aria-label={`Exporter les données de ${titre} en Excel`}
           onClick={() => telechargerClasseurGraphique({ titre, detail, series })}
@@ -73,7 +73,7 @@ export function GraphiqueChoisi({
         </button>
         <button
           type="button"
-          className={`flex h-11 w-11 items-center justify-center rounded bg-[#f3f4f6] hover:bg-white ${etiquettes ? "border-2 border-[#1c1c1c]" : "border border-outline-variant"}`}
+          className={`flex h-11 w-11 items-center justify-center rounded backdrop-blur-sm hover:bg-white/90 ${etiquettes ? "border-2 border-primary bg-primary/10" : "border border-white/40 bg-white/60"}`}
           aria-pressed={etiquettes}
           title="Étiquettes de données"
           aria-label={etiquettes ? "Masquer les étiquettes de données" : "Afficher les étiquettes de données"}
@@ -119,7 +119,7 @@ function ChoixForme({ forme, onChange }: { forme: FormeGraphique; onChange: (for
     <div className="relative" ref={boite}>
       <button
         type="button"
-        className="flex h-11 w-11 items-center justify-center rounded border border-outline-variant bg-[#f3f4f6] hover:bg-white"
+        className="flex h-11 w-11 items-center justify-center rounded border border-white/40 bg-white/60 backdrop-blur-sm hover:bg-white/90"
         aria-label={`Type de graphique : ${courant.libelle}`}
         aria-haspopup="listbox"
         aria-expanded={ouvert}
@@ -131,7 +131,7 @@ function ChoixForme({ forme, onChange }: { forme: FormeGraphique; onChange: (for
         <div
           role="listbox"
           aria-labelledby={titre}
-          className="absolute right-0 top-full z-30 mt-1 grid w-max grid-cols-6 gap-1 rounded border border-hairline bg-[#f3f4f6] p-2 shadow-md"
+          className="absolute right-0 top-full z-30 mt-1 grid w-max grid-cols-6 gap-1 rounded border border-white/40 bg-white/80 backdrop-blur-xl p-2 shadow-md"
         >
           <p id={titre} className="sr-only">Types de graphique</p>
           {FORMES.map((item) => {
@@ -144,7 +144,7 @@ function ChoixForme({ forme, onChange }: { forme: FormeGraphique; onChange: (for
                 aria-selected={choisi}
                 title={item.libelle}
                 aria-label={item.libelle}
-                className={`flex h-11 w-11 items-center justify-center rounded bg-[#f3f4f6] ${choisi ? "border-2 border-[#1c1c1c]" : "border border-transparent hover:bg-white"}`}
+                className={`flex h-11 w-11 items-center justify-center rounded ${choisi ? "border-2 border-primary bg-primary/10" : "border border-transparent bg-transparent hover:bg-white/70"}`}
                 onClick={() => {
                   onChange(item.code);
                   setOuvert(false);
@@ -193,7 +193,7 @@ function option(forme: FormeGraphique, series: SerieGraphique[], etiquettes: boo
     const donnees = (source?.points ?? []).map((point) => ({ name: point.libelle, value: point.total }));
     return {
       color: PALETTE,
-      textStyle: { fontFamily: "Public Sans, sans-serif" },
+      textStyle: { fontFamily: "Plus Jakarta Sans, sans-serif" },
       tooltip: { trigger: "item" },
       legend: { type: "scroll", bottom: 0 },
       series: [{
@@ -221,7 +221,7 @@ function option(forme: FormeGraphique, series: SerieGraphique[], etiquettes: boo
   const axeValeur = { type: "value" as const, max: forme === "pourcentage" ? 100 : undefined };
   return {
     color: PALETTE,
-    textStyle: { fontFamily: "Public Sans, sans-serif" },
+    textStyle: { fontFamily: "Plus Jakarta Sans, sans-serif" },
     tooltip: {
       trigger: "axis",
       valueFormatter: (valeur: unknown) => {
@@ -326,8 +326,8 @@ function IconeEmpilee() {
   return (
     <Cadre>
       <rect x="8" y="4" width="8" height="5" fill={ENCRE} />
-      <rect x="8" y="9" width="8" height="6" fill="#8cd6a9" />
-      <rect x="8" y="15" width="8" height="6" fill="#9e4300" />
+      <rect x="8" y="9" width="8" height="6" fill="#A78BFA" />
+      <rect x="8" y="15" width="8" height="6" fill="#5B21B6" />
       <path d="M2 21h20" stroke={TRAIT} strokeWidth="1.2" />
     </Cadre>
   );
@@ -337,8 +337,8 @@ function IconeEmpileeHorizontale() {
   return (
     <Cadre>
       <rect x="3" y="8" width="6" height="8" fill={ENCRE} />
-      <rect x="9" y="8" width="6" height="8" fill="#8cd6a9" />
-      <rect x="15" y="8" width="6" height="8" fill="#9e4300" />
+      <rect x="9" y="8" width="6" height="8" fill="#A78BFA" />
+      <rect x="15" y="8" width="6" height="8" fill="#5B21B6" />
     </Cadre>
   );
 }
@@ -347,9 +347,9 @@ function IconePourcentage() {
   return (
     <Cadre>
       <rect x="5" y="4" width="5" height="16" fill={ENCRE} />
-      <rect x="5" y="4" width="5" height="6" fill="#8cd6a9" />
+      <rect x="5" y="4" width="5" height="6" fill="#A78BFA" />
       <rect x="14" y="4" width="5" height="16" fill={ENCRE} />
-      <rect x="14" y="4" width="5" height="10" fill="#8cd6a9" />
+      <rect x="14" y="4" width="5" height="10" fill="#A78BFA" />
       <path d="M2 21h20" stroke={TRAIT} strokeWidth="1.2" />
     </Cadre>
   );
@@ -397,7 +397,7 @@ function IconeSecteur() {
   return (
     <Cadre>
       <path d="M12 12 L12 3 A9 9 0 1 1 5 17z" fill={ENCRE} />
-      <path d="M12 12 L5 17 A9 9 0 0 1 12 3z" fill="#8cd6a9" />
+      <path d="M12 12 L5 17 A9 9 0 0 1 12 3z" fill="#A78BFA" />
     </Cadre>
   );
 }

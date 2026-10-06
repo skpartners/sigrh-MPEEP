@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState, type CSSProperties } from "react";
 import { ApiError, api } from "../api/client";
 import type { AnnuaireUtilisateurs, CompteUtilisateur } from "../api/types";
 import { optionsEntites, rangerStructures } from "../ui/Entites";
@@ -13,7 +13,7 @@ import { Icone } from "../ui/Icone";
 const PAGE = "w-full px-4 sm:px-6 lg:px-8 py-6 mx-auto flex-1 space-y-6";
 const CARTE = "rounded-xl bg-surface-container-lowest border border-hairline";
 const CHAMP = "w-full h-10 px-3 rounded border border-outline-variant bg-surface-container-lowest font-body-md text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-primary";
-const PRIMAIRE = "inline-flex items-center gap-2 px-4 py-2 rounded bg-primary text-on-primary hover:bg-primary-container font-label-lg text-label-lg";
+const PRIMAIRE = "inline-flex items-center gap-2 px-3 py-1.5 rounded bg-primary text-on-primary hover:bg-primary-container font-label-md text-label-md";
 
 const VIDE = {
   matricule: "",
@@ -272,7 +272,7 @@ export function UtilisateursScreen() {
   return (
     <AppChrome>
       <div className={PAGE}>
-        <section className={`${CARTE} p-6`}>
+        <section className={`${CARTE} p-6 motion-rise`} style={{ "--delay": "0ms" } as CSSProperties}>
           <p className="flex flex-wrap items-center gap-2 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wide">
             <span>Administration</span>
             <Icone nom="chevron_right" className="text-xs" />
@@ -293,7 +293,7 @@ export function UtilisateursScreen() {
           </div>
         </section>
 
-        <section className={`${CARTE} overflow-hidden`}>
+        <section className={`${CARTE} overflow-hidden motion-rise`} style={{ "--delay": "80ms" } as CSSProperties}>
           <div className="grid gap-3 p-4 md:grid-cols-3">
             <input className={CHAMP} value={recherche} placeholder="Matricule ou nom…" aria-label="Rechercher un compte" onChange={(event) => setRecherche(event.target.value)} />
             <select className={CHAMP} value={role} aria-label="Filtrer par rôle" onChange={(event) => setRole(event.target.value)}>

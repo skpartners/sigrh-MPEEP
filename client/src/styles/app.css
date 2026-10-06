@@ -1,10 +1,10 @@
 @import "tailwindcss";
-@import "@fontsource/public-sans/400.css";
-@import "@fontsource/public-sans/500.css";
-@import "@fontsource/public-sans/600.css";
-@import "@fontsource/public-sans/700.css";
+@import "@fontsource/plus-jakarta-sans/400.css";
+@import "@fontsource/plus-jakarta-sans/500.css";
+@import "@fontsource/plus-jakarta-sans/600.css";
+@import "@fontsource/plus-jakarta-sans/700.css";
 @theme {
-  --font-sans: "Public Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
   --font-headline-xl: var(--font-sans);
   --font-headline-xl-mobile: var(--font-sans);
   --font-headline-lg: var(--font-sans);
@@ -68,55 +68,59 @@
   --spacing-margin-tablet: 1.5rem;
   --spacing-margin-desktop: 2rem;
 
-  --color-surface: #f8f9ff;
-  --color-surface-dim: #cbdbf5;
-  --color-surface-bright: #f8f9ff;
+  /* ---- Surfaces & fonds : chrome doux, sobre & moderne. ---- */
+  --color-surface: #f0f3f7;
+  --color-surface-dim: #e0e4ec;
+  --color-surface-bright: #ffffff;
   --color-surface-container-lowest: #ffffff;
-  --color-surface-container-low: #eff4ff;
-  --color-surface-container: #e5eeff;
-  --color-surface-container-high: #dce9ff;
-  --color-surface-container-highest: #d3e4fe;
-  --color-surface-variant: #d3e4fe;
-  --color-on-surface: #0b1c30;
-  --color-on-surface-variant: #3f4942;
-  --color-inverse-surface: #213145;
-  --color-inverse-on-surface: #eaf1ff;
-  --color-outline: #707a71;
-  --color-outline-variant: #bfc9c0;
-  --color-surface-tint: #1e6b46;
-  --color-background: #f8f9ff;
-  --color-on-background: #0b1c30;
-  --color-primary: #004428;
+  --color-surface-container-low: #f5f7fa;
+  --color-surface-container: #e8ecf1;
+  --color-surface-container-high: #dde2ea;
+  --color-surface-container-highest: #d1d8e3;
+  --color-surface-variant: #ede9fe;
+  --color-on-surface: #1a103a;
+  --color-on-surface-variant: #4a4060;
+  --color-inverse-surface: #2e1065;
+  --color-inverse-on-surface: #f3e8ff;
+  --color-outline: #7c6fa0;
+  --color-outline-variant: #c9c0dc;
+  --color-surface-tint: #8b5cf6;
+  --color-background: #eef1f6;
+  --color-on-background: #1a103a;
+  /* ---- Primary : violet toxique & souverain. ---- */
+  --color-primary: #3d007a;
   --color-on-primary: #ffffff;
-  --color-primary-container: #0a5e3a;
-  --color-on-primary-container: #8ad5a7;
-  --color-inverse-primary: #8cd6a9;
-  --color-primary-fixed: #a7f3c3;
-  --color-primary-fixed-dim: #8cd6a9;
-  --color-on-primary-fixed: #002111;
-  --color-on-primary-fixed-variant: #005231;
-  --color-secondary: #9e4300;
+  --color-primary-container: #5b0faf;
+  --color-on-primary-container: #f3e8ff;
+  --color-inverse-primary: #c4a0ff;
+  --color-primary-fixed: #ede9fe;
+  --color-primary-fixed-dim: #ddd6fe;
+  --color-on-primary-fixed: #2e1065;
+  --color-on-primary-fixed-variant: #5b21b6;
+  /* ---- Secondary : violet lumineux, accent vivid. ---- */
+  --color-secondary: #5b21b6;
   --color-on-secondary: #ffffff;
-  --color-secondary-container: #fe7b28;
-  --color-on-secondary-container: #602600;
-  --color-secondary-fixed: #ffdbcb;
-  --color-secondary-fixed-dim: #ffb691;
-  --color-on-secondary-fixed: #341100;
-  --color-on-secondary-fixed-variant: #783100;
-  --color-tertiary: #333a4f;
+  --color-secondary-container: #8b5cf6;
+  --color-on-secondary-container: #ede9fe;
+  --color-secondary-fixed: #f5f3ff;
+  --color-secondary-fixed-dim: #ddd6fe;
+  --color-on-secondary-fixed: #2e1065;
+  --color-on-secondary-fixed-variant: #4c1d95;
+  /* ---- Tertiary : lilas tendre. ---- */
+  --color-tertiary: #7c3aed;
   --color-on-tertiary: #ffffff;
-  --color-tertiary-container: #495167;
-  --color-on-tertiary-container: #bdc4de;
-  --color-tertiary-fixed: #dae2fd;
-  --color-tertiary-fixed-dim: #bec6e0;
-  --color-on-tertiary-fixed: #131b2e;
-  --color-on-tertiary-fixed-variant: #3f465c;
-  --color-error: #ba1a1a;
+  --color-tertiary-container: #ddd6fe;
+  --color-on-tertiary-container: #2e1065;
+  --color-tertiary-fixed: #f5f3ff;
+  --color-tertiary-fixed-dim: #ede9fe;
+  --color-on-tertiary-fixed: #1c0040;
+  --color-on-tertiary-fixed-variant: #4c1d95;
+  --color-error: #dc2626;
   --color-on-error: #ffffff;
-  --color-error-container: #ffdad6;
-  --color-on-error-container: #93000a;
+  --color-error-container: #fee2e2;
+  --color-on-error-container: #991b1b;
   /* Bordure technique 1px des cartes (DESIGN.md, niveau 0). */
-  --color-hairline: #e2e8f0;
+  --color-hairline: #d8dae0;
 }
 
 html,
@@ -127,7 +131,12 @@ body,
 
 body {
   margin: 0;
-  background: var(--color-background);
+  /* Fond dégradé fixe — substrat pour l'effet liquid glass macOS. */
+  background:
+    radial-gradient(ellipse at 20% 0%, rgba(61, 0, 122, 0.08) 0%, transparent 55%),
+    radial-gradient(ellipse at 80% 100%, rgba(139, 92, 246, 0.07) 0%, transparent 55%),
+    #eef1f6;
+  background-attachment: fixed;
   color: var(--color-on-surface);
   font-family: var(--font-sans);
 }
@@ -141,8 +150,8 @@ table,
 
 /* Surfaces navigateur aux couleurs de la palette. */
 ::selection {
-  background: var(--color-primary-fixed);
-  color: var(--color-on-primary-fixed);
+  background: var(--color-primary-fixed);  /* #ede9fe — lilas doux */
+  color: var(--color-on-primary-fixed);    /* #2e1065 — violet profond */
 }
 html {
   caret-color: var(--color-primary);
@@ -154,7 +163,7 @@ button:focus-visible,
 a:focus-visible,
 [role="button"]:focus-visible,
 input[type="checkbox"]:focus-visible {
-  outline: 2px solid var(--color-primary-container);
+  outline: 2px solid var(--color-secondary-container);
   outline-offset: 2px;
 }
 
@@ -188,17 +197,27 @@ input[type="checkbox"]:focus-visible {
 @keyframes fade-in {
   from { opacity: 0; }
 }
+/* Jitter/Swishy : ressort avec léger dépassement → retour naturel */
 @keyframes rise-in {
-  from { opacity: 0; transform: translateY(12px); }
+  0%   { opacity: 0; transform: translateY(18px) scale(0.97); }
+  58%  { opacity: 1; transform: translateY(-3px) scale(1.006); }
+  80%  { transform: translateY(1.5px) scale(0.998); }
+  100% { opacity: 1; transform: none; }
 }
 @keyframes scale-in {
-  from { opacity: 0; transform: translateY(8px) scale(0.96); }
+  0%   { opacity: 0; transform: translateY(12px) scale(0.93); }
+  60%  { opacity: 1; transform: translateY(-2px) scale(1.015); }
+  80%  { transform: translateY(1px) scale(0.997); }
+  100% { opacity: 1; transform: none; }
 }
 @keyframes toast-in {
-  from { opacity: 0; transform: translateY(16px) scale(0.98); }
+  0%   { opacity: 0; transform: translateY(22px) scale(0.94); }
+  55%  { opacity: 1; transform: translateY(-5px) scale(1.02); }
+  78%  { transform: translateY(2px) scale(0.997); }
+  100% { opacity: 1; transform: none; }
 }
 @keyframes toast-out {
-  to { opacity: 0; transform: translateX(24px); }
+  to { opacity: 0; transform: translateX(32px) scale(0.96); }
 }
 @keyframes spin {
   to { transform: rotate(360deg); }
@@ -218,22 +237,89 @@ input[type="checkbox"]:focus-visible {
   20%, 60% { transform: translateX(-6px); }
   40%, 80% { transform: translateX(6px); }
 }
+/* Héro : entrée ample avec ressort (Jitter-style) */
+@keyframes hero-in {
+  0%   { opacity: 0; transform: translateY(40px) scale(0.96); }
+  55%  { opacity: 1; transform: translateY(-6px) scale(1.01); }
+  78%  { transform: translateY(2.5px) scale(0.998); }
+  100% { opacity: 1; transform: none; }
+}
+/* Portrait : ressort + légère rotation — LottieFiles feel */
+@keyframes hero-img-in {
+  0%   { opacity: 0; transform: translateY(30px) scale(0.88) rotate(-3deg); }
+  55%  { opacity: 1; transform: translateY(-6px) scale(1.03) rotate(0.5deg); }
+  80%  { transform: translateY(2px) scale(0.998) rotate(0deg); }
+  100% { opacity: 1; transform: none; }
+}
+/* Transition de page : spring ultra-subtil — Swishy-style */
+@keyframes page-in {
+  0%   { opacity: 0; transform: translateY(12px) scale(0.99); }
+  65%  { opacity: 1; transform: translateY(-2px) scale(1.002); }
+  100% { opacity: 1; transform: none; }
+}
+@keyframes nav-indicator-in {
+  from { transform: scaleY(0); opacity: 0; }
+}
+@keyframes counter-pop {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.06); }
+  100% { transform: scale(1); }
+}
+/* Carte : ressort prononcé, signature Swishy */
+@keyframes card-appear {
+  0%   { opacity: 0; transform: translateY(24px) scale(0.94); }
+  55%  { opacity: 1; transform: translateY(-5px) scale(1.012); }
+  76%  { transform: translateY(2px) scale(0.997); }
+  100% { opacity: 1; transform: none; }
+}
 
-/* Apparition discrète, réservée aux blocs hors écran au chargement : pas de flash. */
+/* Swishy : ressort pour le reveal au scroll ─────────────────────── */
+@keyframes spring-up {
+  0%   { opacity: 0; transform: translateY(22px) scale(0.97); }
+  55%  { opacity: 1; transform: translateY(-4px) scale(1.008); }
+  76%  { transform: translateY(1.5px) scale(0.997); }
+  100% { opacity: 1; transform: none; }
+}
+/* LottieFiles : halos flottants organiques ──────────────────────── */
+@keyframes float-1 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33%  { transform: translate(14px, -10px) scale(1.12); }
+  66%  { transform: translate(-8px, 14px) scale(0.92); }
+}
+@keyframes float-2 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  40%  { transform: translate(-16px, 10px) scale(1.15); }
+  70%  { transform: translate(12px, -14px) scale(0.9); }
+}
+/* LottieFiles : pulsation de statut ─────────────────────────────── */
+@keyframes pulse-ring {
+  0%   { transform: scale(1); opacity: 0.8; }
+  70%  { transform: scale(2.6); opacity: 0; }
+  100% { transform: scale(2.6); opacity: 0; }
+}
+/* Ripplix : ripple au clic depuis le centre ─────────────────────── */
+@keyframes ripple-out {
+  0%   { transform: scale(0); opacity: 0.28; }
+  100% { transform: scale(3.5); opacity: 0; }
+}
+/* Jitter : ligne d'accent qui voyage ───────────────────────────── */
+@keyframes gradient-sweep {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* ── Reveal au scroll : animation spring (pas de transition) ── */
 .reveal {
-  opacity: 0.35;
-  transform: translateY(8px);
+  opacity: 0;
+  transform: translateY(22px) scale(0.97);
 }
 .reveal.is-revealed {
-  opacity: 1;
-  transform: none;
-  transition:
-    opacity var(--dur-base) var(--ease-out) var(--reveal-delay, 0ms),
-    transform var(--dur-base) var(--ease-out) var(--reveal-delay, 0ms);
+  animation: spring-up 540ms var(--ease-out) both;
+  animation-delay: var(--reveal-delay, 0ms);
 }
 
 .motion-rise {
-  animation: rise-in var(--dur-slow) var(--ease-out) both;
+  animation: rise-in 480ms var(--ease-out) both;
   animation-delay: var(--delay, 0ms);
 }
 
@@ -263,7 +349,7 @@ input[type="checkbox"]:focus-visible {
   inset: 0;
   width: 40%;
   border-radius: inherit;
-  background: linear-gradient(90deg, var(--color-secondary-container), var(--color-primary-container));
+  background: linear-gradient(90deg, var(--color-secondary-container), var(--color-primary));
   animation: indeterminate 1.2s var(--ease-in-out) infinite;
 }
 .motion-skeleton {
@@ -280,22 +366,176 @@ input[type="checkbox"]:focus-visible {
   animation: shake 0.4s var(--ease-in-out);
 }
 
-/* Micro-interactions : retour tactile sur les boutons, survol des cartes. */
+/* Entrée séquentielle des éléments du héro (page publique). */
+.motion-hero {
+  animation: hero-in 560ms var(--ease-out) both;
+  animation-delay: var(--delay, 0ms);
+}
+.motion-hero-img {
+  animation: hero-img-in 640ms var(--ease-out) both;
+  animation-delay: var(--delay, 0ms);
+}
+/* Entrée de page : spring ultra-subtil, 300ms. */
+.motion-page {
+  animation: page-in 300ms var(--ease-out) both;
+}
+/* Carte : spring Swishy, 500ms pour laisser le ressort s'exprimer. */
+.motion-card-appear {
+  animation: card-appear 500ms var(--ease-out) both;
+  animation-delay: var(--delay, 0ms);
+}
+/* Hub — défilement bidirectionnel des cartes ────────────────────── */
+/* État caché (par défaut) : sortie rapide ease-in. */
+.hub-card {
+  opacity: 0;
+  transform: translateY(26px) scale(0.97);
+  transition:
+    opacity 180ms cubic-bezier(0.4, 0, 1, 1),
+    transform 180ms cubic-bezier(0.4, 0, 1, 1);
+}
+/* État visible : entrée spring, délai de cascade. */
+.hub-card.hub-card-in {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 480ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 480ms cubic-bezier(0.16, 1, 0.3, 1);
+  transition-delay: var(--card-delay, 0ms);
+}
+
+/* LottieFiles — halos animés organiques */
+.motion-float-1 {
+  animation: float-1 9s ease-in-out infinite;
+}
+.motion-float-2 {
+  animation: float-2 13s ease-in-out infinite;
+}
+/* LottieFiles — pastille de statut qui pulse */
+.motion-pulse-dot {
+  position: relative;
+}
+.motion-pulse-dot::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: inherit;
+  animation: pulse-ring 2.2s var(--ease-out) infinite;
+}
+/* Jitter — ligne d'accent avec lumière qui voyage (palette violette) */
+.motion-gradient-sweep {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--color-secondary-container) 20%,
+    var(--color-primary-container) 50%,
+    var(--color-secondary-container) 80%,
+    transparent 100%
+  );
+  background-size: 300% 100%;
+  animation: gradient-sweep 5s linear infinite;
+}
+/* Ripplix — bouton primaire avec ripple depuis le centre */
+.btn-ripple {
+  position: relative;
+  overflow: hidden;
+}
+.btn-ripple::after {
+  content: "";
+  position: absolute;
+  inset: 50%;
+  margin: -1px;
+  width: 2px;
+  height: 2px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0;
+  transform: scale(0);
+  transform-origin: center;
+  pointer-events: none;
+}
+.btn-ripple:active::after {
+  animation: ripple-out 550ms var(--ease-out) forwards;
+}
+/* Indicateur de nav actif : nait du haut vers le bas. */
+.nav-active-bar {
+  transform-origin: top center;
+  animation: nav-indicator-in 240ms var(--ease-out) both;
+}
+/* Pop sur un chiffre KPI qui se met à jour. */
+.motion-counter-pop {
+  animation: counter-pop 380ms var(--ease-out);
+}
+
+/* ── Liquid glass — cartes standard de toute l'application ─────────────
+   Cible : tout bloc arrondi avec bg-surface-container-lowest OU border-hairline.
+   Couvre : rounded-xl/lg/2xl/.border-hairline + rounded-xl/lg/2xl/rounded.bg-surface-container-lowest.
+   Exclut les champs de saisie, boutons et spans (gardent un fond solide).
+   Les règles custom sans @layer l'emportent sur les utilities Tailwind. */
+main .rounded-xl.border-hairline:not(input):not(select):not(textarea),
+main .rounded-lg.border-hairline:not(input):not(select):not(textarea),
+main .rounded-2xl.border-hairline:not(input):not(select):not(textarea),
+main .rounded-xl.bg-surface-container-lowest:not(input):not(select):not(textarea):not(button):not(span):not(a),
+main .rounded-2xl.bg-surface-container-lowest:not(input):not(select):not(textarea):not(button):not(span):not(a),
+main .rounded-lg.bg-surface-container-lowest:not(input):not(select):not(textarea):not(button):not(span):not(a),
+main .rounded.bg-surface-container-lowest:not(input):not(select):not(textarea):not(button):not(span):not(a) {
+  background-color: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(20px) saturate(165%);
+  -webkit-backdrop-filter: blur(20px) saturate(165%);
+  border-color: rgba(255, 255, 255, 0.50);
+}
+
+/* ── Micro-interactions ─────────────────────────────────────────────── */
 @media (hover: hover) and (pointer: fine) {
-  main .rounded-xl.border-hairline {
+  /* Toutes les cartes : transition fluide ombre + transform */
+  main .rounded-xl.border-hairline,
+  main .rounded-lg.border-hairline,
+  main .rounded-xl.bg-surface-container-lowest:not(button):not(span),
+  main .rounded-2xl.bg-surface-container-lowest:not(button):not(span),
+  main .rounded-lg.bg-surface-container-lowest:not(button):not(span),
+  main .rounded.bg-surface-container-lowest:not(button):not(span) {
     transition:
-      box-shadow var(--dur-base) var(--ease-out),
-      transform var(--dur-base) var(--ease-out);
+      box-shadow 200ms var(--ease-out),
+      transform 200ms var(--ease-out);
   }
-  /* Niveau 1 de DESIGN.md au survol. */
-  main .rounded-xl.border-hairline:hover {
-    box-shadow: 0 2px 4px -1px rgb(15 23 42 / 0.05), 0 1px 2px -1px rgb(15 23 42 / 0.03);
+  /* Cartes passives : légère élévation */
+  main .rounded-xl.border-hairline:hover,
+  main .rounded-lg.border-hairline:hover,
+  main .rounded-xl.bg-surface-container-lowest:not(button):not(span):not(a):hover,
+  main .rounded-2xl.bg-surface-container-lowest:not(button):not(span):not(a):hover,
+  main .rounded-lg.bg-surface-container-lowest:not(button):not(span):not(a):hover,
+  main .rounded.bg-surface-container-lowest:not(button):not(span):not(a):hover {
+    box-shadow:
+      0 6px 20px -4px rgb(15 23 42 / 0.12),
+      0 2px 6px -1px rgb(15 23 42 / 0.07);
   }
+  /* Cartes interactives : lévitation spring (Jitter-style) */
+  main a.rounded-xl.border-hairline:hover,
+  main a.rounded-lg.border-hairline:hover,
+  main [role="button"].rounded-xl.border-hairline:hover,
+  main [role="button"].rounded-lg.border-hairline:hover,
+  main a.rounded-xl.bg-surface-container-lowest:hover,
+  main a.rounded-lg.bg-surface-container-lowest:hover {
+    transform: translateY(-4px) scale(1.005);
+    box-shadow:
+      0 16px 40px -8px rgb(15 23 42 / 0.16),
+      0 6px 16px -4px rgb(15 23 42 / 0.10);
+  }
+  main a.rounded-xl.border-hairline:active,
+  main a.rounded-lg.border-hairline:active,
+  main [role="button"].rounded-xl.border-hairline:active,
+  main [role="button"].rounded-lg.border-hairline:active,
+  main a.rounded-xl.bg-surface-container-lowest:active,
+  main a.rounded-lg.bg-surface-container-lowest:active {
+    transform: translateY(-1px) scale(0.998);
+    transition-duration: 60ms;
+  }
+  /* Icône dans le nav latéral */
   aside nav a .icone {
-    transition: transform var(--dur-base) var(--ease-out);
+    transition: transform var(--dur-base) var(--ease-out), color var(--dur-fast) var(--ease-out);
   }
   aside nav a:hover .icone {
-    transform: translateX(2px) scale(1.08);
+    transform: translateX(3px) scale(1.12);
   }
 }
 /* Retour tactile : le bouton s'enfonce au clic et revient en douceur. Hors couche Tailwind,
@@ -314,15 +554,16 @@ a[class*="rounded"]:active {
 
 /* --- Contenu, jauges, onglets ------------------------------------- */
 
- content-in {
+@keyframes content-in {
   from { opacity: 0; }
 }
 /* Données qui remplacent un squelette : fondu bref, sans saut. */
 .motion-content {
   animation: content-in 220ms var(--ease-out) both;
+  animation-delay: var(--delay, 0ms);
 }
 
- fill-x {
+@keyframes fill-x {
   from { transform: scaleX(0); }
 }
 /* Jauge qui se remplit une seule fois, à l'arrivée de la donnée. */
@@ -332,7 +573,7 @@ a[class*="rounded"]:active {
   animation-delay: var(--delay, 120ms);
 }
 
- panel-in {
+@keyframes panel-in {
   from { opacity: 0; transform: translateX(var(--from, 12px)); }
 }
 /* Contenu d'onglet : entre depuis le côté de l'onglet choisi. */
@@ -348,7 +589,7 @@ a[class*="rounded"]:active {
     height 320ms var(--ease-out);
 }
 
- count-bump {
+@keyframes count-bump {
   40% { transform: scale(1.18); }
 }
 .motion-bump {
@@ -358,10 +599,10 @@ a[class*="rounded"]:active {
 
 /* --- Sorties : plus rapides que les entrées ---------------------- */
 
- fade-out {
+@keyframes fade-out {
   to { opacity: 0; }
 }
- card-out {
+@keyframes card-out {
   to { opacity: 0; transform: translateY(6px) scale(0.98); }
 }
 .motion-overlay-out {
@@ -398,7 +639,7 @@ a[class*="rounded"]:active {
 
 /* --- Moment fort : apposition d'un visa --------------------------- */
 
- stamp-in {
+@keyframes stamp-in {
   0% { opacity: 0; transform: scale(1.6) rotate(-12deg); }
   60% { opacity: 1; transform: scale(0.94) rotate(-4deg); }
   100% { opacity: 1; transform: scale(1) rotate(-4deg); }
@@ -424,7 +665,14 @@ a[class*="rounded"]:active {
   .motion-toast,
   .motion-overlay,
   .motion-overlay-card,
-  .visa-stamp {
+  .visa-stamp,
+  .motion-hero,
+  .motion-hero-img,
+  .motion-page,
+  .motion-rise,
+  .motion-card-appear,
+  .motion-counter-pop,
+  .reveal.is-revealed {
     animation: content-in 160ms linear both !important;
   }
   .motion-overlay-out,
@@ -432,6 +680,24 @@ a[class*="rounded"]:active {
   .motion-overlay-out .motion-overlay-card {
     animation: fade-out 120ms linear both !important;
   }
+  /* Défilement bidirectionnel : visible immédiatement. */
+  .hub-card,
+  .hub-card.hub-card-in {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+  /* Les flottements et pulsations disparaissent (purement décoratifs). */
+  .motion-float-1,
+  .motion-float-2,
+  .motion-pulse-dot::before,
+  .motion-gradient-sweep {
+    animation: none !important;
+  }
+  .btn-ripple::after {
+    animation: none !important;
+  }
+  /* Contenu visible immédiatement, sans déplacement. */
   .reveal {
     opacity: 1;
     transform: none;

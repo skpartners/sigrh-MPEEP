@@ -152,7 +152,7 @@ export function CguScreen() {
             </div>
           </div>
         </div>
-        <div className={"mx-auto px-margin-desktop py-space-lg w-full"}>
+        <div className={"mx-auto px-margin-desktop py-space-lg w-full motion-rise"}>
           <div className={"grid grid-cols-1 lg:grid-cols-12 gap-gutter-desktop items-start"}>
             <aside className={"hidden lg:block lg:col-span-3 sticky top-24 space-y-space-md"}>
               <div className={"bg-surface-container-lowest p-space-md rounded shadow-sm"}>

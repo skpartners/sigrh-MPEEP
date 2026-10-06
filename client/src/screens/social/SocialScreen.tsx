@@ -91,7 +91,7 @@ export function SocialScreen() {
     <AppChrome>
       <div className="flex flex-col w-full font-body-md text-on-surface">
         {/* Bandeau */}
-        <section className="w-full px-6 py-5 bg-surface-container-lowest shadow-sm flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
+        <section className="w-full px-6 py-5 bg-surface-container-lowest shadow-sm flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4 motion-rise">
           <div className="flex items-start gap-4">
             <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
               <Icone nom="volunteer_activism" className="text-2xl" />
@@ -131,7 +131,7 @@ export function SocialScreen() {
             <CarteBudget titre="Dotation sociale annuelle" icone="account_balance_wallet" teinte="text-primary" valeur={budget ? fcfa(budget.allouee) : "—"} gauche="Ligne budgétaire" droite={budget?.ligne ?? ""} />
             <CarteBudget titre={`Engagé & liquidé (${engage.toLocaleString("fr-FR")} %)`} icone="payments" teinte="text-secondary" valeur={budget ? fcfa(budget.engagee) : "—"} valeurCouleur="text-secondary">
               <div className="w-full h-1.5 bg-surface-container-high rounded-full overflow-hidden">
-                <div className="h-full bg-secondary-container rounded-full" style={{ width: `${Math.min(engage, 100)}%` }} />
+                <div className="motion-fill h-full bg-secondary-container rounded-full" style={{ width: `${Math.min(engage, 100)}%` }} />
               </div>
             </CarteBudget>
             <CarteBudget titre="Solde disponible" icone="savings" teinte="text-primary" valeur={budget ? fcfa(budget.reliquat) : "—"} valeurCouleur="text-primary" gauche="Trésorerie DAAF" droite="Réserve" />
@@ -170,7 +170,7 @@ export function SocialScreen() {
                             </span>
                           </div>
                           <div className="w-full h-1.5 bg-surface-container-high rounded-full overflow-hidden">
-                            <div className={`h-full rounded-full ${consommation > 70 ? "bg-secondary-container" : "bg-primary"}`} style={{ width: `${Math.min(consommation, 100)}%` }} />
+                            <div className={`motion-fill h-full rounded-full ${consommation > 70 ? "bg-secondary-container" : "bg-primary"}`} style={{ width: `${Math.min(consommation, 100)}%` }} />
                           </div>
                         </div>
                       </div>
@@ -377,7 +377,7 @@ export function SocialScreen() {
                       <div className="mt-4 pt-2">
                         <span className="text-[11px] text-on-surface-variant block mb-1">{activite.jauge}</span>
                         <div className="w-full h-1.5 bg-surface-container-high rounded-full overflow-hidden">
-                          <div className="h-full bg-primary rounded-full" style={{ width: `${activite.part}%` }} />
+                          <div className="motion-fill h-full bg-primary rounded-full" style={{ width: `${activite.part}%` }} />
                         </div>
                       </div>
                     </div>

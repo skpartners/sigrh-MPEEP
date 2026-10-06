@@ -98,7 +98,7 @@ export function LoginScreen() {
         Accueil
       </Link>
 
-      <section className="relative z-10 w-full max-w-lg rounded-2xl border border-white/50 bg-surface-container-lowest/50 px-6 py-8 shadow-[0_16px_40px_rgba(0,0,0,0.22)] backdrop-blur-sm sm:px-8">
+      <section className="motion-overlay-card relative z-10 w-full max-w-lg rounded-2xl border border-white/40 bg-white/20 px-6 py-8 shadow-[0_20px_60px_rgba(61,0,122,0.32)] backdrop-blur-2xl sm:px-8">
         <header className="mb-8 text-center">
           <img alt="Armoiries de la République de Côte d'Ivoire" className="mx-auto h-16 w-16 object-contain" src={`${import.meta.env.BASE_URL}logo.png`} />
           <p className="mt-4 font-label-lg text-label-lg font-bold tracking-widest text-primary uppercase">
@@ -179,7 +179,7 @@ export function LoginScreen() {
           ) : null}
 
           <button
-            className="flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-primary font-label-lg text-label-lg font-bold text-on-primary hover:bg-primary-container disabled:opacity-60"
+            className="btn-ripple flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-primary font-label-lg text-label-lg font-bold text-on-primary hover:bg-primary-container disabled:opacity-60"
             id="btn-submit"
             type="submit"
             disabled={pending}

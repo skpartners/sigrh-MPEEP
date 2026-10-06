@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, type CSSProperties } from "react";
 import { Link, Navigate, useLocation } from "react-router-dom";
 import { api } from "../api/client";
 import type { Circuits } from "../api/types";
@@ -39,7 +39,7 @@ export function CircuitsScreen() {
       <div className="w-full px-4 sm:px-6 lg:px-8 py-6 mx-auto flex-1">
         <div className="flex flex-col w-full space-y-8">
           {/* Bandeau et compteurs du circuit */}
-          <div className={`${CARD} p-6`}>
+          <div className={`${CARD} p-6 motion-rise`}>
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
               <div className="space-y-1.5">
                 <h1 className="font-headline-lg text-headline-lg text-on-surface tracking-tight">
@@ -52,7 +52,7 @@ export function CircuitsScreen() {
               </div>
               <div className="flex flex-wrap items-center gap-3 shrink-0">
                 <button
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded bg-primary text-on-primary font-label-lg text-label-lg hover:bg-primary-container transition-colors shadow-sm disabled:opacity-50"
+                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded bg-primary text-on-primary font-label-md text-label-md hover:bg-primary-container transition-colors shadow-sm disabled:opacity-50"
                   type="button"
                   disabled={aSigner === 0}
                   onClick={() =>
@@ -102,7 +102,7 @@ export function CircuitsScreen() {
           {circuits.isError ? (
             <div className={`${CARD} p-6`} role="alert">
               <p className="font-label-lg text-label-lg text-error">Les circuits n'ont pas pu être chargés.</p>
-              <button type="button" className="mt-3 h-10 px-4 rounded bg-primary-container text-on-primary font-label-lg text-label-lg hover:bg-primary" onClick={() => circuits.refetch()}>
+              <button type="button" className="mt-3 h-8 px-3 rounded bg-primary-container text-on-primary font-label-md text-label-md hover:bg-primary" onClick={() => circuits.refetch()}>
                 Réessayer
               </button>
             </div>
@@ -111,7 +111,7 @@ export function CircuitsScreen() {
           <ConfigurerCircuits />
 
           {/* Parcours d'une requête */}
-          <section className="space-y-4" aria-labelledby="titre-parcours">
+          <section className="space-y-4 motion-rise" style={{ "--delay": "80ms" } as CSSProperties} aria-labelledby="titre-parcours">
             <div>
               <h2 id="titre-parcours" className="font-headline-md text-headline-md text-on-surface">Parcours d'une requête</h2>
               <p className="font-body-sm text-body-sm text-on-surface-variant">Cinq étapes, avec contrôle de légalité et retour possible à l'agent.</p>
@@ -119,7 +119,7 @@ export function CircuitsScreen() {
             <ol className={`${CARD} p-6 grid grid-cols-1 lg:grid-cols-5 gap-4`}>
               {data
                 ? data.parcours.map((etape, index) => (
-                    <li key={etape.ordre} className="motion-content relative rounded-lg p-4 bg-surface-container-low flex flex-col justify-between">
+                    <li key={etape.ordre} className="motion-content relative rounded-lg p-4 bg-surface-container-low flex flex-col justify-between" style={{ "--delay": `${index * 60}ms` } as CSSProperties}>
                       <div className="space-y-3">
                         <div className="flex items-center justify-between">
                           <span className="w-7 h-7 rounded-full bg-primary text-on-primary font-code-num text-code-num flex items-center justify-center font-bold">{etape.ordre}</span>
