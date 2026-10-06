@@ -1,17 +1,18 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { api, logout, mediaUrl } from "../api/client";
 import type { SessionUser } from "../api/types";
 import { EditeurSignature } from "../ui/EditeurSignature";
 import { Portrait } from "../ui/PhotoProfil";
 import { useFeedback } from "../ui/Feedback";
 import { PageMotion } from "../ui/Motion";
+import { useIntervalle } from "../ui/TempsReel";
 import { CommunicationBouton } from "./CommunicationBouton";
 import { MessagerieBouton } from "./Messagerie";
 import { NotificationBell } from "./NotificationBell";
 import { Icone } from "../ui/Icone";
-import { lienActif, menuAutorise, menuCourant, pageHorsHabilitation, sousMenus } from "./navigation";
+import { lienActif, libellePage, menuAutorise, menuCourant, pageHorsHabilitation, repliHabilitation, sousMenus } from "./navigation";
 
 function ecranLarge(): boolean {
   return window.matchMedia("(min-width: 1024px)").matches;
@@ -57,9 +58,19 @@ export function AppChrome({ children }: { children: ReactNode }) {
   const [focusDedans, setFocusDedans] = useState(false);
   const [large, setLarge] = useState(ecranLarge);
   const { pathname, hash } = useLocation();
-  const me = useQuery({ queryKey: ["me"], queryFn: () => api<SessionUser>("/api/v1/me/"), staleTime: Infinity });
+  const feedback = useFeedback();
+  const intervalle = useIntervalle(4_000);
+  const me = useQuery({
+    queryKey: ["me"],
+    queryFn: () => api<SessionUser>("/api/v1/me/"),
+    staleTime: Infinity,
+    refetchInterval: intervalle,
+    refetchIntervalInBackground: true,
+  });
+  const accesConnu = useRef<SessionUser["acces"] | undefined>(undefined);
   const courant = menuCourant(pathname, hash);
   const enfants = courant ? sousMenus(courant) : [];
+  const repli = repliHabilitation(pathname, hash, me.data?.acces);
   const avecSidebar = enfants.length > 0;
   const deplie = pointe || focusDedans;
   const reduit = avecSidebar && large && !deplie;
@@ -77,6 +88,19 @@ export function AppChrome({ children }: { children: ReactNode }) {
 
   // Le tiroir se referme à chaque navigation et à la touche Échap.
   useEffect(() => setMenuOpen(false), [pathname]);
+  useEffect(() => {
+    const avant = accesConnu.current;
+    const apres = me.data?.acces;
+    accesConnu.current = apres;
+    if (!avant || !apres) return;
+    if (!pageHorsHabilitation(pathname, hash, apres) || pageHorsHabilitation(pathname, hash, avant)) return;
+    const libelle = libellePage(pathname, hash);
+    feedback.toast(
+      "Accès retiré",
+      libelle ? `L'accès à « ${libelle} » vient de vous être retiré.` : "L'accès à cette page vient de vous être retiré.",
+      "info",
+    );
+  }, [me.data?.acces, pathname, hash, feedback]);
   useEffect(() => {
     if (!menuOpen) return;
     function onKey(event: KeyboardEvent) {
@@ -168,9 +192,9 @@ export function AppChrome({ children }: { children: ReactNode }) {
               {courant.libelle}
             </p>
             {enfants.map((enfant) => {
-              const actif = lienActif(enfant.to, enfant.end, pathname, hash);
               const autorise = menuAutorise(me.data?.acces, enfant.acces);
-              const classe = `flex items-center rounded transition-colors ${reduit ? "justify-center px-2 py-2" : "gap-3 px-3 py-2"} ${actif ? "bg-primary-fixed text-on-primary-fixed font-semibold shadow-sm" : autorise ? "text-on-primary/80 hover:bg-primary-container hover:text-on-primary" : "text-on-primary/35 cursor-not-allowed"}`;
+              const actif = autorise && lienActif(enfant.to, enfant.end, pathname, hash);
+              const classe = `flex items-center rounded transition-colors ${reduit ? "justify-center px-2 py-2" : "gap-3 px-3 py-2"} ${!autorise ? "text-on-primary/35 cursor-not-allowed" : actif ? "bg-primary-fixed text-on-primary-fixed font-semibold shadow-sm" : "text-on-primary/80 hover:bg-primary-container hover:text-on-primary"}`;
               const contenu = (
                 <>
                   <Icone nom={enfant.icone} className="text-lg shrink-0" />
@@ -198,9 +222,7 @@ export function AppChrome({ children }: { children: ReactNode }) {
         <main className="zone-app relative pt-[calc(4.25rem+env(safe-area-inset-top))] pb-40 sm:pb-28 min-h-screen bg-background flex flex-col justify-between">
           <PageMotion className="flex-1 flex flex-col" reveal={false}>
             <BandeauSondage />
-            {pageHorsHabilitation(pathname, hash, me.data?.acces) ? (
-              <p className="m-8 max-w-xl font-body-md text-body-md text-on-surface-variant">Cette entrée est hors de votre habilitation.</p>
-            ) : children}
+            {me.isPending ? null : repli ? <Navigate to={repli} replace /> : children}
           </PageMotion>
         </main>
       </div>

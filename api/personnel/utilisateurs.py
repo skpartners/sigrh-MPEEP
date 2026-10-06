@@ -154,17 +154,12 @@ def _descendants(user_id: int) -> set[int]:
 
 
 def perimetre_ids(user: User) -> set[int] | None:
-    """None : tout le ministère. Sinon les personnes sous la supervision du chef de ce compte."""
+    """None : tout le ministère. Sinon le compte et les personnes qu'il encadre, pas ses pairs."""
     if not hasattr(user, "profil"):
         return {user.pk}
     if user.profil.administrateur or _racine_ministere(user):
         return None
-    descendants = _descendants(user.pk)
-    if descendants:
-        return descendants | {user.pk}
-    if user.profil.superieur_id:
-        return _descendants(user.profil.superieur_id) | {user.pk}
-    return {user.pk}
+    return _descendants(user.pk) | {user.pk}
 
 
 def perimetre_matricules(user: User) -> set[str] | None:

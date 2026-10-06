@@ -133,10 +133,19 @@ export function moduleAutorise(acces: SessionUser["acces"], lien: LienNav): bool
   return menuAutorise(acces, lien.acces) || sousMenus(lien).some((enfant) => menuAutorise(acces, enfant.acces));
 }
 
-/** L'accueil du module, ou la première rubrique encore ouverte. */
+/** L'accueil du module, ou la première rubrique encore ouverte. Jamais une page refusée. */
 export function destinationModule(acces: SessionUser["acces"], lien: LienNav): string {
   if (menuAutorise(acces, lien.acces)) return lien.to;
-  return sousMenus(lien).find((enfant) => menuAutorise(acces, enfant.acces))?.to ?? lien.to;
+  return sousMenus(lien).find((enfant) => menuAutorise(acces, enfant.acces))?.to ?? "/app";
+}
+
+/** Quand l'adresse courante est refusée, la première page encore ouverte du même module. */
+export function repliHabilitation(pathname: string, hash: string, acces: SessionUser["acces"]): string | null {
+  if (!acces || !pageHorsHabilitation(pathname, hash, acces)) return null;
+  const menu = menuCourant(pathname, hash);
+  if (!menu) return "/app";
+  const ouvert = [menu, ...sousMenus(menu)].find((item) => menuAutorise(acces, item.acces));
+  return ouvert?.to ?? "/app";
 }
 
 const ANCRES = NAV.flatMap((section) =>
@@ -154,9 +163,8 @@ export function lienActif(to: string, end: boolean | undefined, pathname: string
   return end ? pathname === chemin : pathname === chemin || pathname.startsWith(`${chemin}/`);
 }
 
-export function pageHorsHabilitation(pathname: string, hash: string, acces: SessionUser["acces"]): boolean {
-  if (!acces) return false;
-  const candidats: { to: string; end?: boolean; acces: AccesMenu }[] = [];
+function pageCourante(pathname: string, hash: string): { acces: AccesMenu; libelle: string } | null {
+  const candidats: { to: string; end?: boolean; acces: AccesMenu; libelle: string }[] = [];
   for (const section of NAV) {
     for (const lien of section.liens) {
       candidats.push(lien);
@@ -165,8 +173,17 @@ export function pageHorsHabilitation(pathname: string, hash: string, acces: Sess
   }
   const actifs = candidats.filter((item) => lienActif(item.to, item.end, pathname, hash));
   actifs.sort((a, b) => b.to.length - a.to.length);
-  const choisi = actifs[0];
+  return actifs[0] ?? null;
+}
+
+export function pageHorsHabilitation(pathname: string, hash: string, acces: SessionUser["acces"]): boolean {
+  if (!acces) return false;
+  const choisi = pageCourante(pathname, hash);
   return choisi ? !menuAutorise(acces, choisi.acces) : false;
+}
+
+export function libellePage(pathname: string, hash: string): string | null {
+  return pageCourante(pathname, hash)?.libelle ?? null;
 }
 
 /** Un enfant qui ne fait que répéter la page du menu n'est pas un sous-menu. */

@@ -123,7 +123,7 @@ export function HubScreen() {
                   key={lien.to}
                   lien={lien}
                   accent={accent}
-                  autorise={moduleAutorise(acces, lien)}
+                  autorise={Boolean(acces) && moduleAutorise(acces, lien)}
                   vers={destinationModule(acces, lien)}
                 />
               );

@@ -58,6 +58,7 @@ const DROIT: Record<string, { libelle: string; style: string }> = {
 };
 
 const NIVEAUX = ["lecture", "saisie", "validation", "refus"] as const;
+const COLONNE_ROLE = "sticky left-0 z-10 w-36 max-w-36 sm:w-56 sm:max-w-56 whitespace-normal shadow-[4px_0_8px_-4px_rgba(11,28,48,0.18)]";
 
 function messageErreur(error: unknown): string {
   return error instanceof ApiError ? error.message : "L'enregistrement n'a pas abouti.";
@@ -135,13 +136,14 @@ export function HabilitationsScreen() {
                 </div>
               </div>
             </div>
+            <p className="lg:hidden font-body-sm text-body-sm text-on-surface-variant">Faites défiler le tableau pour voir chaque entrée du menu.</p>
             <div className={`${CARD} overflow-x-auto`}>
               <table className="tableau-fixe w-max min-w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-surface-container-low text-on-surface font-label-md text-label-md">
-                    <th className="sticky left-0 z-10 bg-surface-container-low py-3 px-5" rowSpan={2}>Rôle</th>
+                    <th className={`${COLONNE_ROLE} bg-surface-container-low py-3 px-3 sm:px-5`} rowSpan={2}>Rôle</th>
                     {groupesMenu(ENTREES_MENU).map((groupe) => (
-                      <th key={groupe.titre} className="px-3 py-2 text-center border-l border-hairline" colSpan={groupe.taille} rowSpan={groupe.simple ? 2 : 1}>
+                      <th key={groupe.titre} className="min-w-28 sm:min-w-36 px-2 sm:px-3 py-2 text-center border-l border-hairline whitespace-normal" colSpan={groupe.taille} rowSpan={groupe.simple ? 2 : 1}>
                         {groupe.titre}
                       </th>
                     ))}
@@ -151,7 +153,7 @@ export function HabilitationsScreen() {
                       if (groupe.simple) return [];
                       const debut = groupes.slice(0, index).reduce((total, item) => total + item.taille, 0);
                       return ENTREES_MENU.slice(debut, debut + groupe.taille).map((entree) => (
-                        <th key={`${entree.module}-${entree.fonction}`} className="min-w-36 max-w-44 px-2 py-2 text-center font-normal border-l border-hairline whitespace-normal">{entree.titre}</th>
+                        <th key={`${entree.module}-${entree.fonction}`} className="min-w-28 sm:min-w-36 max-w-44 px-2 py-2 text-center font-normal border-l border-hairline whitespace-normal">{entree.titre}</th>
                       ));
                     })}
                   </tr>
@@ -166,14 +168,14 @@ export function HabilitationsScreen() {
                     : null}
                   {pageRoles.visibles.map((role) => (
                     <tr key={role.role} className="motion-content border-t border-hairline hover:bg-surface-container-low/50 transition-colors">
-                      <th scope="row" className="sticky left-0 z-10 bg-surface-container-lowest py-3.5 px-5 font-normal">
-                        <span className="flex items-center gap-2.5">
-                          <Icone nom={role.icone} className="text-primary text-base" />
-                          <span>
-                            <button type="button" className="font-label-lg text-label-lg font-bold text-on-surface block text-left hover:underline" onClick={() => setRoleEdite(role)}>
+                      <th scope="row" className={`${COLONNE_ROLE} bg-surface-container-lowest py-3 px-3 sm:py-3.5 sm:px-5 font-normal`}>
+                        <span className="flex items-start gap-2 min-w-0">
+                          <Icone nom={role.icone} className="text-primary text-base mt-0.5 shrink-0" />
+                          <span className="min-w-0">
+                            <button type="button" className="font-label-lg text-label-lg font-bold text-on-surface block text-left hover:underline whitespace-normal" onClick={() => setRoleEdite(role)}>
                               {role.role}
                             </button>
-                            <span className="block font-label-sm text-label-sm text-on-surface-variant">{role.description}</span>
+                            <span className="block font-label-sm text-label-sm text-on-surface-variant whitespace-normal">{role.description}</span>
                           </span>
                         </span>
                       </th>

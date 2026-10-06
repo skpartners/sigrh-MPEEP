@@ -5,7 +5,9 @@ import { apiBaseUrl, getToken } from "../api/client";
 export type EvenementTempsReel =
   | { type: "message.nouveau"; conversation_id: number; message_id: number; auteur_id: number; auteur_matricule: string; auteur: string; extrait: string }
   | { type: "messagerie.lu"; conversation_id: number }
-  | { type: "notification.nouvelle"; id: number; titre: string; urgente: boolean };
+  | { type: "notification.nouvelle"; id: number; titre: string; urgente: boolean }
+  | { type: "habilitation.changee" }
+  | { type: "registre.change" };
 
 type TempsReelApi = {
   /** Vrai quand le WebSocket est authentifié : le rafraîchissement périodique peut s'espacer. */
@@ -27,6 +29,15 @@ export function useIntervalle(sansTempsReelMs: number): number {
 const PING_MS = 25_000;
 const DELAI_MAX_MS = 30_000;
 const FERMETURE_NON_AUTHENTIFIE = 4401;
+const RAFRAICHISSEMENT_MS = 200;
+let rafraichissement = 0;
+
+function planifierRafraichissement(client: { invalidateQueries: () => Promise<unknown> }) {
+  window.clearTimeout(rafraichissement);
+  rafraichissement = window.setTimeout(() => {
+    void client.invalidateQueries();
+  }, RAFRAICHISSEMENT_MS);
+}
 
 function adresse(): string {
   const base = apiBaseUrl();
@@ -65,9 +76,12 @@ export function TempsReelProvider({ children, actif }: { children: ReactNode; ac
     function traiter(evenement: EvenementTempsReel) {
       if (evenement.type === "message.nouveau" || evenement.type === "messagerie.lu") {
         void client.invalidateQueries({ queryKey: ["messagerie"] });
-      } else if (evenement.type === "notification.nouvelle") {
-        // Une notification suit une action : les écrans qu'elle concerne changent aussi.
-        for (const cle of ["notifications", "dashboard", "carrieres", "circuits"]) void client.invalidateQueries({ queryKey: [cle] });
+      } else if (
+        evenement.type === "notification.nouvelle"
+        || evenement.type === "habilitation.changee"
+        || evenement.type === "registre.change"
+      ) {
+        planifierRafraichissement(client);
       }
       ecouteurs.current.forEach((ecouteur) => ecouteur(evenement));
     }
@@ -114,6 +128,12 @@ export function TempsReelProvider({ children, actif }: { children: ReactNode; ac
       setConnecte(false);
     };
   }, [client, actif]);
+
+  useEffect(() => {
+    if (!actif || connecte) return;
+    const secours = window.setInterval(() => planifierRafraichissement(client), 5_000);
+    return () => window.clearInterval(secours);
+  }, [actif, connecte, client]);
 
   return <TempsReelContext.Provider value={{ connecte, abonner }}>{children}</TempsReelContext.Provider>;
 }

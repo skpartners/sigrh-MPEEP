@@ -77,3 +77,63 @@ async def test_notification_poussee_a_son_destinataire():
     evenement = await drh_ws.receive_json_from(timeout=2)
     assert evenement["type"] == "notification.nouvelle" and evenement["titre"] == "Nouveau visa à apposer"
     await drh_ws.disconnect()
+
+
+async def test_retrait_d_habilitation_pousse_aux_comptes_du_role():
+    from personnel.models import Organisme, Profil, RoleMatrice
+
+    await _preparer()
+
+    def comptes():
+        org = Organisme.objects.get(code="dgpe")
+        sous_directeur = User.objects.create_user("SD-TEMPS", password="Sigrh-Dev-2026")
+        Profil.objects.create(user=sous_directeur, role="Sous directeur", fonction="Sous-directeur", organisme=org)
+        agent = User.objects.create_user("AG-TEMPS", password="Sigrh-Dev-2026")
+        Profil.objects.create(user=agent, role="Agent", fonction="Agent", organisme=org)
+        return {
+            "SD-TEMPS": Token.objects.create(user=sous_directeur).key,
+            "AG-TEMPS": Token.objects.create(user=agent).key,
+        }
+
+    jetons = await database_sync_to_async(comptes)()
+    sd = await _connecter(jetons["SD-TEMPS"])
+    assert await sd.receive_json_from(timeout=2) == {"type": "pret"}
+    agent = await _connecter(jetons["AG-TEMPS"])
+    assert await agent.receive_json_from(timeout=2) == {"type": "pret"}
+
+    def retirer():
+        role = RoleMatrice.objects.get(role="Sous directeur")
+        droits = list(role.droits)
+        droits[0] = "refus"
+        role.droits = droits
+        role.save(update_fields=["droits"])
+
+    await database_sync_to_async(retirer)()
+    evenement = await sd.receive_json_from(timeout=2)
+    assert evenement == {"type": "habilitation.changee"}
+    assert await agent.receive_nothing(timeout=0.3)
+    await sd.disconnect()
+    await agent.disconnect()
+
+
+async def test_une_action_rafraichit_les_sessions_ouvertes():
+    from personnel.models import Absence, Agent
+
+    _drh, _kouassi, _fil, jetons = await _preparer()
+    drh = await _connecter(jetons["DRH-2018-044"])
+    assert await drh.receive_json_from(timeout=2) == {"type": "pret"}
+    autre = await _connecter(jetons["340188P"])
+    assert await autre.receive_json_from(timeout=2) == {"type": "pret"}
+
+    def poser():
+        agent = Agent.objects.first()
+        Absence.objects.create(
+            agent=agent, nature="Absence de test", debut=timezone.now().date(), fin=timezone.now().date(),
+            jours=1, statut="Demandée",
+        )
+
+    await database_sync_to_async(poser)()
+    assert await drh.receive_json_from(timeout=2) == {"type": "registre.change"}
+    assert await autre.receive_json_from(timeout=2) == {"type": "registre.change"}
+    await drh.disconnect()
+    await autre.disconnect()

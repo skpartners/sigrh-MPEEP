@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { ApiError, api, getToken, setToken } from "../api/client";
 import type { SessionUser } from "../api/types";
 import { useSlideNavigate } from "../ui/Motion";
@@ -13,6 +14,7 @@ const INACTIVITE_MS = 15_000;
 
 export function LoginScreen() {
   const navigate = useNavigate();
+  const client = useQueryClient();
   const slideTo = useSlideNavigate();
   const [matricule, setMatricule] = useState("");
   const [password, setPassword] = useState("");
@@ -63,6 +65,7 @@ export function LoginScreen() {
           }),
         { detail: "Connexion sécurisée au SIGRH en cours." },
       );
+      client.clear();
       setToken(result.token, remember);
       navigate("/app");
       return;

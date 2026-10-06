@@ -2619,3 +2619,29 @@ def test_veille_du_retour_previent_l_agent_et_son_superieur(api):
     assert surveiller_retours() == 2
     assert Notification.objects.filter(destinataire__username="394812H", titre="Retour d'absence", message__contains="Autorisation de test").exists()
     assert Notification.objects.filter(destinataire=chef, titre="Retour d'absence dans votre équipe", message__contains="Autorisation de test").exists()
+
+
+def test_sous_directeur_ne_voit_pas_les_pairs(api):
+    from django.contrib.auth.models import User
+
+    from personnel.models import Organisme, Profil
+
+    org = Organisme.objects.get(code="dgpe")
+    directeur = User.objects.create_user("DIR-PAIR", password="Sigrh-Dev-2026")
+    Profil.objects.create(user=directeur, role="Directeur", fonction="Directeur", organisme=org)
+    gauche = User.objects.create_user("SD-PAIR-1", password="Sigrh-Dev-2026")
+    Profil.objects.create(
+        user=gauche, role="Sous directeur", fonction="Sous-directeur", organisme=org, superieur=directeur,
+    )
+    droite = User.objects.create_user("SD-PAIR-2", password="Sigrh-Dev-2026")
+    Profil.objects.create(
+        user=droite, role="Sous directeur", fonction="Sous-directeur", organisme=org, superieur=directeur,
+    )
+    agent = User.objects.create_user("AG-PAIR", password="Sigrh-Dev-2026")
+    Profil.objects.create(user=agent, role="Agent", fonction="Agent", organisme=org, superieur=gauche)
+
+    jeton = api.post("/api/v1/auth/login/", {"matricule": "SD-PAIR-1", "password": "Sigrh-Dev-2026"}, format="json")
+    assert jeton.status_code == 200
+    liste = api.get("/api/v1/utilisateurs/", HTTP_AUTHORIZATION=f"Token {jeton.json()['token']}")
+    assert liste.status_code == 200
+    assert {item["matricule"] for item in liste.json()["utilisateurs"]} == {"SD-PAIR-1", "AG-PAIR"}
