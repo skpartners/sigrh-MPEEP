@@ -230,7 +230,7 @@ export function StructuresScreen() {
 
         <section className={`${CARTE} overflow-hidden motion-rise`} style={{ "--delay": "80ms" } as CSSProperties}>
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[640px] text-left">
+            <table className="w-full min-w-[40rem] text-left">
               <thead className="bg-surface-container-low font-label-sm text-label-sm uppercase tracking-wide text-on-surface-variant">
                 <tr>
                   <th className="px-4 py-3">Pôle</th>
@@ -265,7 +265,7 @@ export function StructuresScreen() {
             </select>
           </div>
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[880px] text-left">
+            <table className="w-full min-w-[55rem] text-left">
               <thead className="bg-surface-container-low font-label-sm text-label-sm uppercase tracking-wide text-on-surface-variant">
                 <tr>
                   <th className="px-4 py-3">Structure</th>
@@ -470,7 +470,7 @@ function VoletGrades() {
         </button>
       </div>
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[720px] text-left">
+        <table className="w-full min-w-[45rem] text-left">
           <thead className="bg-surface-container-low font-label-sm text-label-sm uppercase tracking-wide text-on-surface-variant">
             <tr>
               <th className="px-4 py-3">Grade</th>
@@ -701,7 +701,7 @@ function ListeEmplois({
         </div>
       </div>
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[720px] text-left">
+        <table className="w-full min-w-[45rem] text-left">
           <thead className="bg-surface-container-low font-label-sm text-label-sm uppercase tracking-wide text-on-surface-variant">
             <tr>
               <th className="px-4 py-3">Emploi</th>

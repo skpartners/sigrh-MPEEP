@@ -142,7 +142,7 @@ export function NotificationBell() {
           id="panneau-notifications"
           role="dialog"
           aria-labelledby="titre-notifications"
-          className="motion-overlay-card fixed sm:absolute left-4 right-4 sm:left-auto sm:right-0 top-[7.5rem] sm:top-auto sm:mt-2 sm:w-[24rem] z-50 rounded-lg border border-hairline bg-surface-container-lowest shadow-xl overflow-hidden"
+          className="motion-overlay-card fixed sm:absolute left-4 right-4 sm:left-auto sm:right-0 top-[calc(var(--haut-entete)+0.5rem)] sm:top-auto sm:mt-2 sm:w-[24rem] z-50 rounded-lg border border-hairline bg-surface-container-lowest shadow-xl overflow-hidden"
         >
           <div className="px-4 pt-4 pb-3 border-b border-hairline">
             <div className="flex items-center justify-between gap-3">
@@ -176,7 +176,7 @@ export function NotificationBell() {
             </div>
           </div>
 
-          <div className="max-h-[min(28rem,calc(100vh-12rem))] overflow-y-auto overscroll-contain">
+          <div className="max-h-[min(28rem,calc(100dvh-var(--haut-entete)-var(--haut-pied)-7rem))] overflow-y-auto overscroll-contain">
             {requete.isPending ? (
               <div className="p-4 space-y-3" aria-busy="true">
                 {[0, 1, 2].map((index) => <Skeleton key={index} className="h-14 rounded-lg" />)}

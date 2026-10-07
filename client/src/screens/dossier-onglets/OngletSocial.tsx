@@ -93,7 +93,7 @@ export function OngletSocial({ agent }: { agent: Dossier }) {
               {" "}
               <span>Rapport Annuel Social (PDF)</span>
             </button>
-            <button type="button" className="inline-flex items-center gap-2 px-4 py-2 rounded bg-secondary-container hover:bg-secondary text-on-secondary font-label-lg text-label-lg font-semibold shadow-md transition-all" data-soon={`Cette action porte sur le dossier de ${v.nom}. Elle sera versée à son circuit de validation.`}>
+            <button type="button" className="inline-flex items-center gap-2 px-4 py-2 rounded bg-secondary-container text-on-secondary-container hover:bg-secondary hover:text-on-secondary font-label-lg text-label-lg font-semibold shadow-md transition-all" data-soon={`Cette action porte sur le dossier de ${v.nom}. Elle sera versée à son circuit de validation.`}>
               <Icone nom="add_circle" className="text-lg" />
               {" "}
               <span>Nouvelle demande d'aide ou prêt</span>
@@ -209,7 +209,7 @@ export function OngletSocial({ agent }: { agent: Dossier }) {
             <div className="bg-surface-container-lowest p-6 rounded shadow-sm space-y-5">
               <div className="flex items-center justify-between pb-2">
                 <div className="flex items-center gap-2.5">
-                  <Icone nom="emergency" className="text-secondary-container" />
+                  <Icone nom="emergency" className="text-secondary" />
                   <h2 className="font-headline-sm text-headline-sm text-on-surface font-bold">
                     {"Secours & Aides Exceptionnelles"}
                   </h2>

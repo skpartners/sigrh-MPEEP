@@ -42,7 +42,7 @@ export function PublicHeaderNav() {
       </nav>
       {ouvert ? (
         <nav
-          className="lg:hidden fixed inset-x-4 top-24 z-50 rounded-xl border border-hairline bg-surface-container-lowest p-2 shadow-xl"
+          className="lg:hidden fixed inset-x-4 top-[calc(var(--haut-entete)+0.5rem)] z-50 rounded-xl border border-hairline bg-surface-container-lowest p-2 shadow-xl"
           aria-label="Pages publiques"
         >
           {links.map((link) => (

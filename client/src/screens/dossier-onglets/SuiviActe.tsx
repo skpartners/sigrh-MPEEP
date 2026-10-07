@@ -33,7 +33,7 @@ export function SuiviActe({ acte, matricule }: { acte: Acte; matricule: string }
   const atteinte = etapeActe(acte);
   return (
     <div className="mt-4 space-y-3">
-      <ol className="grid grid-cols-1 min-[480px]:grid-cols-2 gap-2 md:grid-cols-4" aria-label="Avancement de l'acte">
+      <ol className="grid grid-cols-1 min-[30rem]:grid-cols-2 gap-2 md:grid-cols-4" aria-label="Avancement de l'acte">
         {ETAPES.map((etape, index) => {
           const faite = index < atteinte;
           const courante = index === atteinte;
@@ -57,7 +57,7 @@ export function SuiviActe({ acte, matricule }: { acte: Acte; matricule: string }
         <div className="flex flex-wrap items-center gap-3">
           {acte.signatures.map((signature) => (
             <figure key={signature.signature_url} className="flex items-center gap-2 rounded-lg bg-surface-container-lowest px-3 py-2">
-              <img src={mediaUrl(signature.signature_url)} alt={`Signature de ${signature.signataire || "l'autorité"}`} className="h-9 max-w-[140px] object-contain" />
+              <img src={mediaUrl(signature.signature_url)} alt={`Signature de ${signature.signataire || "l'autorité"}`} className="h-9 max-w-[8.75rem] object-contain" />
               <figcaption className="font-label-sm text-label-sm text-on-surface-variant">
                 {signature.signataire || "Visa DRH"}
                 {signature.date ? <span className="block">{dateFr(signature.date)}</span> : null}

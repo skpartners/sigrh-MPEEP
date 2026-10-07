@@ -4,6 +4,7 @@ import { DataZoomComponent, GridComponent, LegendComponent, TooltipComponent } f
 import { init, use, type EChartsCoreOption, type EChartsType } from "echarts/core";
 import { CanvasRenderer } from "echarts/renderers";
 import { telechargerClasseurGraphique } from "./classeurGraphique";
+import { paletteGraphique, useCouleurs } from "./Couleurs";
 
 use([
   BarChart,
@@ -17,9 +18,16 @@ use([
   CanvasRenderer,
 ]);
 
-const PALETTE = ["#3D007A", "#7C3AED", "#A78BFA", "#4338CA", "#C4B5FD", "#5B21B6", "#818CF8"];
 const TRAIT = "#64748b";
-const ENCRE = "#7C3AED";
+const ENCRE = "var(--color-tertiary)";
+const CLAIR = "var(--color-tertiary-container)";
+const FONCE = "var(--color-primary)";
+
+/** Le canevas ignore la police du navigateur : la taille du texte suit celle de la racine (12px à 100 %). */
+function styleTexte() {
+  const racine = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+  return { fontFamily: "Plus Jakarta Sans, sans-serif", fontSize: Math.round((12 * racine) / 16) };
+}
 
 const FORMES = [
   { code: "barre", libelle: "Barres", icone: IconeBarres },
@@ -163,6 +171,7 @@ function ChoixForme({ forme, onChange }: { forme: FormeGraphique; onChange: (for
 function Toile({ forme, series, etiquettes, hauteur }: { forme: FormeGraphique; series: SerieGraphique[]; etiquettes: boolean; hauteur: number }) {
   const noeud = useRef<HTMLDivElement>(null);
   const graphique = useRef<EChartsType | null>(null);
+  const couleurs = useCouleurs();
 
   useEffect(() => {
     const element = noeud.current;
@@ -180,20 +189,21 @@ function Toile({ forme, series, etiquettes, hauteur }: { forme: FormeGraphique; 
 
   const signature = JSON.stringify(series);
   useEffect(() => {
-    graphique.current?.setOption(option(forme, JSON.parse(signature) as SerieGraphique[], etiquettes), true);
-  }, [forme, signature, etiquettes]);
+    graphique.current?.setOption(option(forme, JSON.parse(signature) as SerieGraphique[], etiquettes, paletteGraphique(couleurs)), true);
+  }, [forme, signature, etiquettes, couleurs]);
 
-  return <div ref={noeud} style={{ height: hauteur }} role="img" aria-label="Graphique" />;
+  // hauteur est donnée en px à la police par défaut ; en rem, le graphique grandit avec la police du navigateur.
+  return <div ref={noeud} style={{ height: `${hauteur / 16}rem` }} role="img" aria-label="Graphique" />;
 }
 
-function option(forme: FormeGraphique, series: SerieGraphique[], etiquettes: boolean): EChartsCoreOption {
+function option(forme: FormeGraphique, series: SerieGraphique[], etiquettes: boolean, palette: string[]): EChartsCoreOption {
   const source = series.length > 1 ? series[series.length - 1] : series[0];
   const categories = (series[0]?.points ?? []).map((point) => point.libelle);
   if (forme === "secteur" || forme === "anneau" || forme === "entonnoir") {
     const donnees = (source?.points ?? []).map((point) => ({ name: point.libelle, value: point.total }));
     return {
-      color: PALETTE,
-      textStyle: { fontFamily: "Plus Jakarta Sans, sans-serif" },
+      color: palette,
+      textStyle: styleTexte(),
       tooltip: { trigger: "item" },
       legend: { type: "scroll", bottom: 0 },
       series: [{
@@ -220,8 +230,8 @@ function option(forme: FormeGraphique, series: SerieGraphique[], etiquettes: boo
   const axeCategorie = { type: "category" as const, data: categories, axisLabel: { hideOverlap: true } };
   const axeValeur = { type: "value" as const, max: forme === "pourcentage" ? 100 : undefined };
   return {
-    color: PALETTE,
-    textStyle: { fontFamily: "Plus Jakarta Sans, sans-serif" },
+    color: palette,
+    textStyle: styleTexte(),
     tooltip: {
       trigger: "axis",
       valueFormatter: (valeur: unknown) => {
@@ -277,7 +287,7 @@ function IconeExcel() {
     <Cadre>
       <rect x="3" y="3" width="13" height="16" rx="1" fill="none" stroke={TRAIT} strokeWidth="1.2" />
       <path d="M3 8h13M3 12h13M7 8v11" stroke={TRAIT} strokeWidth="1" />
-      <path d="M18 13v6M15.5 16.5 18 19l2.5-2.5" fill="none" stroke={ENCRE} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M18 13v6M15.5 16.5 18 19l2.5-2.5" fill="none" style={{ stroke: ENCRE }} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
     </Cadre>
   );
 }
@@ -285,8 +295,8 @@ function IconeExcel() {
 function IconeEtiquette() {
   return (
     <Cadre>
-      <rect x="4" y="12" width="5" height="8" fill={ENCRE} />
-      <rect x="15" y="8" width="5" height="12" fill={ENCRE} />
+      <rect x="4" y="12" width="5" height="8" style={{ fill: ENCRE }} />
+      <rect x="15" y="8" width="5" height="12" style={{ fill: ENCRE }} />
       <text x="3" y="9" fill={TRAIT} fontSize="7" fontFamily="sans-serif">12</text>
       <text x="13" y="6" fill={TRAIT} fontSize="7" fontFamily="sans-serif">8</text>
     </Cadre>
@@ -304,9 +314,9 @@ function Cadre({ children }: { children: ReactNode }) {
 function IconeBarres() {
   return (
     <Cadre>
-      <rect x="3" y="12" width="4" height="8" fill={ENCRE} />
-      <rect x="10" y="6" width="4" height="14" fill={ENCRE} />
-      <rect x="17" y="9" width="4" height="11" fill={ENCRE} />
+      <rect x="3" y="12" width="4" height="8" style={{ fill: ENCRE }} />
+      <rect x="10" y="6" width="4" height="14" style={{ fill: ENCRE }} />
+      <rect x="17" y="9" width="4" height="11" style={{ fill: ENCRE }} />
       <path d="M2 21h20" stroke={TRAIT} strokeWidth="1.2" />
     </Cadre>
   );
@@ -315,9 +325,9 @@ function IconeBarres() {
 function IconeHorizontales() {
   return (
     <Cadre>
-      <rect x="3" y="4" width="14" height="4" fill={ENCRE} />
-      <rect x="3" y="10" width="18" height="4" fill={ENCRE} />
-      <rect x="3" y="16" width="10" height="4" fill={ENCRE} />
+      <rect x="3" y="4" width="14" height="4" style={{ fill: ENCRE }} />
+      <rect x="3" y="10" width="18" height="4" style={{ fill: ENCRE }} />
+      <rect x="3" y="16" width="10" height="4" style={{ fill: ENCRE }} />
     </Cadre>
   );
 }
@@ -325,9 +335,9 @@ function IconeHorizontales() {
 function IconeEmpilee() {
   return (
     <Cadre>
-      <rect x="8" y="4" width="8" height="5" fill={ENCRE} />
-      <rect x="8" y="9" width="8" height="6" fill="#A78BFA" />
-      <rect x="8" y="15" width="8" height="6" fill="#5B21B6" />
+      <rect x="8" y="4" width="8" height="5" style={{ fill: ENCRE }} />
+      <rect x="8" y="9" width="8" height="6" style={{ fill: CLAIR }} />
+      <rect x="8" y="15" width="8" height="6" style={{ fill: FONCE }} />
       <path d="M2 21h20" stroke={TRAIT} strokeWidth="1.2" />
     </Cadre>
   );
@@ -336,9 +346,9 @@ function IconeEmpilee() {
 function IconeEmpileeHorizontale() {
   return (
     <Cadre>
-      <rect x="3" y="8" width="6" height="8" fill={ENCRE} />
-      <rect x="9" y="8" width="6" height="8" fill="#A78BFA" />
-      <rect x="15" y="8" width="6" height="8" fill="#5B21B6" />
+      <rect x="3" y="8" width="6" height="8" style={{ fill: ENCRE }} />
+      <rect x="9" y="8" width="6" height="8" style={{ fill: CLAIR }} />
+      <rect x="15" y="8" width="6" height="8" style={{ fill: FONCE }} />
     </Cadre>
   );
 }
@@ -346,10 +356,10 @@ function IconeEmpileeHorizontale() {
 function IconePourcentage() {
   return (
     <Cadre>
-      <rect x="5" y="4" width="5" height="16" fill={ENCRE} />
-      <rect x="5" y="4" width="5" height="6" fill="#A78BFA" />
-      <rect x="14" y="4" width="5" height="16" fill={ENCRE} />
-      <rect x="14" y="4" width="5" height="10" fill="#A78BFA" />
+      <rect x="5" y="4" width="5" height="16" style={{ fill: ENCRE }} />
+      <rect x="5" y="4" width="5" height="6" style={{ fill: CLAIR }} />
+      <rect x="14" y="4" width="5" height="16" style={{ fill: ENCRE }} />
+      <rect x="14" y="4" width="5" height="10" style={{ fill: CLAIR }} />
       <path d="M2 21h20" stroke={TRAIT} strokeWidth="1.2" />
     </Cadre>
   );
@@ -358,7 +368,7 @@ function IconePourcentage() {
 function IconeLigne() {
   return (
     <Cadre>
-      <path d="M3 16l5-6 4 3 8-8" fill="none" stroke={ENCRE} strokeWidth="1.8" strokeLinejoin="round" />
+      <path d="M3 16l5-6 4 3 8-8" fill="none" style={{ stroke: ENCRE }} strokeWidth="1.8" strokeLinejoin="round" />
       <path d="M2 21h20" stroke={TRAIT} strokeWidth="1.2" />
     </Cadre>
   );
@@ -367,7 +377,7 @@ function IconeLigne() {
 function IconeAire() {
   return (
     <Cadre>
-      <path d="M3 17l5-7 4 3 8-8v12H3z" fill={ENCRE} opacity="0.85" />
+      <path d="M3 17l5-7 4 3 8-8v12H3z" style={{ fill: ENCRE }} opacity="0.85" />
       <path d="M2 21h20" stroke={TRAIT} strokeWidth="1.2" />
     </Cadre>
   );
@@ -376,11 +386,11 @@ function IconeAire() {
 function IconePoints() {
   return (
     <Cadre>
-      <path d="M4 16l5-6 4 3 7-8" fill="none" stroke={ENCRE} strokeWidth="1.6" />
-      <circle cx="4" cy="16" r="1.6" fill={ENCRE} />
-      <circle cx="9" cy="10" r="1.6" fill={ENCRE} />
-      <circle cx="13" cy="13" r="1.6" fill={ENCRE} />
-      <circle cx="20" cy="5" r="1.6" fill={ENCRE} />
+      <path d="M4 16l5-6 4 3 7-8" fill="none" style={{ stroke: ENCRE }} strokeWidth="1.6" />
+      <circle cx="4" cy="16" r="1.6" style={{ fill: ENCRE }} />
+      <circle cx="9" cy="10" r="1.6" style={{ fill: ENCRE }} />
+      <circle cx="13" cy="13" r="1.6" style={{ fill: ENCRE }} />
+      <circle cx="20" cy="5" r="1.6" style={{ fill: ENCRE }} />
     </Cadre>
   );
 }
@@ -388,7 +398,7 @@ function IconePoints() {
 function IconeEntonnoir() {
   return (
     <Cadre>
-      <path d="M4 4h16l-4 7v5l-8 3V11z" fill={ENCRE} stroke={TRAIT} strokeWidth="1" />
+      <path d="M4 4h16l-4 7v5l-8 3V11z" style={{ fill: ENCRE }} stroke={TRAIT} strokeWidth="1" />
     </Cadre>
   );
 }
@@ -396,8 +406,8 @@ function IconeEntonnoir() {
 function IconeSecteur() {
   return (
     <Cadre>
-      <path d="M12 12 L12 3 A9 9 0 1 1 5 17z" fill={ENCRE} />
-      <path d="M12 12 L5 17 A9 9 0 0 1 12 3z" fill="#A78BFA" />
+      <path d="M12 12 L12 3 A9 9 0 1 1 5 17z" style={{ fill: ENCRE }} />
+      <path d="M12 12 L5 17 A9 9 0 0 1 12 3z" style={{ fill: CLAIR }} />
     </Cadre>
   );
 }
@@ -405,7 +415,7 @@ function IconeSecteur() {
 function IconeAnneau() {
   return (
     <Cadre>
-      <path d="M12 3a9 9 0 1 1 0 18 9 9 0 0 1 0-18zm0 5a4 4 0 1 0 0 8 4 4 0 0 0 0-8z" fill={ENCRE} />
+      <path d="M12 3a9 9 0 1 1 0 18 9 9 0 0 1 0-18zm0 5a4 4 0 1 0 0 8 4 4 0 0 0 0-8z" style={{ fill: ENCRE }} />
     </Cadre>
   );
 }

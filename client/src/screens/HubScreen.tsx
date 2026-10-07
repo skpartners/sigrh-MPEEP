@@ -9,7 +9,7 @@ import { destinationModule, moduleAutorise, NAV, sousMenus, type LienNav } from 
 
 const ACCENTS = [
   {
-    // Violet Profond — sombre & autoritaire
+    // Principale — sombre & autoritaire
     barre: "from-primary via-primary/60 to-transparent",
     fond: "from-primary/10 to-transparent",
     tache: "bg-primary/10",
@@ -20,18 +20,18 @@ const ACCENTS = [
     cta: "group-hover:bg-primary group-hover:text-on-primary group-hover:border-primary/40",
   },
   {
-    // Violet Lumineux — vivid accent
+    // Accent — la couleur d'accent du ministère
     barre: "from-secondary-container via-secondary-container/60 to-transparent",
     fond: "from-secondary-container/10 to-transparent",
     tache: "bg-secondary-container/15",
-    icone: "bg-gradient-to-br from-secondary-container to-secondary text-on-primary shadow-[0_4px_20px_-4px_var(--color-secondary-container)]",
-    badge: "bg-secondary-container/10 text-secondary-container border border-secondary-container/25",
+    icone: "bg-gradient-to-br from-secondary-container to-secondary-fixed-dim text-on-secondary-container shadow-[0_4px_20px_-4px_var(--color-secondary)]",
+    badge: "bg-secondary-container/40 text-secondary border border-secondary/20",
     puce: "bg-secondary-container/10 text-on-surface border border-secondary-container/15",
-    titre: "group-hover:text-secondary-container",
-    cta: "group-hover:bg-secondary-container group-hover:text-on-primary group-hover:border-secondary-container/40",
+    titre: "group-hover:text-secondary",
+    cta: "group-hover:bg-secondary-container group-hover:text-on-secondary-container group-hover:border-secondary-container/40",
   },
   {
-    // Aurora Violette — dégradé toxique → vivid
+    // Aurore — de la principale vers l'accent
     barre: "from-primary via-primary-container to-secondary-container",
     fond: "from-primary/5 via-primary-container/5 to-transparent",
     tache: "bg-secondary/10",
@@ -140,7 +140,7 @@ export function HubScreen() {
             <div className="motion-float-1 absolute -right-10 -top-10 w-52 h-52 rounded-full bg-secondary-container/20 blur-3xl pointer-events-none" aria-hidden="true" />
             <div className="motion-float-2 absolute left-1/3 -bottom-8 w-44 h-44 rounded-full bg-secondary/15 blur-2xl pointer-events-none" aria-hidden="true" />
             <div className="motion-float-1 absolute right-1/4 bottom-0 w-24 h-24 rounded-full bg-secondary-container/10 blur-xl pointer-events-none" aria-hidden="true" style={{ animationDelay: "3.5s" }} />
-            <div className="relative z-10 px-6 sm:px-8 py-7 flex flex-col sm:flex-row sm:items-center justify-between gap-5">
+            <div className="relative z-10 px-6 sm:px-8 py-7 court:py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-5">
               <div>
                 <div className="flex flex-wrap items-center gap-2 mb-3">
                   <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-secondary-container/15 border border-secondary-container/30 text-secondary-container font-label-sm text-label-sm font-semibold">
@@ -252,7 +252,7 @@ function CarteModule({
         {/* Ligne 1 : icône + badge */}
         <div className="flex items-start justify-between gap-3">
           <span
-            className={`w-16 h-16 rounded-2xl flex items-center justify-center text-[30px] shrink-0 ${accent.icone} ${autorise ? "group-hover:scale-105 group-hover:-rotate-3 transition-[transform,box-shadow] duration-300" : ""}`}
+            className={`w-16 h-16 rounded-2xl flex items-center justify-center text-[1.875rem] shrink-0 ${accent.icone} ${autorise ? "group-hover:scale-105 group-hover:-rotate-3 transition-[transform,box-shadow] duration-300" : ""}`}
             aria-hidden="true"
           >
             <Icone nom={lien.icone} />
@@ -308,7 +308,7 @@ function CarteModule({
     </>
   );
 
-  const classe = "group relative flex flex-col rounded-2xl bg-white/80 backdrop-blur-2xl border border-white/50 shadow-[0_4px_24px_rgba(61,0,122,0.12)] overflow-hidden min-h-72 p-5";
+  const classe = "group relative flex flex-col rounded-2xl bg-white/80 backdrop-blur-2xl border border-white/50 shadow-[0_4px_24px_color-mix(in_oklab,var(--color-primary)_12%,transparent)] overflow-hidden min-h-72 p-5";
 
   if (!autorise) {
     return (
@@ -318,7 +318,7 @@ function CarteModule({
     );
   }
   return (
-    <Link to={vers} className={`${classe} hover:shadow-[0_16px_48px_rgba(61,0,122,0.20)] hover:border-white/70 hover:bg-white/90 transition-[box-shadow,border-color,background-color] duration-300`}>
+    <Link to={vers} className={`${classe} hover:shadow-[0_16px_48px_color-mix(in_oklab,var(--color-primary)_20%,transparent)] hover:border-white/70 hover:bg-white/90 transition-[box-shadow,border-color,background-color] duration-300`}>
       {corps}
     </Link>
   );

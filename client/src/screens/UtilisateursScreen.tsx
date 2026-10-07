@@ -306,7 +306,7 @@ export function UtilisateursScreen() {
             </select>
           </div>
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[920px] text-left">
+            <table className="w-full min-w-[57.5rem] text-left">
               <thead className="bg-surface-container-low font-label-sm text-label-sm uppercase tracking-wide text-on-surface-variant">
                 <tr>
                   <th className="px-4 py-3">Matricule</th>
@@ -667,7 +667,7 @@ export function UtilisateursScreen() {
               <span className="relative block">
                 <input type={motDePasseVisible ? "text" : "password"} autoComplete="new-password" className={`${CHAMP} pr-10`} required={!edition} value={formulaire.mot_de_passe} placeholder={edition ? "Laisser vide pour le conserver" : ""} onChange={(event) => { setEcart(""); setFormulaire({ ...formulaire, mot_de_passe: event.target.value }); }} />
                 <button type="button" className="absolute top-1/2 right-3 -translate-y-1/2 rounded text-on-surface-variant hover:text-on-surface" aria-label={motDePasseVisible ? "Masquer le mot de passe" : "Afficher le mot de passe"} aria-pressed={motDePasseVisible} onClick={() => setMotDePasseVisible((visible) => !visible)}>
-                  <Icone nom={motDePasseVisible ? "visibility_off" : "visibility"} className="text-[18px]" />
+                  <Icone nom={motDePasseVisible ? "visibility_off" : "visibility"} className="text-[1.125rem]" />
                 </button>
               </span>
             </label>
@@ -676,7 +676,7 @@ export function UtilisateursScreen() {
               <span className="relative block">
                 <input type={motDePasseVisible ? "text" : "password"} autoComplete="new-password" className={`${CHAMP} pr-10`} required={!edition || Boolean(formulaire.mot_de_passe)} value={formulaire.confirmation} placeholder={edition ? "Laisser vide pour le conserver" : ""} onChange={(event) => { setEcart(""); setFormulaire({ ...formulaire, confirmation: event.target.value }); }} />
                 <button type="button" className="absolute top-1/2 right-3 -translate-y-1/2 rounded text-on-surface-variant hover:text-on-surface" aria-label={motDePasseVisible ? "Masquer le mot de passe" : "Afficher le mot de passe"} aria-pressed={motDePasseVisible} onClick={() => setMotDePasseVisible((visible) => !visible)}>
-                  <Icone nom={motDePasseVisible ? "visibility_off" : "visibility"} className="text-[18px]" />
+                  <Icone nom={motDePasseVisible ? "visibility_off" : "visibility"} className="text-[1.125rem]" />
                 </button>
               </span>
             </label>

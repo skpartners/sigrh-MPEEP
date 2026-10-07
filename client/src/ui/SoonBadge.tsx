@@ -5,7 +5,7 @@ export function SoonBadge({ className = "" }: { className?: string }) {
     <span
       className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-secondary-fixed text-on-secondary-fixed font-label-sm text-label-sm font-semibold whitespace-nowrap ${className}`}
     >
-      <Icone nom="schedule" className="text-[14px]" />
+      <Icone nom="schedule" className="text-[0.875rem]" />
       Bientôt disponible
     </span>
   );

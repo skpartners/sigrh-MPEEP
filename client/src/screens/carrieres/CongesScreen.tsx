@@ -466,7 +466,7 @@ function LigneConge({ demande, onAction }: { demande: DemandeConge; onAction: (a
           <span className="w-1.5 h-1.5 rounded-full bg-current opacity-70" />
           {demande.instruction_libelle}
         </span>
-        {demande.motif ? <p className="mt-1 text-xs text-on-surface-variant max-w-[220px]">Motif : {demande.motif}</p> : null}
+        {demande.motif ? <p className="mt-1 text-xs text-on-surface-variant max-w-[13.75rem]">Motif : {demande.motif}</p> : null}
       </td>
       <td className="py-3.5 px-4 text-right">
         {close ? (

@@ -1,11 +1,15 @@
+import { useRef } from "react";
 import { Link } from "react-router-dom";
 import { PublicHeaderNav } from "./PublicHeaderNav";
+import { useHauteurFixe } from "../ui/HauteurFixe";
 import { Icone } from "../ui/Icone";
 
 export function ProtectionDonneesScreen() {
+  const enteteRef = useRef<HTMLElement>(null);
+  useHauteurFixe(enteteRef, "--haut-entete");
   return (
     <>
-    <header className={"fixed top-0 w-full z-50 bg-surface/95 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]"}>
+    <header ref={enteteRef} className={"fixed top-0 w-full z-50 bg-surface/95 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]"}>
       <div className={"w-full bg-primary text-on-primary px-margin-desktop py-space-xs"}>
         <div className={"mx-auto flex items-center justify-between font-label-sm text-label-sm"}>
           <div className={"flex items-center gap-space-md"}>
@@ -46,28 +50,28 @@ export function ProtectionDonneesScreen() {
             </span>
           </div>
           <div className={"w-8 h-8 rounded-full bg-primary flex items-center justify-center"}>
-            <Icone nom="person" className="text-on-primary text-[18px]" />
+            <Icone nom="person" className="text-on-primary text-[1.125rem]" />
           </div>
         </div>
       </div>
     </header>
-    <main className={"w-full pt-28 sm:pt-24 bg-surface motion-rise"}>
+    <main className={"w-full pt-[calc(var(--haut-entete)+0.5rem)] bg-surface motion-rise"}>
       <div className={"flex flex-col w-full"}>
         {/* Fil d'ariane & Contexte Régalien */}
         <section className={"w-full bg-surface-container-low py-space-md"}>
           <div className={"mx-auto px-margin-desktop flex flex-col md:flex-row md:items-center justify-between gap-space-sm"}>
             <nav aria-label={"Breadcrumb"} className={"flex items-center gap-space-xs font-label-md text-label-md text-on-surface-variant"}>
               <Link className={"hover:text-primary transition-colors flex items-center gap-1"} to="/">
-                <Icone nom="home" className="text-[16px]" />
+                <Icone nom="home" className="text-[1rem]" />
                 <span>
                   Accueil
                 </span>
               </Link>
-              <Icone nom="chevron_right" className="text-[14px] text-on-surface-variant" />
+              <Icone nom="chevron_right" className="text-[0.875rem] text-on-surface-variant" />
               <a className={"hover:text-primary transition-colors"} href={"#"} data-soon>
                 Gouvernance & Droits
               </a>
-              <Icone nom="chevron_right" className="text-[14px] text-on-surface-variant" />
+              <Icone nom="chevron_right" className="text-[0.875rem] text-on-surface-variant" />
               <span className={"text-primary font-semibold"}>
                 Conformité Données Personnelles (Loi n° 2013-450 & RGPD)
               </span>
@@ -82,7 +86,7 @@ export function ProtectionDonneesScreen() {
             <div className={"grid grid-cols-1 lg:grid-cols-12 gap-space-lg items-center"}>
               <div className={"lg:col-span-8 space-y-space-md"}>
                 <div className={"inline-flex items-center gap-2 bg-primary/10 text-primary px-space-md py-1 rounded text-label-sm font-label-sm tracking-wide uppercase"}>
-                  <Icone nom="shield_with_heart" className="text-[16px]" />
+                  <Icone nom="shield_with_heart" className="text-[1rem]" />
                   <span>
                     Régime de Souveraineté & Protection des Libertés Numériques
                   </span>
@@ -114,7 +118,7 @@ export function ProtectionDonneesScreen() {
                   <div className={"bg-surface-container-low p-space-md rounded-xl space-y-2 relative overflow-hidden"}>
                     <div className={"w-1.5 h-full bg-primary absolute left-0 top-0"}></div>
                     <div className={"flex items-center gap-2 pl-space-xs"}>
-                      <Icone nom="account_balance" className="text-primary text-[20px]" />
+                      <Icone nom="account_balance" className="text-primary text-[1.25rem]" />
                       <span className={"font-label-lg text-label-lg text-primary uppercase"}>
                         Droit Souverain Ivoirien
                       </span>
@@ -128,7 +132,7 @@ export function ProtectionDonneesScreen() {
                   <div className={"bg-surface-container-low p-space-md rounded-xl space-y-2 relative overflow-hidden"}>
                     <div className={"w-1.5 h-full bg-secondary absolute left-0 top-0"}></div>
                     <div className={"flex items-center gap-2 pl-space-xs"}>
-                      <Icone nom="public" className="text-secondary text-[20px]" />
+                      <Icone nom="public" className="text-secondary text-[1.25rem]" />
                       <span className={"font-label-lg text-label-lg text-secondary uppercase"}>
                         Normes Panafricaines & RGPD
                       </span>
@@ -146,7 +150,7 @@ export function ProtectionDonneesScreen() {
                 <div className={"w-32 h-32 mb-space-sm rounded-full bg-surface-container-low flex items-center justify-center relative shadow-sm"}>
                   <img className={"w-24 h-24 object-contain"} alt="Armoiries de la République de Côte d'Ivoire" src={`${import.meta.env.BASE_URL}logo.png`} />
                   <div className={"absolute -bottom-1 -right-1 bg-primary text-on-primary rounded-full p-1.5 shadow"}>
-                    <Icone nom="verified" className="text-[16px] block" />
+                    <Icone nom="verified" className="text-[1rem] block" />
                   </div>
                 </div>
                 <span className={"font-headline-sm text-headline-sm text-on-surface"}>
@@ -182,7 +186,7 @@ export function ProtectionDonneesScreen() {
                   </div>
                 </div>
                 <button className={"w-full bg-primary hover:bg-primary-container text-on-primary py-space-xs px-space-md rounded font-label-lg text-label-lg flex items-center justify-center gap-2 shadow-sm transition-colors"} type="button" data-long-action="Génération du document certifié…" data-long-action-done="Document prêt">
-                  <Icone nom="download_for_offline" className="text-[18px]" />
+                  <Icone nom="download_for_offline" className="text-[1.125rem]" />
                   <span>
                     Attestation de Conformité 2026
                   </span>
@@ -201,7 +205,7 @@ export function ProtectionDonneesScreen() {
                   <span className={"font-label-md text-label-md text-on-surface-variant uppercase tracking-wider"}>
                     Agrément Légal
                   </span>
-                  <Icone nom="policy" className="text-primary text-[22px]" />
+                  <Icone nom="policy" className="text-primary text-[1.375rem]" />
                 </div>
                 <div className={"font-headline-lg text-headline-lg text-on-surface font-code-num"}>
                   100%
@@ -220,7 +224,7 @@ export function ProtectionDonneesScreen() {
                   <span className={"font-label-md text-label-md text-on-surface-variant uppercase tracking-wider"}>
                     Registres Actifs
                   </span>
-                  <Icone nom="inventory_2" className="text-secondary text-[22px]" />
+                  <Icone nom="inventory_2" className="text-secondary text-[1.375rem]" />
                 </div>
                 <div className={"font-headline-lg text-headline-lg text-on-surface font-code-num"}>
                   14
@@ -237,7 +241,7 @@ export function ProtectionDonneesScreen() {
                   <span className={"font-label-md text-label-md text-on-surface-variant uppercase tracking-wider"}>
                     Agents Protégés
                   </span>
-                  <Icone nom="badge" className="text-primary text-[22px]" />
+                  <Icone nom="badge" className="text-primary text-[1.375rem]" />
                 </div>
                 <div className={"font-headline-lg text-headline-lg text-on-surface font-code-num"}>
                   48 720
@@ -254,7 +258,7 @@ export function ProtectionDonneesScreen() {
                   <span className={"font-label-md text-label-md text-on-surface-variant uppercase tracking-wider"}>
                     Hébergement Souverain
                   </span>
-                  <Icone nom="cloud_done" className="text-primary text-[22px]" />
+                  <Icone nom="cloud_done" className="text-primary text-[1.375rem]" />
                 </div>
                 <div className={"font-headline-lg text-headline-lg text-primary font-code-num"}>
                   Tier-III CI
@@ -288,7 +292,7 @@ export function ProtectionDonneesScreen() {
               {/* Pilier 1 */}
               <div className={"bg-surface-container-lowest p-space-lg rounded-xl border border-hairline space-y-space-sm relative"}>
                 <div className={"w-10 h-10 rounded-lg bg-surface-container-low flex items-center justify-center text-primary"}>
-                  <Icone nom="gavel" className="text-[24px]" />
+                  <Icone nom="gavel" className="text-[1.5rem]" />
                 </div>
                 <div className={"space-y-1"}>
                   <span className={"font-code-num text-code-num text-primary font-bold"}>
@@ -305,7 +309,7 @@ export function ProtectionDonneesScreen() {
                 </p>
                 <div className={"pt-2"}>
                   <span className={"inline-flex items-center gap-1 font-label-sm text-label-sm text-primary"}>
-                    <Icone nom="check_circle" className="text-[14px]" />
+                    <Icone nom="check_circle" className="text-[0.875rem]" />
                      Art. 14 Loi 2013-450
             
                   </span>
@@ -314,7 +318,7 @@ export function ProtectionDonneesScreen() {
               {/* Pilier 2 */}
               <div className={"bg-surface-container-lowest p-space-lg rounded-xl border border-hairline space-y-space-sm relative"}>
                 <div className={"w-10 h-10 rounded-lg bg-surface-container-low flex items-center justify-center text-secondary"}>
-                  <Icone nom="target" className="text-[24px]" />
+                  <Icone nom="target" className="text-[1.5rem]" />
                 </div>
                 <div className={"space-y-1"}>
                   <span className={"font-code-num text-code-num text-secondary font-bold"}>
@@ -331,7 +335,7 @@ export function ProtectionDonneesScreen() {
                 </p>
                 <div className={"pt-2"}>
                   <span className={"inline-flex items-center gap-1 font-label-sm text-label-sm text-secondary"}>
-                    <Icone nom="check_circle" className="text-[14px]" />
+                    <Icone nom="check_circle" className="text-[0.875rem]" />
                      Finalité statutaire exclusive
             
                   </span>
@@ -340,7 +344,7 @@ export function ProtectionDonneesScreen() {
               {/* Pilier 3 */}
               <div className={"bg-surface-container-lowest p-space-lg rounded-xl border border-hairline space-y-space-sm relative"}>
                 <div className={"w-10 h-10 rounded-lg bg-surface-container-low flex items-center justify-center text-primary"}>
-                  <Icone nom="filter_alt" className="text-[24px]" />
+                  <Icone nom="filter_alt" className="text-[1.5rem]" />
                 </div>
                 <div className={"space-y-1"}>
                   <span className={"font-code-num text-code-num text-primary font-bold"}>
@@ -357,7 +361,7 @@ export function ProtectionDonneesScreen() {
                 </p>
                 <div className={"pt-2"}>
                   <span className={"inline-flex items-center gap-1 font-label-sm text-label-sm text-primary"}>
-                    <Icone nom="check_circle" className="text-[14px]" />
+                    <Icone nom="check_circle" className="text-[0.875rem]" />
                      Principe de parcimonie
             
                   </span>
@@ -366,7 +370,7 @@ export function ProtectionDonneesScreen() {
               {/* Pilier 4 */}
               <div className={"bg-surface-container-lowest p-space-lg rounded-xl border border-hairline space-y-space-sm relative"}>
                 <div className={"w-10 h-10 rounded-lg bg-surface-container-low flex items-center justify-center text-primary"}>
-                  <Icone nom="sync" className="text-[24px]" />
+                  <Icone nom="sync" className="text-[1.5rem]" />
                 </div>
                 <div className={"space-y-1"}>
                   <span className={"font-code-num text-code-num text-primary font-bold"}>
@@ -383,7 +387,7 @@ export function ProtectionDonneesScreen() {
                 </p>
                 <div className={"pt-2"}>
                   <span className={"inline-flex items-center gap-1 font-label-sm text-label-sm text-primary"}>
-                    <Icone nom="check_circle" className="text-[14px]" />
+                    <Icone nom="check_circle" className="text-[0.875rem]" />
                      Contrôle biométrique continu
             
                   </span>
@@ -392,7 +396,7 @@ export function ProtectionDonneesScreen() {
               {/* Pilier 5 */}
               <div className={"bg-surface-container-lowest p-space-lg rounded-xl border border-hairline space-y-space-sm relative"}>
                 <div className={"w-10 h-10 rounded-lg bg-surface-container-low flex items-center justify-center text-secondary"}>
-                  <Icone nom="history_edu" className="text-[24px]" />
+                  <Icone nom="history_edu" className="text-[1.5rem]" />
                 </div>
                 <div className={"space-y-1"}>
                   <span className={"font-code-num text-code-num text-secondary font-bold"}>
@@ -409,7 +413,7 @@ export function ProtectionDonneesScreen() {
                 </p>
                 <div className={"pt-2"}>
                   <span className={"inline-flex items-center gap-1 font-label-sm text-label-sm text-secondary"}>
-                    <Icone nom="check_circle" className="text-[14px]" />
+                    <Icone nom="check_circle" className="text-[0.875rem]" />
                      DUA & Tri Réglementaire
             
                   </span>
@@ -418,7 +422,7 @@ export function ProtectionDonneesScreen() {
               {/* Pilier 6 */}
               <div className={"bg-surface-container-lowest p-space-lg rounded-xl border border-hairline space-y-space-sm relative"}>
                 <div className={"w-10 h-10 rounded-lg bg-surface-container-low flex items-center justify-center text-primary"}>
-                  <Icone nom="vpn_lock" className="text-[24px]" />
+                  <Icone nom="vpn_lock" className="text-[1.5rem]" />
                 </div>
                 <div className={"space-y-1"}>
                   <span className={"font-code-num text-code-num text-primary font-bold"}>
@@ -435,7 +439,7 @@ export function ProtectionDonneesScreen() {
                 </p>
                 <div className={"pt-2"}>
                   <span className={"inline-flex items-center gap-1 font-label-sm text-label-sm text-primary"}>
-                    <Icone nom="check_circle" className="text-[14px]" />
+                    <Icone nom="check_circle" className="text-[0.875rem]" />
                      Souveraineté Cloud 100% CI
             
                   </span>
@@ -462,7 +466,7 @@ export function ProtectionDonneesScreen() {
                 </p>
               </div>
               <div className={"bg-surface-container-highest px-space-md py-space-xs rounded text-primary font-label-md text-label-md flex items-center gap-2"}>
-                <Icone nom="lock_clock" className="text-[18px]" />
+                <Icone nom="lock_clock" className="text-[1.125rem]" />
                 <span>
                   {"D\u00e9lai d'instruction l\u00e9gal garanti : < 72 heures ouvr\u00e9es"}
                 </span>
@@ -473,7 +477,7 @@ export function ProtectionDonneesScreen() {
               <div className={"bg-surface-container-lowest p-space-lg rounded-xl border border-hairline flex flex-col justify-between space-y-space-md"}>
                 <div className={"space-y-space-xs"}>
                   <div className={"flex items-center justify-between"}>
-                    <Icone nom="file_open" className="text-primary text-[28px]" />
+                    <Icone nom="file_open" className="text-primary text-[1.75rem]" />
                     <span className={"bg-surface-container-low text-on-surface-variant px-2 py-0.5 rounded font-label-sm text-label-sm"}>
                       Art. 28 Loi 2013
                     </span>
@@ -488,7 +492,7 @@ export function ProtectionDonneesScreen() {
                   </p>
                 </div>
                 <button className={"w-full bg-primary hover:bg-primary-container text-on-primary py-space-xs px-space-md rounded font-label-md text-label-md flex items-center justify-center gap-2 transition-colors"} type="button" data-long-action="Génération du document certifié…" data-long-action-done="Document prêt">
-                  <Icone nom="download" className="text-[18px]" />
+                  <Icone nom="download" className="text-[1.125rem]" />
                   <span>
                     Demander mon Extrait Nominatif
                   </span>
@@ -498,7 +502,7 @@ export function ProtectionDonneesScreen() {
               <div className={"bg-surface-container-lowest p-space-lg rounded-xl border border-hairline flex flex-col justify-between space-y-space-md"}>
                 <div className={"space-y-space-xs"}>
                   <div className={"flex items-center justify-between"}>
-                    <Icone nom="edit_document" className="text-secondary text-[28px]" />
+                    <Icone nom="edit_document" className="text-secondary text-[1.75rem]" />
                     <span className={"bg-surface-container-low text-on-surface-variant px-2 py-0.5 rounded font-label-sm text-label-sm"}>
                       Art. 30 Loi 2013
                     </span>
@@ -513,7 +517,7 @@ export function ProtectionDonneesScreen() {
                   </p>
                 </div>
                 <button className={"w-full bg-surface-container hover:bg-surface-container-high text-on-surface py-space-xs px-space-md rounded font-label-md text-label-md flex items-center justify-center gap-2 transition-colors"} type="button" data-soon>
-                  <Icone nom="edit_calendar" className="text-[18px]" />
+                  <Icone nom="edit_calendar" className="text-[1.125rem]" />
                   <span>
                     Signaler une Anomalie de Registre
                   </span>
@@ -523,7 +527,7 @@ export function ProtectionDonneesScreen() {
               <div className={"bg-surface-container-lowest p-space-lg rounded-xl border border-hairline flex flex-col justify-between space-y-space-md"}>
                 <div className={"space-y-space-xs"}>
                   <div className={"flex items-center justify-between"}>
-                    <Icone nom="block" className="text-on-surface-variant text-[28px]" />
+                    <Icone nom="block" className="text-on-surface-variant text-[1.75rem]" />
                     <span className={"bg-surface-container-low text-on-surface-variant px-2 py-0.5 rounded font-label-sm text-label-sm"}>
                       Art. 32 Loi 2013
                     </span>
@@ -538,7 +542,7 @@ export function ProtectionDonneesScreen() {
                   </p>
                 </div>
                 <button className={"w-full bg-surface-container hover:bg-surface-container-high text-on-surface py-space-xs px-space-md rounded font-label-md text-label-md flex items-center justify-center gap-2 transition-colors"} type="button" data-soon>
-                  <Icone nom="lock" className="text-[18px]" />
+                  <Icone nom="lock" className="text-[1.125rem]" />
                   <span>
                     Formuler une Requête Réservée
                   </span>
@@ -603,7 +607,7 @@ export function ProtectionDonneesScreen() {
                     </td>
                     <td className={"py-space-sm px-space-md"}>
                       <span className={"inline-flex items-center gap-1 px-2 py-0.5 bg-primary/10 text-primary rounded font-label-sm text-label-sm font-semibold"}>
-                        <Icone nom="check" className="text-[14px]" />
+                        <Icone nom="check" className="text-[0.875rem]" />
                          Conforme Certifié
                 
                       </span>
@@ -627,7 +631,7 @@ export function ProtectionDonneesScreen() {
                     </td>
                     <td className={"py-space-sm px-space-md"}>
                       <span className={"inline-flex items-center gap-1 px-2 py-0.5 bg-primary/10 text-primary rounded font-label-sm text-label-sm font-semibold"}>
-                        <Icone nom="check" className="text-[14px]" />
+                        <Icone nom="check" className="text-[0.875rem]" />
                          Conforme Certifié
                 
                       </span>
@@ -651,7 +655,7 @@ export function ProtectionDonneesScreen() {
                     </td>
                     <td className={"py-space-sm px-space-md"}>
                       <span className={"inline-flex items-center gap-1 px-2 py-0.5 bg-primary/10 text-primary rounded font-label-sm text-label-sm font-semibold"}>
-                        <Icone nom="check" className="text-[14px]" />
+                        <Icone nom="check" className="text-[0.875rem]" />
                          Conforme Certifié
                 
                       </span>
@@ -675,7 +679,7 @@ export function ProtectionDonneesScreen() {
                     </td>
                     <td className={"py-space-sm px-space-md"}>
                       <span className={"inline-flex items-center gap-1 px-2 py-0.5 bg-secondary-container/20 text-secondary rounded font-label-sm text-label-sm font-semibold"}>
-                        <Icone nom="schedule" className="text-[14px]" />
+                        <Icone nom="schedule" className="text-[0.875rem]" />
                          Réaudit Trimestriel
                 
                       </span>
@@ -692,7 +696,7 @@ export function ProtectionDonneesScreen() {
             <div className={"bg-surface-container-lowest p-space-lg rounded-xl shadow-md flex flex-col lg:flex-row items-center justify-between gap-space-lg"}>
               <div className={"space-y-space-xs max-w-3xl"}>
                 <div className={"flex items-center gap-2 text-primary font-semibold text-label-md"}>
-                  <Icone nom="support_agent" className="text-[20px]" />
+                  <Icone nom="support_agent" className="text-[1.25rem]" />
                   <span>
                     Bureau du Délégué à la Protection des Données (DPO / CIL)
                   </span>
@@ -707,19 +711,19 @@ export function ProtectionDonneesScreen() {
                 </p>
                 <div className={"flex flex-wrap items-center gap-space-md pt-2 text-on-surface font-label-md text-label-md"}>
                   <span className={"flex items-center gap-1"}>
-                    <Icone nom="mail" className="text-primary text-[16px]" />
+                    <Icone nom="mail" className="text-primary text-[1rem]" />
                     
               dp-rgpd@portefeuille.gouv.ci
             
                   </span>
                   <span className={"flex items-center gap-1"}>
-                    <Icone nom="call" className="text-primary text-[16px]" />
+                    <Icone nom="call" className="text-primary text-[1rem]" />
                     
               +225 20 21 00 89 (Ligne Directe CIL)
             
                   </span>
                   <span className={"flex items-center gap-1"}>
-                    <Icone nom="pin_drop" className="text-primary text-[16px]" />
+                    <Icone nom="pin_drop" className="text-primary text-[1rem]" />
                     
               Immeuble SCIAM, 14e étage, Abidjan-Plateau
             
@@ -744,7 +748,7 @@ export function ProtectionDonneesScreen() {
         {/* Notification Toast Container */}
         <div className={"fixed bottom-6 right-6 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none"} id={"statusToast"}>
           <div className={"bg-primary text-on-primary px-space-md py-space-sm rounded-xl shadow-xl flex items-center gap-space-sm"}>
-            <Icone nom="check_circle" className="text-[20px]" id="toastIcon" />
+            <Icone nom="check_circle" className="text-[1.25rem]" id="toastIcon" />
             <span className={"font-label-md text-label-md"} id={"toastMessage"}>
               Action enregistrée avec succès.
             </span>
@@ -757,7 +761,7 @@ export function ProtectionDonneesScreen() {
         <div className={"grid grid-cols-1 md:grid-cols-4 gap-space-lg mb-space-lg"}>
           <div className={"space-y-space-sm"}>
             <div className={"flex items-center gap-space-sm"}>
-              <Icone nom="account_balance" className="text-primary text-[24px]" />
+              <Icone nom="account_balance" className="text-primary text-[1.5rem]" />
               <span className={"font-headline-sm text-headline-sm text-primary"}>
                 MPEEP - SIGRH
               </span>

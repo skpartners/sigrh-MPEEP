@@ -1,6 +1,17 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { ApiError, api, mediaUrl } from "../api/client";
+import {
+  CLE_COULEURS,
+  COULEURS_DEFAUT,
+  appliquerCouleurs,
+  contraste,
+  couleursCourantes,
+  couleurValide,
+  paletteGraphique,
+  useCouleursEnregistrees,
+  type Couleurs,
+} from "../ui/Couleurs";
 import { useFeedback } from "../ui/Feedback";
 import { BOUTON_DANGER, BOUTON_PRIMAIRE, BOUTON_SECONDAIRE } from "../ui/Modale";
 import { AppChrome } from "./AppChrome";
@@ -12,6 +23,7 @@ type Parametres = {
   civilite: string;
   nom: string;
   inactivite_minutes: number;
+  couleurs: Couleurs;
   connexion: {
     active: boolean;
     matricule: string;
@@ -241,7 +253,7 @@ export function ParametresScreen() {
           <p className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Gouvernance · Paramètres</p>
           <h1 className="font-headline-lg text-headline-lg text-on-surface">Paramètres du ministère</h1>
           <p className="font-body-md text-body-md text-on-surface-variant max-w-3xl">
-            Les paramètres de connexion ouvrent l'accès. La civilité, le nom et le portrait de la ministre s'affichent ensuite sur le portail public.
+            Les paramètres de connexion ouvrent l'accès. La civilité, le nom et le portrait de la ministre s'affichent ensuite sur le portail public. Les couleurs habillent tout le SIGRH.
           </p>
         </div>
 
@@ -456,7 +468,159 @@ export function ParametresScreen() {
             </div>
           </div>
         </section>
+
+        <SectionCouleurs peutModifier={Boolean(data?.peut_modifier)} pret={Boolean(data)} />
       </div>
     </AppChrome>
+  );
+}
+
+const CHAMPS_COULEUR = [
+  { cle: "principale", libelle: "Couleur principale", aide: "Barre latérale, bannières, boutons et liens." },
+  { cle: "accent", libelle: "Couleur d'accent", aide: "Repères, pastilles, onglet actif et fonds teintés." },
+] as const;
+
+function SectionCouleurs({ peutModifier, pret }: { peutModifier: boolean; pret: boolean }) {
+  const client = useQueryClient();
+  const feedback = useFeedback();
+  const enregistrees = useCouleursEnregistrees();
+  const [brouillon, setBrouillon] = useState<Couleurs>(couleursCourantes);
+  const [erreur, setErreur] = useState("");
+  const [enCours, setEnCours] = useState(false);
+  const reference = enregistrees.data ?? COULEURS_DEFAUT;
+  const valides = couleurValide(brouillon.principale) && couleurValide(brouillon.accent);
+  const modifiees = brouillon.principale !== reference.principale || brouillon.accent !== reference.accent;
+  const parDefaut = brouillon.principale === COULEURS_DEFAUT.principale && brouillon.accent === COULEURS_DEFAUT.accent;
+  const tropClaire = couleurValide(brouillon.principale) && contraste(brouillon.principale, "#FFFFFF") < 4.5;
+
+  useEffect(() => {
+    if (enregistrees.data) setBrouillon(enregistrees.data);
+  }, [enregistrees.data]);
+
+  // Aperçu en direct : tout l'écran prend les couleurs du brouillon.
+  useEffect(() => {
+    if (valides) appliquerCouleurs(brouillon);
+  }, [brouillon, valides]);
+
+  // En quittant la page sans enregistrer, les couleurs enregistrées reviennent.
+  useEffect(() => {
+    return () => appliquerCouleurs(client.getQueryData<Couleurs>(CLE_COULEURS) ?? COULEURS_DEFAUT);
+  }, [client]);
+
+  function changer(cle: keyof Couleurs, valeur: string) {
+    setErreur("");
+    const texte = valeur.trim();
+    setBrouillon((precedent) => ({ ...precedent, [cle]: (texte.startsWith("#") ? texte : `#${texte}`).toUpperCase() }));
+  }
+
+  async function enregistrer() {
+    if (!valides) {
+      setErreur("Chaque couleur doit s'écrire #RRVVBB, par exemple #042F32.");
+      return;
+    }
+    setEnCours(true);
+    setErreur("");
+    try {
+      const reponse = await feedback.run(
+        "Enregistrement des couleurs…",
+        () => api<Parametres>("/api/v1/parametres/couleurs/", { method: "POST", body: JSON.stringify(brouillon) }),
+        { success: { title: "Couleurs enregistrées", message: "Le SIGRH s'affiche désormais avec ces couleurs pour tous." } },
+      );
+      client.setQueryData(["parametres"], reponse);
+      client.setQueryData(CLE_COULEURS, reponse.couleurs);
+    } catch (cause) {
+      setErreur(cause instanceof ApiError ? cause.message : "Les couleurs n'ont pas pu être enregistrées.");
+    } finally {
+      setEnCours(false);
+    }
+  }
+
+  return (
+    <section className="motion-rise rounded-xl border border-hairline bg-surface-container-lowest p-6" style={{ "--delay": "320ms" } as CSSProperties} aria-labelledby="titre-couleurs">
+      <h2 id="titre-couleurs" className="font-headline-sm text-headline-sm text-on-surface">Couleurs de l'application</h2>
+      <p className="mt-1 font-body-sm text-body-sm text-on-surface-variant">
+        Deux couleurs suffisent : les nuances, les textes lisibles et les graphiques en découlent. L'écran les essaie en direct ; elles ne s'appliquent à tous qu'une fois enregistrées.
+      </p>
+
+      <form
+        className="mt-6 space-y-6"
+        onSubmit={(event) => {
+          event.preventDefault();
+          void enregistrer();
+        }}
+      >
+        <div className="grid gap-4 sm:grid-cols-2">
+          {CHAMPS_COULEUR.map((champ) => {
+            const valeur = brouillon[champ.cle];
+            const bloque = enCours || !pret || !peutModifier;
+            return (
+              <div key={champ.cle} className="space-y-1.5">
+                <label htmlFor={`couleur-${champ.cle}`} className="font-label-sm text-label-sm text-on-surface-variant">{champ.libelle}</label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    aria-label={`${champ.libelle} : nuancier`}
+                    className="h-10 w-12 shrink-0 cursor-pointer rounded border border-outline-variant bg-surface-container-lowest p-1 disabled:cursor-not-allowed"
+                    value={couleurValide(valeur) ? valeur.toLowerCase() : "#000000"}
+                    disabled={bloque}
+                    onChange={(event) => changer(champ.cle, event.target.value)}
+                  />
+                  <input
+                    id={`couleur-${champ.cle}`}
+                    className={`${CHAMP} font-code-num uppercase`}
+                    value={valeur}
+                    maxLength={7}
+                    spellCheck={false}
+                    autoComplete="off"
+                    aria-invalid={!couleurValide(valeur)}
+                    disabled={bloque}
+                    onChange={(event) => changer(champ.cle, event.target.value)}
+                  />
+                </div>
+                <p className="font-body-sm text-body-sm text-on-surface-variant">{champ.aide}</p>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="overflow-hidden rounded-lg border border-hairline" aria-label="Aperçu des couleurs">
+          <div className="flex flex-wrap items-center gap-3 bg-primary px-4 py-3 text-on-primary">
+            <span className="font-label-md text-label-md font-bold">SIGRH · MPEEP</span>
+            <span className="rounded-full bg-secondary-container px-2.5 py-0.5 font-label-sm text-label-sm text-on-secondary-container">Onglet actif</span>
+          </div>
+          <div className="flex flex-wrap items-center gap-3 bg-surface-container-lowest px-4 py-3">
+            <span className={BOUTON_PRIMAIRE}>Bouton principal</span>
+            <span className="font-label-md text-label-md text-primary underline">Lien</span>
+            <span className="rounded bg-primary-fixed px-2 py-0.5 font-label-sm text-label-sm text-on-primary-fixed">Étiquette</span>
+            <span className="ml-auto flex h-6 items-end gap-0.5" aria-hidden="true">
+              {(valides ? paletteGraphique(brouillon) : []).map((teinte, index) => (
+                <span key={index} className="w-2.5 rounded-sm" style={{ backgroundColor: teinte, height: `${40 + ((index * 37) % 60)}%` }} />
+              ))}
+            </span>
+          </div>
+        </div>
+
+        {tropClaire ? (
+          <p className="font-body-sm text-body-sm text-on-surface" role="status">
+            La couleur principale est claire : les liens et titres qui la portent seront difficiles à lire sur fond blanc. Une teinte plus foncée est conseillée.
+          </p>
+        ) : null}
+
+        {peutModifier ? (
+          <div className="flex flex-wrap items-center gap-3">
+            <button type="submit" className={BOUTON_PRIMAIRE} disabled={enCours || !pret || !modifiees || !valides}>Enregistrer</button>
+            <button type="button" className={BOUTON_SECONDAIRE} disabled={enCours || !modifiees} onClick={() => { setErreur(""); setBrouillon(reference); }}>
+              Annuler
+            </button>
+            <button type="button" className={BOUTON_SECONDAIRE} disabled={enCours || parDefaut} onClick={() => { setErreur(""); setBrouillon(COULEURS_DEFAUT); }}>
+              Couleurs par défaut
+            </button>
+            {erreur ? <p className="font-body-sm text-body-sm text-error" role="alert">{erreur}</p> : null}
+          </div>
+        ) : pret ? (
+          <p className="font-body-sm text-body-sm text-on-surface-variant">La modification est réservée aux comptes habilités à saisir ces paramètres.</p>
+        ) : null}
+      </form>
+    </section>
   );
 }

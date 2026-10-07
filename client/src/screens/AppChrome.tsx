@@ -6,6 +6,7 @@ import type { SessionUser } from "../api/types";
 import { EditeurSignature } from "../ui/EditeurSignature";
 import { Portrait } from "../ui/PhotoProfil";
 import { useFeedback } from "../ui/Feedback";
+import { useHauteurFixe } from "../ui/HauteurFixe";
 import { PageMotion } from "../ui/Motion";
 import { useIntervalle } from "../ui/TempsReel";
 import { CommunicationBouton } from "./CommunicationBouton";
@@ -14,8 +15,12 @@ import { NotificationBell } from "./NotificationBell";
 import { Icone } from "../ui/Icone";
 import { lienActif, libellePage, menuAutorise, menuCourant, pageHorsHabilitation, repliHabilitation, sousMenus, type LienNav } from "./navigation";
 
+// Même palier que lg: de Tailwind (64rem) : il suit la taille de police du navigateur, et le zoom
+// réduit déjà la largeur utile en px CSS.
+const ECRAN_LARGE = "(width >= 64rem)";
+
 function ecranLarge(): boolean {
-  return window.matchMedia("(min-width: 1024px)").matches;
+  return window.matchMedia(ECRAN_LARGE).matches;
 }
 
 function initiales(user: SessionUser | undefined): string {
@@ -68,6 +73,10 @@ export function AppChrome({ children }: { children: ReactNode }) {
     refetchIntervalInBackground: true,
   });
   const accesConnu = useRef<SessionUser["acces"] | undefined>(undefined);
+  const enteteRef = useRef<HTMLElement>(null);
+  const piedRef = useRef<HTMLElement>(null);
+  useHauteurFixe(enteteRef, "--haut-entete");
+  useHauteurFixe(piedRef, "--haut-pied");
   const courant = menuCourant(pathname, hash);
   const enfants = courant ? sousMenus(courant) : [];
   const repli = repliHabilitation(pathname, hash, me.data?.acces);
@@ -76,7 +85,7 @@ export function AppChrome({ children }: { children: ReactNode }) {
   const reduit = avecSidebar && large && !deplie;
 
   useEffect(() => {
-    const media = window.matchMedia("(min-width: 1024px)");
+    const media = window.matchMedia(ECRAN_LARGE);
     const suivre = () => setLarge(media.matches);
     media.addEventListener("change", suivre);
     return () => media.removeEventListener("change", suivre);
@@ -111,7 +120,7 @@ export function AppChrome({ children }: { children: ReactNode }) {
   }, [menuOpen]);
 
   return (
-    <div className="min-h-screen bg-transparent font-body-md text-body-md text-on-surface antialiased">
+    <div className="min-h-dvh bg-transparent font-body-md text-body-md text-on-surface antialiased">
       {/* Fond photo du siège — persiste sur toutes les pages applicatives */}
       <img
         src={`${import.meta.env.BASE_URL}DGPE%20siege.jpg`}
@@ -120,8 +129,8 @@ export function AppChrome({ children }: { children: ReactNode }) {
         className="pointer-events-none fixed inset-0 -z-10 h-dvh w-full object-cover object-center"
       />
       <div className="pointer-events-none fixed inset-0 -z-10 bg-gradient-to-b from-primary/15 via-transparent to-primary/10" aria-hidden="true" />
-      <header className="fixed top-0 left-0 right-0 z-50 bg-white/20 backdrop-blur-2xl border-b border-white/10 shadow-[0_1px_20px_rgba(61,0,122,0.10)] pt-[env(safe-area-inset-top)]">
-        <div className="barre-app h-16 px-3 sm:px-6 flex items-center justify-between gap-1 sm:gap-3">
+      <header ref={enteteRef} className="fixed top-0 left-0 right-0 z-50 bg-white/20 backdrop-blur-2xl border-b border-white/10 shadow-[0_1px_20px_color-mix(in_oklab,var(--color-primary)_10%,transparent)] pt-[env(safe-area-inset-top)]">
+        <div className="barre-app h-14 sm:h-16 court:h-14 px-2 sm:px-6 flex items-center justify-between gap-1 sm:gap-3">
           <div className="flex items-center gap-1 sm:gap-3 min-w-0">
             {avecSidebar && !large ? (
               <button
@@ -135,7 +144,7 @@ export function AppChrome({ children }: { children: ReactNode }) {
                 <Icone nom={menuOpen ? "menu_open" : "menu"} className="text-2xl" />
               </button>
             ) : null}
-            <Link to="/app" title="Menu" className="flex items-center gap-3 min-w-0 rounded">
+            <Link to="/app" title="Menu" aria-label="Menu principal" className="flex max-[22rem]:hidden items-center gap-3 min-w-0 rounded">
               <span className="relative flex items-center justify-center p-1 bg-surface-container-low rounded shrink-0">
                 <img alt="Armoiries de la République de Côte d'Ivoire" className="h-8 w-8 sm:h-10 sm:w-10 object-contain" src={`${import.meta.env.BASE_URL}logo.png`} />
                 <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-secondary-container border border-surface-container-lowest" aria-hidden="true" />
@@ -143,7 +152,7 @@ export function AppChrome({ children }: { children: ReactNode }) {
               <span className="hidden sm:flex flex-col min-w-0">
                 <span className="font-label-md text-label-md font-bold truncate flex items-center gap-0.5">
                   <span className="text-primary">SIGRH</span>
-                  <span className="text-secondary-container">·</span>
+                  <span className="text-secondary">·</span>
                 </span>
                 <span className="font-label-sm text-label-sm text-on-surface-variant truncate flex items-center gap-1.5" title="Ministère du Portefeuille de l'État et des Entreprises Publiques">MPEEP<span className="font-label-xs text-label-xs text-on-surface-variant/50 tabular-nums">v0</span></span>
               </span>
@@ -155,7 +164,7 @@ export function AppChrome({ children }: { children: ReactNode }) {
               aria-label="Menu"
               aria-current={pathname === "/app" ? "page" : undefined}
               title="Menu"
-              className={`inline-flex p-2 rounded hover:bg-surface-container-high ${pathname === "/app" ? "bg-surface-container-high text-on-surface" : "text-on-surface-variant hover:text-on-surface"}`}
+              className={`hidden sm:inline-flex items-center justify-center p-2 rounded hover:bg-surface-container-high ${pathname === "/app" ? "bg-surface-container-high text-on-surface" : "text-on-surface-variant hover:text-on-surface"}`}
             >
               <Icone nom="home" className="text-xl" />
             </Link>
@@ -167,7 +176,7 @@ export function AppChrome({ children }: { children: ReactNode }) {
               aria-label="Aide"
               aria-current={pathname === "/app/aide" ? "page" : undefined}
               title="Aide"
-              className={`inline-flex items-center justify-center p-2 rounded hover:bg-surface-container-high ${pathname === "/app/aide" ? "bg-surface-container-high text-on-surface" : "text-on-surface-variant hover:text-on-surface"}`}
+              className={`hidden sm:inline-flex items-center justify-center p-2 rounded hover:bg-surface-container-high ${pathname === "/app/aide" ? "bg-surface-container-high text-on-surface" : "text-on-surface-variant hover:text-on-surface"}`}
             >
               <Icone nom="help" className="text-xl" />
             </Link>
@@ -191,7 +200,7 @@ export function AppChrome({ children }: { children: ReactNode }) {
           onBlur={(event) => {
             if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setFocusDedans(false);
           }}
-          className={`fixed left-0 top-0 h-full bg-primary/40 backdrop-blur-2xl text-on-primary z-40 flex flex-col pt-20 pb-24 border-r border-white/15 overflow-x-hidden overflow-y-auto transition-[width,transform] duration-300 ease-out w-72 ${menuOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full"} lg:translate-x-0 ${deplie ? "lg:w-72 lg:shadow-[8px_0_32px_rgba(61,0,122,0.18)]" : "lg:w-16 lg:shadow-none"}`}
+          className={`fixed left-0 top-0 h-full bg-primary/40 backdrop-blur-2xl text-on-primary z-40 flex flex-col pt-[calc(var(--haut-entete)+1rem)] pb-[calc(var(--haut-pied)+1rem)] border-r border-white/15 overflow-x-hidden overflow-y-auto transition-[width,transform] duration-300 ease-out w-72 ${menuOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full"} lg:translate-x-0 ${deplie ? "lg:w-72 lg:shadow-[8px_0_32px_color-mix(in_oklab,var(--color-primary)_18%,transparent)]" : "lg:w-16 lg:shadow-none"}`}
         >
           <nav className={`flex-1 space-y-1 font-body-sm text-body-sm ${reduit ? "px-2" : "px-3"}`} aria-label={courant.libelle}>
             <Link
@@ -239,15 +248,15 @@ export function AppChrome({ children }: { children: ReactNode }) {
       ) : null}
 
       <div className={avecSidebar ? "lg:pl-16" : ""}>
-        <main className={`zone-app relative pt-[calc(4.25rem+env(safe-area-inset-top))] pb-40 sm:pb-28 min-h-screen flex flex-col justify-between ${pathname === "/app" ? "bg-transparent" : "bg-white/20 backdrop-blur-sm"}`}>
-          <PageMotion className="flex-1 flex flex-col" reveal={true}>
+        <main className={`zone-app relative pt-[calc(var(--haut-entete)+0.25rem)] pb-[calc(var(--haut-pied)+4.5rem)] min-h-dvh flex flex-col justify-between ${pathname === "/app" ? "bg-transparent" : "bg-white/20 backdrop-blur-sm"}`}>
+          <PageMotion className="flex-1 flex flex-col w-full max-w-[120rem] mx-auto" reveal={true}>
             <BandeauSondage />
             {pathname !== "/app" ? <HeroBanniere courant={courant} user={me.data} pathname={pathname} /> : null}
             {me.isPending ? null : repli ? <Navigate to={repli} replace /> : children}
           </PageMotion>
         </main>
       </div>
-      <footer className="app-pied fixed bottom-0 inset-x-0 z-50 bg-white/15 backdrop-blur-2xl border-t border-white/10 shadow-[0_-1px_16px_rgba(61,0,122,0.08)] py-3 sm:py-4 px-4 sm:px-8">
+      <footer ref={piedRef} className="app-pied fixed tres-court:static bottom-0 inset-x-0 z-50 bg-white/15 backdrop-blur-2xl border-t border-white/10 shadow-[0_-1px_16px_color-mix(in_oklab,var(--color-primary)_8%,transparent)] py-3 sm:py-4 court:py-2 px-4 sm:px-8">
         {/* Ligne accent animée — Jitter gradient sweep (footer) */}
         <div className="motion-gradient-sweep absolute top-0 left-0 right-0 h-0.5" aria-hidden="true" />
         <div className="flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-3 text-center sm:text-left">
@@ -256,10 +265,10 @@ export function AppChrome({ children }: { children: ReactNode }) {
             <div className="flex flex-col text-left">
               <span className="font-label-md text-label-md font-bold flex items-center gap-0.5">
                 <span className="text-primary">SIGRH</span>
-                <span className="text-secondary-container">·</span>
+                <span className="text-secondary">·</span>
                 <span className="text-primary">MPEEP</span>
               </span>
-              <span className="hidden sm:block font-label-sm text-label-sm text-on-surface-variant leading-none">
+              <span className="hidden sm:block court:hidden font-label-sm text-label-sm text-on-surface-variant leading-none">
                 Ministère du Portefeuille de l'État et des Entreprises Publiques
               </span>
             </div>
@@ -293,12 +302,12 @@ function HeroBanniere({ courant, user, pathname }: { courant: LienNav | null; us
   const resume = courant?.resume ?? fixe?.resume;
   if (!libelle) return null;
   return (
-    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary to-primary-container mx-4 sm:mx-6 lg:mx-8 mt-4 mb-2">
+    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary to-primary-container mx-4 sm:mx-6 lg:mx-8 mt-4 court:mt-2 mb-2">
       <div className="motion-float-1 absolute -right-10 -top-10 w-40 h-40 rounded-full bg-secondary-container/20 blur-3xl pointer-events-none" aria-hidden="true" />
       <div className="motion-float-2 absolute left-1/3 bottom-0 w-32 h-32 rounded-full bg-secondary/15 blur-2xl pointer-events-none" aria-hidden="true" />
-      <div className="relative z-10 px-5 sm:px-8 py-5 flex items-center justify-between gap-4">
+      <div className="relative z-10 px-5 sm:px-8 py-5 court:py-3 flex items-center justify-between gap-4">
         <div className="flex items-center gap-4 min-w-0">
-          <span className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl bg-white/15 border border-white/20 text-on-primary shrink-0" aria-hidden="true">
+          <span className="w-12 h-12 court:w-10 court:h-10 rounded-xl flex items-center justify-center text-2xl court:text-xl bg-white/15 border border-white/20 text-on-primary shrink-0" aria-hidden="true">
             <Icone nom={icone} />
           </span>
           <div className="min-w-0">
@@ -313,7 +322,7 @@ function HeroBanniere({ courant, user, pathname }: { courant: LienNav | null; us
               {libelle}
             </h1>
             {resume ? (
-              <p className="font-body-sm text-body-sm text-on-primary/60 mt-0.5 hidden sm:block truncate max-w-xl">
+              <p className="font-body-sm text-body-sm text-on-primary/60 mt-0.5 hidden sm:block court:hidden truncate max-w-xl">
                 {resume}
               </p>
             ) : null}
@@ -430,6 +439,16 @@ function ProfileMenu({ user }: { user: SessionUser | undefined }) {
               <span className="font-body-sm text-body-sm text-on-surface-variant">Aucune signature enregistrée</span>
             )}
           </button>
+          {/* Sur téléphone, Menu et Aide quittent la barre du haut et se retrouvent ici. */}
+          <Link
+            role="menuitem"
+            to="/app"
+            className="sm:hidden w-full flex items-center gap-2 px-3 py-2 rounded text-left font-label-lg text-label-lg text-on-surface hover:bg-surface-container-high"
+            onClick={() => setOpen(false)}
+          >
+            <Icone nom="home" className="text-lg" />
+            Menu principal
+          </Link>
           <Link
             role="menuitem"
             to="/app/aide"

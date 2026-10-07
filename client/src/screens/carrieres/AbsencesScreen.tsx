@@ -415,7 +415,7 @@ export function AbsencesScreen() {
                   </div>
                 </div>
                 <span className="inline-flex items-center gap-1 px-2 py-1 rounded bg-secondary-fixed text-on-secondary-fixed font-label-sm text-label-sm font-semibold whitespace-nowrap shrink-0">
-                  <Icone nom="schedule" className="text-[14px]" />
+                  <Icone nom="schedule" className="text-[0.875rem]" />
                   {" "}Version ultérieure
                 </span>
               </div>
@@ -471,7 +471,7 @@ function LigneAutorisation({ autorisation, onChoisir }: { autorisation: Autorisa
               <span aria-hidden="true">•</span>
               <span>Grade {agent.grade}</span>
               <span aria-hidden="true">•</span>
-              <span className="px-1.5 py-0.2 rounded bg-surface-container text-on-surface text-[11px] font-semibold">{agent.organisme_sigle}</span>
+              <span className="px-1.5 py-0.2 rounded bg-surface-container text-on-surface text-[0.6875rem] font-semibold">{agent.organisme_sigle}</span>
             </div>
           </div>
         </div>
@@ -537,7 +537,7 @@ function ActionsDecision({ autorisation, onChoisir }: { autorisation: Autorisati
           <Icone nom={valide ? "check_circle" : "cancel"} className="text-base" />
           {valide ? "Validée" : "Invalidée"}
         </span>
-        <p className="text-xs text-on-surface-variant mt-1 max-w-[220px] ml-auto">Motif : {autorisation.motif_decision}</p>
+        <p className="text-xs text-on-surface-variant mt-1 max-w-[13.75rem] ml-auto">Motif : {autorisation.motif_decision}</p>
       </div>
     );
   }

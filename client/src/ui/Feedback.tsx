@@ -138,7 +138,7 @@ export function FeedbackProvider({ children }: { children: ReactNode }) {
         />
       ) : null}
       {createPortal(
-        <div className="fixed bottom-24 right-6 z-[90] flex flex-col items-end gap-3" aria-live="polite">
+        <div className="fixed bottom-[calc(var(--haut-pied)+5.5rem)] right-6 z-[90] flex flex-col items-end gap-3" aria-live="polite">
           {toasts.map((item) => (
             <div
               key={item.id}

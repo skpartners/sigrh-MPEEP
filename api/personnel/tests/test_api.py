@@ -1058,6 +1058,15 @@ def test_photo_de_la_ministre_dans_les_parametres(api, tmp_path, settings):
     delai = api.post("/api/v1/parametres/inactivite/", {"minutes": 20}, format="json", **auth)
     assert delai.status_code == 200
     assert delai.json()["inactivite_minutes"] == 20
+    assert api.get("/api/v1/public/couleurs/").json() == {"principale": "#042F32", "accent": "#D6FFCB"}
+    refuse_couleurs = api.post("/api/v1/parametres/couleurs/", {"principale": "#112233", "accent": "#ddeeff"}, format="json", **agent_auth)
+    assert refuse_couleurs.status_code == 403
+    couleur_invalide = api.post("/api/v1/parametres/couleurs/", {"principale": "vert", "accent": "#ddeeff"}, format="json", **auth)
+    assert couleur_invalide.status_code == 400
+    couleurs = api.post("/api/v1/parametres/couleurs/", {"principale": "#112233", "accent": "#ddeeff"}, format="json", **auth)
+    assert couleurs.status_code == 200
+    assert couleurs.json()["couleurs"] == {"principale": "#112233", "accent": "#DDEEFF"}
+    assert api.get("/api/v1/public/couleurs/").json() == {"principale": "#112233", "accent": "#DDEEFF"}
     publique = api.get("/api/v1/public/accueil/").json()["ministre"]
     assert publique == {"civilite": "Madame", "nom": "Koné Mariétou"}
     efface = api.post("/api/v1/parametres/identite/", {"civilite": "", "nom": ""}, format="json", **auth)

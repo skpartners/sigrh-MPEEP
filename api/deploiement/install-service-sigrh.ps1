@@ -1,4 +1,5 @@
 # Installe le service Windows SIGRH (NSSM) sur 127.0.0.1:8081.
+# Reconstruit d'abord le front : Django sert client/dist, que Git ne versionne pas.
 # Le tunnel Cloudflare publie https://sk-partners.consulting/sigrh vers ce port.
 # À lancer dans une console administrateur.
 
@@ -6,9 +7,32 @@ $ErrorActionPreference = "Stop"
 $nssm = "C:\nssm\nssm.exe"
 $python = "C:\Users\SORO\Documents\SIGRH-MPEEP\api\.venv\Scripts\python.exe"
 $app = "C:\Users\SORO\Documents\SIGRH-MPEEP\api"
+$client = "C:\Users\SORO\Documents\SIGRH-MPEEP\client"
 $journal = Join-Path $app "logs\sigrh-service.log"
 
 New-Item -ItemType Directory -Force -Path (Split-Path $journal) | Out-Null
+
+function Invoke-Npm {
+    param([Parameter(ValueFromRemainingArguments = $true)][string[]]$Arguments)
+    # Un avertissement npm ou Vite sur stderr ne doit pas interrompre le script.
+    $PSNativeCommandUseErrorActionPreference = $false
+    $precedent = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+    & npm @Arguments
+    $code = $LASTEXITCODE
+    $ErrorActionPreference = $precedent
+    if ($code -ne 0) { throw "npm $($Arguments -join ' ') a échoué (code $code)." }
+}
+
+Write-Host "Reconstruction du front..."
+Push-Location $client
+try {
+    Invoke-Npm install
+    Invoke-Npm run build
+}
+finally {
+    Pop-Location
+}
 
 $existant = Get-Service -Name SIGRH -ErrorAction SilentlyContinue
 if ($existant) {

@@ -1512,6 +1512,8 @@ class ParametresMinistere(models.Model):
     connexion_active = models.BooleanField(default=False)
     admin_matricule = models.CharField(max_length=150, blank=True)
     inactivite_minutes = models.PositiveSmallIntegerField(default=15)
+    couleur_principale = models.CharField(max_length=7, default="#042F32")
+    couleur_accent = models.CharField(max_length=7, default="#D6FFCB")
 
     class Meta:
         verbose_name = "paramètres du ministère"

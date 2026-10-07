@@ -6,6 +6,7 @@ import type { Accueil, CommunicationPublique } from "../api/types";
 import { dateLongue } from "../ui/format";
 import { reducedMotion, useSlideNavigate } from "../ui/Motion";
 import { PublicHeaderNav } from "./PublicHeaderNav";
+import { useHauteurFixe } from "../ui/HauteurFixe";
 import { Icone } from "../ui/Icone";
 
 /** Extrait l'entier de tête d'une chaîne (ex : "1 247 agents" → 1247) et anime le comptage.
@@ -62,9 +63,9 @@ function ChiffreAnime({ chiffre, ton }: { chiffre: { valeur: string; libelle: st
   }, []);
 
   return (
-    <div ref={containerRef} className={"bg-white/70 backdrop-blur-xl border border-white/40 rounded-xl p-space-md shadow-[0_4px_24px_rgba(61,0,122,0.10)] flex items-start gap-space-md"}>
+    <div ref={containerRef} className={"bg-white/70 backdrop-blur-xl border border-white/40 rounded-xl p-space-md shadow-[0_4px_24px_color-mix(in_oklab,var(--color-primary)_10%,transparent)] flex items-start gap-space-md"}>
       <div className={`w-12 h-12 rounded-lg bg-white/60 flex items-center justify-center shrink-0 ${ton}`}>
-        <Icone nom={chiffre?.icone ?? "hourglass_empty"} className="text-[26px]" />
+        <Icone nom={chiffre?.icone ?? "hourglass_empty"} className="text-[1.625rem]" />
       </div>
       <div className={"space-y-0.5"}>
         <span className={`font-headline-lg text-headline-lg tracking-tight ${ton}`}>
@@ -84,6 +85,8 @@ function ChiffreAnime({ chiffre, ton }: { chiffre: { valeur: string; libelle: st
 const TONS_CHIFFRE = ["text-secondary", "text-primary", "text-tertiary"];
 
 export function HomeScreen() {
+  const enteteRef = useRef<HTMLElement>(null);
+  useHauteurFixe(enteteRef, "--haut-entete");
   const slideTo = useSlideNavigate();
   const accueil = useQuery({
     queryKey: ["accueil"],
@@ -104,7 +107,7 @@ export function HomeScreen() {
       className="pointer-events-none fixed inset-0 z-0 h-dvh w-full object-cover object-center"
     />
     <div className="relative z-10">
-    <header className={"fixed top-0 w-full z-50 bg-surface/80 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]"}>
+    <header ref={enteteRef} className={"fixed top-0 w-full z-50 bg-surface/80 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]"}>
       <div className={"w-full bg-primary text-on-primary px-margin-desktop py-space-xs"}>
         <div className={"mx-auto flex items-center justify-between font-label-sm text-label-sm"}>
           <div className={"flex items-center gap-space-md"}>
@@ -145,12 +148,12 @@ export function HomeScreen() {
             </span>
           </div>
           <div className={"w-8 h-8 rounded-full bg-primary flex items-center justify-center"}>
-            <Icone nom="person" className="text-on-primary text-[18px]" />
+            <Icone nom="person" className="text-on-primary text-[1.125rem]" />
           </div>
         </div>
       </div>
     </header>
-    <main className={"w-full pt-28 sm:pt-24"}>
+    <main className={"w-full pt-[calc(var(--haut-entete)+0.5rem)]"}>
       <div className={"flex flex-col w-full"}>
         {/* BANNIÈRE D'ACCUEIL RÉGALIENNE & PRESTIGIEUSE */}
         <section className={"relative overflow-hidden bg-primary/75 text-on-primary"}>
@@ -205,7 +208,7 @@ export function HomeScreen() {
                   style={{ "--delay": "240ms" } as React.CSSProperties}
                 >
                   <button className={"flex max-w-full flex-wrap items-center justify-center gap-space-sm bg-surface-container-lowest text-primary px-space-lg py-space-sm rounded font-label-lg text-label-lg shadow-md hover:bg-primary-fixed transition-colors"} type="button" onClick={() => slideTo("/connexion", "forward")}>
-                    <Icone nom="lock" className="text-[20px]" />
+                    <Icone nom="lock" className="text-[1.25rem]" />
                     <span>
                       Accéder à l'Espace Sécurisé (Connexion)
                     </span>
@@ -252,7 +255,7 @@ export function HomeScreen() {
           <div className={"mx-auto px-margin-desktop"}>
             <div className={"space-y-space-md"}>
               <div className={"flex items-center gap-space-xs"}>
-                <Icone nom="campaign" className="text-primary text-[24px]" />
+                <Icone nom="campaign" className="text-primary text-[1.5rem]" />
                 <h2 className={"font-headline-sm text-headline-sm text-on-surface"}>
                   Informations de la Direction des ressources humaines
                 </h2>
@@ -289,7 +292,7 @@ export function HomeScreen() {
           <div className={"mt-space-lg bg-surface-container rounded-xl p-space-md flex flex-col sm:flex-row items-center justify-between gap-space-md"}>
             <div className={"flex items-center gap-space-md"}>
               <div className={"w-12 h-12 rounded-full bg-primary flex items-center justify-center text-on-primary shrink-0"}>
-                <Icone nom="support_agent" className="text-[24px]" />
+                <Icone nom="support_agent" className="text-[1.5rem]" />
               </div>
               <div>
                 <h4 className={"font-label-lg text-label-lg text-on-surface"}>
@@ -322,7 +325,7 @@ export function HomeScreen() {
         <div className={"grid grid-cols-1 md:grid-cols-4 gap-space-lg mb-space-lg"}>
           <div className={"space-y-space-sm"}>
             <div className={"flex items-center gap-space-sm"}>
-              <Icone nom="account_balance" className="text-primary text-[24px]" />
+              <Icone nom="account_balance" className="text-primary text-[1.5rem]" />
               <span className={"font-headline-sm text-headline-sm text-primary"}>
                 MPEEP - SIGRH
               </span>

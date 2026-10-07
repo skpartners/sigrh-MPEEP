@@ -146,7 +146,7 @@ export function MessagerieProvider({ children, actif }: { children: ReactNode; a
           role="dialog"
           aria-modal="false"
           aria-label="Messagerie interne"
-          className={`${sortie ? "motion-chat-out" : "motion-chat-in"} fixed z-[60] inset-x-2 top-[7.5rem] bottom-60 sm:inset-x-auto sm:top-auto sm:bottom-48 sm:right-6 sm:w-[24rem] sm:h-[min(36rem,calc(100vh-18rem))] lg:bottom-40 rounded-xl border border-hairline bg-surface-container-lowest shadow-2xl flex flex-col overflow-hidden`}
+          className={`${sortie ? "motion-chat-out" : "motion-chat-in"} fixed z-[60] inset-x-2 top-[calc(var(--haut-entete)+0.5rem)] bottom-[calc(var(--haut-pied)+5.5rem)] sm:inset-x-auto sm:top-auto sm:right-6 sm:w-[24rem] sm:h-[min(36rem,calc(100dvh-var(--haut-entete)-var(--haut-pied)-6.5rem))] rounded-xl border border-hairline bg-surface-container-lowest shadow-2xl flex flex-col overflow-hidden`}
         >
           {vue.type === "liste" ? <VueListe onOuvrir={(id) => setVue({ type: "fil", id })} onNouveau={() => setVue({ type: "nouveau" })} /> : null}
           {vue.type === "nouveau" ? <VueNouveau onRetour={() => setVue({ type: "liste" })} onOuvrir={(id) => setVue({ type: "fil", id })} /> : null}
@@ -161,7 +161,7 @@ export function MessagerieProvider({ children, actif }: { children: ReactNode; a
           aria-expanded={ouvert}
           aria-haspopup="dialog"
           aria-label={ouvert ? "Fermer la messagerie" : "Ouvrir la messagerie"}
-          className="fixed z-[60] bottom-40 right-6 sm:bottom-28 lg:bottom-20 w-14 h-14 rounded-full bg-primary text-on-primary shadow-xl hover:bg-primary-container flex items-center justify-center"
+          className="fixed z-[60] bottom-[calc(var(--haut-pied)+1rem)] right-6 w-14 h-14 rounded-full bg-primary text-on-primary shadow-xl hover:bg-primary-container flex items-center justify-center"
         >
           <Icone nom={ouvert && !sortie ? "close" : "forum"} className="text-2xl" />
         </button>
@@ -242,7 +242,7 @@ export function MessagerieBouton() {
           id="apercu-messagerie"
           role="dialog"
           aria-labelledby="titre-apercu-messagerie"
-          className="motion-overlay-card fixed sm:absolute left-4 right-4 sm:left-auto sm:right-0 top-[7.5rem] sm:top-auto sm:mt-2 sm:w-[22rem] z-50 rounded-lg border border-hairline bg-surface-container-lowest shadow-xl overflow-hidden"
+          className="motion-overlay-card fixed sm:absolute left-4 right-4 sm:left-auto sm:right-0 top-[calc(var(--haut-entete)+0.5rem)] sm:top-auto sm:mt-2 sm:w-[22rem] z-50 rounded-lg border border-hairline bg-surface-container-lowest shadow-xl overflow-hidden"
         >
           <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-hairline">
             <h2 id="titre-apercu-messagerie" className="font-headline-sm text-headline-sm text-on-surface">Messages</h2>
@@ -637,7 +637,7 @@ function VueFil({ id, onRetour }: { id: number; onRetour: () => void }) {
             onChange={(event) => setTexte(event.target.value)}
             onKeyDown={clavier}
             placeholder="Écrire un message…"
-            className="block w-full resize-none max-h-[120px] px-3 py-2 rounded-lg bg-surface-container-low font-body-md text-body-md text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:ring-2 focus:ring-primary"
+            className="block w-full resize-none max-h-[7.5rem] px-3 py-2 rounded-lg bg-surface-container-low font-body-md text-body-md text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:ring-2 focus:ring-primary"
           />
           {texte.length > LONGUEUR_MAX - 200 ? (
             <span className="block px-1 pt-0.5 font-label-sm text-label-sm text-on-surface-variant text-right">

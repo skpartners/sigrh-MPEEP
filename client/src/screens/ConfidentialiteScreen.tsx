@@ -1,11 +1,15 @@
+import { useRef } from "react";
 import { Link } from "react-router-dom";
 import { PublicHeaderNav } from "./PublicHeaderNav";
+import { useHauteurFixe } from "../ui/HauteurFixe";
 import { Icone } from "../ui/Icone";
 
 export function ConfidentialiteScreen() {
+  const enteteRef = useRef<HTMLElement>(null);
+  useHauteurFixe(enteteRef, "--haut-entete");
   return (
     <>
-    <header className={"fixed top-0 w-full z-50 bg-surface/95 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]"}>
+    <header ref={enteteRef} className={"fixed top-0 w-full z-50 bg-surface/95 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]"}>
       <div className={"w-full bg-primary text-on-primary px-margin-desktop py-space-xs"}>
         <div className={"mx-auto flex items-center justify-between font-label-sm text-label-sm"}>
           <div className={"flex items-center gap-space-md"}>
@@ -46,35 +50,35 @@ export function ConfidentialiteScreen() {
             </span>
           </div>
           <div className={"w-8 h-8 rounded-full bg-primary flex items-center justify-center"}>
-            <Icone nom="person" className="text-on-primary text-[18px]" />
+            <Icone nom="person" className="text-on-primary text-[1.125rem]" />
           </div>
         </div>
       </div>
     </header>
-    <main className={"w-full pt-28 sm:pt-24 bg-surface motion-rise"}>
+    <main className={"w-full pt-[calc(var(--haut-entete)+0.5rem)] bg-surface motion-rise"}>
       <div className={"flex flex-col w-full"}>
         {/* Bandeau de contexte et fil d'ariane */}
         <section className={"w-full bg-surface-container-low py-space-md"}>
           <div className={"mx-auto px-margin-desktop flex flex-col md:flex-row md:items-center justify-between gap-space-sm"}>
             <nav aria-label={"Fil d'Ariane"} className={"flex items-center gap-space-xs font-label-sm text-label-sm text-on-surface-variant"}>
               <Link className={"hover:text-primary transition-colors flex items-center gap-1"} to="/">
-                <Icone nom="account_balance" className="text-[16px]" />
+                <Icone nom="account_balance" className="text-[1rem]" />
                 <span>
                   Accueil
                 </span>
               </Link>
-              <Icone nom="chevron_right" className="text-[14px] text-on-surface-variant" />
+              <Icone nom="chevron_right" className="text-[0.875rem] text-on-surface-variant" />
               <span className={"hover:text-primary transition-colors"}>
                 Conformité & Sécurité
               </span>
-              <Icone nom="chevron_right" className="text-[14px] text-on-surface-variant" />
+              <Icone nom="chevron_right" className="text-[0.875rem] text-on-surface-variant" />
               <span className={"text-on-surface font-semibold"}>
                 Politique de Confidentialité
               </span>
             </nav>
             <div className={"flex items-center gap-space-sm"}>
               <div className={"hidden sm:inline-flex items-center gap-1 px-space-sm py-1 rounded bg-primary-container text-on-primary text-label-sm font-label-sm"}>
-                <Icone nom="shield_locked" className="text-[14px]" />
+                <Icone nom="shield_locked" className="text-[0.875rem]" />
                 <span>
                   Accès réservé aux agents habilités
                 </span>
@@ -88,7 +92,7 @@ export function ConfidentialiteScreen() {
             <div className={"grid grid-cols-1 lg:grid-cols-12 gap-space-lg items-center"}>
               <div className={"lg:col-span-8 space-y-space-md"}>
                 <div className={"inline-flex items-center gap-2 px-3 py-1 rounded bg-secondary-fixed text-on-secondary-fixed font-label-sm text-label-sm tracking-wide uppercase"}>
-                  <Icone nom="verified" className="text-[15px]" />
+                  <Icone nom="verified" className="text-[0.9375rem]" />
                   
             Régime Républicain de Protection des Données Agents
           
@@ -105,7 +109,7 @@ export function ConfidentialiteScreen() {
                 </p>
                 <div className={"flex flex-wrap items-center gap-space-md pt-2 text-label-sm font-label-sm text-on-surface-variant"}>
                   <span className={"flex items-center gap-1.5"}>
-                    <Icone nom="calendar_today" className="text-[16px] text-primary" />
+                    <Icone nom="calendar_today" className="text-[1rem] text-primary" />
                     
               Entrée en vigueur légale : 1er Janvier 2026
             
@@ -114,7 +118,7 @@ export function ConfidentialiteScreen() {
                     |
                   </span>
                   <span className={"flex items-center gap-1.5"}>
-                    <Icone nom="gavel" className="text-[16px] text-primary" />
+                    <Icone nom="gavel" className="text-[1rem] text-primary" />
                     
               Loi N° 2013-450 relative à la protection des données
             
@@ -123,7 +127,7 @@ export function ConfidentialiteScreen() {
                     |
                   </span>
                   <span className={"flex items-center gap-1.5"}>
-                    <Icone nom="database" className="text-[16px] text-secondary" />
+                    <Icone nom="database" className="text-[1rem] text-secondary" />
                     
               Stockage Souverain Datacenter National (Yamoussoukro / Abidjan)
             
@@ -135,7 +139,7 @@ export function ConfidentialiteScreen() {
                 <div className={"w-24 h-24 rounded-full bg-surface-container-lowest p-2 shadow-sm flex items-center justify-center mb-space-sm relative"}>
                   <img className={"w-20 h-20 object-contain"} alt="Armoiries de la République de Côte d'Ivoire" src={`${import.meta.env.BASE_URL}logo.png`} />
                   <span className={"absolute -bottom-1 -right-1 bg-primary text-on-primary w-7 h-7 rounded-full flex items-center justify-center shadow"}>
-                    <Icone nom="lock" className="text-[16px]" />
+                    <Icone nom="lock" className="text-[1rem]" />
                   </span>
                 </div>
                 <span className={"font-label-lg text-label-lg text-on-surface"}>
@@ -156,7 +160,7 @@ export function ConfidentialiteScreen() {
               <div className={"bg-surface-container-lowest p-space-lg rounded-xl border border-hairline flex flex-col justify-between hover:shadow-md transition-shadow"}>
                 <div>
                   <div className={"w-12 h-12 rounded-lg bg-surface-container flex items-center justify-center text-primary mb-space-md"}>
-                    <Icone nom="assignment_turned_in" className="text-[28px]" />
+                    <Icone nom="assignment_turned_in" className="text-[1.75rem]" />
                   </div>
                   <span className={"font-label-sm text-label-sm text-secondary uppercase font-semibold tracking-wider"}>
                     Principe Fondateur 01
@@ -171,7 +175,7 @@ export function ConfidentialiteScreen() {
                   </p>
                 </div>
                 <div className={"mt-space-md pt-space-sm flex items-center text-primary font-label-md text-label-md font-semibold"}>
-                  <Icone nom="block" className="text-[18px] mr-1" />
+                  <Icone nom="block" className="text-[1.125rem] mr-1" />
                   
             Zéro cession marchande ou croisement tiers
           
@@ -181,7 +185,7 @@ export function ConfidentialiteScreen() {
               <div className={"bg-surface-container-lowest p-space-lg rounded-xl border border-hairline flex flex-col justify-between hover:shadow-md transition-shadow"}>
                 <div>
                   <div className={"w-12 h-12 rounded-lg bg-surface-container flex items-center justify-center text-primary mb-space-md"}>
-                    <Icone nom="security" className="text-[28px]" />
+                    <Icone nom="security" className="text-[1.75rem]" />
                   </div>
                   <span className={"font-label-sm text-label-sm text-secondary uppercase font-semibold tracking-wider"}>
                     Principe Fondateur 02
@@ -196,7 +200,7 @@ export function ConfidentialiteScreen() {
                   </p>
                 </div>
                 <div className={"mt-space-md pt-space-sm flex items-center text-primary font-label-md text-label-md font-semibold"}>
-                  <Icone nom="lock_clock" className="text-[18px] mr-1" />
+                  <Icone nom="lock_clock" className="text-[1.125rem] mr-1" />
                   
             Journal des consultations
           
@@ -206,7 +210,7 @@ export function ConfidentialiteScreen() {
               <div className={"bg-surface-container-lowest p-space-lg rounded-xl border border-hairline flex flex-col justify-between hover:shadow-md transition-shadow"}>
                 <div>
                   <div className={"w-12 h-12 rounded-lg bg-surface-container flex items-center justify-center text-primary mb-space-md"}>
-                    <Icone nom="cloud_sync" className="text-[28px]" />
+                    <Icone nom="cloud_sync" className="text-[1.75rem]" />
                   </div>
                   <span className={"font-label-sm text-label-sm text-secondary uppercase font-semibold tracking-wider"}>
                     Principe Fondateur 03
@@ -221,7 +225,7 @@ export function ConfidentialiteScreen() {
                   </p>
                 </div>
                 <div className={"mt-space-md pt-space-sm flex items-center text-primary font-label-md text-label-md font-semibold"}>
-                  <Icone nom="domain" className="text-[18px] mr-1" />
+                  <Icone nom="domain" className="text-[1.125rem] mr-1" />
                   
             Hébergement territorial 100% en Côte d'Ivoire
           
@@ -235,10 +239,10 @@ export function ConfidentialiteScreen() {
           <div className={"mx-auto px-margin-desktop"}>
             <div className={"grid grid-cols-1 lg:grid-cols-12 gap-space-lg items-start"}>
               {/* Sommaire latéral fixe (Sticky Menu) */}
-              <div className={"lg:col-span-4 lg:sticky lg:top-24 space-y-space-md"}>
+              <div className={"lg:col-span-4 lg:sticky lg:top-[calc(var(--haut-entete)+1rem)] space-y-space-md"}>
                 <div className={"bg-surface-container-lowest p-space-md rounded-xl border border-hairline"}>
                   <div className={"flex items-center gap-2 mb-space-md pb-space-sm bg-surface-container-low px-space-sm py-2 rounded-lg"}>
-                    <Icone nom="menu_book" className="text-primary text-[20px]" />
+                    <Icone nom="menu_book" className="text-primary text-[1.25rem]" />
                     <span className={"font-label-lg text-label-lg text-primary uppercase"}>
                       Sections du Décret
                     </span>
@@ -248,31 +252,31 @@ export function ConfidentialiteScreen() {
                       <span>
                         1. Données Collectées & Nature
                       </span>
-                      <Icone nom="chevron_right" className="text-[16px]" />
+                      <Icone nom="chevron_right" className="text-[1rem]" />
                     </a>
                     <a className={"policy-link px-3 py-2 rounded text-left font-label-md text-label-md text-on-surface-variant hover:bg-surface-container-low transition-colors flex items-center justify-between"} href={"#section-destinataires"}>
                       <span>
                         2. Destinataires Habilités
                       </span>
-                      <Icone nom="chevron_right" className="text-[16px]" />
+                      <Icone nom="chevron_right" className="text-[1rem]" />
                     </a>
                     <a className={"policy-link px-3 py-2 rounded text-left font-label-md text-label-md text-on-surface-variant hover:bg-surface-container-low transition-colors flex items-center justify-between"} href={"#section-conservation"}>
                       <span>
                         3. Délais de Conservation
                       </span>
-                      <Icone nom="chevron_right" className="text-[16px]" />
+                      <Icone nom="chevron_right" className="text-[1rem]" />
                     </a>
                     <a className={"policy-link px-3 py-2 rounded text-left font-label-md text-label-md text-on-surface-variant hover:bg-surface-container-low transition-colors flex items-center justify-between"} href={"#section-securite"}>
                       <span>
                         4. Sécurité & Journalisation
                       </span>
-                      <Icone nom="chevron_right" className="text-[16px]" />
+                      <Icone nom="chevron_right" className="text-[1rem]" />
                     </a>
                     <a className={"policy-link px-3 py-2 rounded text-left font-label-md text-label-md text-on-surface-variant hover:bg-surface-container-low transition-colors flex items-center justify-between"} href={"#section-droits"}>
                       <span>
                         5. Exercice des Droits de l'Agent
                       </span>
-                      <Icone nom="chevron_right" className="text-[16px]" />
+                      <Icone nom="chevron_right" className="text-[1rem]" />
                     </a>
                   </nav>
                 </div>
@@ -282,7 +286,7 @@ export function ConfidentialiteScreen() {
                     <span className={"font-label-sm text-label-sm uppercase tracking-wider text-primary-fixed"}>
                       Indicateurs de Conformité
                     </span>
-                    <Icone nom="policy" className="text-[20px] text-primary-fixed" />
+                    <Icone nom="policy" className="text-[1.25rem] text-primary-fixed" />
                   </div>
                   <div className={"grid grid-cols-2 gap-space-sm pt-2"}>
                     <div className={"bg-primary-container p-space-sm rounded-lg"}>
@@ -312,7 +316,7 @@ export function ConfidentialiteScreen() {
                 <div className={"bg-surface-container-lowest p-space-md rounded-xl border border-hairline flex items-center justify-between"}>
                   <div className={"flex items-center gap-space-sm"}>
                     <div className={"w-10 h-10 rounded bg-error-container text-error flex items-center justify-center font-bold"}>
-                      <Icone nom="picture_as_pdf" className="text-[22px]" />
+                      <Icone nom="picture_as_pdf" className="text-[1.375rem]" />
                     </div>
                     <div>
                       <span className={"font-label-md text-label-md text-on-surface block"}>
@@ -327,14 +331,14 @@ export function ConfidentialiteScreen() {
                     <span>
                       PDF
                     </span>
-                    <Icone nom="download" className="text-[16px]" />
+                    <Icone nom="download" className="text-[1rem]" />
                   </button>
                 </div>
               </div>
               {/* Colonne détaillée des chapitres de confidentialité */}
               <div className={"lg:col-span-8 space-y-space-lg"}>
                 {/* Section 1 : Données Collectées */}
-                <article className={"bg-surface-container-lowest p-space-xl rounded-xl border border-hairline space-y-space-md scroll-mt-24"} id={"section-collecte"}>
+                <article className={"bg-surface-container-lowest p-space-xl rounded-xl border border-hairline space-y-space-md scroll-mt-[calc(var(--haut-entete)+1rem)]"} id={"section-collecte"}>
                   <div className={"flex items-center gap-space-sm pb-space-xs"}>
                     <span className={"px-2.5 py-1 rounded bg-surface-container-high text-primary font-code-num font-bold text-label-md"}>
                       01
@@ -351,7 +355,7 @@ export function ConfidentialiteScreen() {
                   <div className={"grid grid-cols-1 md:grid-cols-2 gap-space-md pt-2"}>
                     <div className={"p-space-md rounded-lg bg-surface-container-low space-y-1"}>
                       <div className={"flex items-center gap-2 text-on-surface font-label-lg text-label-lg"}>
-                        <Icone nom="badge" className="text-primary text-[18px]" />
+                        <Icone nom="badge" className="text-primary text-[1.125rem]" />
                         <span>
                           Identification & État Civil
                         </span>
@@ -364,7 +368,7 @@ export function ConfidentialiteScreen() {
                     </div>
                     <div className={"p-space-md rounded-lg bg-surface-container-low space-y-1"}>
                       <div className={"flex items-center gap-2 text-on-surface font-label-lg text-label-lg"}>
-                        <Icone nom="military_tech" className="text-primary text-[18px]" />
+                        <Icone nom="military_tech" className="text-primary text-[1.125rem]" />
                         <span>
                           Carrière & Statut Administratif
                         </span>
@@ -377,7 +381,7 @@ export function ConfidentialiteScreen() {
                     </div>
                     <div className={"p-space-md rounded-lg bg-surface-container-low space-y-1"}>
                       <div className={"flex items-center gap-2 text-on-surface font-label-lg text-label-lg"}>
-                        <Icone nom="family_restroom" className="text-primary text-[18px]" />
+                        <Icone nom="family_restroom" className="text-primary text-[1.125rem]" />
                         <span>
                           Situation Familiale & Ayants Droit
                         </span>
@@ -390,7 +394,7 @@ export function ConfidentialiteScreen() {
                     </div>
                     <div className={"p-space-md rounded-lg bg-surface-container-low space-y-1"}>
                       <div className={"flex items-center gap-2 text-on-surface font-label-lg text-label-lg"}>
-                        <Icone nom="health_and_safety" className="text-primary text-[18px]" />
+                        <Icone nom="health_and_safety" className="text-primary text-[1.125rem]" />
                         <span>
                           Aptitude Médicale Réglementaire
                         </span>
@@ -409,7 +413,7 @@ export function ConfidentialiteScreen() {
                     </div>
                     <div className={"absolute bottom-0 inset-x-0 bg-surface-container-lowest/90 backdrop-blur-md p-space-sm flex items-center justify-between text-label-sm font-label-sm"}>
                       <span className={"text-on-surface font-medium flex items-center gap-1"}>
-                        <Icone nom="fingerprint" className="text-[16px] text-primary" />
+                        <Icone nom="fingerprint" className="text-[1rem] text-primary" />
                         
                   Registre National Dématérialisé des Actes Ministériels
                 
@@ -421,7 +425,7 @@ export function ConfidentialiteScreen() {
                   </div>
                 </article>
                 {/* Section 2 : Destinataires habilités */}
-                <article className={"bg-surface-container-lowest p-space-xl rounded-xl border border-hairline space-y-space-md scroll-mt-24"} id={"section-destinataires"}>
+                <article className={"bg-surface-container-lowest p-space-xl rounded-xl border border-hairline space-y-space-md scroll-mt-[calc(var(--haut-entete)+1rem)]"} id={"section-destinataires"}>
                   <div className={"flex items-center gap-space-sm pb-space-xs"}>
                     <span className={"px-2.5 py-1 rounded bg-surface-container-high text-primary font-code-num font-bold text-label-md"}>
                       02
@@ -523,7 +527,7 @@ export function ConfidentialiteScreen() {
                   </div>
                 </article>
                 {/* Section 3 : Délais de Conservation */}
-                <article className={"bg-surface-container-lowest p-space-xl rounded-xl border border-hairline space-y-space-md scroll-mt-24"} id={"section-conservation"}>
+                <article className={"bg-surface-container-lowest p-space-xl rounded-xl border border-hairline space-y-space-md scroll-mt-[calc(var(--haut-entete)+1rem)]"} id={"section-conservation"}>
                   <div className={"flex items-center gap-space-sm pb-space-xs"}>
                     <span className={"px-2.5 py-1 rounded bg-surface-container-high text-primary font-code-num font-bold text-label-md"}>
                       03
@@ -541,7 +545,7 @@ export function ConfidentialiteScreen() {
                   <div className={"space-y-space-sm pt-2"}>
                     <div className={"flex items-start gap-space-md p-space-md rounded-lg bg-surface-container-low"}>
                       <div className={"w-10 h-10 rounded-full bg-primary text-on-primary flex items-center justify-center shrink-0 mt-0.5"}>
-                        <Icone nom="badge" className="text-[20px]" />
+                        <Icone nom="badge" className="text-[1.25rem]" />
                       </div>
                       <div className={"flex-1"}>
                         <div className={"flex flex-col sm:flex-row sm:items-center justify-between"}>
@@ -561,7 +565,7 @@ export function ConfidentialiteScreen() {
                     </div>
                     <div className={"flex items-start gap-space-md p-space-md rounded-lg bg-surface-container-low"}>
                       <div className={"w-10 h-10 rounded-full bg-secondary text-on-secondary flex items-center justify-center shrink-0 mt-0.5"}>
-                        <Icone nom="history_edu" className="text-[20px]" />
+                        <Icone nom="history_edu" className="text-[1.25rem]" />
                       </div>
                       <div className={"flex-1"}>
                         <div className={"flex flex-col sm:flex-row sm:items-center justify-between"}>
@@ -581,7 +585,7 @@ export function ConfidentialiteScreen() {
                     </div>
                     <div className={"flex items-start gap-space-md p-space-md rounded-lg bg-surface-container-low"}>
                       <div className={"w-10 h-10 rounded-full bg-tertiary text-on-tertiary flex items-center justify-center shrink-0 mt-0.5"}>
-                        <Icone nom="museum" className="text-[20px]" />
+                        <Icone nom="museum" className="text-[1.25rem]" />
                       </div>
                       <div className={"flex-1"}>
                         <div className={"flex flex-col sm:flex-row sm:items-center justify-between"}>
@@ -602,7 +606,7 @@ export function ConfidentialiteScreen() {
                   </div>
                 </article>
                 {/* Section 4 : Sécurité & Traçabilité */}
-                <article className={"bg-surface-container-lowest p-space-xl rounded-xl border border-hairline space-y-space-md scroll-mt-24"} id={"section-securite"}>
+                <article className={"bg-surface-container-lowest p-space-xl rounded-xl border border-hairline space-y-space-md scroll-mt-[calc(var(--haut-entete)+1rem)]"} id={"section-securite"}>
                   <div className={"flex items-center gap-space-sm pb-space-xs"}>
                     <span className={"px-2.5 py-1 rounded bg-surface-container-high text-primary font-code-num font-bold text-label-md"}>
                       04
@@ -646,7 +650,7 @@ export function ConfidentialiteScreen() {
                   </div>
                 </article>
                 {/* Section 5 : Droits de l'Agent */}
-                <article className={"bg-surface-container-lowest p-space-xl rounded-xl border border-hairline space-y-space-md scroll-mt-24"} id={"section-droits"}>
+                <article className={"bg-surface-container-lowest p-space-xl rounded-xl border border-hairline space-y-space-md scroll-mt-[calc(var(--haut-entete)+1rem)]"} id={"section-droits"}>
                   <div className={"flex items-center gap-space-sm pb-space-xs"}>
                     <span className={"px-2.5 py-1 rounded bg-surface-container-high text-primary font-code-num font-bold text-label-md"}>
                       05
@@ -662,7 +666,7 @@ export function ConfidentialiteScreen() {
                   </p>
                   <div className={"space-y-space-sm"}>
                     <div className={"p-space-md rounded-lg bg-surface-container-low flex items-start gap-space-md"}>
-                      <Icone nom="visibility" className="text-primary text-[24px] shrink-0 mt-0.5" />
+                      <Icone nom="visibility" className="text-primary text-[1.5rem] shrink-0 mt-0.5" />
                       <div>
                         <h4 className={"font-label-lg text-label-lg text-on-surface"}>
                           Droit d'Accès et Consultation du Fascicule Personnel
@@ -675,7 +679,7 @@ export function ConfidentialiteScreen() {
                       </div>
                     </div>
                     <div className={"p-space-md rounded-lg bg-surface-container-low flex items-start gap-space-md"}>
-                      <Icone nom="edit_document" className="text-primary text-[24px] shrink-0 mt-0.5" />
+                      <Icone nom="edit_document" className="text-primary text-[1.5rem] shrink-0 mt-0.5" />
                       <div>
                         <h4 className={"font-label-lg text-label-lg text-on-surface"}>
                           Droit de Rectification des Mentions Erronées
@@ -688,7 +692,7 @@ export function ConfidentialiteScreen() {
                       </div>
                     </div>
                     <div className={"p-space-md rounded-lg bg-surface-container-low flex items-start gap-space-md"}>
-                      <Icone nom="contact_support" className="text-primary text-[24px] shrink-0 mt-0.5" />
+                      <Icone nom="contact_support" className="text-primary text-[1.5rem] shrink-0 mt-0.5" />
                       <div>
                         <h4 className={"font-label-lg text-label-lg text-on-surface"}>
                           Droit de Recours auprès du Délégué à la Protection des Données
@@ -714,7 +718,7 @@ export function ConfidentialiteScreen() {
                       </h3>
                     </div>
                     <div className={"inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-surface-container-lowest text-on-surface text-label-sm font-label-sm shadow-sm"}>
-                      <Icone nom="mail" className="text-[16px] text-primary" />
+                      <Icone nom="mail" className="text-[1rem] text-primary" />
                       <span>
                         dpo-portefeuille@gouv.ci
                       </span>
@@ -781,7 +785,7 @@ export function ConfidentialiteScreen() {
                     </div>
                     <div className={"p-space-sm rounded bg-surface-container-lowest flex items-center justify-between text-label-sm font-label-sm"}>
                       <span className={"flex items-center gap-1.5 text-on-surface-variant"}>
-                        <Icone nom="security" className="text-[16px] text-primary" />
+                        <Icone nom="security" className="text-[1rem] text-primary" />
                         
                   Délai indiqué : 15 jours ouvrés
                 
@@ -797,7 +801,7 @@ export function ConfidentialiteScreen() {
                 
                       </button>
                       <button className={"px-space-lg h-10 rounded bg-primary text-on-primary hover:bg-primary-container font-label-md text-label-md font-semibold transition-colors shadow flex items-center gap-2"} type={"submit"}>
-                        <Icone nom="send" className="text-[18px]" />
+                        <Icone nom="send" className="text-[1.125rem]" />
                         <span>
                           Soumettre au DPO Ministériel
                         </span>
@@ -806,7 +810,7 @@ export function ConfidentialiteScreen() {
                   </form>
                   {/* Notification de validation d'envoi */}
                   <div className={"hidden p-space-md rounded-lg bg-primary text-on-primary shadow-md flex items-start gap-space-sm animate-fade-in"} id={"confirmation-banner"}>
-                    <Icone nom="task_alt" className="text-[24px] text-primary-fixed mt-0.5" />
+                    <Icone nom="task_alt" className="text-[1.5rem] text-primary-fixed mt-0.5" />
                     <div className={"flex-1 font-body-sm text-body-sm"}>
                       <span className={"font-bold text-label-md block"}>
                         Requête enregistrée sous le récépissé républicain N° DPO-CI-2026-9938
@@ -829,7 +833,7 @@ export function ConfidentialiteScreen() {
         <div className={"grid grid-cols-1 md:grid-cols-4 gap-space-lg mb-space-lg"}>
           <div className={"space-y-space-sm"}>
             <div className={"flex items-center gap-space-sm"}>
-              <Icone nom="account_balance" className="text-primary text-[24px]" />
+              <Icone nom="account_balance" className="text-primary text-[1.5rem]" />
               <span className={"font-headline-sm text-headline-sm text-primary"}>
                 MPEEP - SIGRH
               </span>

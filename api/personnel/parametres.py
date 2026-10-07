@@ -1,5 +1,6 @@
 """Identité et portrait officiel de la ministre, déposés dans les paramètres du ministère."""
 
+import re
 from pathlib import Path
 
 from django.contrib.auth.models import User
@@ -7,7 +8,7 @@ from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from rest_framework.decorators import api_view, parser_classes, permission_classes
 from rest_framework.parsers import FormParser, MultiPartParser
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
 from .models import Organisme, ParametresMinistere
@@ -22,6 +23,9 @@ NOM_MAX = 160
 INACTIVITE_MIN = 1
 INACTIVITE_MAX = 240
 INACTIVITE_DEFAUT = 15
+COULEUR_PRINCIPALE_DEFAUT = "#042F32"
+COULEUR_ACCENT_DEFAUT = "#D6FFCB"
+COULEUR = re.compile(r"^#[0-9A-Fa-f]{6}$")
 
 
 def _parametres() -> ParametresMinistere | None:
@@ -79,11 +83,22 @@ def inactivite_minutes() -> int:
     return objet.inactivite_minutes or INACTIVITE_DEFAUT
 
 
+def couleurs() -> dict:
+    objet = _parametres()
+    if objet is None:
+        return {"principale": COULEUR_PRINCIPALE_DEFAUT, "accent": COULEUR_ACCENT_DEFAUT}
+    return {
+        "principale": objet.couleur_principale or COULEUR_PRINCIPALE_DEFAUT,
+        "accent": objet.couleur_accent or COULEUR_ACCENT_DEFAUT,
+    }
+
+
 def _ligne(user) -> dict:
     return {
         "photo_url": portrait_url(),
         "peut_modifier": _peut_modifier(user),
         "inactivite_minutes": inactivite_minutes(),
+        "couleurs": couleurs(),
         "connexion": _connexion(),
         **identite_ministre(),
     }
@@ -219,4 +234,27 @@ def enregistrer_inactivite(request):
     objet, _cree = ParametresMinistere.objects.get_or_create(pk=1)
     objet.inactivite_minutes = minutes
     objet.save(update_fields=["inactivite_minutes"])
+    return Response(_ligne(request.user))
+
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def couleurs_publiques(_request):
+    """Couleurs de l'application, lues avant la connexion pour habiller aussi le portail."""
+    return Response(couleurs())
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def enregistrer_couleurs(request):
+    if not _peut_modifier(request.user):
+        return Response({"detail": "Cette action est hors de votre habilitation."}, status=403)
+    principale = str(request.data.get("principale") or "").strip()
+    accent = str(request.data.get("accent") or "").strip()
+    if not COULEUR.match(principale) or not COULEUR.match(accent):
+        return Response({"detail": "Chaque couleur doit s'écrire #RRVVBB, par exemple #042F32."}, status=400)
+    objet, _cree = ParametresMinistere.objects.get_or_create(pk=1)
+    objet.couleur_principale = principale.upper()
+    objet.couleur_accent = accent.upper()
+    objet.save(update_fields=["couleur_principale", "couleur_accent"])
     return Response(_ligne(request.user))

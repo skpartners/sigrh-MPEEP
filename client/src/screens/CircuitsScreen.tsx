@@ -138,7 +138,7 @@ export function CircuitsScreen() {
                         </div>
                       ))}
                       {index < data.parcours.length - 1 ? (
-                        <Icone nom="arrow_forward" className="hidden lg:block absolute top-1/2 -right-[19px] -translate-y-1/2 z-10 text-primary text-2xl" />
+                        <Icone nom="arrow_forward" className="hidden lg:block absolute top-1/2 -right-[1.1875rem] -translate-y-1/2 z-10 text-primary text-2xl" />
                       ) : null}
                     </li>
                   ))

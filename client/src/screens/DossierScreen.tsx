@@ -617,7 +617,7 @@ function ActeFascicule({ acte, matricule }: { acte: Acte; matricule: string }) {
   const nom = `${acte.reference.replace(/[^\w.-]+/g, "-")}.pdf`;
   return (
     <li className="relative">
-      <span className={`absolute -left-[27px] top-1.5 w-3.5 h-3.5 rounded-full ring-4 ring-surface-container-lowest ${style.pastille}`} aria-hidden="true"></span>
+      <span className={`absolute -left-[1.6875rem] top-1.5 w-3.5 h-3.5 rounded-full ring-4 ring-surface-container-lowest ${style.pastille}`} aria-hidden="true"></span>
       <article className="bg-surface-container-low p-5 rounded-lg">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
           <div className="flex flex-wrap items-center gap-2">

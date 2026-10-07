@@ -966,7 +966,7 @@ export function AideScreen() {
     <AppChrome>
       <div className={PAGE}>
         <div className="grid grid-cols-1 xl:grid-cols-[16rem_minmax(0,1fr)] gap-8 items-start">
-          <nav aria-label="Sommaire de l'aide" className="xl:sticky xl:top-24 rounded-xl border border-hairline bg-surface-container-lowest overflow-hidden">
+          <nav aria-label="Sommaire de l'aide" className="xl:sticky xl:top-[calc(var(--haut-entete)+1rem)] rounded-xl border border-hairline bg-surface-container-lowest overflow-hidden">
             <Bandeau />
             <div className="p-4">
               <p className="font-label-sm text-label-sm uppercase tracking-wider text-primary font-bold px-2">Sommaire</p>
@@ -1022,7 +1022,7 @@ export function AideScreen() {
               </div>
             </header>
 
-            <section id="communs" className="reveal scroll-mt-24 space-y-4" aria-labelledby="titre-communs">
+            <section id="communs" className="reveal scroll-mt-[calc(var(--haut-entete)+1rem)] space-y-4" aria-labelledby="titre-communs">
               <h2 id="titre-communs" className="font-headline-sm text-headline-sm text-on-surface">Règles communes</h2>
               <div className="flex flex-col gap-4">
                 {COMMUNS.map((bloc, index) => (
@@ -1031,7 +1031,7 @@ export function AideScreen() {
               </div>
             </section>
 
-            <section id="barre" className="reveal scroll-mt-24 space-y-4" aria-labelledby="titre-barre">
+            <section id="barre" className="reveal scroll-mt-[calc(var(--haut-entete)+1rem)] space-y-4" aria-labelledby="titre-barre">
               <h2 id="titre-barre" className="font-headline-sm text-headline-sm text-on-surface">Barre du haut</h2>
               <div className="flex flex-col gap-4">
                 {BARRE.map((bloc, index) => (
@@ -1109,7 +1109,7 @@ function Partie({ titre, icone, lignes, ton, ordonne = false }: { titre: string;
 
 function CarteModule({ module }: { module: ModuleAide }) {
   return (
-    <article id={module.id} className="reveal scroll-mt-24 rounded-xl border border-hairline bg-surface-container-lowest overflow-hidden" aria-labelledby={`titre-${module.id}`}>
+    <article id={module.id} className="reveal scroll-mt-[calc(var(--haut-entete)+1rem)] rounded-xl border border-hairline bg-surface-container-lowest overflow-hidden" aria-labelledby={`titre-${module.id}`}>
       <Bandeau />
       <div className="p-6">
         <Corps module={module} />
@@ -1120,7 +1120,7 @@ function CarteModule({ module }: { module: ModuleAide }) {
 
 function GroupeMenu({ groupe }: { groupe: Extract<Rubrique, { genre: "groupe" }> }) {
   return (
-    <article id={groupe.id} className="reveal scroll-mt-24 rounded-xl border border-hairline bg-surface-container-lowest overflow-hidden" aria-labelledby={`titre-${groupe.id}`}>
+    <article id={groupe.id} className="reveal scroll-mt-[calc(var(--haut-entete)+1rem)] rounded-xl border border-hairline bg-surface-container-lowest overflow-hidden" aria-labelledby={`titre-${groupe.id}`}>
       <Bandeau />
       <div className="p-6">
         <Entete id={groupe.id} icone={groupe.icone} titre={groupe.titre} resume={groupe.resume} chemin={groupe.chemin} />
@@ -1130,7 +1130,7 @@ function GroupeMenu({ groupe }: { groupe: Extract<Rubrique, { genre: "groupe" }>
       </div>
       <div>
         {groupe.enfants.map((enfant) => (
-          <details key={enfant.id} id={enfant.id} className="group scroll-mt-24 border-t border-hairline">
+          <details key={enfant.id} id={enfant.id} className="group scroll-mt-[calc(var(--haut-entete)+1rem)] border-t border-hairline">
             <summary className="flex cursor-pointer list-none items-center gap-3 px-6 py-4 font-label-lg text-label-lg text-on-surface hover:bg-secondary-fixed [&::-webkit-details-marker]:hidden">
               <span className="w-9 h-9 rounded-md bg-secondary text-on-secondary flex items-center justify-center shrink-0">
                 <Icone nom={enfant.icone} className="text-lg" />
@@ -1199,7 +1199,7 @@ function Corps({ module, entete = true }: { module: ModuleAide; entete?: boolean
         <div className="mt-4 rounded-lg border border-hairline overflow-hidden bg-surface-container-lowest">
           <p className="px-4 py-3 font-label-lg text-label-lg text-on-surface bg-tertiary-fixed">Sous-menus</p>
           {volets.map((volet) => (
-            <details key={volet.id} id={volet.id} className="group scroll-mt-24 border-t border-hairline">
+            <details key={volet.id} id={volet.id} className="group scroll-mt-[calc(var(--haut-entete)+1rem)] border-t border-hairline">
               <summary className="flex cursor-pointer list-none items-center gap-3 px-4 py-3 font-label-md text-label-md text-on-surface hover:bg-tertiary-fixed [&::-webkit-details-marker]:hidden">
                 <Icone nom="subdirectory_arrow_right" className="text-tertiary" />
                 <span className="flex-1">{volet.titre}</span>

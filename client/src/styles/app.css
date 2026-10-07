@@ -3,6 +3,11 @@
 @import "@fontsource/plus-jakarta-sans/500.css";
 @import "@fontsource/plus-jakarta-sans/600.css";
 @import "@fontsource/plus-jakarta-sans/700.css";
+
+/* Écrans peu hauts : la connexion se resserre. Seuils en em, donc relatifs à la taille de police
+   choisie dans le navigateur ; le zoom, lui, réduit déjà la hauteur utile en px CSS. */
+@custom-variant court (@media (max-height: 47.5em));
+@custom-variant tres-court (@media (max-height: 37.5em));
 @theme {
   --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
   --font-headline-xl: var(--font-sans);
@@ -19,42 +24,43 @@
   --font-label-sm: var(--font-sans);
   --font-code-num: var(--font-sans);
 
-  --text-headline-xl: 36px;
-  --text-headline-xl--line-height: 44px;
+  /* Titres fluides : taille téléphone jusqu'à 40rem de large, taille bureau à partir de 80rem. */
+  --text-headline-xl: clamp(1.75rem, 1.25rem + 1.25vw, 2.25rem);
+  --text-headline-xl--line-height: 1.22;
   --text-headline-xl--font-weight: 700;
-  --text-headline-xl-mobile: 28px;
-  --text-headline-xl-mobile--line-height: 36px;
+  --text-headline-xl-mobile: 1.75rem;
+  --text-headline-xl-mobile--line-height: 2.25rem;
   --text-headline-xl-mobile--font-weight: 700;
-  --text-headline-lg: 30px;
-  --text-headline-lg--line-height: 38px;
+  --text-headline-lg: clamp(1.5rem, 1.125rem + 0.9375vw, 1.875rem);
+  --text-headline-lg--line-height: 1.27;
   --text-headline-lg--font-weight: 700;
-  --text-headline-lg-mobile: 24px;
-  --text-headline-lg-mobile--line-height: 32px;
+  --text-headline-lg-mobile: 1.5rem;
+  --text-headline-lg-mobile--line-height: 2rem;
   --text-headline-lg-mobile--font-weight: 700;
-  --text-headline-md: 22px;
-  --text-headline-md--line-height: 28px;
+  --text-headline-md: clamp(1.25rem, 1.125rem + 0.3125vw, 1.375rem);
+  --text-headline-md--line-height: 1.27;
   --text-headline-md--font-weight: 600;
-  --text-headline-sm: 18px;
-  --text-headline-sm--line-height: 24px;
+  --text-headline-sm: 1.125rem;
+  --text-headline-sm--line-height: 1.5rem;
   --text-headline-sm--font-weight: 600;
-  --text-body-lg: 16px;
-  --text-body-lg--line-height: 24px;
-  --text-body-md: 14px;
-  --text-body-md--line-height: 20px;
-  --text-body-sm: 13px;
-  --text-body-sm--line-height: 18px;
-  --text-label-lg: 14px;
-  --text-label-lg--line-height: 20px;
+  --text-body-lg: 1rem;
+  --text-body-lg--line-height: 1.5rem;
+  --text-body-md: 0.875rem;
+  --text-body-md--line-height: 1.25rem;
+  --text-body-sm: 0.8125rem;
+  --text-body-sm--line-height: 1.125rem;
+  --text-label-lg: 0.875rem;
+  --text-label-lg--line-height: 1.25rem;
   --text-label-lg--font-weight: 600;
-  --text-label-md: 12px;
-  --text-label-md--line-height: 16px;
+  --text-label-md: 0.75rem;
+  --text-label-md--line-height: 1rem;
   --text-label-md--font-weight: 600;
-  /* DESIGN.md : aucun texte informatif sous 12px. */
-  --text-label-sm: 12px;
-  --text-label-sm--line-height: 16px;
+  /* DESIGN.md : aucun texte informatif sous 12px (0.75rem). */
+  --text-label-sm: 0.75rem;
+  --text-label-sm--line-height: 1rem;
   --text-label-sm--font-weight: 500;
-  --text-code-num: 13px;
-  --text-code-num--line-height: 18px;
+  --text-code-num: 0.8125rem;
+  --text-code-num--line-height: 1.125rem;
   --text-code-num--font-weight: 600;
 
   --spacing-space-xs: 0.25rem;
@@ -68,59 +74,72 @@
   --spacing-margin-tablet: 1.5rem;
   --spacing-margin-desktop: 2rem;
 
-  /* ---- Surfaces & fonds : chrome doux, sobre & moderne. ---- */
-  --color-surface: #f0f3f7;
-  --color-surface-dim: #e0e4ec;
+  /* ---- Palette dérivée des deux couleurs choisies dans Paramètres ----
+     --brand-1 (principale) et --brand-2 (accent) sont posées sur <html> ;
+     --on-brand-* est l'encre lisible calculée pour chacune (ui/Couleurs.tsx). */
+  --color-surface: #f0f3f4;
+  --color-surface-dim: #e0e5e6;
   --color-surface-bright: #ffffff;
   --color-surface-container-lowest: #ffffff;
-  --color-surface-container-low: #f5f7fa;
-  --color-surface-container: #e8ecf1;
-  --color-surface-container-high: #dde2ea;
-  --color-surface-container-highest: #d1d8e3;
-  --color-surface-variant: #ede9fe;
-  --color-on-surface: #1a103a;
-  --color-on-surface-variant: #4a4060;
-  --color-inverse-surface: #2e1065;
-  --color-inverse-on-surface: #f3e8ff;
-  --color-outline: #7c6fa0;
-  --color-outline-variant: #c9c0dc;
-  --color-surface-tint: #8b5cf6;
-  --color-background: #eef1f6;
-  --color-on-background: #1a103a;
-  /* ---- Primary : violet toxique & souverain. ---- */
-  --color-primary: #3d007a;
-  --color-on-primary: #ffffff;
-  --color-primary-container: #5b0faf;
-  --color-on-primary-container: #f3e8ff;
-  --color-inverse-primary: #c4a0ff;
-  --color-primary-fixed: #ede9fe;
-  --color-primary-fixed-dim: #ddd6fe;
-  --color-on-primary-fixed: #2e1065;
-  --color-on-primary-fixed-variant: #5b21b6;
-  /* ---- Secondary : violet lumineux, accent vivid. ---- */
-  --color-secondary: #5b21b6;
-  --color-on-secondary: #ffffff;
-  --color-secondary-container: #8b5cf6;
-  --color-on-secondary-container: #ede9fe;
-  --color-secondary-fixed: #f5f3ff;
-  --color-secondary-fixed-dim: #ddd6fe;
-  --color-on-secondary-fixed: #2e1065;
-  --color-on-secondary-fixed-variant: #4c1d95;
-  /* ---- Tertiary : lilas tendre. ---- */
-  --color-tertiary: #7c3aed;
-  --color-on-tertiary: #ffffff;
-  --color-tertiary-container: #ddd6fe;
-  --color-on-tertiary-container: #2e1065;
-  --color-tertiary-fixed: #f5f3ff;
-  --color-tertiary-fixed-dim: #ede9fe;
-  --color-on-tertiary-fixed: #1c0040;
-  --color-on-tertiary-fixed-variant: #4c1d95;
+  --color-surface-container-low: #f5f7f7;
+  --color-surface-container: #e8eced;
+  --color-surface-container-high: #dde2e3;
+  --color-surface-container-highest: #d1d8d9;
+  --color-surface-variant: color-mix(in oklab, var(--brand-2) 30%, #f3f5f6);
+  --color-on-surface: color-mix(in oklab, var(--brand-1) 45%, #101414);
+  --color-on-surface-variant: color-mix(in oklab, var(--brand-1) 35%, #4a5254);
+  --color-inverse-surface: color-mix(in oklab, var(--brand-1) 80%, #000);
+  --color-inverse-on-surface: color-mix(in oklab, var(--brand-2) 40%, #fff);
+  --color-outline: color-mix(in oklab, var(--brand-1) 35%, #7a8486);
+  --color-outline-variant: color-mix(in oklab, var(--brand-1) 12%, #ccd3d5);
+  --color-surface-tint: var(--color-secondary);
+  --color-background: #eef1f2;
+  --color-on-background: var(--color-on-surface);
+  /* ---- Primary : la couleur principale. ---- */
+  --color-primary: var(--brand-1);
+  --color-on-primary: var(--on-brand-1);
+  --color-primary-container: color-mix(in oklab, var(--brand-1) 82%, var(--brand-2));
+  --color-on-primary-container: color-mix(in oklab, var(--brand-2) 40%, var(--on-brand-1));
+  --color-inverse-primary: var(--brand-2);
+  --color-primary-fixed: color-mix(in oklab, var(--brand-2) 45%, #fff);
+  --color-on-primary-fixed: color-mix(in oklab, var(--brand-1) 80%, #000);
+  --color-primary-fixed-dim: color-mix(in oklab, var(--brand-2) 70%, #fff);
+  --color-on-primary-fixed-variant: var(--brand-1);
+  /* ---- Secondary : entre principale et accent ; le conteneur est l'accent lui-même. ---- */
+  --color-secondary: color-mix(in oklab, var(--brand-1) 75%, var(--brand-2));
+  --color-on-secondary: var(--on-brand-1);
+  --color-secondary-container: var(--brand-2);
+  --color-on-secondary-container: var(--on-brand-2);
+  --color-secondary-fixed: color-mix(in oklab, var(--brand-2) 30%, #fff);
+  --color-secondary-fixed-dim: color-mix(in oklab, var(--brand-2) 60%, #fff);
+  --color-on-secondary-fixed: var(--color-on-primary-fixed);
+  --color-on-secondary-fixed-variant: var(--brand-1);
+  /* ---- Tertiary : principale adoucie par l'accent. ---- */
+  --color-tertiary: color-mix(in oklab, var(--brand-1) 65%, var(--brand-2));
+  --color-on-tertiary: var(--on-brand-1);
+  --color-tertiary-container: color-mix(in oklab, var(--brand-2) 70%, #fff);
+  --color-on-tertiary-container: var(--color-on-primary-fixed);
+  --color-tertiary-fixed: color-mix(in oklab, var(--brand-2) 25%, #fff);
+  --color-tertiary-fixed-dim: color-mix(in oklab, var(--brand-2) 45%, #fff);
+  --color-on-tertiary-fixed: var(--color-on-primary-fixed);
+  --color-on-tertiary-fixed-variant: var(--brand-1);
   --color-error: #dc2626;
   --color-on-error: #ffffff;
   --color-error-container: #fee2e2;
   --color-on-error-container: #991b1b;
   /* Bordure technique 1px des cartes (DESIGN.md, niveau 0). */
   --color-hairline: #d8dae0;
+}
+
+/* Couleurs par défaut ; ui/Couleurs.tsx les remplace par celles enregistrées. */
+:root {
+  --brand-1: #042f32;
+  --brand-2: #d6ffcb;
+  --on-brand-1: #ffffff;
+  --on-brand-2: #0b1416;
+  /* Hauteurs des barres fixes de l'application, remplacées par la mesure réelle (AppChrome). */
+  --haut-entete: calc(4rem + env(safe-area-inset-top));
+  --haut-pied: 0px;
 }
 
 html,
@@ -133,9 +152,9 @@ body {
   margin: 0;
   /* Fond dégradé fixe — substrat pour l'effet liquid glass macOS. */
   background:
-    radial-gradient(ellipse at 20% 0%, rgba(61, 0, 122, 0.08) 0%, transparent 55%),
-    radial-gradient(ellipse at 80% 100%, rgba(139, 92, 246, 0.07) 0%, transparent 55%),
-    #eef1f6;
+    radial-gradient(ellipse at 20% 0%, color-mix(in oklab, var(--brand-1) 8%, transparent) 0%, transparent 55%),
+    radial-gradient(ellipse at 80% 100%, color-mix(in oklab, var(--brand-2) 35%, transparent) 0%, transparent 55%),
+    var(--color-background);
   background-attachment: fixed;
   color: var(--color-on-surface);
   font-family: var(--font-sans);
@@ -150,10 +169,15 @@ table,
 
 /* Surfaces navigateur aux couleurs de la palette. */
 ::selection {
-  background: var(--color-primary-fixed);  /* #ede9fe — lilas doux */
-  color: var(--color-on-primary-fixed);    /* #2e1065 — violet profond */
+  background: var(--color-primary-fixed);
+  color: var(--color-on-primary-fixed);
 }
+/* Taille de base fluide : jamais sous la police choisie dans le navigateur (100 %), un peu plus
+   grande sur les grands écrans (au plus 112,5 %). Tout étant en rem, l'interface entière suit.
+   La largeur pèse plus que la hauteur : un écran large mais bas ne grossit presque pas. Le zoom
+   agrandit toujours, puisque le plancher est relatif à la police du navigateur. */
 html {
+  font-size: clamp(100%, 0.75rem + 0.2vw + 0.15vh, 112.5%);
   caret-color: var(--color-primary);
   scrollbar-color: var(--color-outline-variant) transparent;
 }
@@ -163,7 +187,7 @@ button:focus-visible,
 a:focus-visible,
 [role="button"]:focus-visible,
 input[type="checkbox"]:focus-visible {
-  outline: 2px solid var(--color-secondary-container);
+  outline: 2px solid var(--color-secondary);
   outline-offset: 2px;
 }
 
@@ -422,7 +446,7 @@ input[type="checkbox"]:focus-visible {
   background: inherit;
   animation: pulse-ring 2.2s var(--ease-out) infinite;
 }
-/* Jitter — ligne d'accent avec lumière qui voyage (palette violette) */
+/* Jitter — ligne d'accent avec lumière qui voyage (couleurs du ministère) */
 .motion-gradient-sweep {
   background: linear-gradient(
     90deg,
@@ -840,7 +864,7 @@ a[class*="rounded"]:active {
 .modale-sortie .modale-contenu {
   animation: none;
 }
-@media (max-width: 639px) {
+@media (width < 40rem) {
   .modale-carte {
     animation: modale-feuille-in 360ms var(--ease-out) both;
   }
@@ -857,34 +881,36 @@ a[class*="rounded"]:active {
 }
 
 /* --- Mobile et tablette -------------------------------------------------------
-   Sous 1280 px, les registres deviennent des cartes : chaque colonne reste
+   Sous le palier xl (80rem, 1280 px à 100 %), les registres deviennent des cartes : chaque colonne reste
    visible, avec le libellé de l'en-tête. Les grilles (calendrier, matrice de
    droits) restent des tableaux que l'on fait défiler. */
-@media screen and (max-width: 1279px) {
+@media screen and (width < 80rem) {
   .px-margin-desktop {
     padding-left: 1rem;
     padding-right: 1rem;
   }
 
+  /* En-tête des pages publiques (bandeau « République » en tête) : l'en-tête de l'application
+     n'est pas concerné, il se range par ses propres classes. */
   header > div.bg-primary .italic,
   header > div.bg-primary .opacity-40,
   header > div.bg-primary .justify-between > div:last-child,
-  header .max-w-xl.truncate {
+  header:has(> div.bg-primary) .max-w-xl.truncate {
     display: none;
   }
 
-  header .h-16 > div:first-child {
+  header:has(> div.bg-primary) .h-16 > div:first-child {
     min-width: 0;
     flex: 1 1 auto;
   }
 
-  header .h-16 .font-label-lg {
+  header:has(> div.bg-primary) .h-16 .font-label-lg {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
 
-  header .h-16 .bg-surface-container-high {
+  header:has(> div.bg-primary) .h-16 .bg-surface-container-high {
     display: none;
   }
 
@@ -976,9 +1002,9 @@ a[class*="rounded"]:active {
     content: attr(data-label);
     display: block;
     margin-bottom: 0.125rem;
-    font-size: 12px;
+    font-size: 0.75rem;
     font-weight: 600;
-    line-height: 16px;
+    line-height: 1rem;
     color: var(--color-on-surface-variant);
   }
 
@@ -1010,7 +1036,7 @@ a[class*="rounded"]:active {
 }
 
 /* Cibles tactiles, barre d'outils et onglets : téléphone et tablette. */
-@media screen and (max-width: 1023px) {
+@media screen and (width < 64rem) {
   button,
   [role="tab"],
   [role="menuitem"],
@@ -1026,8 +1052,10 @@ a[class*="rounded"]:active {
     min-height: 2.75rem;
   }
 
-  header .outils a,
-  header .outils button,
+  /* Boutons de la barre seulement (pas les éléments des menus déroulants), et jamais ceux masqués
+     par « hidden » : cette règle hors couche l'emporterait sur l'utilitaire. */
+  header .outils > a:not(.hidden),
+  header .outils > div > button,
   header .barre-app > div:first-child > button {
     display: inline-flex;
     align-items: center;
@@ -1074,59 +1102,22 @@ a[class*="rounded"]:active {
     max-width: 100%;
   }
 
-  .text-headline-xl {
-    font-size: 1.75rem;
-    line-height: 2.25rem;
-  }
-
-  .text-headline-lg {
-    font-size: 1.5rem;
-    line-height: 2rem;
-  }
-
   label:has(input[type="checkbox"]),
   label:has(input[type="radio"]) {
     min-height: 2.75rem;
     align-items: center;
   }
 
-  .text-\[11px\] {
-    font-size: 12px;
-    line-height: 16px;
+  .text-\[0\.6875rem\] {
+    font-size: 0.75rem;
+    line-height: 1rem;
   }
 }
 
-@media screen and (max-width: 767px) {
+@media screen and (width < 48rem) {
   main .flex:not(.flex-col):not(.flex-nowrap),
   .modale-carte .flex:not(.flex-col):not(.flex-nowrap) {
     flex-wrap: wrap;
-  }
-}
-
-/* Sur téléphone, la barre d'outils passe sur une deuxième ligne pour garder
-   chaque bouton à portée de doigt. */
-@media screen and (max-width: 639px) {
-  header .barre-app {
-    height: auto;
-    min-height: 4rem;
-    flex-wrap: wrap;
-    align-items: center;
-    row-gap: 0.125rem;
-    padding-top: 0.25rem;
-    padding-bottom: 0.25rem;
-  }
-
-  header .barre-app > .outils {
-    flex: 1 1 100%;
-    justify-content: flex-end;
-  }
-
-  main.zone-app {
-    padding-top: calc(7.25rem + env(safe-area-inset-top));
-  }
-
-  #app-sidebar {
-    padding-top: 7.5rem;
   }
 }
 
@@ -1134,4 +1125,9 @@ a[class*="rounded"]:active {
   .app-pied {
     padding-bottom: max(1rem, env(safe-area-inset-bottom));
   }
+}
+/* Connexion : la carte se réduit d'un bloc à la hauteur réellement disponible (LoginScreen mesure
+   et pose --echelle-carte). « scale » est indépendant de « transform », que l'animation d'entrée utilise. */
+.login-carte {
+  scale: var(--echelle-carte, 1);
 }

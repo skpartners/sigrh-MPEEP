@@ -180,7 +180,7 @@ export function BesoinsScreen() {
             </select>
           </div>
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[960px] text-left">
+            <table className="w-full min-w-[60rem] text-left">
               <thead className="bg-surface-container-low font-label-sm text-label-sm uppercase tracking-wide text-on-surface-variant">
                 <tr>
                   <th className="px-4 py-3">Fiche</th>

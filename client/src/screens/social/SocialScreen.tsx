@@ -98,14 +98,14 @@ export function SocialScreen() {
             </div>
             <div>
               <div className="flex flex-wrap items-center gap-2 mb-1">
-                <span className="px-2 py-0.5 rounded text-[10px] font-label-sm uppercase tracking-widest font-bold bg-primary text-on-primary">Régie sociale ministérielle</span>
-                <span className="px-2 py-0.5 rounded text-[10px] font-label-sm font-semibold bg-surface-container-high text-on-surface-variant flex items-center gap-1">
+                <span className="px-2 py-0.5 rounded text-[0.625rem] font-label-sm uppercase tracking-widest font-bold bg-primary text-on-primary">Régie sociale ministérielle</span>
+                <span className="px-2 py-0.5 rounded text-[0.625rem] font-label-sm font-semibold bg-surface-container-high text-on-surface-variant flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-secondary-container" />
                   Exercice budgétaire {exercice}
                   {donnees?.entete?.arrete ? ` • ${donnees.entete.arrete}` : ""}
                 </span>
                 {donnees?.entete?.synchronisation ? (
-                  <span className="px-2 py-0.5 rounded text-[10px] font-label-sm font-bold bg-primary-fixed text-on-primary-fixed">{donnees.entete.synchronisation}</span>
+                  <span className="px-2 py-0.5 rounded text-[0.625rem] font-label-sm font-bold bg-primary-fixed text-on-primary-fixed">{donnees.entete.synchronisation}</span>
                 ) : null}
               </div>
               <h1 className="font-headline-md text-headline-md text-on-surface font-bold tracking-tight">Sous-direction de l'action sociale (SDAS)</h1>
@@ -116,7 +116,7 @@ export function SocialScreen() {
             <span className="px-3.5 py-2 rounded bg-surface-container-low text-primary text-label-md font-label-md flex items-center gap-2">
               <Icone nom="gavel" className="text-base" />
               <span>Commission d'arbitrage</span>
-              <span className="px-1.5 py-0.2 rounded-full bg-secondary text-on-secondary text-[10px] font-bold">{donnees?.commission ?? 0}</span>
+              <span className="px-1.5 py-0.2 rounded-full bg-secondary text-on-secondary text-[0.625rem] font-bold">{donnees?.commission ?? 0}</span>
             </span>
             <button className="px-4 py-2 rounded bg-primary hover:bg-primary-container text-on-primary text-label-md font-label-md transition-all shadow-sm flex items-center gap-2" type="button" onClick={() => setDemandeOuverte(true)}>
               <Icone nom="add_circle" className="text-base" />
@@ -158,7 +158,7 @@ export function SocialScreen() {
                           <span className="w-9 h-9 rounded-lg bg-surface-container-high text-primary flex items-center justify-center">
                             <Icone nom={guichet.icone} className="text-xl" />
                           </span>
-                          <span className="px-2 py-0.5 rounded text-[10px] font-label-sm font-bold bg-primary-fixed text-on-primary-fixed">{guichet.plafond}</span>
+                          <span className="px-2 py-0.5 rounded text-[0.625rem] font-label-sm font-bold bg-primary-fixed text-on-primary-fixed">{guichet.plafond}</span>
                         </div>
                         <h3 className="font-label-lg text-label-lg font-bold text-on-surface">{guichet.titre}</h3>
                         <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">{guichet.texte}</p>
@@ -174,7 +174,7 @@ export function SocialScreen() {
                           </div>
                         </div>
                       </div>
-                      <div className="mt-4 pt-3 flex items-center justify-between gap-2 text-[11px] font-label-sm text-on-surface-variant bg-surface-container-low/50 px-2 py-1.5 rounded">
+                      <div className="mt-4 pt-3 flex items-center justify-between gap-2 text-[0.6875rem] font-label-sm text-on-surface-variant bg-surface-container-low/50 px-2 py-1.5 rounded">
                         <span>{guichet.pied}</span>
                         <span className="font-bold text-primary">{guichet.valeur}</span>
                       </div>
@@ -212,7 +212,7 @@ export function SocialScreen() {
                 </div>
                 <div className="pt-2 flex flex-wrap items-center justify-between gap-2 text-label-sm font-semibold">
                   <span className="text-on-surface">Avis d'éligibilité :</span>
-                  <span className={`px-2 py-0.5 rounded text-[11px] font-bold ${quotite.avis.classe}`}>{quotite.avis.libelle}</span>
+                  <span className={`px-2 py-0.5 rounded text-[0.6875rem] font-bold ${quotite.avis.classe}`}>{quotite.avis.libelle}</span>
                 </div>
               </div>
             </div>
@@ -229,7 +229,7 @@ export function SocialScreen() {
                   <div key={partenaire.titre} className="p-3.5 rounded-lg bg-surface-container-low flex flex-col justify-between">
                     <div>
                       <div className="flex items-center justify-between gap-2 mb-2">
-                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-primary text-on-primary uppercase">{partenaire.organisme}</span>
+                        <span className="px-2 py-0.5 rounded text-[0.625rem] font-bold bg-primary text-on-primary uppercase">{partenaire.organisme}</span>
                         <span className="font-code-num text-label-sm font-bold text-primary">{partenaire.badge}</span>
                       </div>
                       <h4 className="font-label-md text-label-md font-bold text-on-surface">{partenaire.titre}</h4>
@@ -261,7 +261,7 @@ export function SocialScreen() {
                   <div className="space-y-1">
                     <div className="text-label-md font-bold text-on-surface">{fcfa(donnees.medecine.vus)} / {fcfa(donnees.medecine.effectif)} agents</div>
                     <div className="text-body-sm text-on-surface-variant">Visites d'aptitude validées</div>
-                    <div className="text-[11px] font-semibold text-secondary">{fcfa(donnees.medecine.relances)} relances programmées</div>
+                    <div className="text-[0.6875rem] font-semibold text-secondary">{fcfa(donnees.medecine.relances)} relances programmées</div>
                   </div>
                 </div>
                 <div className="space-y-2 mt-3">
@@ -287,7 +287,7 @@ export function SocialScreen() {
                 <div className="p-3 bg-surface-container-low rounded-lg">
                   <div className="flex items-center justify-between gap-2">
                     <span className="font-label-md text-label-md font-bold text-on-surface">{donnees.retraites.seminaire}</span>
-                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-primary text-on-primary whitespace-nowrap">{donnees.retraites.date}</span>
+                    <span className="px-2 py-0.5 rounded text-[0.625rem] font-bold bg-primary text-on-primary whitespace-nowrap">{donnees.retraites.date}</span>
                   </div>
                   <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">{donnees.retraites.texte}</p>
                 </div>
@@ -368,14 +368,14 @@ export function SocialScreen() {
                     <div key={activite.titre} className="p-4 rounded-lg bg-surface-container-low flex flex-col justify-between">
                       <div>
                         <div className="flex items-center justify-between gap-2 mb-2">
-                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-primary text-on-primary whitespace-nowrap">{activite.quand} {exercice}</span>
+                          <span className="px-2 py-0.5 rounded text-[0.625rem] font-bold bg-primary text-on-primary whitespace-nowrap">{activite.quand} {exercice}</span>
                           <span className="font-label-sm text-primary font-bold text-right">{activite.lieu}</span>
                         </div>
                         <h4 className="font-label-lg text-label-lg font-bold text-on-surface">{activite.titre}</h4>
                         <p className="font-body-sm text-body-sm text-on-surface-variant mt-2">{activite.texte}</p>
                       </div>
                       <div className="mt-4 pt-2">
-                        <span className="text-[11px] text-on-surface-variant block mb-1">{activite.jauge}</span>
+                        <span className="text-[0.6875rem] text-on-surface-variant block mb-1">{activite.jauge}</span>
                         <div className="w-full h-1.5 bg-surface-container-high rounded-full overflow-hidden">
                           <div className="motion-fill h-full bg-primary rounded-full" style={{ width: `${activite.part}%` }} />
                         </div>
@@ -399,7 +399,7 @@ export function SocialScreen() {
                 </div>
                 <div className="mt-4 p-3 bg-surface-container-low/60 rounded-lg">
                   <span className="font-label-md text-label-md font-bold text-on-surface block mb-1">Secret professionnel</span>
-                  <p className="text-[12px] text-on-surface-variant">Tout entretien est protégé par le secret médical et déontologique de la fonction publique.</p>
+                  <p className="text-[0.75rem] text-on-surface-variant">Tout entretien est protégé par le secret médical et déontologique de la fonction publique.</p>
                 </div>
               </div>
             ) : null}
@@ -426,7 +426,7 @@ function CarteBudget({ titre, icone, teinte, valeur, valeurCouleur = "text-on-su
       </div>
       <div className="mt-3">
         {children ?? (
-          <div className="pt-2 bg-surface-container-low/40 rounded flex items-center justify-between gap-2 px-2 py-1 text-[11px] font-label-sm text-on-surface-variant">
+          <div className="pt-2 bg-surface-container-low/40 rounded flex items-center justify-between gap-2 px-2 py-1 text-[0.6875rem] font-label-sm text-on-surface-variant">
             <span>{gauche}</span>
             <span className="font-bold text-primary">{droite}</span>
           </div>
@@ -444,7 +444,7 @@ function Panneau({ icone, titre, badge, children }: { icone: string; titre: stri
           <Icone nom={icone} className="text-primary text-xl" />
           <h3 className="font-headline-sm text-headline-sm font-bold text-on-surface">{titre}</h3>
         </div>
-        <span className="px-2 py-0.5 rounded text-[10px] font-label-sm font-bold bg-primary-fixed text-on-primary-fixed whitespace-nowrap">{badge}</span>
+        <span className="px-2 py-0.5 rounded text-[0.625rem] font-label-sm font-bold bg-primary-fixed text-on-primary-fixed whitespace-nowrap">{badge}</span>
       </div>
       {children}
     </div>
@@ -509,7 +509,7 @@ function LigneRequete({ requete }: { requete: Requete }) {
       </td>
       <td className="py-3.5 px-4 font-code-num font-bold text-on-surface whitespace-nowrap">{fcfa(requete.montant)} FCFA</td>
       <td className="py-3.5 px-4">
-        <span className={`px-2 py-0.5 rounded bg-surface-container-low text-[11px] font-semibold flex items-center gap-1 w-max ${reserve ? "text-secondary" : "text-primary"}`}>
+        <span className={`px-2 py-0.5 rounded bg-surface-container-low text-[0.6875rem] font-semibold flex items-center gap-1 w-max ${reserve ? "text-secondary" : "text-primary"}`}>
           <Icone nom={reserve ? "warning" : "task"} className="text-xs" />
           {requete.pieces}
         </span>
@@ -519,17 +519,17 @@ function LigneRequete({ requete }: { requete: Requete }) {
       </td>
       <td className="py-3.5 px-4 text-right">
         {requete.etat === "conforme" ? (
-          <button type="button" disabled={action.isPending} onClick={() => action.mutate("mandater")} className="px-2.5 py-1 rounded bg-primary text-on-primary font-label-sm text-[11px] hover:bg-primary-container transition-colors inline-flex items-center gap-1 disabled:opacity-50">
+          <button type="button" disabled={action.isPending} onClick={() => action.mutate("mandater")} className="px-2.5 py-1 rounded bg-primary text-on-primary font-label-sm text-[0.6875rem] hover:bg-primary-container transition-colors inline-flex items-center gap-1 disabled:opacity-50">
             <Icone nom="check" className="text-sm" />
             Mandater
           </button>
         ) : reserve ? (
-          <button type="button" disabled={action.isPending} onClick={() => action.mutate("relancer")} className="px-2.5 py-1 rounded bg-surface-container-high text-on-surface font-label-sm text-[11px] hover:bg-surface-container transition-colors inline-flex items-center gap-1 disabled:opacity-50">
+          <button type="button" disabled={action.isPending} onClick={() => action.mutate("relancer")} className="px-2.5 py-1 rounded bg-surface-container-high text-on-surface font-label-sm text-[0.6875rem] hover:bg-surface-container transition-colors inline-flex items-center gap-1 disabled:opacity-50">
             <Icone nom="attachment" className="text-sm" />
             Relancer
           </button>
         ) : (
-          <span className={`inline-flex items-center gap-1 font-label-sm text-[11px] font-semibold ${requete.etat === "mandatee" ? "text-primary" : "text-on-surface-variant"}`}>
+          <span className={`inline-flex items-center gap-1 font-label-sm text-[0.6875rem] font-semibold ${requete.etat === "mandatee" ? "text-primary" : "text-on-surface-variant"}`}>
             <Icone nom={requete.etat === "mandatee" ? "done_all" : "hourglass_top"} className="text-sm" />
             {requete.etat_libelle}
           </span>

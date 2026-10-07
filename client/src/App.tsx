@@ -25,6 +25,7 @@ import { LoginScreen } from "./screens/LoginScreen";
 import { ProtectionDonneesScreen } from "./screens/ProtectionDonneesScreen";
 import { api, getToken, logout } from "./api/client";
 import { MessagerieProvider } from "./screens/Messagerie";
+import { CouleursApplication } from "./ui/Couleurs";
 import { FeedbackProvider } from "./ui/Feedback";
 import { EtiquettesTableaux } from "./ui/EtiquettesTableaux";
 import { PageMotion, TopProgress } from "./ui/Motion";
@@ -37,6 +38,7 @@ const queryClient = new QueryClient({
 export function App() {
   return (
     <QueryClientProvider client={queryClient}>
+      <CouleursApplication />
       <BrowserRouter basename="/sigrh" useTransitions={false}>
         <FeedbackProvider>
           <EtiquettesTableaux />
