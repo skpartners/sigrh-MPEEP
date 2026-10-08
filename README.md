@@ -21,7 +21,7 @@ Les deux serveurs dans un seul terminal (racine du dépôt) :
 .\start-dev.ps1
 ```
 
-Ctrl+C arrête l’API et le front.
+Le script libère les ports 8101 et 9100, réinstalle les paquets du front, puis démarre l’API et Vite. Ctrl+C arrête les deux. Le build `client/dist` n’est pas produit ici : il sert au service Windows (`api/deploiement/install-service-sigrh.ps1`).
 
 Premier lancement (dépendances et base), une fois :
 

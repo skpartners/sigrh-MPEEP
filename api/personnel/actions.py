@@ -16,6 +16,7 @@ from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from .parametres import delai_visa_acte_jours, libelle_echeance_visa_acte
 from .models import (
     Acte,
     Demande,
@@ -209,7 +210,9 @@ def decision_avancement(request, pk: int):
             VisaEnAttente.objects.create(
                 agent=agent, acte=acte, categorie="carriere",
                 objet=f"Avancement {ligne.mode.lower()} : {ligne.grade_echelon} vers {ligne.proposition.lower()}",
-                echeance=f"Transmis le {aujourd_hui:%d/%m/%Y}", visa_amont="Visa SD Carrières OK",
+                echeance=libelle_echeance_visa_acte(aujourd_hui),
+                visa_amont="Visa SD Carrières OK",
+                urgent=delai_visa_acte_jours() <= 2,
             )
             _notifier(request.user, "visa", "Nouveau visa à apposer", f"{agent.nom_complet} · avancement vers {ligne.proposition.lower()}.", "/app/tableau-de-bord")
         else:

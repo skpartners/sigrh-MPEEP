@@ -48,12 +48,11 @@ from .utilisateurs import acces_menu, perimetre_matricules
 from .statistiques import FiltreInconnu, calculer, classeur, diaporama, lire_echeance, synthese
 from .statistiques_dynamiques import (
     CompositionInvalide,
-    calculer_composition,
+    calculer_cube,
+    configuration_de,
     decrire_catalogue,
-    filtres_query,
-    lister_valeurs,
     presenter,
-    valider_composition,
+    valider_tableau,
 )
 from .present import (
     acte_row,
@@ -92,6 +91,7 @@ def _me(user, request) -> dict:
         "organisme_sigle": profil.organisme.sigle,
         "signature_url": signature,
         "photo_url": agent.photo.url if agent and agent.photo else "",
+        "administrateur": bool(profil.administrateur),
         "acces": acces_menu(profil),
     }
 
@@ -206,6 +206,48 @@ def logout(request):
 @permission_classes([IsAuthenticated])
 def me(request):
     return Response(_me(request.user, request))
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def changer_mot_de_passe(request):
+    """Chaque utilisateur change son propre mot de passe, en confirmant l'ancien.
+
+    Le jeton est renouvelé : la session en cours continue avec le nouveau, les autres
+    appareils doivent se reconnecter.
+    """
+    from django.contrib.auth.password_validation import validate_password
+    from django.core.exceptions import ValidationError
+
+    user = request.user
+    actuel = str(request.data.get("actuel") or "")
+    nouveau = str(request.data.get("nouveau") or "")
+    confirmation = str(request.data.get("confirmation") or "")
+    if not user.check_password(actuel):
+        return Response({"detail": "Le mot de passe actuel est incorrect."}, status=400)
+    if not nouveau:
+        return Response({"detail": "Saisissez le nouveau mot de passe."}, status=400)
+    if nouveau != confirmation:
+        return Response({"detail": "La confirmation ne correspond pas au nouveau mot de passe."}, status=400)
+    if nouveau == actuel:
+        return Response({"detail": "Le nouveau mot de passe doit être différent de l'actuel."}, status=400)
+    try:
+        validate_password(nouveau, user)
+    except ValidationError as exc:
+        return Response({"detail": " ".join(exc.messages)}, status=400)
+    user.set_password(nouveau)
+    user.save(update_fields=["password"])
+    Token.objects.filter(user=user).delete()
+    token = Token.objects.create(user=user)
+    Notification.objects.create(
+        destinataire=user,
+        categorie=Notification.Categorie.SYSTEME,
+        titre="Mot de passe modifié",
+        message="Votre mot de passe a été changé. Si vous n'êtes pas à l'origine de ce changement, prévenez un administrateur.",
+        lien="/app",
+        creee_le=timezone.now(),
+    )
+    return Response({"detail": "Votre mot de passe est modifié.", "token": token.key})
 
 
 @api_view(["POST"])
@@ -392,21 +434,12 @@ def _reponse_composition(exc: CompositionInvalide):
 
 
 def _corps_composition(data, composition=None) -> dict:
-    def prendre(cle, defaut):
-        if cle in data:
-            return data[cle]
-        return defaut
-
-    return valider_composition(
-        prendre("nom", composition.nom if composition else ""),
-        prendre("sujet", composition.sujet if composition else ""),
-        prendre("mesure", composition.mesure if composition else ""),
-        prendre("axe_lignes", composition.axe_lignes if composition else ""),
-        prendre("axe_colonnes", composition.axe_colonnes if composition else ""),
-        prendre("filtres", composition.filtres if composition else []),
-        prendre("dossiers", None),
-        prendre("volets", composition.volets if composition else None),
-    )
+    nom = data["nom"] if "nom" in data else (composition.nom if composition else "")
+    if "configuration" in data:
+        configuration = data["configuration"]
+    else:
+        configuration = configuration_de(composition) if composition else None
+    return valider_tableau(nom, configuration)
 
 
 @api_view(["GET"])
@@ -417,24 +450,13 @@ def catalogue_statistiques(_request):
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
-def valeurs_statistiques(request):
+def cube_statistiques(request):
     try:
-        return Response({"valeurs": lister_valeurs(request.GET.get("sujet", ""), request.GET.get("axe", ""))})
-    except CompositionInvalide as exc:
-        return _reponse_composition(exc)
-
-
-@api_view(["GET"])
-@permission_classes([IsAuthenticated])
-def composer_statistiques(request):
-    try:
-        return Response(calculer_composition(
-            request.GET.get("sujet", ""),
-            request.GET.get("mesure", ""),
-            request.GET.get("lignes", ""),
-            request.GET.get("colonnes", ""),
-            filtres_query(request.GET.get("filtres", "")),
-            request.GET.get("dossiers", ""),
+        return Response(calculer_cube(
+            request.GET.get("source", ""),
+            request.GET.get("champs", ""),
+            request.GET.get("croisements", ""),
+            request.GET.get("periodes", ""),
         ))
     except CompositionInvalide as exc:
         return _reponse_composition(exc)
@@ -461,7 +483,7 @@ def composition_statistique(request, pk: int):
     if request.method == "GET":
         return Response(presenter(composition, request.user))
     if composition.auteur_id != request.user.id:
-        return Response({"detail": "Cette composition ne vous appartient pas."}, status=403)
+        return Response({"detail": "Ce tableau ne vous appartient pas."}, status=403)
     if request.method == "DELETE":
         composition.delete()
         return Response(status=204)
@@ -581,17 +603,21 @@ def _activite() -> list[dict]:
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
-def dashboard(_request):
+def dashboard(request):
+    from .tableau_de_bord import etats, kpis
+
     snap = _snapshot()
     visas = VisaEnAttente.objects.filter(statut=VisaEnAttente.Statut.EN_ATTENTE).select_related("agent", "agent__organisme")
-    mouvements = Acte.objects.select_related("agent", "agent__organisme")
+    etats_calcules = etats(request.user, EXERCICE)
     return Response(
         {
             "exercice": EXERCICE,
-            **snap.dashboard,
+            "campagne": snap.dashboard.get("campagne"),
+            # Indicateurs et états lus en direct, à la place des chiffres figés de l'instantané.
+            "kpis": kpis(request.user, EXERCICE, etats_calcules),
+            "etats": etats_calcules,
             "modules": _activite(),
             "visas": [visa_row(item) for item in visas],
-            "mouvements": [acte_row(item) for item in mouvements],
         }
     )
 

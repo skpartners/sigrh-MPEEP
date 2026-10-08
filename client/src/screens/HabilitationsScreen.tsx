@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
+import { createPortal } from "react-dom";
 import { ApiError, api } from "../api/client";
 import type { Circuits } from "../api/types";
 import { useFeedback } from "../ui/Feedback";
@@ -269,26 +270,55 @@ export function HabilitationsScreen() {
 
 function CelluleDroit({ valeur, libelle, onChoisir }: { valeur: string; libelle: string; onChoisir: (droit: string) => void }) {
   const [ouvert, setOuvert] = useState(false);
-  const zone = useRef<HTMLDivElement>(null);
+  const bouton = useRef<HTMLButtonElement>(null);
+  const menu = useRef<HTMLUListElement>(null);
+  const [place, setPlace] = useState({ top: 0, left: 0 });
   const droit = DROIT[valeur] ?? DROIT.refus;
+  useLayoutEffect(() => {
+    if (!ouvert || !bouton.current) return;
+    const cadre = bouton.current.getBoundingClientRect();
+    const menuH = 184;
+    const menuW = 176;
+    const racine = getComputedStyle(document.documentElement);
+    const entete = parseFloat(racine.getPropertyValue("--haut-entete")) || 72;
+    const minHaut = entete + 8;
+    const maxBas = window.innerHeight - 12;
+    let top = cadre.bottom + 4;
+    if (top + menuH > maxBas) top = cadre.top - 4 - menuH;
+    if (top < minHaut) top = minHaut;
+    setPlace({
+      top,
+      left: Math.min(Math.max(cadre.left + cadre.width / 2, menuW / 2 + 8), window.innerWidth - menuW / 2 - 8),
+    });
+  }, [ouvert]);
   useEffect(() => {
     if (!ouvert) return;
     function fermer(event: MouseEvent) {
-      if (!zone.current?.contains(event.target as Node)) setOuvert(false);
+      const cible = event.target as Node;
+      if (bouton.current?.contains(cible) || menu.current?.contains(cible)) return;
+      setOuvert(false);
     }
     function clavier(event: KeyboardEvent) {
       if (event.key === "Escape") setOuvert(false);
     }
+    function defiler() {
+      setOuvert(false);
+    }
     document.addEventListener("mousedown", fermer);
     document.addEventListener("keydown", clavier);
+    window.addEventListener("scroll", defiler, true);
+    window.addEventListener("resize", defiler);
     return () => {
       document.removeEventListener("mousedown", fermer);
       document.removeEventListener("keydown", clavier);
+      window.removeEventListener("scroll", defiler, true);
+      window.removeEventListener("resize", defiler);
     };
   }, [ouvert]);
   return (
-    <div className="relative inline-block" ref={zone}>
+    <div className="relative inline-block">
       <button
+        ref={bouton}
         type="button"
         className={`inline-block px-2.5 py-1 rounded font-label-md text-label-md ${droit.style}`}
         aria-haspopup="listbox"
@@ -298,26 +328,39 @@ function CelluleDroit({ valeur, libelle, onChoisir }: { valeur: string; libelle:
       >
         {valeur === "refus" ? "—" : droit.libelle}
       </button>
-      {ouvert ? (
-        <ul role="listbox" aria-label={libelle} className="absolute z-20 left-1/2 -translate-x-1/2 mt-1 min-w-40 rounded-lg border border-hairline bg-surface-container-lowest p-1 text-left shadow-lg">
-          {NIVEAUX.map((code) => (
-            <li key={code}>
-              <button
-                type="button"
-                role="option"
-                aria-selected={code === (DROIT[valeur] ? valeur : "refus")}
-                className={`w-full rounded px-2 py-1.5 text-left font-label-md text-label-md hover:bg-surface-container-low ${code === valeur ? "font-bold" : ""}`}
-                onClick={() => {
-                  setOuvert(false);
-                  if (code !== valeur) onChoisir(code);
-                }}
-              >
-                {DROIT[code].libelle}
-              </button>
-            </li>
-          ))}
-        </ul>
-      ) : null}
+      {ouvert
+        ? createPortal(
+            <ul
+              ref={menu}
+              role="listbox"
+              aria-label={libelle}
+              className="menu-flottant fixed z-[80] min-w-40 rounded-lg border p-1 text-left shadow-lg"
+              style={{
+                top: place.top,
+                left: place.left,
+                transform: "translateX(-50%)",
+              }}
+            >
+              {NIVEAUX.map((code) => (
+                <li key={code}>
+                  <button
+                    type="button"
+                    role="option"
+                    aria-selected={code === (DROIT[valeur] ? valeur : "refus")}
+                    className={`w-full rounded px-2 py-1.5 text-left font-label-md text-label-md hover:bg-surface-container-low ${code === valeur ? "font-bold" : ""}`}
+                    onClick={() => {
+                      setOuvert(false);
+                      if (code !== valeur) onChoisir(code);
+                    }}
+                  >
+                    {DROIT[code].libelle}
+                  </button>
+                </li>
+              ))}
+            </ul>,
+            document.body,
+          )
+        : null}
     </div>
   );
 }

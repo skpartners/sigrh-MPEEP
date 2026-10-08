@@ -13,11 +13,21 @@ EXTENSIONS = {".pdf", ".png", ".jpg", ".jpeg", ".webp"}
 TAILLE_MAX = 15 * 1024 * 1024
 
 ETAPES = [
-    (2, "Étape 2 : chef de service", "Avis hiérarchique attendu", "J-3 avant relance"),
-    (3, "Étape 3 : SD Formation Continue", "Contrôle de la direction de la formation continue", "Dans les délais"),
-    (4, "Étape 4 : signature DRH", "Visa du directeur des ressources humaines", "Priorité courante"),
+    (2, "Étape 2 : chef de service", "Avis hiérarchique attendu"),
+    (3, "Étape 3 : SD Formation Continue", "Contrôle de la direction de la formation continue"),
+    (4, "Étape 4 : signature DRH", "Visa du directeur des ressources humaines"),
 ]
 CLOTURE = ("Étape 5 : notifiée", "Prise en compte notifiée à l'agent", "Clôturée")
+
+
+def _echeance(ordre: int) -> str:
+    from .parametres import libelle_echeance_hierarchie, libelle_echeance_visa_acte
+
+    if ordre == 2:
+        return libelle_echeance_hierarchie()
+    if ordre == 4:
+        return libelle_echeance_visa_acte()
+    return "Dans les délais"
 
 
 def inscrire(agent, code: str, fichier=None) -> str | None:
@@ -45,7 +55,7 @@ def inscrire(agent, code: str, fichier=None) -> str | None:
             icone="school",
             etape=ETAPES[0][1],
             responsable=ETAPES[0][2],
-            echeance=ETAPES[0][3],
+            echeance=_echeance(ETAPES[0][0]),
             depose_le=aujourd_hui,
             categorie="formation",
         )
@@ -95,7 +105,7 @@ def valider_etape(demande: Demande, acteur) -> tuple[str, bool]:
         visa.signature = copie_signature(acteur)
         visa.save()
         suivante = next(etape for etape in ETAPES if etape[0] == visa.ordre + 1)
-        demande.etape, demande.responsable, demande.echeance = suivante[1], suivante[2], suivante[3]
+        demande.etape, demande.responsable, demande.echeance = suivante[1], suivante[2], _echeance(suivante[0])
         demande.save(update_fields=["etape", "responsable", "echeance"])
     return "", False
 

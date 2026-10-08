@@ -29,7 +29,7 @@ function styleTexte() {
   return { fontFamily: "Plus Jakarta Sans, sans-serif", fontSize: Math.round((12 * racine) / 16) };
 }
 
-const FORMES = [
+export const FORMES = [
   { code: "barre", libelle: "Barres", icone: IconeBarres },
   { code: "horizontale", libelle: "Barres horizontales", icone: IconeHorizontales },
   { code: "empilee", libelle: "Barres empilées", icone: IconeEmpilee },
@@ -94,14 +94,14 @@ export function GraphiqueChoisi({
       {circulaire && series.length > 1 && (
         <p className="mt-1 text-right font-label-sm text-label-sm text-on-surface-variant">Ce graphique affiche {series[series.length - 1]?.nom}.</p>
       )}
-      {points ? <Toile forme={forme} series={series} etiquettes={etiquettes} hauteur={hauteur} /> : (
+      {points ? <Toile forme={forme} series={series} etiquettes={etiquettes} legende hauteur={hauteur} /> : (
         <p className="mt-4 font-body-sm text-body-sm text-on-surface-variant">Aucune donnée pour ce filtre.</p>
       )}
     </div>
   );
 }
 
-function ChoixForme({ forme, onChange }: { forme: FormeGraphique; onChange: (forme: FormeGraphique) => void }) {
+export function ChoixForme({ forme, onChange }: { forme: FormeGraphique; onChange: (forme: FormeGraphique) => void }) {
   const [ouvert, setOuvert] = useState(false);
   const boite = useRef<HTMLDivElement>(null);
   const titre = useId();
@@ -139,7 +139,7 @@ function ChoixForme({ forme, onChange }: { forme: FormeGraphique; onChange: (for
         <div
           role="listbox"
           aria-labelledby={titre}
-          className="absolute right-0 top-full z-30 mt-1 grid w-max grid-cols-6 gap-1 rounded border border-white/40 bg-white/80 backdrop-blur-xl p-2 shadow-md"
+          className="menu-flottant absolute right-0 top-full z-50 mt-1 grid w-max grid-cols-6 gap-1 rounded-lg border p-2 shadow-lg"
         >
           <p id={titre} className="sr-only">Types de graphique</p>
           {FORMES.map((item) => {
@@ -168,7 +168,15 @@ function ChoixForme({ forme, onChange }: { forme: FormeGraphique; onChange: (for
   );
 }
 
-function Toile({ forme, series, etiquettes, hauteur }: { forme: FormeGraphique; series: SerieGraphique[]; etiquettes: boolean; hauteur: number }) {
+/** Graphique piloté de l'extérieur : la forme et les réglages viennent de l'appelant (tableau croisé). */
+export function Toile({ forme, series, etiquettes, legende, hauteur, titre = "Graphique" }: {
+  forme: FormeGraphique;
+  series: SerieGraphique[];
+  etiquettes: boolean;
+  legende: boolean;
+  hauteur: number;
+  titre?: string;
+}) {
   const noeud = useRef<HTMLDivElement>(null);
   const graphique = useRef<EChartsType | null>(null);
   const couleurs = useCouleurs();
@@ -189,14 +197,14 @@ function Toile({ forme, series, etiquettes, hauteur }: { forme: FormeGraphique; 
 
   const signature = JSON.stringify(series);
   useEffect(() => {
-    graphique.current?.setOption(option(forme, JSON.parse(signature) as SerieGraphique[], etiquettes, paletteGraphique(couleurs)), true);
-  }, [forme, signature, etiquettes, couleurs]);
+    graphique.current?.setOption(option(forme, JSON.parse(signature) as SerieGraphique[], etiquettes, legende, paletteGraphique(couleurs)), true);
+  }, [forme, signature, etiquettes, legende, couleurs]);
 
   // hauteur est donnée en px à la police par défaut ; en rem, le graphique grandit avec la police du navigateur.
-  return <div ref={noeud} style={{ height: `${hauteur / 16}rem` }} role="img" aria-label="Graphique" />;
+  return <div ref={noeud} style={{ height: `${hauteur / 16}rem` }} role="img" aria-label={titre} />;
 }
 
-function option(forme: FormeGraphique, series: SerieGraphique[], etiquettes: boolean, palette: string[]): EChartsCoreOption {
+function option(forme: FormeGraphique, series: SerieGraphique[], etiquettes: boolean, legende: boolean, palette: string[]): EChartsCoreOption {
   const source = series.length > 1 ? series[series.length - 1] : series[0];
   const categories = (series[0]?.points ?? []).map((point) => point.libelle);
   if (forme === "secteur" || forme === "anneau" || forme === "entonnoir") {
@@ -205,7 +213,7 @@ function option(forme: FormeGraphique, series: SerieGraphique[], etiquettes: boo
       color: palette,
       textStyle: styleTexte(),
       tooltip: { trigger: "item" },
-      legend: { type: "scroll", bottom: 0 },
+      legend: legende ? { type: "scroll", bottom: 0 } : undefined,
       series: [{
         type: forme === "entonnoir" ? "funnel" : "pie",
         radius: forme === "anneau" ? ["42%", "68%"] : "68%",
@@ -227,8 +235,11 @@ function option(forme: FormeGraphique, series: SerieGraphique[], etiquettes: boo
   const empilee = forme === "empilee" || forme === "empilee-horizontale" || forme === "pourcentage";
   const valeurs = forme === "pourcentage" ? enPourcentage(series) : series;
   const beaucoup = categories.length > 8;
-  const axeCategorie = { type: "category" as const, data: categories, axisLabel: { hideOverlap: true } };
-  const axeValeur = { type: "value" as const, max: forme === "pourcentage" ? 100 : undefined };
+  // En barres horizontales, la première catégorie se lit en haut, comme dans le tableau.
+  const axeCategorie = { type: "category" as const, data: categories, inverse: horizontale, axisLabel: { hideOverlap: true, width: horizontale ? 140 : 110, overflow: "truncate" as const } };
+  // Des comptages n'ont pas de graduation à 0,2 : l'axe reste en entiers quand toutes les valeurs le sont.
+  const entiers = valeurs.every((serie) => serie.points.every((point) => Number.isInteger(point.total)));
+  const axeValeur = { type: "value" as const, max: forme === "pourcentage" ? 100 : undefined, minInterval: entiers && forme !== "pourcentage" ? 1 : undefined };
   return {
     color: palette,
     textStyle: styleTexte(),
@@ -239,8 +250,8 @@ function option(forme: FormeGraphique, series: SerieGraphique[], etiquettes: boo
         return forme === "pourcentage" ? `${valeur.toLocaleString("fr-FR", { maximumFractionDigits: 1 })} %` : valeur.toLocaleString("fr-FR");
       },
     },
-    legend: series.length > 1 ? { bottom: 0 } : undefined,
-    grid: { left: 8, right: etiquettes && horizontale ? 36 : 12, top: etiquettes && !horizontale ? 28 : 16, bottom: series.length > 1 || beaucoup ? 56 : 8, containLabel: true },
+    legend: legende && series.length > 1 ? { type: "scroll", bottom: 0 } : undefined,
+    grid: { left: 8, right: etiquettes && horizontale ? 36 : 12, top: etiquettes && !horizontale ? 28 : 16, bottom: (legende && series.length > 1) || beaucoup ? 56 : 8, containLabel: true },
     dataZoom: beaucoup
       ? [{ type: "slider", start: 0, end: Math.round((8 / categories.length) * 100), ...(horizontale ? { yAxisIndex: 0 } : { xAxisIndex: 0 }) }]
       : undefined,
@@ -266,7 +277,8 @@ function option(forme: FormeGraphique, series: SerieGraphique[], etiquettes: boo
 }
 
 function formater(valeur: unknown, pourcentage: boolean): string {
-  if (typeof valeur !== "number") return "";
+  // Une valeur nulle n'a rien à étiqueter : un « 0 » posé sur l'axe ou dans une pile se lit mal.
+  if (typeof valeur !== "number" || valeur === 0) return "";
   return pourcentage
     ? `${valeur.toLocaleString("fr-FR", { maximumFractionDigits: 1 })} %`
     : valeur.toLocaleString("fr-FR");

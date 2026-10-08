@@ -36,6 +36,11 @@ export function setToken(token: string | null, remember = false): void {
   if (token) (remember ? localStorage : sessionStorage).setItem(TOKEN_KEY, token);
 }
 
+/** Remplace le jeton de la session en cours (après un changement de mot de passe), sur le même stockage. */
+export function remplacerToken(token: string): void {
+  setToken(token, localStorage.getItem(TOKEN_KEY) !== null);
+}
+
 /** Ferme la session côté API (révocation du jeton) puis localement, même si l'API est injoignable. */
 export async function logout(): Promise<void> {
   try {

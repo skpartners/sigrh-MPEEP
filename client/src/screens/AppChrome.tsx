@@ -3,6 +3,8 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { api, logout, mediaUrl } from "../api/client";
 import type { SessionUser } from "../api/types";
+import { EditeurConnexion } from "../ui/EditeurConnexion";
+import { EditeurMotDePasse } from "../ui/EditeurMotDePasse";
 import { EditeurSignature } from "../ui/EditeurSignature";
 import { Portrait } from "../ui/PhotoProfil";
 import { useFeedback } from "../ui/Feedback";
@@ -344,6 +346,8 @@ function ProfileMenu({ user }: { user: SessionUser | undefined }) {
   const client = useQueryClient();
   const [open, setOpen] = useState(false);
   const [signatureOuverte, setSignatureOuverte] = useState(false);
+  const [connexionOuverte, setConnexionOuverte] = useState(false);
+  const [motDePasseOuvert, setMotDePasseOuvert] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const feedback = useFeedback();
@@ -410,7 +414,7 @@ function ProfileMenu({ user }: { user: SessionUser | undefined }) {
       {open ? (
         <div
           role="menu"
-          className="motion-overlay-card absolute right-0 mt-2 w-72 max-w-[calc(100vw-1.5rem)] rounded-lg border border-hairline bg-surface-container-lowest p-2 shadow-xl"
+          className="menu-flottant motion-overlay-card absolute right-0 z-50 mt-2 w-72 max-w-[calc(100vw-1.5rem)] rounded-lg border p-2 shadow-xl"
         >
           {user ? (
             <div className="px-3 py-2 border-b border-hairline mb-1">
@@ -439,6 +443,33 @@ function ProfileMenu({ user }: { user: SessionUser | undefined }) {
               <span className="font-body-sm text-body-sm text-on-surface-variant">Aucune signature enregistrée</span>
             )}
           </button>
+          <button
+            role="menuitem"
+            type="button"
+            className="w-full flex items-center gap-2 px-3 py-2 rounded text-left font-label-lg text-label-lg text-on-surface hover:bg-surface-container-high border-b border-hairline mb-1"
+            onClick={() => {
+              setOpen(false);
+              setMotDePasseOuvert(true);
+            }}
+          >
+            <Icone nom="lock" className="text-lg leading-none text-primary shrink-0" />
+            Ma connexion
+            <span className="ml-auto font-body-sm text-body-sm text-on-surface-variant">Mot de passe</span>
+          </button>
+          {user?.administrateur ? (
+            <button
+              role="menuitem"
+              type="button"
+              className="w-full flex items-center gap-2 px-3 py-2 rounded text-left font-label-lg text-label-lg text-on-surface hover:bg-surface-container-high border-b border-hairline mb-1"
+              onClick={() => {
+                setOpen(false);
+                setConnexionOuverte(true);
+              }}
+            >
+              <Icone nom="admin_panel_settings" className="text-lg leading-none text-primary shrink-0" />
+              Compte administrateur
+            </button>
+          ) : null}
           {/* Sur téléphone, Menu et Aide quittent la barre du haut et se retrouvent ici. */}
           <Link
             role="menuitem"
@@ -470,6 +501,8 @@ function ProfileMenu({ user }: { user: SessionUser | undefined }) {
         </div>
       ) : null}
       {signatureOuverte ? <EditeurSignature user={user} onClose={() => setSignatureOuverte(false)} /> : null}
+      {connexionOuverte ? <EditeurConnexion user={user} onClose={() => setConnexionOuverte(false)} /> : null}
+      {motDePasseOuvert ? <EditeurMotDePasse user={user} onClose={() => setMotDePasseOuvert(false)} /> : null}
     </div>
   );
 }

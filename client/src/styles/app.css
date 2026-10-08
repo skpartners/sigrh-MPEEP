@@ -496,17 +496,29 @@ input[type="checkbox"]:focus-visible {
    Couvre : rounded-xl/lg/2xl/.border-hairline + rounded-xl/lg/2xl/rounded.bg-surface-container-lowest.
    Exclut les champs de saisie, boutons et spans (gardent un fond solide).
    Les règles custom sans @layer l'emportent sur les utilities Tailwind. */
-main .rounded-xl.border-hairline:not(input):not(select):not(textarea),
-main .rounded-lg.border-hairline:not(input):not(select):not(textarea),
-main .rounded-2xl.border-hairline:not(input):not(select):not(textarea),
-main .rounded-xl.bg-surface-container-lowest:not(input):not(select):not(textarea):not(button):not(span):not(a),
-main .rounded-2xl.bg-surface-container-lowest:not(input):not(select):not(textarea):not(button):not(span):not(a),
-main .rounded-lg.bg-surface-container-lowest:not(input):not(select):not(textarea):not(button):not(span):not(a),
-main .rounded.bg-surface-container-lowest:not(input):not(select):not(textarea):not(button):not(span):not(a) {
+main .rounded-xl.border-hairline:not(input):not(select):not(textarea):not(.menu-flottant):not([role="listbox"]):not([role="menu"]),
+main .rounded-lg.border-hairline:not(input):not(select):not(textarea):not(.menu-flottant):not([role="listbox"]):not([role="menu"]),
+main .rounded-2xl.border-hairline:not(input):not(select):not(textarea):not(.menu-flottant):not([role="listbox"]):not([role="menu"]),
+main .rounded-xl.bg-surface-container-lowest:not(input):not(select):not(textarea):not(button):not(span):not(a):not(.menu-flottant):not([role="listbox"]):not([role="menu"]),
+main .rounded-2xl.bg-surface-container-lowest:not(input):not(select):not(textarea):not(button):not(span):not(a):not(.menu-flottant):not([role="listbox"]):not([role="menu"]),
+main .rounded-lg.bg-surface-container-lowest:not(input):not(select):not(textarea):not(button):not(span):not(a):not(.menu-flottant):not([role="listbox"]):not([role="menu"]),
+main .rounded.bg-surface-container-lowest:not(input):not(select):not(textarea):not(button):not(span):not(a):not(.menu-flottant):not([role="listbox"]):not([role="menu"]) {
   background-color: rgba(255, 255, 255, 0.72);
   backdrop-filter: blur(20px) saturate(165%);
   -webkit-backdrop-filter: blur(20px) saturate(165%);
   border-color: rgba(255, 255, 255, 0.50);
+}
+
+/* Menus, listes et palettes : fond plein. Le verre laisse voir et cliquer l'arrière-plan. */
+.menu-flottant,
+[role="listbox"],
+[role="menu"] {
+  background-color: var(--color-surface-container-lowest);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-color: color-mix(in oklab, var(--color-on-surface) 16%, transparent);
+  pointer-events: auto;
+  isolation: isolate;
 }
 
 /* ── Micro-interactions ─────────────────────────────────────────────── */

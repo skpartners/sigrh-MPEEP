@@ -283,7 +283,7 @@ export function UtilisateursScreen() {
               <h1 className="font-headline-lg text-headline-lg text-on-surface">Gestion des utilisateurs</h1>
               <p className="mt-2 max-w-3xl font-body-md text-body-md text-on-surface-variant">
                 {actifs} compte{actifs > 1 ? "s" : ""} actif{actifs > 1 ? "s" : ""} sur {data.utilisateurs.length}. Sans habilitations particulières, les droits du rôle s'appliquent.
-                {courant.administrateur ? " Votre compte d'administrateur est à part : tous les droits, sans structure ni supérieur." : ""}
+                {courant.administrateur ? " Votre compte d'administrateur est à part : tous les droits, sans structure ni supérieur. Il se modifie depuis le menu de profil." : ""}
               </p>
             </div>
             <button type="button" className={PRIMAIRE} onClick={ouvrirCreation}>

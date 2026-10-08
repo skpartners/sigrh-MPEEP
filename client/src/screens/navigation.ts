@@ -93,7 +93,7 @@ export const NAV: SectionNav[] = [
         to: "/app/statistiques",
         icone: "bar_chart",
         libelle: "Statistiques",
-        resume: "L'observatoire des effectifs, filtré par exercice, structure et segment.",
+        resume: "Tableaux croisés dynamiques, graphiques modifiables et classeurs Excel.",
         acces: { module: "Statistiques & RBAC", fonction: "Statistiques" },
       },
       {
@@ -101,7 +101,7 @@ export const NAV: SectionNav[] = [
         end: true,
         icone: "tune",
         libelle: "Paramètres",
-        resume: "La connexion et l'identité du ministère, les circuits, les habilitations, les comptes et les structures.",
+        resume: "L'identité de la ministre, les délais, les couleurs, les circuits, les habilitations, les comptes et les structures.",
         acces: { module: "Statistiques & RBAC", fonction: "Paramètres" },
         enfants: [
           { to: "/app/parametres", end: true, icone: "tune", libelle: "Accueil", acces: { module: "Statistiques & RBAC", fonction: "Paramètres" } },

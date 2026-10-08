@@ -84,6 +84,7 @@ export type SessionUser = {
   organisme_sigle: string;
   signature_url: string;
   photo_url: string;
+  administrateur?: boolean;
   acces?: { modules: Record<string, string>; fonctions: Record<string, string> };
 };
 
@@ -114,12 +115,55 @@ export type ModuleActivite = {
   lien: string;
 };
 
+export type LigneEffectif = { libelle: string; total: number; femmes: number; hommes: number };
+export type LigneCompte = { libelle: string; total: number };
+
+/** États lus en direct dans les registres, dans le périmètre de l'utilisateur. */
+export type EtatsTableauDeBord = {
+  perimetre: boolean;
+  effectifs: {
+    total: number;
+    femmes: number;
+    hommes: number;
+    axes: { code: string; libelle: string; modalites: number; lignes: LigneEffectif[]; toutes: LigneEffectif[] }[];
+  };
+  dotations: {
+    effectif: number;
+    plafond: number;
+    occupation: number;
+    branches: { libelle: string; effectif: number; plafond: number; occupation: number }[];
+    demandes: number;
+    ouvertes: number;
+    impact_ouvert: number;
+    par_statut: LigneCompte[];
+    par_nature: LigneCompte[];
+  };
+  absences: {
+    absents: number;
+    en_cours: LigneCompte[];
+    a_decider: number;
+    annee: { absences: number; jours: number; par_nature: (LigneCompte & { jours: number })[]; toutes_natures: (LigneCompte & { jours: number })[] };
+    conges: { a_instruire: number; signes: number; acquis: number; consommes: number; reliquat: number; consommation: number };
+  };
+  formation: {
+    sessions_ouvertes: number;
+    sessions_en_cours: number;
+    agents_en_cours: number;
+    inscrits: number;
+    presents: number;
+    agents_formes: number;
+    heures: number;
+    par_type: LigneCompte[];
+    prochaines: { libelle: string; debut: string | null; lieu: string; inscrits: number; places: number }[];
+  };
+};
+
 export type Dashboard = {
   exercice: number;
   campagne: { libelle: string; cloture: string };
   modules: ModuleActivite[];
   kpis: Kpi[];
-  charges: { titre: string; volume: string; detail: string; icone: string; ton: Ton; pourcentage: number }[];
+  etats: EtatsTableauDeBord;
   visas: {
     id: number;
     objet: string;
@@ -129,7 +173,6 @@ export type Dashboard = {
     urgent: boolean;
     agent: AgentBrief;
   }[];
-  mouvements: Acte[];
 };
 
 export type Dossier = AgentBrief & {

@@ -111,7 +111,7 @@ export function telechargerClasseurTableau(entree: EntreeTableau): void {
   telechargerOctets(classeur, nomFichierGraphique(titre));
 }
 
-function telechargerOctets(octets: Uint8Array, nom: string): void {
+export function telechargerOctets(octets: Uint8Array, nom: string): void {
   const fichier = new ArrayBuffer(octets.byteLength);
   new Uint8Array(fichier).set(octets);
   const blob = new Blob([fichier], {
@@ -541,7 +541,7 @@ function contentTypes(): string {
   );
 }
 
-function colonne(indice: number): string {
+export function colonne(indice: number): string {
   let lettres = "";
   let reste = indice;
   while (reste) {
@@ -552,7 +552,7 @@ function colonne(indice: number): string {
   return lettres;
 }
 
-function echapper(valeur: string): string {
+export function echapper(valeur: string): string {
   return valeur
     .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, "")
     .replace(/&/g, "&amp;")
@@ -560,7 +560,7 @@ function echapper(valeur: string): string {
     .replace(/>/g, "&gt;");
 }
 
-function zipper(fichiers: Record<string, string>): Uint8Array {
+export function zipper(fichiers: Record<string, string>): Uint8Array {
   const encodeur = new TextEncoder();
   const locaux: Uint8Array[] = [];
   const centraux: Uint8Array[] = [];

@@ -661,7 +661,7 @@ def utilisateur(request, matricule: str):
     if user is None or (perimetre_ids(request.user) is not None and user.pk not in perimetre_ids(request.user)):
         return Response({"detail": "Compte introuvable."}, status=404)
     if user.profil.administrateur:
-        return Response({"detail": "Le compte administrateur se gère dans les paramètres de connexion."}, status=400)
+        return Response({"detail": "Le compte administrateur se gère depuis le menu de profil."}, status=400)
     if request.method == "DELETE":
         return _supprimer(request, user)
     saisie, erreur = _valider({**_actuel(user), **request.data}, creation=False, grantor=request.user)

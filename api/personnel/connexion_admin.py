@@ -24,7 +24,7 @@ def connexion_active() -> bool:
 
 
 def assurer_administrateur() -> None:
-    """Crée le compte administrateur au premier démarrage, puis laisse Paramètres en être le maître."""
+    """Crée le compte administrateur au premier démarrage, puis laisse le profil en être le maître."""
     global _erreur
     matricule = settings.ADMIN_MATRICULE
     mot_de_passe = settings.ADMIN_MOT_DE_PASSE

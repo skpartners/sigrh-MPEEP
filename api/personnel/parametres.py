@@ -1,11 +1,13 @@
 """Identité et portrait officiel de la ministre, déposés dans les paramètres du ministère."""
 
 import re
+from datetime import timedelta
 from pathlib import Path
 
 from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
+from django.utils import timezone
 from rest_framework.decorators import api_view, parser_classes, permission_classes
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -23,6 +25,10 @@ NOM_MAX = 160
 INACTIVITE_MIN = 1
 INACTIVITE_MAX = 240
 INACTIVITE_DEFAUT = 15
+DELAI_MIN = 1
+DELAI_MAX = 90
+DELAI_VISA_ACTE_DEFAUT = 2
+DELAI_HIERARCHIE_DEFAUT = 3
 COULEUR_PRINCIPALE_DEFAUT = "#042F32"
 COULEUR_ACCENT_DEFAUT = "#D6FFCB"
 COULEUR = re.compile(r"^#[0-9A-Fa-f]{6}$")
@@ -83,6 +89,37 @@ def inactivite_minutes() -> int:
     return objet.inactivite_minutes or INACTIVITE_DEFAUT
 
 
+def delai_visa_acte_jours() -> int:
+    objet = _parametres()
+    if objet is None or not objet.delai_visa_acte_jours:
+        return DELAI_VISA_ACTE_DEFAUT
+    return objet.delai_visa_acte_jours
+
+
+def delai_validation_hierarchie_jours() -> int:
+    objet = _parametres()
+    if objet is None or not objet.delai_validation_hierarchie_jours:
+        return DELAI_HIERARCHIE_DEFAUT
+    return objet.delai_validation_hierarchie_jours
+
+
+def delais() -> dict:
+    return {
+        "visa_acte_jours": delai_visa_acte_jours(),
+        "validation_hierarchie_jours": delai_validation_hierarchie_jours(),
+    }
+
+
+def libelle_echeance_hierarchie() -> str:
+    return f"J-{delai_validation_hierarchie_jours()} avant relance"
+
+
+def libelle_echeance_visa_acte(aujourdhui=None) -> str:
+    jours = delai_visa_acte_jours()
+    limite = (aujourdhui or timezone.localdate()) + timedelta(days=jours)
+    return f"Délai de rigueur : J-{jours} ({limite.strftime('%d/%m/%Y')})"
+
+
 def couleurs() -> dict:
     objet = _parametres()
     if objet is None:
@@ -98,6 +135,7 @@ def _ligne(user) -> dict:
         "photo_url": portrait_url(),
         "peut_modifier": _peut_modifier(user),
         "inactivite_minutes": inactivite_minutes(),
+        "delais": delais(),
         "couleurs": couleurs(),
         "connexion": _connexion(),
         **identite_ministre(),
@@ -234,6 +272,37 @@ def enregistrer_inactivite(request):
     objet, _cree = ParametresMinistere.objects.get_or_create(pk=1)
     objet.inactivite_minutes = minutes
     objet.save(update_fields=["inactivite_minutes"])
+    return Response(_ligne(request.user))
+
+
+def _jours(valeur, libelle: str):
+    texte = str(valeur if valeur is not None else "").strip()
+    if not texte.isdigit():
+        return Response({"detail": f"Indiquez {libelle} en jours."}, status=400)
+    jours = int(texte)
+    if jours < DELAI_MIN or jours > DELAI_MAX:
+        return Response(
+            {"detail": f"Indiquez une durée entre {DELAI_MIN} et {DELAI_MAX} jours."},
+            status=400,
+        )
+    return jours
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def enregistrer_delais(request):
+    if not _peut_modifier(request.user):
+        return Response({"detail": "Cette action est hors de votre habilitation."}, status=403)
+    visa = _jours(request.data.get("visa_acte_jours"), "le délai de visa d'un acte")
+    if isinstance(visa, Response):
+        return visa
+    hierarchie = _jours(request.data.get("validation_hierarchie_jours"), "le délai de validation par la hiérarchie")
+    if isinstance(hierarchie, Response):
+        return hierarchie
+    objet, _cree = ParametresMinistere.objects.get_or_create(pk=1)
+    objet.delai_visa_acte_jours = visa
+    objet.delai_validation_hierarchie_jours = hierarchie
+    objet.save(update_fields=["delai_visa_acte_jours", "delai_validation_hierarchie_jours"])
     return Response(_ligne(request.user))
 
 

@@ -23,15 +23,11 @@ type Parametres = {
   civilite: string;
   nom: string;
   inactivite_minutes: number;
-  couleurs: Couleurs;
-  connexion: {
-    active: boolean;
-    matricule: string;
-    nom: string;
-    prenoms: string;
-    fonction: string;
-    organisme: string;
+  delais: {
+    visa_acte_jours: number;
+    validation_hierarchie_jours: number;
   };
+  couleurs: Couleurs;
 };
 
 const PAGE = "w-full px-4 sm:px-6 lg:px-8 py-6 mx-auto flex-1 space-y-6";
@@ -50,21 +46,11 @@ export function ParametresScreen() {
   const [civilite, setCivilite] = useState("");
   const [nom, setNom] = useState("");
   const [erreurIdentite, setErreurIdentite] = useState("");
-  const [adminMatricule, setAdminMatricule] = useState("");
-  const [adminNom, setAdminNom] = useState("");
-  const [adminPrenoms, setAdminPrenoms] = useState("");
-  const [adminFonction, setAdminFonction] = useState("");
-  const [adminOrganisme, setAdminOrganisme] = useState("");
-  const [adminPasse, setAdminPasse] = useState("");
-  const [adminConfirmation, setAdminConfirmation] = useState("");
-  const [erreurConnexion, setErreurConnexion] = useState("");
   const [inactivite, setInactivite] = useState("15");
-  const [erreurInactivite, setErreurInactivite] = useState("");
+  const [delaiVisa, setDelaiVisa] = useState("2");
+  const [delaiHierarchie, setDelaiHierarchie] = useState("3");
+  const [erreurDelais, setErreurDelais] = useState("");
   const apercuRef = useRef("");
-  const organismes = useQuery({
-    queryKey: ["organismes"],
-    queryFn: () => api<{ code: string; nom: string; sigle: string }[]>("/api/v1/public/organismes/"),
-  });
 
   useEffect(() => {
     apercuRef.current = apercu;
@@ -80,12 +66,9 @@ export function ParametresScreen() {
     if (!page.data) return;
     setCivilite(page.data.civilite);
     setNom(page.data.nom);
-    setAdminMatricule(page.data.connexion.matricule);
-    setAdminNom(page.data.connexion.nom);
-    setAdminPrenoms(page.data.connexion.prenoms);
-    setAdminFonction(page.data.connexion.fonction);
-    setAdminOrganisme(page.data.connexion.organisme);
     setInactivite(String(page.data.inactivite_minutes ?? 15));
+    setDelaiVisa(String(page.data.delais?.visa_acte_jours ?? 2));
+    setDelaiHierarchie(String(page.data.delais?.validation_hierarchie_jours ?? 3));
   }, [page.data]);
 
   const data = page.data;
@@ -115,62 +98,43 @@ export function ParametresScreen() {
     });
   }
 
-  async function enregistrerConnexion() {
-    if ((adminPasse || adminConfirmation) && adminPasse !== adminConfirmation) {
-      setErreurConnexion("La confirmation du mot de passe ne correspond pas.");
-      return;
-    }
-    setEnCours(true);
-    setErreurConnexion("");
-    try {
-      const reponse = await feedback.run(
-        "Enregistrement des paramètres de connexion…",
-        () =>
-          api<Parametres>("/api/v1/parametres/connexion/", {
-            method: "POST",
-            body: JSON.stringify({
-              matricule: adminMatricule.trim(),
-              nom: adminNom.trim(),
-              prenoms: adminPrenoms.trim(),
-              fonction: adminFonction.trim(),
-              organisme: adminOrganisme,
-              mot_de_passe: adminPasse,
-              confirmation: adminConfirmation,
-            }),
-          }),
-        { success: { title: "Connexion mise à jour", message: "Les paramètres de l'administrateur sont enregistrés." } },
-      );
-      client.setQueryData(["parametres"], reponse);
-      setAdminPasse("");
-      setAdminConfirmation("");
-    } catch (cause) {
-      setErreurConnexion(cause instanceof ApiError ? cause.message : "Les paramètres de connexion n'ont pas pu être enregistrés.");
-    } finally {
-      setEnCours(false);
-    }
-  }
-
-  async function enregistrerInactivite() {
+  async function enregistrerDelais() {
     const minutes = Number(inactivite);
+    const visa = Number(delaiVisa);
+    const hierarchie = Number(delaiHierarchie);
     if (!Number.isInteger(minutes) || minutes < 1 || minutes > 240) {
-      setErreurInactivite("Indiquez une durée entre 1 et 240 minutes.");
+      setErreurDelais("Indiquez une durée d'inactivité entre 1 et 240 minutes.");
+      return;
+    }
+    if (!Number.isInteger(visa) || visa < 1 || visa > 90 || !Number.isInteger(hierarchie) || hierarchie < 1 || hierarchie > 90) {
+      setErreurDelais("Indiquez une durée de visa ou de validation entre 1 et 90 jours.");
       return;
     }
     setEnCours(true);
-    setErreurInactivite("");
+    setErreurDelais("");
     try {
       const reponse = await feedback.run(
-        "Enregistrement du délai d'inactivité…",
-        () =>
-          api<Parametres>("/api/v1/parametres/inactivite/", {
+        "Enregistrement des délais…",
+        async () => {
+          await api<Parametres>("/api/v1/parametres/inactivite/", {
             method: "POST",
             body: JSON.stringify({ minutes }),
-          }),
-        { success: { title: "Délai enregistré", message: `La session se ferme après ${minutes} minute${minutes > 1 ? "s" : ""} sans action.` } },
+          });
+          return api<Parametres>("/api/v1/parametres/delais/", {
+            method: "POST",
+            body: JSON.stringify({ visa_acte_jours: visa, validation_hierarchie_jours: hierarchie }),
+          });
+        },
+        {
+          success: {
+            title: "Délais enregistrés",
+            message: `Inactivité : ${minutes} min. Visa d'un acte : ${visa} j. Validation hiérarchique : ${hierarchie} j.`,
+          },
+        },
       );
       client.setQueryData(["parametres"], reponse);
     } catch (cause) {
-      setErreurInactivite(cause instanceof ApiError ? cause.message : "Le délai n'a pas pu être enregistré.");
+      setErreurDelais(cause instanceof ApiError ? cause.message : "Les délais n'ont pas pu être enregistrés.");
     } finally {
       setEnCours(false);
     }
@@ -253,7 +217,7 @@ export function ParametresScreen() {
           <p className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Gouvernance · Paramètres</p>
           <h1 className="font-headline-lg text-headline-lg text-on-surface">Paramètres du ministère</h1>
           <p className="font-body-md text-body-md text-on-surface-variant max-w-3xl">
-            Les paramètres de connexion ouvrent l'accès. La civilité, le nom et le portrait de la ministre s'affichent ensuite sur le portail public. Les couleurs habillent tout le SIGRH.
+            La ministre — civilité, nom et portrait — s'affiche sur le portail public. Les délais regroupent l'inactivité de session, le visa des actes et la validation par la hiérarchie. Les couleurs habillent tout le SIGRH.
           </p>
         </div>
 
@@ -263,159 +227,11 @@ export function ParametresScreen() {
           </p>
         ) : null}
 
-        <section className="motion-rise rounded-xl border border-hairline bg-surface-container-lowest p-6" style={{ "--delay": "80ms" } as CSSProperties} aria-labelledby="titre-connexion">
-          <h2 id="titre-connexion" className="font-headline-sm text-headline-sm text-on-surface">Paramètres de connexion</h2>
+        <section className="motion-rise rounded-xl border border-hairline bg-surface-container-lowest p-6" style={{ "--delay": "80ms" } as CSSProperties} aria-labelledby="titre-ministre">
+          <h2 id="titre-ministre" className="font-headline-sm text-headline-sm text-on-surface">La ministre</h2>
           <p className="mt-1 font-body-sm text-body-sm text-on-surface-variant">
-            Le matricule et le mot de passe initiaux viennent du fichier d'environnement. L'administrateur peut les modifier ici. Laissez le mot de passe vide pour le conserver.
+            La civilité, le nom et le portrait s'affichent sur le portail public, à côté des armoiries. Image PNG, JPG ou WEBP, au plus 5 Mo.
           </p>
-          {data && !data.connexion.active ? (
-            <p className="mt-6 font-body-md text-body-md text-on-surface">
-              La connexion n'est pas encore activée. Renseignez SIGRH_ADMIN_MATRICULE et SIGRH_ADMIN_MOT_DE_PASSE, puis redémarrez le service.
-            </p>
-          ) : data && !data.peut_modifier ? (
-            <p className="mt-6 font-body-md text-body-md text-on-surface">
-              {[data.connexion.prenoms, data.connexion.nom].filter(Boolean).join(" ") || data.connexion.matricule}
-              {data.connexion.fonction ? ` · ${data.connexion.fonction}` : ""}. La modification est réservée aux comptes habilités à saisir ces paramètres.
-            </p>
-          ) : (
-            <form
-              className="mt-6 grid gap-4 sm:grid-cols-2"
-              onSubmit={(event) => {
-                event.preventDefault();
-                void enregistrerConnexion();
-              }}
-            >
-              <label className="block space-y-1.5">
-                <span className="font-label-sm text-label-sm text-on-surface-variant">Matricule</span>
-                <input className={CHAMP} value={adminMatricule} maxLength={150} disabled={enCours || !data} autoComplete="off" onChange={(event) => setAdminMatricule(event.target.value)} />
-              </label>
-              <label className="block space-y-1.5">
-                <span className="font-label-sm text-label-sm text-on-surface-variant">Fonction</span>
-                <input className={CHAMP} value={adminFonction} maxLength={160} disabled={enCours || !data} onChange={(event) => setAdminFonction(event.target.value)} />
-              </label>
-              <label className="block space-y-1.5">
-                <span className="font-label-sm text-label-sm text-on-surface-variant">Nom</span>
-                <input className={CHAMP} value={adminNom} maxLength={150} disabled={enCours || !data} onChange={(event) => setAdminNom(event.target.value)} />
-              </label>
-              <label className="block space-y-1.5">
-                <span className="font-label-sm text-label-sm text-on-surface-variant">Prénoms</span>
-                <input className={CHAMP} value={adminPrenoms} maxLength={150} disabled={enCours || !data} onChange={(event) => setAdminPrenoms(event.target.value)} />
-              </label>
-              <label className="block space-y-1.5 sm:col-span-2">
-                <span className="font-label-sm text-label-sm text-on-surface-variant">Organisme</span>
-                <select className={CHAMP} value={adminOrganisme} disabled={enCours || !data} onChange={(event) => setAdminOrganisme(event.target.value)}>
-                  {(organismes.data ?? []).map((item) => (
-                    <option key={item.code} value={item.code}>{item.sigle ? `${item.nom} (${item.sigle})` : item.nom}</option>
-                  ))}
-                </select>
-              </label>
-              <label className="block space-y-1.5">
-                <span className="font-label-sm text-label-sm text-on-surface-variant">Nouveau mot de passe</span>
-                <input className={CHAMP} type="password" value={adminPasse} autoComplete="new-password" disabled={enCours || !data} onChange={(event) => setAdminPasse(event.target.value)} />
-              </label>
-              <label className="block space-y-1.5">
-                <span className="font-label-sm text-label-sm text-on-surface-variant">Confirmation</span>
-                <input className={CHAMP} type="password" value={adminConfirmation} autoComplete="new-password" disabled={enCours || !data} onChange={(event) => setAdminConfirmation(event.target.value)} />
-              </label>
-              <div className="sm:col-span-2 flex flex-wrap items-center gap-3">
-                <button type="submit" className={BOUTON_PRIMAIRE} disabled={enCours || !data}>Enregistrer</button>
-                {erreurConnexion ? <p className="font-body-sm text-body-sm text-error" role="alert">{erreurConnexion}</p> : null}
-              </div>
-            </form>
-          )}
-          {data ? (
-            <form
-              className="mt-6 flex flex-wrap items-end gap-3 border-t border-hairline pt-6"
-              onSubmit={(event) => {
-                event.preventDefault();
-                void enregistrerInactivite();
-              }}
-            >
-              <label className="block space-y-1.5">
-                <span className="font-label-sm text-label-sm text-on-surface-variant">Inactivité avant déconnexion (minutes)</span>
-                <input
-                  className={`${CHAMP} w-28`}
-                  type="number"
-                  min={1}
-                  max={240}
-                  step={1}
-                  inputMode="numeric"
-                  value={inactivite}
-                  disabled={enCours || !data.peut_modifier}
-                  onChange={(event) => setInactivite(event.target.value)}
-                />
-              </label>
-              {data.peut_modifier ? (
-                <button type="submit" className={BOUTON_PRIMAIRE} disabled={enCours}>Enregistrer</button>
-              ) : (
-                <p className="font-body-sm text-body-sm text-on-surface-variant">La modification est réservée aux comptes habilités à saisir ces paramètres.</p>
-              )}
-              <p className="basis-full font-body-sm text-body-sm text-on-surface-variant">
-                Après la connexion, la session se ferme au bout de cette durée sans clic, frappe ni défilement. La page de connexion, elle, renvoie à l'accueil après 15 secondes.
-              </p>
-              {erreurInactivite ? <p className="basis-full font-body-sm text-body-sm text-error" role="alert">{erreurInactivite}</p> : null}
-            </form>
-          ) : null}
-        </section>
-
-        <section className="motion-rise rounded-xl border border-hairline bg-surface-container-lowest p-6" style={{ "--delay": "160ms" } as CSSProperties} aria-labelledby="titre-identite-ministre">
-          <h2 id="titre-identite-ministre" className="font-headline-sm text-headline-sm text-on-surface">Identité de la ministre</h2>
-          <p className="mt-1 font-body-sm text-body-sm text-on-surface-variant">
-            La civilité et le nom accompagnent le portrait sur le portail.
-          </p>
-          {data && !data.peut_modifier ? (
-            <p className="mt-6 font-body-md text-body-md text-on-surface">
-              {data.civilite || data.nom
-                ? [data.civilite, data.nom].filter(Boolean).join(" ")
-                : "Aucune identité n'est encore enregistrée."}{" "}
-              La modification est réservée aux comptes habilités à saisir ces paramètres.
-            </p>
-          ) : (
-            <form
-              className="mt-6 grid gap-4 sm:grid-cols-[12rem_minmax(0,24rem)_auto] sm:items-end"
-              onSubmit={(event) => {
-                event.preventDefault();
-                void enregistrerIdentite();
-              }}
-            >
-              <label className="block space-y-1.5">
-                <span className="font-label-sm text-label-sm text-on-surface-variant">Civilité</span>
-                <select
-                  className={CHAMP}
-                  value={civilite}
-                  disabled={enCours || !data}
-                  onChange={(event) => setCivilite(event.target.value)}
-                >
-                  <option value="">Choisir</option>
-                  {CIVILITES.map((option) => (
-                    <option key={option} value={option}>{option}</option>
-                  ))}
-                </select>
-              </label>
-              <label className="block space-y-1.5">
-                <span className="font-label-sm text-label-sm text-on-surface-variant">Nom</span>
-                <input
-                  className={CHAMP}
-                  value={nom}
-                  maxLength={160}
-                  disabled={enCours || !data}
-                  autoComplete="name"
-                  onChange={(event) => setNom(event.target.value)}
-                />
-              </label>
-              <button type="submit" className={BOUTON_PRIMAIRE} disabled={enCours || !data}>
-                Enregistrer
-              </button>
-              {erreurIdentite ? (
-                <p className="sm:col-span-3 font-body-sm text-body-sm text-error" role="alert">{erreurIdentite}</p>
-              ) : null}
-            </form>
-          )}
-        </section>
-
-        <section className="motion-rise rounded-xl border border-hairline bg-surface-container-lowest p-6" style={{ "--delay": "240ms" } as CSSProperties} aria-labelledby="titre-photo-ministre">
-          <h2 id="titre-photo-ministre" className="font-headline-sm text-headline-sm text-on-surface">Photo de la ministre</h2>
-          <p className="mt-1 font-body-sm text-body-sm text-on-surface-variant">Image PNG, JPG ou WEBP, au plus 5 Mo.</p>
 
           <div className="mt-6 flex flex-col sm:flex-row sm:items-start gap-6">
             <div className="h-40 w-40 shrink-0 overflow-hidden rounded-full border border-hairline bg-surface-container">
@@ -428,45 +244,163 @@ export function ParametresScreen() {
               )}
             </div>
 
-            <div className="min-w-0 space-y-3">
+            <div className="min-w-0 flex-1 space-y-4">
               {data && !data.peut_modifier ? (
-                <p className="font-body-sm text-body-sm text-on-surface-variant">
-                  {visible ? "Portrait en vigueur." : "Aucun portrait n'est encore déposé."} La modification est réservée aux comptes habilités à saisir ces paramètres.
+                <p className="font-body-md text-body-md text-on-surface">
+                  {data.civilite || data.nom
+                    ? [data.civilite, data.nom].filter(Boolean).join(" ")
+                    : "Aucune identité n'est encore enregistrée."}
+                  {" "}
+                  {visible ? "Portrait en vigueur." : "Aucun portrait n'est encore déposé."}
+                  {" "}
+                  La modification est réservée aux comptes habilités à saisir ces paramètres.
                 </p>
               ) : (
                 <>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <button type="button" className={BOUTON_SECONDAIRE} disabled={enCours || !data} onClick={() => fichierRef.current?.click()}>
-                      <Icone nom="upload" className="text-lg" />
-                      Choisir une photo
+                  <form
+                    className="grid gap-4 sm:grid-cols-[12rem_minmax(0,1fr)_auto] sm:items-end"
+                    onSubmit={(event) => {
+                      event.preventDefault();
+                      void enregistrerIdentite();
+                    }}
+                  >
+                    <label className="block space-y-1.5">
+                      <span className="font-label-sm text-label-sm text-on-surface-variant">Civilité</span>
+                      <select
+                        className={CHAMP}
+                        value={civilite}
+                        disabled={enCours || !data}
+                        onChange={(event) => setCivilite(event.target.value)}
+                      >
+                        <option value="">Choisir</option>
+                        {CIVILITES.map((option) => (
+                          <option key={option} value={option}>{option}</option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="block space-y-1.5">
+                      <span className="font-label-sm text-label-sm text-on-surface-variant">Nom</span>
+                      <input
+                        className={CHAMP}
+                        value={nom}
+                        maxLength={160}
+                        disabled={enCours || !data}
+                        autoComplete="name"
+                        onChange={(event) => setNom(event.target.value)}
+                      />
+                    </label>
+                    <button type="submit" className={BOUTON_PRIMAIRE} disabled={enCours || !data}>
+                      Enregistrer l'identité
                     </button>
-                    <button type="button" className={BOUTON_PRIMAIRE} disabled={enCours || !fichier} onClick={() => void enregistrer()}>
-                      Enregistrer
-                    </button>
-                    {actuelle && !fichier ? (
-                      <button type="button" className={BOUTON_DANGER} disabled={enCours} onClick={() => void retirer()}>
-                        Retirer
+                    {erreurIdentite ? (
+                      <p className="sm:col-span-3 font-body-sm text-body-sm text-error" role="alert">{erreurIdentite}</p>
+                    ) : null}
+                  </form>
+                  <div className="space-y-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button type="button" className={BOUTON_SECONDAIRE} disabled={enCours || !data} onClick={() => fichierRef.current?.click()}>
+                        <Icone nom="upload" className="text-lg" />
+                        Choisir une photo
                       </button>
+                      <button type="button" className={BOUTON_PRIMAIRE} disabled={enCours || !fichier} onClick={() => void enregistrer()}>
+                        Enregistrer la photo
+                      </button>
+                      {actuelle && !fichier ? (
+                        <button type="button" className={BOUTON_DANGER} disabled={enCours} onClick={() => void retirer()}>
+                          Retirer
+                        </button>
+                      ) : null}
+                    </div>
+                    <input
+                      ref={fichierRef}
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp"
+                      className="sr-only"
+                      onChange={(event) => {
+                        choisir(event.target.files?.[0] ?? null);
+                        event.target.value = "";
+                      }}
+                    />
+                    {fichier ? <p className="font-body-sm text-body-sm text-on-surface-variant">{fichier.name}</p> : null}
+                    {erreur ? (
+                      <p className="font-body-sm text-body-sm text-error" role="alert">{erreur}</p>
                     ) : null}
                   </div>
-                  <input
-                    ref={fichierRef}
-                    type="file"
-                    accept="image/png,image/jpeg,image/webp"
-                    className="sr-only"
-                    onChange={(event) => {
-                      choisir(event.target.files?.[0] ?? null);
-                      event.target.value = "";
-                    }}
-                  />
-                  {fichier ? <p className="font-body-sm text-body-sm text-on-surface-variant">{fichier.name}</p> : null}
                 </>
               )}
-              {erreur ? (
-                <p className="font-body-sm text-body-sm text-error" role="alert">{erreur}</p>
-              ) : null}
             </div>
           </div>
+        </section>
+
+        <section className="motion-rise rounded-xl border border-hairline bg-surface-container-lowest p-6" style={{ "--delay": "160ms" } as CSSProperties} aria-labelledby="titre-delais">
+          <h2 id="titre-delais" className="font-headline-sm text-headline-sm text-on-surface">Délais</h2>
+          <p className="mt-1 font-body-sm text-body-sm text-on-surface-variant">
+            L'inactivité ferme la session. Le visa d'un acte et la validation hiérarchique s'affichent sur la file et à chaque palier. Les dossiers déjà ouverts gardent l'échéance indiquée à leur transmission.
+          </p>
+          {data && !data.peut_modifier ? (
+            <p className="mt-6 font-body-md text-body-md text-on-surface">
+              Inactivité : {data.inactivite_minutes} minute{data.inactivite_minutes > 1 ? "s" : ""}.
+              Visa d'un acte : {data.delais?.visa_acte_jours ?? 2} jour{(data.delais?.visa_acte_jours ?? 2) > 1 ? "s" : ""}.
+              Validation par la hiérarchie : {data.delais?.validation_hierarchie_jours ?? 3} jour{(data.delais?.validation_hierarchie_jours ?? 3) > 1 ? "s" : ""}.
+              La modification est réservée aux comptes habilités à saisir ces paramètres.
+            </p>
+          ) : (
+            <form
+              className="mt-6 flex flex-wrap items-end gap-4"
+              onSubmit={(event) => {
+                event.preventDefault();
+                void enregistrerDelais();
+              }}
+            >
+              <label className="block space-y-1.5">
+                <span className="font-label-sm text-label-sm text-on-surface-variant">Inactivité avant déconnexion (minutes)</span>
+                <input
+                  className={`${CHAMP} w-28`}
+                  type="number"
+                  min={1}
+                  max={240}
+                  step={1}
+                  inputMode="numeric"
+                  value={inactivite}
+                  disabled={enCours || !data}
+                  onChange={(event) => setInactivite(event.target.value)}
+                />
+              </label>
+              <label className="block space-y-1.5">
+                <span className="font-label-sm text-label-sm text-on-surface-variant">Visa d'un acte (jours)</span>
+                <input
+                  className={`${CHAMP} w-28`}
+                  type="number"
+                  min={1}
+                  max={90}
+                  step={1}
+                  inputMode="numeric"
+                  value={delaiVisa}
+                  disabled={enCours || !data}
+                  onChange={(event) => setDelaiVisa(event.target.value)}
+                />
+              </label>
+              <label className="block space-y-1.5">
+                <span className="font-label-sm text-label-sm text-on-surface-variant">Validation par la hiérarchie (jours)</span>
+                <input
+                  className={`${CHAMP} w-28`}
+                  type="number"
+                  min={1}
+                  max={90}
+                  step={1}
+                  inputMode="numeric"
+                  value={delaiHierarchie}
+                  disabled={enCours || !data}
+                  onChange={(event) => setDelaiHierarchie(event.target.value)}
+                />
+              </label>
+              <button type="submit" className={BOUTON_PRIMAIRE} disabled={enCours || !data}>Enregistrer</button>
+              <p className="basis-full font-body-sm text-body-sm text-on-surface-variant">
+                Après connexion, la session se ferme sans clic, frappe ni défilement. Le visa d'un acte court dès la transmission au DRH. La hiérarchie est relancée au bout du délai (chef de service ou sous-direction). La page de connexion, elle, renvoie à l'accueil après 15 secondes.
+              </p>
+              {erreurDelais ? <p className="basis-full font-body-sm text-body-sm text-error" role="alert">{erreurDelais}</p> : null}
+            </form>
+          )}
         </section>
 
         <SectionCouleurs peutModifier={Boolean(data?.peut_modifier)} pret={Boolean(data)} />
@@ -536,7 +470,7 @@ function SectionCouleurs({ peutModifier, pret }: { peutModifier: boolean; pret: 
   }
 
   return (
-    <section className="motion-rise rounded-xl border border-hairline bg-surface-container-lowest p-6" style={{ "--delay": "320ms" } as CSSProperties} aria-labelledby="titre-couleurs">
+    <section className="motion-rise rounded-xl border border-hairline bg-surface-container-lowest p-6" style={{ "--delay": "240ms" } as CSSProperties} aria-labelledby="titre-couleurs">
       <h2 id="titre-couleurs" className="font-headline-sm text-headline-sm text-on-surface">Couleurs de l'application</h2>
       <p className="mt-1 font-body-sm text-body-sm text-on-surface-variant">
         Deux couleurs suffisent : les nuances, les textes lisibles et les graphiques en découlent. L'écran les essaie en direct ; elles ne s'appliquent à tous qu'une fois enregistrées.

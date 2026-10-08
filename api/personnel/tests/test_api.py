@@ -191,10 +191,22 @@ def test_login_puis_tableau_de_bord(api):
     dashboard = api.get("/api/v1/dashboard/", HTTP_AUTHORIZATION=f"Token {token}")
     assert dashboard.status_code == 200
     payload = dashboard.json()
-    assert payload["kpis"][0]["valeur"] == "4 826"
+    from personnel.models import Absence, Agent
+
+    effectif = Agent.objects.count()
+    assert payload["kpis"][0]["valeur"] == f"{effectif:_}".replace("_", " ")
+    assert payload["etats"]["effectifs"]["total"] == effectif
+    assert payload["etats"]["effectifs"]["femmes"] + payload["etats"]["effectifs"]["hommes"] == effectif
+    axes = {axe["code"]: axe for axe in payload["etats"]["effectifs"]["axes"]}
+    assert {"categorie", "grade", "emploi", "structure"} <= set(axes)
+    assert sum(ligne["total"] for ligne in axes["structure"]["lignes"]) == effectif
+    assert payload["etats"]["absences"]["a_decider"] == Absence.objects.filter(decision=Absence.Decision.EN_ATTENTE).count()
+    assert {"dotations", "formation"} <= set(payload["etats"])
+    assert "charges" not in payload
+    libelles = " ".join(kpi["libelle"].lower() for kpi in payload["kpis"])
+    assert "sociale" not in libelles and "évaluation" not in libelles
     assert payload["visas"]
-    assert payload["mouvements"]
-    from personnel.models import Agent
+    assert "mouvements" not in payload
 
     dossiers = next(item for item in payload["modules"] if item["cle"] == "dossiers")
     assert dossiers["lien"] == "/app/dossiers"
@@ -584,6 +596,7 @@ def test_transmettre_un_avancement_le_place_dans_la_file_du_drh(api):
         **auth,
     )
     nouveau = next(item for item in file if item["agent"]["matricule"] == "318490K")
+    assert "J-2" in nouveau["echeance"]
     assert api.post(f"/api/v1/visas/{nouveau['id']}/decision/", {"decision": "visa"}, format="json", **auth).status_code == 200
     assert api.post(f"/api/v1/avancements/{ligne.id}/decision/", {"decision": "renvoyer"}, format="json", **auth).status_code == 409
 
@@ -991,6 +1004,7 @@ def test_photo_de_la_ministre_dans_les_parametres(api, tmp_path, settings):
     assert depart["photo_url"] == ""
     assert depart["peut_modifier"] is True
     assert depart["inactivite_minutes"] == 15
+    assert depart["delais"] == {"visa_acte_jours": 2, "validation_hierarchie_jours": 3}
     assert depart["civilite"] == ""
     assert depart["nom"] == ""
 
@@ -1058,6 +1072,28 @@ def test_photo_de_la_ministre_dans_les_parametres(api, tmp_path, settings):
     delai = api.post("/api/v1/parametres/inactivite/", {"minutes": 20}, format="json", **auth)
     assert delai.status_code == 200
     assert delai.json()["inactivite_minutes"] == 20
+    refuse_delais = api.post(
+        "/api/v1/parametres/delais/",
+        {"visa_acte_jours": 5, "validation_hierarchie_jours": 7},
+        format="json",
+        **agent_auth,
+    )
+    assert refuse_delais.status_code == 403
+    delais_invalides = api.post(
+        "/api/v1/parametres/delais/",
+        {"visa_acte_jours": 0, "validation_hierarchie_jours": 7},
+        format="json",
+        **auth,
+    )
+    assert delais_invalides.status_code == 400
+    delais = api.post(
+        "/api/v1/parametres/delais/",
+        {"visa_acte_jours": 5, "validation_hierarchie_jours": 7},
+        format="json",
+        **auth,
+    )
+    assert delais.status_code == 200
+    assert delais.json()["delais"] == {"visa_acte_jours": 5, "validation_hierarchie_jours": 7}
     assert api.get("/api/v1/public/couleurs/").json() == {"principale": "#042F32", "accent": "#D6FFCB"}
     refuse_couleurs = api.post("/api/v1/parametres/couleurs/", {"principale": "#112233", "accent": "#ddeeff"}, format="json", **agent_auth)
     assert refuse_couleurs.status_code == 403
@@ -1112,6 +1148,7 @@ def test_la_connexion_suit_les_parametres_admin(api, settings):
     assert login.status_code == 200
     auth = {"HTTP_AUTHORIZATION": f"Token {login.json()['token']}"}
     session = api.get("/api/v1/me/", **auth).json()
+    assert session["administrateur"] is True
     assert session["acces"]["fonctions"]["Statistiques & RBAC|Paramètres"] == "validation"
     assert session["acces"]["fonctions"]["Statistiques & RBAC|Habilitations"] == "validation"
     annuaire = api.get("/api/v1/utilisateurs/", **auth).json()
@@ -2353,54 +2390,124 @@ def test_statistiques_filtre_exports_et_planification(api):
     assert plan.status_code == 201
 
 
-def test_statistiques_dynamiques(api):
-    from personnel.models import Agent, CompositionStatistique
+def test_tableaux_croises_dynamiques(api):
+    from personnel.models import Absence, Agent, CompositionStatistique
 
     auth = _auth(api)
     catalogue = api.get("/api/v1/statistiques/catalogue/", **auth)
     assert catalogue.status_code == 200
-    assert "agents" in [item["code"] for item in catalogue.json()["sujets"]]
+    sources = {item["code"]: item for item in catalogue.json()["sources"]}
+    assert {"agents", "absences"} <= set(sources)
+    assert "agent.corps" in [item["code"] for item in sources["absences"]["champs"]]
+    assert "age" in [item["code"] for item in sources["agents"]["mesures"] if item["numerique"]]
+
+    cube = api.get("/api/v1/statistiques/cube/?source=agents&champs=corps,sexe", **auth)
+    assert cube.status_code == 200
+    corps = cube.json()
+    assert [item["code"] for item in corps["champs"]] == ["corps", "sexe"]
+    assert corps["total"] == Agent.objects.count()
+    assert sum(groupe["n"] for groupe in corps["groupes"]) == corps["total"]
+    assert {"Homme", "Femme"} <= {groupe["v"][1] for groupe in corps["groupes"]}
+    assert all(len(groupe["v"]) == 2 for groupe in corps["groupes"])
+
+    jours = api.get("/api/v1/statistiques/cube/?source=absences&champs=agent.sexe", **auth).json()
+    assert jours["total"] == Absence.objects.count()
+    somme = sum(groupe["m"]["jours"][0] for groupe in jours["groupes"] if "jours" in groupe["m"])
+    assert somme == sum(Absence.objects.values_list("jours", flat=True))
 
     croise = api.get(
-        "/api/v1/statistiques/composer/?sujet=agents&mesure=nombre&lignes=corps&colonnes=sexe",
+        "/api/v1/statistiques/cube/?source=agents&champs=sexe,x.absences.presence&croisements=absences,notations",
+        **auth,
+    ).json()
+    assert croise["total"] == Agent.objects.count()
+    jours_croises = sum(groupe["m"]["x.absences.jours"][0] for groupe in croise["groupes"])
+    assert jours_croises == sum(Absence.objects.values_list("jours", flat=True))
+    avec = sum(groupe["n"] for groupe in croise["groupes"] if groupe["v"][1] == "Oui")
+    assert avec == Agent.objects.filter(absences__isnull=False).distinct().count()
+    sources_croisees = {item["code"]: item for item in sources["agents"]["croisements"]}
+    assert sources_croisees["absences"]["possible"] is True
+    assert sources_croisees["sessions"]["possible"] is False
+    impossible = api.get("/api/v1/statistiques/cube/?source=absences&croisements=sanctions", **auth)
+    assert impossible.status_code == 400
+    assert "Dossiers agents" in impossible.json()["detail"]
+    sans_croisement = api.get("/api/v1/statistiques/cube/?source=agents&champs=x.absences.presence", **auth)
+    assert sans_croisement.status_code == 400
+
+    detail = api.get(
+        "/api/v1/statistiques/cube/?source=agents&champs=corps,x.absences.nature&croisements=absences",
+        **auth,
+    ).json()
+    assert detail["detail"] == "absences"
+    assert sum(groupe["n"] for groupe in detail["groupes"]) == Absence.objects.count()
+    assert detail["total"] == Agent.objects.filter(absences__isnull=False).distinct().count()
+    assert all(groupe["a"] for groupe in detail["groupes"])
+    assert "age" not in detail["mesures"]
+    deux_details = api.get(
+        "/api/v1/statistiques/cube/?source=agents&champs=x.absences.nature,x.sanctions.nature&croisements=absences,sanctions",
         **auth,
     )
-    assert croise.status_code == 200
-    corps = croise.json()
-    assert corps["colonnes"]["code"] == "sexe"
-    assert corps["series"] is None
-    assert {"Homme", "Femme"} <= set(corps["tableau"]["colonnes"])
-    assert corps["total"] == Agent.objects.count()
-    assert sum(ligne["total"] for ligne in corps["tableau"]["lignes"]) == corps["total"]
+    assert deux_details.status_code == 400
+    annee = Absence.objects.order_by("debut").first().debut.year
+    periode = api.get(
+        "/api/v1/statistiques/cube/?source=agents&champs=sexe&croisements=absences"
+        f'&periodes={{"absences":{{"de":{annee},"a":{annee}}}}}',
+        **auth,
+    ).json()
+    assert periode["periodes"] == {"absences": {"de": annee, "a": annee}}
+    jours_annee = sum(groupe["m"]["x.absences.jours"][0] for groupe in periode["groupes"])
+    assert jours_annee == sum(Absence.objects.filter(debut__year=annee).values_list("jours", flat=True))
 
-    inconnu = api.get("/api/v1/statistiques/composer/?sujet=agents&mesure=nombre&lignes=matricule", **auth)
-    assert inconnu.status_code == 400
+    assert api.get("/api/v1/statistiques/cube/?source=agents&champs=matricule", **auth).status_code == 400
+    assert api.get("/api/v1/statistiques/cube/?source=inconnue", **auth).status_code == 400
 
+    configuration = {
+        "source": "agents",
+        "lignes": ["corps"],
+        "colonnes": ["sexe"],
+        "filtres": ["situation"],
+        "valeurs": [{"mesure": "nombre"}, {"mesure": "age", "agregat": "moyenne"}],
+        "selections": {"situation": {"exclus": ["Retraité"]}, "inconnu": {"exclus": ["x"]}},
+        "graphique": {"forme": "anneau", "etiquettes": False},
+        "croisements": ["absences"],
+        "nom_auto": True,
+    }
     cree = api.post(
         "/api/v1/statistiques/compositions/",
-        {
-            "nom": "Effectif par corps et par sexe",
-            "sujet": "agents",
-            "mesure": "nombre",
-            "axe_lignes": "corps",
-            "axe_colonnes": "sexe",
-            "filtres": [],
-        },
+        {"nom": "Effectif par corps et par sexe", "configuration": configuration},
         format="json",
         **auth,
     )
     assert cree.status_code == 201
     identifiant = cree.json()["id"]
     assert cree.json()["mien"] is True
-    assert cree.json()["resultat"]["total"] == Agent.objects.count()
+    enregistree = cree.json()["configuration"]
+    assert enregistree["lignes"] == ["corps"]
+    assert enregistree["valeurs"][0] == {"mesure": "nombre", "agregat": "nombre", "affichage": "valeur"}
+    assert enregistree["valeurs"][1]["agregat"] == "moyenne"
+    assert enregistree["selections"] == {"situation": {"exclus": ["Retraité"]}}
+    assert enregistree["graphique"]["forme"] == "anneau"
+    assert enregistree["graphique"]["etiquettes"] is False
+    assert enregistree["croisements"] == ["absences"]
+    assert enregistree["nom_auto"] is True
+
+    doublon = api.post(
+        "/api/v1/statistiques/compositions/",
+        {"nom": "Doublon", "configuration": {**configuration, "colonnes": ["corps"]}},
+        format="json",
+        **auth,
+    )
+    assert doublon.status_code == 400
+    somme_texte = api.post(
+        "/api/v1/statistiques/compositions/",
+        {"nom": "Somme impossible", "configuration": {**configuration, "valeurs": [{"mesure": "nombre", "agregat": "somme"}]}},
+        format="json",
+        **auth,
+    )
+    assert somme_texte.status_code == 400
 
     liste = api.get("/api/v1/statistiques/compositions/", **auth)
     assert liste.status_code == 200
     assert any(item["id"] == identifiant for item in liste.json())
-
-    detail = api.get(f"/api/v1/statistiques/compositions/{identifiant}/", **auth)
-    assert detail.status_code == 200
-    assert detail.json()["nom"] == "Effectif par corps et par sexe"
 
     renomme = api.patch(
         f"/api/v1/statistiques/compositions/{identifiant}/",
@@ -2410,28 +2517,24 @@ def test_statistiques_dynamiques(api):
     )
     assert renomme.status_code == 200
     assert renomme.json()["nom"] == "Parité par corps"
+    assert renomme.json()["configuration"]["colonnes"] == ["sexe"]
 
-    plusieurs = api.patch(
-        f"/api/v1/statistiques/compositions/{identifiant}/",
-        {
-            "dossiers": ["agents", "absences"],
-            "mesure": "nombre",
-            "axe_lignes": "agents.corps",
-            "axe_colonnes": "absences.nature",
-            "filtres": [],
-        },
-        format="json",
-        **auth,
+    ancienne = CompositionStatistique.objects.create(
+        auteur=CompositionStatistique.objects.get(pk=identifiant).auteur,
+        nom="Ancienne composition",
+        sujet="agents",
+        mesure="nombre",
+        axe_lignes="agents.corps",
+        axe_colonnes="absences.nature",
+        filtres=[{"dimension": "agents.sexe", "valeur": "F"}],
+        volets=["agents", "absences"],
     )
-    assert plusieurs.status_code == 200
-    combine = plusieurs.json()["resultat"]
-    assert [item["code"] for item in combine["dossiers"]] == ["agents", "absences"]
-    assert combine["lignes"]["code"] == "agents.corps"
-    assert combine["colonnes"]["code"] == "absences.nature"
-    assert combine["total"] == Agent.objects.filter(absences__pk__isnull=False).distinct().count()
-    assert combine["total"] > 0
-    assert "absence" in combine["lecture"].lower()
-    assert "corps" in combine["nom_propose"].lower()
+    convertie = api.get(f"/api/v1/statistiques/compositions/{ancienne.pk}/", **auth).json()["configuration"]
+    assert convertie["source"] == "absences"
+    assert convertie["lignes"] == ["agent.corps"]
+    assert convertie["colonnes"] == ["nature"]
+    assert convertie["filtres"] == ["agent.sexe"]
+    assert convertie["selections"] == {"agent.sexe": {"inclus": ["Femme"]}}
 
     autre = api.post(
         "/api/v1/auth/login/",
@@ -2654,3 +2757,32 @@ def test_sous_directeur_ne_voit_pas_les_pairs(api):
     liste = api.get("/api/v1/utilisateurs/", HTTP_AUTHORIZATION=f"Token {jeton.json()['token']}")
     assert liste.status_code == 200
     assert {item["matricule"] for item in liste.json()["utilisateurs"]} == {"SD-PAIR-1", "AG-PAIR"}
+
+
+def test_chaque_utilisateur_change_son_mot_de_passe(api):
+    from personnel.models import Notification
+
+    connexion = api.post("/api/v1/auth/login/", {"matricule": "349812K", "password": "Sigrh-Dev-2026"}, format="json")
+    assert connexion.status_code == 200
+    ancien_jeton = connexion.json()["token"]
+    auth = {"HTTP_AUTHORIZATION": f"Token {ancien_jeton}"}
+    route = "/api/v1/me/mot-de-passe/"
+
+    faux = api.post(route, {"actuel": "mauvais", "nouveau": "Ministere-Portefeuille-27", "confirmation": "Ministere-Portefeuille-27"}, format="json", **auth)
+    assert faux.status_code == 400
+    assert "actuel" in faux.json()["detail"]
+    differente = api.post(route, {"actuel": "Sigrh-Dev-2026", "nouveau": "Ministere-Portefeuille-27", "confirmation": "Autre-chose-27"}, format="json", **auth)
+    assert differente.status_code == 400
+    faible = api.post(route, {"actuel": "Sigrh-Dev-2026", "nouveau": "12345678", "confirmation": "12345678"}, format="json", **auth)
+    assert faible.status_code == 400
+
+    change = api.post(route, {"actuel": "Sigrh-Dev-2026", "nouveau": "Ministere-Portefeuille-27", "confirmation": "Ministere-Portefeuille-27"}, format="json", **auth)
+    assert change.status_code == 200
+    nouveau_jeton = change.json()["token"]
+    assert nouveau_jeton != ancien_jeton
+    assert api.get("/api/v1/me/", **auth).status_code == 401
+    assert api.get("/api/v1/me/", HTTP_AUTHORIZATION=f"Token {nouveau_jeton}").status_code == 200
+    assert Notification.objects.filter(destinataire__username="349812K", titre="Mot de passe modifié").exists()
+
+    assert api.post("/api/v1/auth/login/", {"matricule": "349812K", "password": "Sigrh-Dev-2026"}, format="json").status_code == 401
+    assert api.post("/api/v1/auth/login/", {"matricule": "349812K", "password": "Ministere-Portefeuille-27"}, format="json").status_code == 200

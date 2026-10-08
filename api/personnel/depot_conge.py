@@ -11,7 +11,13 @@ from .circuits_config import etapes_pour_conge
 from .inscriptions import _reference
 from .models import Demande, TypeConge, VisaDemande
 
-ETAPE = ("Étape 2 : chef de service", "Avis hiérarchique attendu", "J-3 avant relance")
+ETAPE = ("Étape 2 : chef de service", "Avis hiérarchique attendu")
+
+
+def _echeance_hierarchie() -> str:
+    from .parametres import libelle_echeance_hierarchie
+
+    return libelle_echeance_hierarchie()
 
 
 def deposer(agent, payload: dict) -> str | None:
@@ -48,7 +54,7 @@ def deposer(agent, payload: dict) -> str | None:
             icone="calendar_month",
             etape=etape,
             responsable=responsable,
-            echeance=ETAPE[2],
+            echeance=_echeance_hierarchie(),
             depose_le=aujourd_hui,
             categorie="conge",
         )

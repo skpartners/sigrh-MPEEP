@@ -1184,16 +1184,22 @@ class DistinctionCarriere(models.Model):
 
 
 class CompositionStatistique(models.Model):
-    """Statistique composée par un utilisateur et rejouée à l'ouverture de l'écran."""
+    """Tableau croisé dynamique composé par un utilisateur et recalculé à l'ouverture de l'écran."""
 
     nom = models.CharField(max_length=160)
     auteur = models.ForeignKey(User, on_delete=models.CASCADE, related_name="compositions_statistiques")
-    sujet = models.SlugField(max_length=40)
-    mesure = models.SlugField(max_length=40)
-    axe_lignes = models.SlugField(max_length=40)
+    sujet = models.SlugField(max_length=40, help_text="Source de données du tableau.")
+    configuration = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="Zones du tableau croisé (filtres, colonnes, lignes, valeurs), tri, options et graphique.",
+    )
+    # Champs des compositions d'avant les tableaux croisés, convertis à la lecture.
+    mesure = models.SlugField(max_length=40, blank=True)
+    axe_lignes = models.SlugField(max_length=40, blank=True)
     axe_colonnes = models.SlugField(max_length=40, blank=True)
-    filtres = models.JSONField(default=list)
-    volets = models.JSONField(default=list, help_text="Dossiers réunis dans la même composition.")
+    filtres = models.JSONField(default=list, blank=True)
+    volets = models.JSONField(default=list, blank=True, help_text="Dossiers réunis dans la même composition.")
     creee_le = models.DateTimeField(auto_now_add=True)
     modifiee_le = models.DateTimeField(auto_now=True)
 
@@ -1512,6 +1518,8 @@ class ParametresMinistere(models.Model):
     connexion_active = models.BooleanField(default=False)
     admin_matricule = models.CharField(max_length=150, blank=True)
     inactivite_minutes = models.PositiveSmallIntegerField(default=15)
+    delai_visa_acte_jours = models.PositiveSmallIntegerField(default=2)
+    delai_validation_hierarchie_jours = models.PositiveSmallIntegerField(default=3)
     couleur_principale = models.CharField(max_length=7, default="#042F32")
     couleur_accent = models.CharField(max_length=7, default="#D6FFCB")
 

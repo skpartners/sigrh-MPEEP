@@ -142,11 +142,6 @@ function DossierContenu({ agent }: { agent: Dossier }) {
     { id: "pieces", icone: "folder_zip", libelle: "Pièces Jointes & Actes Numérisés", compteur: String(agent.pieces.length) },
   ];
   const [photoOuverte, setPhotoOuverte] = useState(false);
-  const conformite = [
-    { libelle: "Situation", valeur: agent.situation },
-    { libelle: "Visite médicale", valeur: agent.visite_medicale },
-    { libelle: "Affiliation CGRAE", valeur: agent.affiliation_cgrae },
-  ];
 
   // Sens du changement d'onglet : le nouveau contenu entre du côté de l'onglet choisi.
   const sens = useRef(1);
@@ -258,16 +253,6 @@ function DossierContenu({ agent }: { agent: Dossier }) {
                 valeur={agent.projection ? dateCourte(agent.projection.date_radiation) : "—"}
                 detail={agent.projection ? `Limite d'âge ${agent.projection.age_limite} ans · ${agent.projection.service_restant}` : "Date de naissance non renseignée"}
               />
-              <ul className="flex flex-col gap-1.5 min-w-0 max-w-full">
-                {conformite.map((ligne) => (
-                  <li key={ligne.libelle} className={`flex items-start gap-1.5 px-2.5 py-1 bg-surface-container-low rounded min-w-0 max-w-full ${ligne.valeur ? "text-primary" : "text-on-surface-variant"}`}>
-                    <span className={`w-2 h-2 rounded-full shrink-0 mt-1.5 ${ligne.valeur ? "bg-primary" : "bg-outline-variant"}`} aria-hidden="true"></span>
-                    <span className="font-label-sm text-label-sm font-semibold min-w-0">
-                      {ligne.libelle} : {ligne.valeur || "non renseigné"}
-                    </span>
-                  </li>
-                ))}
-              </ul>
             </div>
           </div>
         </div>
