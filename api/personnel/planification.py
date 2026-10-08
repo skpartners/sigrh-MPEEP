@@ -1,5 +1,6 @@
 """Planification annuelle des congés : ouverture, remontée hiérarchique, arrêté du DRH."""
 
+import re
 from datetime import datetime, timedelta
 
 from django.contrib.auth.models import User
@@ -41,7 +42,8 @@ def _est_rh(user) -> bool:
     if profil is None or _est_drh(user):
         return False
     texte = f"{profil.role} {profil.fonction}".lower()
-    return "carrière" in texte or "carriere" in texte or "ressource" in texte
+    # « Responsable RH » compte comme « ressources humaines » : le sigle est cherché comme un mot entier.
+    return "carrière" in texte or "carriere" in texte or "ressource" in texte or re.search(r"\brh\b", texte) is not None
 
 
 def _notifier(user, titre: str, message: str, urgente: bool = False) -> None:

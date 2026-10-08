@@ -1,5 +1,6 @@
 import pytest
 from django.core.management import call_command
+from django.utils import timezone
 from rest_framework.test import APIClient
 
 pytestmark = pytest.mark.django_db
@@ -476,16 +477,21 @@ def test_carrieres_mouvements_et_alertes(api):
 
 
 def test_notifications_du_drh(api):
+    from personnel.models import Notification
+
     auth = {"HTTP_AUTHORIZATION": f"Token {_token(api)}"}
     body = api.get("/api/v1/notifications/", **auth).json()
-    assert body["non_lues"] == 5
+    # Le jeu de démonstration fixe le nombre de non-lues : le test le relit plutôt que de le recopier.
+    attendues = Notification.objects.filter(destinataire__username="DRH-2018-044", lue=False).count()
+    assert attendues >= 2
+    assert body["non_lues"] == attendues
     premiere = body["notifications"][0]
     assert premiere["lue"] is False  # les non-lues d'abord
 
     api.post(f"/api/v1/notifications/{premiere['id']}/lue/", **auth)
-    assert api.get("/api/v1/notifications/", **auth).json()["non_lues"] == 4
+    assert api.get("/api/v1/notifications/", **auth).json()["non_lues"] == attendues - 1
 
-    assert api.post("/api/v1/notifications/tout-lu/", **auth).json()["marquees"] == 4
+    assert api.post("/api/v1/notifications/tout-lu/", **auth).json()["marquees"] == attendues - 1
     assert api.get("/api/v1/notifications/", **auth).json()["non_lues"] == 0
 
 
@@ -2322,11 +2328,16 @@ def test_statistiques(api):
     page = api.get("/api/v1/statistiques/", **auth)
     assert page.status_code == 200
     corps = page.json()
+    from personnel.models import EntiteTutelle
+
+    # Le registre des structures grandit avec l'organigramme : le compte se lit dans la base.
+    structures = EntiteTutelle.objects.count()
     assert corps["poles"] == 3
-    assert corps["structures"] == 24
+    assert structures >= 24
+    assert corps["structures"] == structures
     assert corps["agents"] > 0
     assert corps["effectif"] == 4826
-    assert sum(item["structures"] for item in corps["par_pole"]) == 24
+    assert sum(item["structures"] for item in corps["par_pole"]) == structures
     assert corps["kpi"]["dossiers"] == corps["agents"]
     assert len(corps["lignes"]) == corps["structures"]
     assert {ligne["code"] for ligne in corps["lignes"]} >= {"drh", "ig", "dsi"}
@@ -2566,7 +2577,8 @@ def test_planification_annuelle_des_conges(api):
     chef_nom = "349812K"
     chef_user = User.objects.get(username=chef_nom)
     Profil.objects.filter(user__username__in=[agent_nom, silencieux]).update(superieur=chef_user)
-    aujourd_hui = date.today()
+    # Le jour de l'application (fuseau du projet), pas celui de la machine qui lance les tests.
+    aujourd_hui = timezone.localdate()
     corps = {
         "limite_agents": (aujourd_hui + timedelta(days=5)).isoformat(),
         "limite_hierarchie": (aujourd_hui + timedelta(days=12)).isoformat(),
@@ -2640,7 +2652,8 @@ def test_surveillance_des_echeances_de_conges(api):
     from personnel.models import CampagnePlanConge, Notification, Profil
 
     drh = _connexion(api, "DRH-2018-044")
-    aujourd_hui = date.today()
+    # Le jour de l'application (fuseau du projet), pas celui de la machine qui lance les tests.
+    aujourd_hui = timezone.localdate()
     ouvert = api.post(
         "/api/v1/conges/planification/ouvrir/",
         {
@@ -2683,7 +2696,8 @@ def test_veille_du_retour_previent_l_agent_et_son_superieur(api):
     from personnel.models import Absence, Agent, InscriptionFormation, Notification, Profil, SessionFormation
     from personnel.retours import surveiller_retours
 
-    aujourd_hui = date.today()
+    # Le jour de l'application (fuseau du projet), pas celui de la machine qui lance les tests.
+    aujourd_hui = timezone.localdate()
     agent = Agent.objects.get(matricule="394812H")
     chef = User.objects.get(username="349812K")
     Profil.objects.filter(user__username="394812H").update(superieur=chef)

@@ -137,3 +137,33 @@ async def test_une_action_rafraichit_les_sessions_ouvertes():
     assert await autre.receive_json_from(timeout=2) == {"type": "registre.change"}
     await drh.disconnect()
     await autre.disconnect()
+
+
+async def test_une_ecriture_annulee_ne_coupe_pas_les_annonces_suivantes():
+    from django.db import transaction
+
+    from personnel.models import Absence, Agent
+
+    _drh, _kouassi, _fil, jetons = await _preparer()
+    drh = await _connecter(jetons["DRH-2018-044"])
+    assert await drh.receive_json_from(timeout=2) == {"type": "pret"}
+
+    def poser():
+        Absence.objects.create(
+            agent=Agent.objects.first(), nature="Absence de test", debut=timezone.now().date(), fin=timezone.now().date(),
+            jours=1, statut="Demandée",
+        )
+
+    def annuler():
+        try:
+            with transaction.atomic():
+                poser()
+                raise RuntimeError("enregistrement interrompu")
+        except RuntimeError:
+            pass
+
+    await database_sync_to_async(annuler)()
+    assert await drh.receive_nothing(timeout=0.3)
+    await database_sync_to_async(poser)()
+    assert await drh.receive_json_from(timeout=2) == {"type": "registre.change"}
+    await drh.disconnect()

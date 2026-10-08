@@ -74,7 +74,6 @@ def groupe(user_id: int) -> str:
 
 
 GROUPE_SESSIONS = "sessions"
-_annonce_en_attente = False
 
 
 def diffuser(user_ids, evenement: dict) -> None:
@@ -92,21 +91,19 @@ def diffuser(user_ids, evenement: dict) -> None:
 
 
 def annoncer_changement() -> None:
-    """Une seule annonce par transaction, après sa validation."""
-    global _annonce_en_attente
-    if _annonce_en_attente:
+    """Une seule annonce par transaction, après sa validation.
+
+    L'annonce déjà prévue se lit dans la file de la transaction en cours, et non dans un drapeau
+    global : une transaction annulée vide cette file, elle ne peut donc pas bloquer les annonces suivantes.
+    """
+    connexion = transaction.get_connection()
+    if connexion.in_atomic_block and any(rappel is _pousser_changement for _, rappel, *_ in connexion.run_on_commit):
         return
-    _annonce_en_attente = True
-
-    def envoyer():
-        global _annonce_en_attente
-        _annonce_en_attente = False
-        _pousser_changement()
-
-    transaction.on_commit(envoyer)
+    transaction.on_commit(_pousser_changement)
 
 
 def _pousser_changement() -> None:
+    """Prévient toutes les sessions ouvertes qu'un registre a changé."""
     couche = get_channel_layer()
     if couche is None:
         return

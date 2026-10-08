@@ -23,9 +23,14 @@ def application_front(request, chemin=""):
     return FileResponse(index.open("rb"))
 
 
+def media(request, path):
+    """Sert les fichiers déposés ; le dossier est lu à chaque requête, pas au chargement des routes."""
+    return serve(request, path, document_root=settings.MEDIA_ROOT)
+
+
 urlpatterns = [
     path("sigrh/admin/", admin.site.urls),
     path("sigrh/api/v1/", include("personnel.urls")),
-    re_path(r"^sigrh/media/(?P<path>.*)$", serve, {"document_root": settings.MEDIA_ROOT}),
+    re_path(r"^sigrh/media/(?P<path>.*)$", media),
     re_path(r"^sigrh(?:/(?P<chemin>.*))?$", application_front),
 ]

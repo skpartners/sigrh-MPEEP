@@ -4,6 +4,7 @@ from datetime import date, timedelta
 
 import pytest
 from django.core.management import call_command
+from django.utils import timezone
 from rest_framework.test import APIClient
 
 
@@ -187,7 +188,7 @@ def test_discipline_registre_sessions_et_effacements(api, settings, tmp_path):
         "/api/v1/carrieres/discipline/sessions/",
         {
             "intitule": "Session ordinaire",
-            "date": (date.today() + timedelta(days=40)).isoformat(),
+            "date": (timezone.localdate() + timedelta(days=40)).isoformat(),
             "heure": "10:00",
             "lieu": "Salle du conseil",
             "ordre_du_jour": f"Audition du dossier {cree.json()['reference']}",
