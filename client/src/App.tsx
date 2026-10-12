@@ -30,6 +30,7 @@ import { FeedbackProvider } from "./ui/Feedback";
 import { EtiquettesTableaux } from "./ui/EtiquettesTableaux";
 import { PageMotion, TopProgress } from "./ui/Motion";
 import { TempsReelProvider } from "./ui/TempsReel";
+import { AgentScreen } from "./screens/AgentScreen";
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: false, refetchOnWindowFocus: false } },
@@ -56,6 +57,8 @@ export function App() {
               <Route path="/app/tableau-de-bord" element={<RequireAuth><DashboardScreen /></RequireAuth>} />
               <Route path="/app/dossiers" element={<RequireAuth><DossierScreen /></RequireAuth>} />
               <Route path="/app/dossiers/:matricule" element={<RequireAuth><DossierScreen /></RequireAuth>} />
+              <Route path="/app/agents" element={<RequireAuth><AgentScreen /></RequireAuth>} />
+              <Route path="/app/agents/:matricule" element={<RequireAuth><AgentScreen /></RequireAuth>} />
               <Route path="/app/carrieres" element={<RequireAuth><CarrieresScreen /></RequireAuth>} />
               <Route path="/app/carrieres/dotation" element={<Navigate to="/app/gpec/recrutement" replace />} />
               <Route path="/app/carrieres/situation-administrative" element={<RequireAuth><SituationScreen /></RequireAuth>} />
