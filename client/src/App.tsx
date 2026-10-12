@@ -31,6 +31,7 @@ import { EtiquettesTableaux } from "./ui/EtiquettesTableaux";
 import { PageMotion, TopProgress } from "./ui/Motion";
 import { TempsReelProvider } from "./ui/TempsReel";
 import { AgentScreen } from "./screens/AgentScreen";
+import { GrhScreen } from "./screens/GRHScreen";
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: false, refetchOnWindowFocus: false } },
@@ -57,8 +58,12 @@ export function App() {
               <Route path="/app/tableau-de-bord" element={<RequireAuth><DashboardScreen /></RequireAuth>} />
               <Route path="/app/dossiers" element={<RequireAuth><DossierScreen /></RequireAuth>} />
               <Route path="/app/dossiers/:matricule" element={<RequireAuth><DossierScreen /></RequireAuth>} />
+
               <Route path="/app/agents" element={<RequireAuth><AgentScreen /></RequireAuth>} />
               <Route path="/app/agents/:matricule" element={<RequireAuth><AgentScreen /></RequireAuth>} />
+
+              <Route path="/app/grh" element={<RequireAuth><GrhScreen /></RequireAuth>} />
+
               <Route path="/app/carrieres" element={<RequireAuth><CarrieresScreen /></RequireAuth>} />
               <Route path="/app/carrieres/dotation" element={<Navigate to="/app/gpec/recrutement" replace />} />
               <Route path="/app/carrieres/situation-administrative" element={<RequireAuth><SituationScreen /></RequireAuth>} />
@@ -66,6 +71,7 @@ export function App() {
               <Route path="/app/carrieres/conges" element={<RequireAuth><CongesScreen /></RequireAuth>} />
               <Route path="/app/carrieres/procedures-disciplinaires" element={<RequireAuth><DisciplineScreen /></RequireAuth>} />
               <Route path="/app/carrieres/fin-de-carriere" element={<RequireAuth><FinCarriereScreen /></RequireAuth>} />
+
               <Route path="/app/action-sociale" element={<RequireAuth><SocialScreen /></RequireAuth>} />
               <Route path="/app/formation" element={<RequireAuth><FormationScreen /></RequireAuth>} />
               <Route path="/app/gpec" element={<Navigate to="/app/gpec/expression-des-besoins" replace />} />

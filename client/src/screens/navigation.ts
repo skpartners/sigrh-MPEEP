@@ -45,6 +45,20 @@ export const NAV: SectionNav[] = [
     groupe: "Métier",
     liens: [
       {
+        to: "/app/grh",
+        icone: "assignment",
+        libelle: "GRH",
+        resume: "La GRH permet d’assurer la gestion des carrières, des congés, des absences, des procédures disciplinaires, des fins de carrière, de la formation continue et de la programmation des effectifs.",
+        acces: { module: "Carrières & Actes", fonction: "Accueil" },
+        enfants: [
+          { to: "/app/grh", end: true, icone: "dashboard", libelle: "Accueil", acces: { module: "GRH", fonction: "Accueil" } },
+          { to: "/app/grh/gestion-des-carrieres", icone: "work_history", libelle: "Gestion des carrières", acces: { module: "GRH", fonction: "Gestion des carrières" } },
+          { to: "/app/grh/action-sociale", icone: "volunteer_activism", libelle: "Action sociale", acces: { module: "GRH", fonction: "Action sociale" } },
+          { to: "/app/grh/formation-continue", icone: "school", libelle: "Formation continue", acces: { module: "GRH", fonction: "Formation continue" } },
+          { to: "/app/grh/programmation-des-effectifs", icone: "groups", libelle: "Programmations des effectifs", acces: { module: "GRH", fonction: "Programmations des effectifs" } },
+        ],
+      },
+      {
         to: "/app/carrieres",
         icone: "assignment",
         libelle: "Carrières & actes",
@@ -59,31 +73,31 @@ export const NAV: SectionNav[] = [
           { to: "/app/carrieres/fin-de-carriere", icone: "military_tech", libelle: "Fin de carrière", acces: { module: "Carrières & Actes", fonction: "Fin de carrière" } },
         ],
       },
-      {
-        to: "/app/action-sociale",
-        icone: "volunteer_activism",
-        libelle: "Action sociale",
-        resume: "Les aides, prêts et secours, et la quotité cessible de l'agent.",
-        acces: { module: "Social & Santé", fonction: "Action sociale" },
-      },
-      {
-        to: "/app/formation",
-        icone: "school",
-        libelle: "Formation continue",
-        resume: "Le plan, le catalogue, les sessions, les candidatures et le passeport de compétences.",
-        acces: { module: "Formations", fonction: "Formation continue" },
-      },
-      {
-        to: "/app/gpec",
-        icone: "groups",
-        libelle: "GPEC",
-        resume: "Ce que les structures demandent, et la façon dont les postes sont pourvus dans les plafonds.",
-        acces: { module: "GPEC", fonction: "GPEC" },
-        enfants: [
-          { to: "/app/gpec/expression-des-besoins", icone: "post_add", libelle: "Expression des besoins", acces: { module: "GPEC", fonction: "Expression des besoins" } },
-          { to: "/app/gpec/recrutement", icone: "person_add", libelle: "Recrutement", acces: { module: "GPEC", fonction: "Recrutement" } },
-        ],
-      },
+      // {
+      //   to: "/app/action-sociale",
+      //   icone: "volunteer_activism",
+      //   libelle: "Action sociale",
+      //   resume: "Les aides, prêts et secours, et la quotité cessible de l'agent.",
+      //   acces: { module: "Social & Santé", fonction: "Action sociale" },
+      // },
+      // {
+      //   to: "/app/formation",
+      //   icone: "school",
+      //   libelle: "Formation continue",
+      //   resume: "Le plan, le catalogue, les sessions, les candidatures et le passeport de compétences.",
+      //   acces: { module: "Formations", fonction: "Formation continue" },
+      // },
+      // {
+      //   to: "/app/gpec",
+      //   icone: "groups",
+      //   libelle: "GPEC",
+      //   resume: "Ce que les structures demandent, et la façon dont les postes sont pourvus dans les plafonds.",
+      //   acces: { module: "GPEC", fonction: "GPEC" },
+      //   enfants: [
+      //     { to: "/app/gpec/expression-des-besoins", icone: "post_add", libelle: "Expression des besoins", acces: { module: "GPEC", fonction: "Expression des besoins" } },
+      //     { to: "/app/gpec/recrutement", icone: "person_add", libelle: "Recrutement", acces: { module: "GPEC", fonction: "Recrutement" } },
+      //   ],
+      // },
       {
         to: "/app/communication",
         icone: "campaign",
