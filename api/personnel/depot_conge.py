@@ -7,9 +7,9 @@ from django.db import transaction
 from django.utils import timezone
 from django.utils.dateparse import parse_date
 
-from .circuits_config import etapes_pour_conge
+from .circuits_config import etapes_pour_absence, etapes_pour_conge
 from .inscriptions import _reference
-from .models import Demande, TypeConge, VisaDemande
+from .models import Demande, TypeAbsence, TypeConge, VisaDemande
 
 ETAPE = ("Étape 2 : chef de service", "Avis hiérarchique attendu")
 
@@ -22,9 +22,12 @@ def _echeance_hierarchie() -> str:
 
 def deposer(agent, payload: dict) -> str | None:
     """Ouvre le circuit. Retourne un message d'erreur, ou None."""
-    type_conge = TypeConge.objects.filter(code=(payload.get("type") or "").strip()).first()
-    if type_conge is None:
+    code = (payload.get("type") or "").strip()
+    type_conge = TypeConge.objects.filter(code=code).first()
+    absence = None if type_conge is not None else TypeAbsence.objects.filter(code=code).first()
+    if type_conge is None and absence is None:
         return "Choisissez la nature de la demande."
+    element = type_conge or absence
     debut = parse_date(str(payload.get("debut") or ""))
     fin = parse_date(str(payload.get("fin") or ""))
     if debut is None or fin is None:
@@ -38,10 +41,10 @@ def deposer(agent, payload: dict) -> str | None:
     if not interim:
         return "Désignez le remplaçant qui assure la continuité du service."
     observations = " ".join(str(payload.get("observations") or "").split())
-    if _annuel(type_conge) and _deja_ouvert(agent) + jours > agent.reliquat_conges:
+    if type_conge is not None and _annuel(type_conge) and _deja_ouvert(agent) + jours > agent.reliquat_conges:
         return f"Le reliquat de congé annuel ({agent.reliquat_conges} j) ne couvre pas cette demande."
     aujourd_hui = timezone.localdate()
-    configurees = etapes_pour_conge(type_conge)
+    configurees = etapes_pour_conge(type_conge) if type_conge is not None else etapes_pour_absence(absence)
     if configurees:
         etape, responsable = f"Étape 2 : {configurees[0][0]}", configurees[0][1] or "Avis attendu"
     else:
@@ -50,7 +53,7 @@ def deposer(agent, payload: dict) -> str | None:
         demande = Demande.objects.create(
             reference=_reference(aujourd_hui.year),
             agent=agent,
-            nature=f"{type_conge.libelle} ({jours} j)",
+            nature=f"{element.libelle} ({jours} j)",
             icone="calendar_month",
             etape=etape,
             responsable=responsable,

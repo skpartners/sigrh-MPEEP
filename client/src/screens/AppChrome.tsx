@@ -59,7 +59,8 @@ function BandeauSondage() {
   );
 }
 
-export function AppChrome({ children }: { children: ReactNode }) {
+/** `sansSidebar` : page qui occupe toute la largeur, sans menu latéral (le profil agent). */
+export function AppChrome({ children, sansSidebar = false }: { children: ReactNode; sansSidebar?: boolean }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [pointe, setPointe] = useState(false);
   const [focusDedans, setFocusDedans] = useState(false);
@@ -82,7 +83,7 @@ export function AppChrome({ children }: { children: ReactNode }) {
   const courant = menuCourant(pathname, hash);
   const enfants = courant ? sousMenus(courant) : [];
   const repli = repliHabilitation(pathname, hash, me.data?.acces);
-  const avecSidebar = enfants.length > 0;
+  const avecSidebar = enfants.length > 0 && !sansSidebar;
   const deplie = pointe || focusDedans;
   const reduit = avecSidebar && large && !deplie;
 

@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Link, Navigate, useParams } from "react-router-dom";
+import { Link, Navigate, useLocation, useParams } from "react-router-dom";
 import { ApiError, api } from "../api/client";
 import type { Dossier, SessionUser } from "../api/types";
 import { Skeleton } from "../ui/Motion";
@@ -11,10 +11,11 @@ const CARD = "bg-surface-container-lowest rounded-xl border border-hairline p-6"
 
 export function AgentScreen() {
   const { matricule } = useParams();
-  return <AppChrome>{matricule ? <ProfilAgent matricule={matricule} /> : <VersMonProfil />}</AppChrome>;
+  return <AppChrome sansSidebar>{matricule ? <ProfilAgent matricule={matricule} /> : <VersMonProfil />}</AppChrome>;
 }
 
 function VersMonProfil() {
+  const { search } = useLocation();
   const me = useQuery({ queryKey: ["me"], queryFn: () => api<SessionUser>("/api/v1/me/"), staleTime: Infinity });
   if (me.isError) {
     return (
@@ -24,7 +25,7 @@ function VersMonProfil() {
     );
   }
   if (!me.data) return <DossierSquelette />;
-  return <Navigate to={`/app/agents/${encodeURIComponent(me.data.matricule)}`} replace />;
+  return <Navigate to={`/app/agents/${encodeURIComponent(me.data.matricule)}${search}`} replace />;
 }
 
 function ProfilAgent({ matricule }: { matricule: string }) {

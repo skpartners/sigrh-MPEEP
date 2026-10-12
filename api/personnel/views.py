@@ -272,6 +272,33 @@ def deposer_signature(request):
     return Response(_me(request.user, request))
 
 
+ROLES_GESTION_DOSSIER = {"Chef de service", "Sous directeur", "Directeur", "Directeur général"}
+
+
+def _peut_gerer_dossier(user, agent) -> bool:
+    """L'agent gère son propre dossier ; un responsable, ceux de son périmètre ; l'administrateur, tous."""
+    if user.username == agent.matricule:
+        return True
+    profil = getattr(user, "profil", None)
+    if profil is None:
+        return False
+    if profil.administrateur:
+        return True
+    if profil.role not in ROLES_GESTION_DOSSIER:
+        return False
+    perimetre = perimetre_matricules(user)
+    return perimetre is None or agent.matricule in perimetre
+
+
+def _refus_dossier():
+    return Response({"detail": "Seul l'agent, ou un responsable de son périmètre, peut modifier ce dossier."}, status=403)
+
+
+def _detail(agent, user) -> dict:
+    """Dossier de l'agent, avec le droit de modification de l'utilisateur qui le consulte."""
+    return {**agent_detail(agent), "modifiable": _peut_gerer_dossier(user, agent)}
+
+
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 @parser_classes([MultiPartParser, FormParser])
@@ -280,6 +307,8 @@ def deposer_photo(request, matricule: str):
     from pathlib import Path
 
     agent = get_object_or_404(Agent, matricule=matricule)
+    if not _peut_gerer_dossier(request.user, agent):
+        return _refus_dossier()
     fichier = request.FILES.get("fichier")
     if fichier is None:
         return Response({"detail": "Choisissez une photo."}, status=400)
@@ -291,7 +320,92 @@ def deposer_photo(request, matricule: str):
         agent.photo.delete(save=False)
     agent.photo = fichier
     agent.save(update_fields=["photo"])
-    return Response(agent_detail(agent))
+    return Response(_detail(agent, request.user))
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+@parser_classes([MultiPartParser, FormParser])
+def deposer_piece_identite(request, matricule: str):
+    """L'agent déclare le type de sa pièce d'identité, son numéro, puis charge le document."""
+    from pathlib import Path
+
+    agent = get_object_or_404(Agent, matricule=matricule)
+    if not _peut_gerer_dossier(request.user, agent):
+        return _refus_dossier()
+    types = {code for code, _libelle in Agent._meta.get_field("type_piece_identite").choices}
+    type_piece = (request.data.get("type_piece") or "").strip()
+    if type_piece not in types:
+        return Response({"detail": "Choisissez le type de pièce d'identité."}, status=400)
+    numero = (request.data.get("numero") or "").strip()[:40]
+    if not numero:
+        return Response({"detail": "Renseignez le numéro de la pièce."}, status=400)
+    fichier = request.FILES.get("fichier")
+    if fichier is None and not agent.piece_identite:
+        return Response({"detail": "Chargez le document de la pièce d'identité."}, status=400)
+    if fichier is not None:
+        if Path(fichier.name).suffix.lower() not in {".pdf", ".png", ".jpg", ".jpeg", ".webp"}:
+            return Response({"detail": "Le document doit être un PDF ou une image (PNG, JPG, WEBP)."}, status=400)
+        if fichier.size > 5 * 1024 * 1024:
+            return Response({"detail": "Le document dépasse 5 Mo."}, status=400)
+        if agent.piece_identite:
+            agent.piece_identite.delete(save=False)
+        agent.piece_identite = fichier
+    agent.type_piece_identite = type_piece
+    agent.numero_piece_identite = numero
+    agent.save(update_fields=["type_piece_identite", "numero_piece_identite", "piece_identite"])
+    return Response(_detail(agent, request.user))
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def ajouter_enfant(request, matricule: str):
+    """Déclare un enfant à charge sur le dossier de l'agent."""
+    from datetime import date
+
+    from .models import Enfant
+
+    agent = get_object_or_404(Agent, matricule=matricule)
+    if not _peut_gerer_dossier(request.user, agent):
+        return _refus_dossier()
+    donnees = request.data
+    nom = (donnees.get("nom") or "").strip()[:120]
+    prenoms = (donnees.get("prenoms") or "").strip()[:160]
+    if not nom or not prenoms:
+        return Response({"detail": "Renseignez le nom et les prénoms de l'enfant."}, status=400)
+    sexe = donnees.get("sexe")
+    if sexe not in {"H", "F"}:
+        return Response({"detail": "Précisez le sexe de l'enfant."}, status=400)
+    naissance = None
+    if donnees.get("date_naissance"):
+        try:
+            naissance = date.fromisoformat(str(donnees["date_naissance"]))
+        except ValueError:
+            return Response({"detail": "La date de naissance n'est pas valide."}, status=400)
+        if naissance > date.today():
+            return Response({"detail": "La date de naissance ne peut pas être dans le futur."}, status=400)
+    Enfant.objects.create(
+        agent=agent,
+        nom=nom,
+        prenoms=prenoms,
+        sexe=sexe,
+        date_naissance=naissance,
+        lieu_naissance=(donnees.get("lieu_naissance") or "").strip()[:160],
+    )
+    return Response(_detail(agent, request.user), status=201)
+
+
+@api_view(["DELETE"])
+@permission_classes([IsAuthenticated])
+def retirer_enfant(request, matricule: str, pk: int):
+    """Retire un enfant du dossier de l'agent."""
+    from .models import Enfant
+
+    agent = get_object_or_404(Agent, matricule=matricule)
+    if not _peut_gerer_dossier(request.user, agent):
+        return _refus_dossier()
+    get_object_or_404(Enfant, pk=pk, agent=agent).delete()
+    return Response(_detail(agent, request.user))
 
 
 @api_view(["GET"])
@@ -736,7 +850,7 @@ def agent_detail_view(request, matricule: str):
         erreur = enregistrer_situation(agent, request.data)
         if erreur:
             return Response({"detail": erreur}, status=400)
-    return Response(agent_detail(agent))
+    return Response(_detail(agent, request.user))
 
 
 @api_view(["POST"])
@@ -759,10 +873,12 @@ def deposer_conge(request, matricule: str):
     from .depot_conge import deposer
 
     agent = get_object_or_404(Agent.objects.select_related("organisme"), matricule=matricule)
+    if not _peut_gerer_dossier(request.user, agent):
+        return Response({"detail": "Seul l'agent, ou un responsable de son périmètre, peut déposer cette demande."}, status=403)
     erreur = deposer(agent, request.data)
     if erreur:
         return Response({"detail": erreur}, status=400)
-    return Response(agent_detail(agent), status=201)
+    return Response(_detail(agent, request.user), status=201)
 
 
 @api_view(["POST"])
@@ -800,6 +916,117 @@ def deposer_piece(request, matricule: str):
     if erreur:
         return Response({"detail": erreur}, status=400)
     return Response(agent_detail(agent), status=201)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+@parser_classes([MultiPartParser, FormParser])
+def deposer_document(request, matricule: str):
+    """Verse une pièce du dossier personnel numérique (état civil, diplômes, actes administratifs)."""
+    from .pieces import deposer_document as verser
+
+    agent = get_object_or_404(Agent.objects.select_related("organisme"), matricule=matricule)
+    if not _peut_gerer_dossier(request.user, agent):
+        return _refus_dossier()
+    erreur = verser(
+        agent,
+        request.FILES.get("fichier"),
+        str(request.data.get("rubrique") or ""),
+        str(request.data.get("type_document") or ""),
+        str(request.data.get("precision") or ""),
+        str(request.data.get("date_expiration") or ""),
+    )
+    if erreur:
+        return Response({"detail": erreur}, status=400)
+    return Response(_detail(agent, request.user), status=201)
+
+
+def _demande_acte_row(demande) -> dict:
+    return {
+        "reference": demande.reference,
+        "nature": demande.nature,
+        "type_acte": demande.type_acte,
+        "agent": {"matricule": demande.agent.matricule, "nom_complet": demande.agent.nom_complet},
+        "motif": demande.motif,
+        "debut": demande.debut.isoformat() if demande.debut else "",
+        "fin": demande.fin.isoformat() if demande.fin else "",
+        "destinataire": demande.destinataire,
+        "justificatif_url": demande.justificatif.url if demande.justificatif else "",
+        "etape": demande.etape,
+        "depose_le": demande.depose_le.isoformat(),
+    }
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def demandes_actes(request):
+    """Actes demandables et demandes qui attendent le visa de l'utilisateur."""
+    from .demande_acte import CATEGORIE, peut_decider, types
+
+    en_cours = Demande.objects.filter(categorie=CATEGORIE).select_related("agent").order_by("depose_le", "id")
+    a_traiter = [_demande_acte_row(item) for item in en_cours if peut_decider(request.user, item)]
+    return Response({"types": types(), "a_traiter": a_traiter})
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+@parser_classes([JSONParser, MultiPartParser, FormParser])
+def deposer_demande_acte(request, matricule: str):
+    """L'agent demande un acte en son nom : attestation, permission ou autorisation d'absence."""
+    from .demande_acte import deposer
+
+    if request.user.username != matricule:
+        return Response({"detail": "Vous ne pouvez demander un acte qu'en votre nom."}, status=403)
+    agent = get_object_or_404(Agent.objects.select_related("organisme"), matricule=matricule)
+    erreur = deposer(agent, request.data, request.FILES.get("justificatif"))
+    if erreur:
+        return Response({"detail": erreur}, status=400)
+    return Response(_detail(agent, request.user), status=201)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+@parser_classes([JSONParser])
+def decider_demande_acte(request, reference: str):
+    """Vise ou refuse une demande d'acte à l'étape qui revient à l'utilisateur."""
+    from .demande_acte import CATEGORIE, decider, peut_decider
+
+    demande = get_object_or_404(Demande.objects.select_related("agent__organisme"), reference=reference, categorie=CATEGORIE)
+    if not peut_decider(request.user, demande):
+        return Response({"detail": "Cette demande n'attend pas votre visa."}, status=403)
+    erreur = decider(demande, request.user, str(request.data.get("sens") or ""), str(request.data.get("motif") or ""))
+    if erreur:
+        return Response({"detail": erreur}, status=400)
+    return Response(_detail(demande.agent, request.user))
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def document_demande_acte(request, reference: str):
+    """PDF de l'acte délivré, pour l'agent concerné ou pour un responsable."""
+    from .demande_acte import CATEGORIE, ROLES_CHEF, delivree, visa_final
+    from .rapports.convocation import Signataire
+    from .rapports.documents import rendre_acte_demande
+
+    demande = get_object_or_404(Demande.objects.select_related("agent__organisme"), reference=reference, categorie=CATEGORIE)
+    role = getattr(getattr(request.user, "profil", None), "role", "")
+    if request.user.username != demande.agent.matricule and role not in ROLES_CHEF:
+        return Response({"detail": "Cet acte ne vous est pas destiné."}, status=403)
+    if not delivree(demande):
+        return Response({"detail": "Cet acte n'est pas encore délivré."}, status=409)
+    visa = visa_final(demande)
+    image = None
+    if visa is not None and visa.signature:
+        try:
+            with visa.signature.open("rb") as source:
+                image = source.read()
+        except (OSError, ValueError):
+            image = None
+    qualite = "Le Directeur des ressources humaines" if visa is None or visa.instance == "Visa DRH" else (visa.fonction or visa.instance)
+    signataire = Signataire(visa.titulaire if visa else "", qualite, f"Visa {visa.reference}" if visa and visa.reference else "", image)
+    reponse = HttpResponse(rendre_acte_demande(demande, signataire), content_type="application/pdf")
+    reponse["Content-Disposition"] = f'attachment; filename="{demande.reference}.pdf"'
+    return reponse
 
 
 @api_view(["GET"])
@@ -1208,6 +1435,74 @@ def configuration_circuit(request, pk: int):
     if erreur:
         return Response({"detail": erreur}, status=400)
     return Response(circuit)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+@parser_classes([JSONParser])
+def configuration_elements(request, famille: str):
+    """Ajoute un congé (ou une sous-rubrique) ou une absence à la liste proposée aux agents."""
+    from .circuits_config import enregistrer_element
+
+    element, erreur = enregistrer_element(famille, request.data)
+    if erreur:
+        return Response({"detail": erreur}, status=400)
+    return Response(element, status=201)
+
+
+@api_view(["PUT", "DELETE"])
+@permission_classes([IsAuthenticated])
+@parser_classes([JSONParser])
+def configuration_element(request, famille: str, pk: int):
+    """Modifie ou retire un congé ou une absence."""
+    from .circuits_config import _modele, enregistrer_element, supprimer_element
+
+    modele = _modele(famille)
+    if modele is None:
+        return Response({"detail": "Famille inconnue."}, status=404)
+    objet = get_object_or_404(modele, pk=pk)
+    if request.method == "DELETE":
+        erreur = supprimer_element(famille, objet)
+        if erreur:
+            return Response({"detail": erreur}, status=409)
+        return Response({"ok": True})
+    element, erreur = enregistrer_element(famille, request.data, objet)
+    if erreur:
+        return Response({"detail": erreur}, status=400)
+    return Response(element)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+@parser_classes([JSONParser])
+def configuration_actes(request):
+    """Ajoute un acte que l'agent pourra demander."""
+    from .circuits_config import enregistrer_acte
+
+    acte, erreur = enregistrer_acte(request.data)
+    if erreur:
+        return Response({"detail": erreur}, status=400)
+    return Response(acte, status=201)
+
+
+@api_view(["PUT", "DELETE"])
+@permission_classes([IsAuthenticated])
+@parser_classes([JSONParser])
+def configuration_acte(request, pk: int):
+    """Modifie ou retire un acte demandable."""
+    from .circuits_config import enregistrer_acte, supprimer_acte
+    from .models import ActeDemandable
+
+    acte = get_object_or_404(ActeDemandable, pk=pk)
+    if request.method == "DELETE":
+        erreur = supprimer_acte(acte)
+        if erreur:
+            return Response({"detail": erreur}, status=409)
+        return Response({"ok": True})
+    donnees, erreur = enregistrer_acte(request.data, acte)
+    if erreur:
+        return Response({"detail": erreur}, status=400)
+    return Response(donnees)
 
 
 @api_view(["GET"])

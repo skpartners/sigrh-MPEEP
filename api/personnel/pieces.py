@@ -48,6 +48,85 @@ def deposer(agent: Agent, fichier, intitule: str, _categorie: str) -> str | None
     return None
 
 
+# Dossier personnel numérique : trois rubriques et les pièces attendues dans chacune.
+CATALOGUE_DOCUMENTS = [
+    {
+        "code": "etat_civil",
+        "libelle": "Actes d'état civil",
+        "types": [
+            {"code": "acte_naissance", "libelle": "Copie d'acte de naissance de l'agent"},
+            {"code": "certificat_nationalite", "libelle": "Certificat de nationalité"},
+            {"code": "acte_mariage", "libelle": "Acte de mariage"},
+            {"code": "acte_naissance_enfant", "libelle": "Acte de naissance d'un enfant"},
+        ],
+    },
+    {
+        "code": "diplomes",
+        "libelle": "Diplômes & Certifications",
+        "types": [
+            {"code": "diplome", "libelle": "Diplôme"},
+            {"code": "cv", "libelle": "CV"},
+        ],
+    },
+    {
+        "code": "administratifs",
+        "libelle": "Actes administratifs",
+        "types": [
+            {"code": "arrete_nomination", "libelle": "Arrêté de nomination"},
+            {"code": "decision", "libelle": "Décision"},
+            {"code": "certificat", "libelle": "Certificat"},
+            {"code": "attestation", "libelle": "Attestation"},
+            {"code": "note_service", "libelle": "Note de service"},
+        ],
+    },
+]
+
+
+def deposer_document(agent: Agent, fichier, rubrique: str, type_code: str, precision: str, expiration: str) -> str | None:
+    """Verse une pièce du dossier personnel numérique. Retourne un message d'erreur, ou None."""
+    groupe = next((item for item in CATALOGUE_DOCUMENTS if item["code"] == rubrique), None)
+    if groupe is None:
+        return "Choisissez la rubrique du document."
+    type_piece = next((item for item in groupe["types"] if item["code"] == type_code), None)
+    if type_piece is None:
+        return "Choisissez le type de document."
+    echeance = None
+    if expiration:
+        try:
+            echeance = date.fromisoformat(expiration)
+        except ValueError:
+            return "La date d'expiration n'est pas valide."
+    erreur = _controler_fichier(agent, fichier)
+    if erreur:
+        return erreur
+    precision = (precision or "").strip()[:80]
+    intitule = f"{type_piece['libelle']} — {precision}" if precision else type_piece["libelle"]
+    PieceJointe.objects.create(
+        agent=agent,
+        intitule=intitule,
+        categorie=groupe["libelle"],
+        date_depot=date.today(),
+        taille_ko=max(1, (fichier.size + 1023) // 1024),
+        verifiee=False,
+        date_expiration=echeance,
+        fichier=fichier,
+    )
+    return None
+
+
+def _controler_fichier(agent: Agent, fichier) -> str | None:
+    if fichier is None:
+        return "Choisissez un fichier à téléverser."
+    if Path(getattr(fichier, "name", "") or "").suffix.lower() not in EXTENSIONS:
+        return "Le fichier doit être un PDF ou une image (PNG, JPG, WEBP)."
+    if fichier.size > TAILLE_MAX:
+        return "Le fichier dépasse 15 Mo."
+    taille_ko = max(1, (fichier.size + 1023) // 1024)
+    if sum(agent.pieces.values_list("taille_ko", flat=True)) + taille_ko > QUOTA_KO:
+        return "La capacité scellée de 50 Mo est atteinte."
+    return None
+
+
 def archive(agent: Agent) -> tuple[bytes, str]:
     """Archive ZIP des pièces du dossier. Les pièces sans fichier y figurent en fiche."""
     tampon = io.BytesIO()

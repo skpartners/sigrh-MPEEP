@@ -280,7 +280,12 @@ def signer_lot(request):
             status=409,
         )
     with transaction.atomic():
-        lot = Demande.objects.select_for_update().filter(etape__startswith="Étape 4").exclude(etape__icontains="papier")
+        lot = (
+            Demande.objects.select_for_update()
+            .filter(etape__startswith="Étape 4")
+            .exclude(etape__icontains="papier")
+            .exclude(categorie="acte")
+        )
         formations = list(lot.filter(categorie="formation"))
         autres = lot.exclude(categorie="formation")
         nombre = autres.count() + len(formations)

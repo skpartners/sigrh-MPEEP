@@ -34,6 +34,102 @@ def rendre_acte(acte) -> bytes:
     )
 
 
+def rendre_acte_demande(demande, signataire=None) -> bytes:
+    """Acte délivré à l'agent à sa demande : attestation, permission ou autorisation d'absence."""
+    agent = demande.agent
+    titre = demande.nature
+    return assembler(
+        {
+            "reference": demande.reference,
+            "titre": f"{titre} {demande.reference}",
+            "sujet": titre,
+            "mention": "acte délivré à la demande de l'agent",
+            "suite": "Acte",
+            "service": DRH,
+            "detail": DRH,
+            "kicker": DRH,
+            "titre_affiche": titre.upper(),
+            "sous_titre": f"{agent.nom_complet} · {agent.matricule}",
+            "badge": "ACTE",
+            "gabarit": "extrait",
+            "bandeau": "ACTE",
+        },
+        lambda feuille: _corps_acte_demande(feuille, demande),
+        signataire,
+    )
+
+
+def _corps_acte_demande(feuille, demande) -> list:
+    agent = demande.agent
+    corps = [
+        *section(feuille, "Identité administrative"),
+        _identite_serree(feuille, agent),
+        Spacer(1, 3 * mm),
+    ]
+    if demande.type_acte == "attestation-travail":
+        depuis = f"depuis le {_jour(agent.prise_service_ministere)}" if agent.prise_service_ministere else "à ce jour"
+        fonction = f", {agent.fonction}" if agent.fonction else ""
+        corps += [
+            *section(feuille, "Attestation de travail"),
+            *texte(
+                feuille,
+                f"Le Directeur des ressources humaines atteste que {agent.nom_complet}, matricule {agent.matricule}, "
+                f"{agent.grade or 'agent'}{fonction}, exerce au sein de {agent.organisme.nom} {depuis}. "
+                f"Sa situation administrative est : {agent.situation}.",
+            ),
+        ]
+    elif demande.type_acte == "attestation-presence":
+        corps += [
+            *section(feuille, "Attestation de présence au poste"),
+            *texte(
+                feuille,
+                f"Le Directeur des ressources humaines atteste que {agent.nom_complet}, matricule {agent.matricule}, "
+                f"{agent.grade or 'agent'}, est présent(e) à son poste au sein de {agent.organisme.nom} "
+                f"à la date du {_jour(_date_visa_final(demande))}.",
+            ),
+        ]
+    else:
+        debut, fin = _jour(demande.debut), _jour(demande.fin)
+        corps += [
+            *section(feuille, "Mentions de l'acte"),
+            fiche(feuille, [
+                ("Nature", demande.nature),
+                ("Période", debut if demande.debut == demande.fin else f"du {debut} au {fin}"),
+                ("Motif", demande.motif),
+                ("Premier visa", _visa_de(demande)),
+            ]),
+            Spacer(1, 3 * mm),
+            *texte(
+                feuille,
+                f"Il est accordé à {agent.nom_complet}, matricule {agent.matricule}, une {demande.nature.lower()} "
+                f"pour la période indiquée ci-dessus. L'absence est inscrite au registre des absences de l'agent.",
+            ),
+        ]
+    if demande.destinataire:
+        corps += [Spacer(1, 2 * mm), *texte(feuille, f"À l'attention de : {demande.destinataire}.")]
+    corps += [
+        Spacer(1, 2 * mm),
+        encadre(feuille, "Validité", f"Acte référencé {demande.reference}, visé par la hiérarchie puis par le Directeur des ressources humaines. Délivré pour servir et valoir ce que de droit."),
+    ]
+    return corps
+
+
+def _date_visa_final(demande):
+    from ..demande_acte import visa_final
+
+    visa = visa_final(demande)
+    return visa.date if visa else None
+
+
+def _visa_de(demande) -> str:
+    from ..demande_acte import visa_initial
+
+    visa = visa_initial(demande)
+    if visa is None or not visa.titulaire:
+        return "—"
+    return f"{visa.titulaire}, {_jour(visa.date)}" if visa.date else visa.titulaire
+
+
 def rendre_notations(agent) -> bytes:
     """Bulletin des notations versées au dossier de l'agent."""
     return assembler(

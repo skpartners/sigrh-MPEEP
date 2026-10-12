@@ -40,7 +40,7 @@ export function ConfigurerCircuits() {
 
   async function retirer(circuit: CircuitConfigure) {
     const confirme = await feedback.confirm(`Retirer le circuit « ${circuit.nom} » ?`, {
-      message: "Les congés et les absences qui lui sont attribués n'auront plus de circuit.",
+      message: "Les congés, les absences et les actes qui lui sont attribués suivront le circuit par défaut.",
       confirmLabel: "Retirer",
     });
     if (!confirme) return;
@@ -61,7 +61,7 @@ export function ConfigurerCircuits() {
         <div>
           <h2 id={titreId} className="font-headline-md text-headline-md text-on-surface">Configurer un circuit</h2>
           <p className="font-body-sm text-body-sm text-on-surface-variant max-w-3xl">
-            Définissez les visas, puis attribuez le circuit à un élément précis : congé annuel, maternité, paternité, parental, maladie, ou un type d'absence.
+            Définissez les visas, puis attribuez le circuit à un élément précis : un congé, un type d'absence ou un acte que l'agent peut demander. Sans circuit attribué, l'élément suit le circuit par défaut.
           </p>
         </div>
         <button
@@ -203,7 +203,7 @@ function Editeur({
           error: "Le circuit n'a pas été enregistré",
           success: {
             title: "Circuit enregistré",
-            message: "Il s'applique aux congés et aux absences que vous lui avez attribués.",
+            message: "Il s'applique aux congés, aux absences et aux actes que vous lui avez attribués.",
           },
         },
       );
@@ -303,6 +303,7 @@ function Editeur({
           <legend className="font-label-md text-label-md text-on-surface font-semibold">Attribuer à</legend>
           <Choix famille="conge" titre="Congés" elements={elements.conges} edition={edition} circuits={circuits} onBasculer={basculer} />
           <Choix famille="absence" titre="Absences" elements={elements.absences} edition={edition} circuits={circuits} onBasculer={basculer} />
+          <Choix famille="acte" titre="Actes demandés par les agents" elements={elements.actes} edition={edition} circuits={circuits} onBasculer={basculer} />
         </fieldset>
 
       </div>
@@ -318,7 +319,7 @@ function Choix({
   circuits,
   onBasculer,
 }: {
-  famille: "conge" | "absence";
+  famille: "conge" | "absence" | "acte";
   titre: string;
   elements: ElementCircuit[];
   edition: Edition;
@@ -365,7 +366,7 @@ function Case({
   onBasculer,
 }: {
   element: ElementCircuit;
-  famille: "conge" | "absence";
+  famille: "conge" | "absence" | "acte";
   edition: Edition;
   circuits: CircuitConfigure[];
   onBasculer: (clef: string) => void;

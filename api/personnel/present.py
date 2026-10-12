@@ -1,5 +1,7 @@
+from pathlib import Path
 from datetime import date
 
+from .pieces import CATALOGUE_DOCUMENTS
 from .models import (
     Absence,
     Acte,
@@ -12,6 +14,7 @@ from .models import (
     MouvementStrategique,
     PrestationSociale,
     SituationSociale,
+    TypeAbsence,
     TypeConge,
     TypeActe,
     SessionFormation,
@@ -95,6 +98,64 @@ def situation_saisie(agent: Agent) -> dict:
         "fonction": agent.fonction,
         "prise_service_fonction": agent.prise_service_fonction.isoformat() if agent.prise_service_fonction else "",
         "situation": agent.situation,
+    }
+
+
+def etat_civil(agent: Agent) -> dict:
+    """Identification, situation matrimoniale, pièce d'identité et coordonnées de l'agent."""
+    return {
+        "nom": agent.nom,
+        "prenoms": agent.prenoms,
+        "nom_jeune_fille": agent.nom_jeune_fille,
+        "sexe": agent.get_sexe_display(),
+        "date_naissance": agent.date_naissance.isoformat() if agent.date_naissance else "",
+        "lieu_naissance": agent.lieu_naissance,
+        "statut_matrimonial": agent.get_statut_matrimonial_display(),
+        "date_mariage": agent.date_mariage.isoformat() if agent.date_mariage else "",
+        "type_piece_identite": agent.type_piece_identite,
+        "type_piece_identite_libelle": agent.get_type_piece_identite_display(),
+        "numero_piece_identite": agent.numero_piece_identite,
+        "piece_identite_url": agent.piece_identite.url if agent.piece_identite else "",
+        "piece_identite_nom": Path(agent.piece_identite.name).name if agent.piece_identite else "",
+        "adresse_residence": agent.adresse_residence,
+        "ville": agent.ville,
+        "telephone": agent.telephone,
+        "telephone_secondaire": agent.telephone_secondaire,
+        "courriel": agent.courriel,
+        "contact_urgence_nom": agent.contact_urgence_nom,
+        "contact_urgence_telephone": agent.contact_urgence_telephone,
+    }
+
+
+def parcours_academique(agent: Agent) -> dict:
+    """Niveau d'étude, diplôme le plus élevé et domaine de formation."""
+    return {
+        "niveau_etude": agent.get_niveau_etude_display(),
+        "libelle_diplome": agent.libelle_diplome,
+        "domaine_formation": agent.domaine_formation,
+    }
+
+
+def famille(agent: Agent) -> dict:
+    """Conjoint et enfants à charge."""
+    return {
+        "conjoint": {
+            "nom": agent.conjoint_nom,
+            "prenoms": agent.conjoint_prenoms,
+            "telephone": agent.conjoint_telephone,
+            "courriel": agent.conjoint_courriel,
+        },
+        "enfants": [
+            {
+                "id": enfant.id,
+                "nom": enfant.nom,
+                "prenoms": enfant.prenoms,
+                "sexe": enfant.get_sexe_display(),
+                "date_naissance": enfant.date_naissance.isoformat() if enfant.date_naissance else "",
+                "lieu_naissance": enfant.lieu_naissance,
+            }
+            for enfant in agent.enfants.all()
+        ],
     }
 
 
@@ -212,6 +273,10 @@ def types_formations() -> list[dict]:
     ]
 
 
+def types_absences() -> list[dict]:
+    return [{"code": item.code, "libelle": item.libelle} for item in TypeAbsence.objects.all()]
+
+
 def types_conges() -> list[dict]:
     racines = TypeConge.objects.filter(parent__isnull=True).prefetch_related("enfants")
     return [
@@ -311,10 +376,14 @@ def agent_detail(agent: Agent) -> dict:
             "prise_service": agent.prise_service,
             "situation_administrative": situation_administrative(agent),
             "situation_saisie": situation_saisie(agent),
+            "etat_civil": etat_civil(agent),
+            "parcours_academique": parcours_academique(agent),
+            "famille": famille(agent),
             "visite_medicale": agent.visite_medicale,
             "affiliation_cgrae": agent.affiliation_cgrae,
             "conges": conges_agent(agent),
             "types_conges": types_conges(),
+            "types_absences": types_absences(),
             "types_formations": types_formations(),
             "sessions_formations": sessions_formations(),
             "types_actes": types_actes(),
@@ -409,9 +478,11 @@ def agent_detail(agent: Agent) -> dict:
                     "taille_ko": item.taille_ko,
                     "verifiee": item.verifiee,
                     "fichier_url": item.fichier.url if item.fichier else "",
+                    "date_expiration": item.date_expiration.isoformat() if item.date_expiration else "",
                 }
                 for item in agent.pieces.all()
             ],
+            "catalogue_documents": CATALOGUE_DOCUMENTS,
             "demandes": [
                 {
                     "reference": item.reference,
@@ -422,6 +493,12 @@ def agent_detail(agent: Agent) -> dict:
                     "echeance": item.echeance,
                     "depose_le": item.depose_le.isoformat(),
                     "categorie": item.categorie,
+                    "type_acte": item.type_acte,
+                    "motif": item.motif,
+                    "debut": item.debut.isoformat() if item.debut else "",
+                    "fin": item.fin.isoformat() if item.fin else "",
+                    "destinataire": item.destinataire,
+                    "justificatif_url": item.justificatif.url if item.justificatif else "",
                     "visas": [
                         {
                             "ordre": visa.ordre,

@@ -485,7 +485,7 @@ function joursOuvrables(debut: string, fin: string): number {
   return compte;
 }
 
-function FormulaireConge({ agent, onClose }: { agent: Dossier; onClose: () => void }) {
+export function FormulaireConge({ agent, onClose }: { agent: Dossier; onClose: () => void }) {
   const feedback = useFeedback();
   const client = useQueryClient();
   const collegues = agent.presence.membres.filter((item) => !item.vous);
@@ -596,6 +596,13 @@ function FormulaireConge({ agent, onClose }: { agent: Dossier; onClose: () => vo
                 <option key={type.code} value={type.code}>{type.libelle}</option>
               ),
             )}
+            {agent.types_absences.length ? (
+              <optgroup label="Absences et autorisations">
+                {agent.types_absences.map((type) => (
+                  <option key={type.code} value={type.code}>{type.libelle}</option>
+                ))}
+              </optgroup>
+            ) : null}
           </select>
         </label>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

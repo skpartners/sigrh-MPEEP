@@ -5,7 +5,9 @@ import { api } from "../api/client";
 import type { Circuits } from "../api/types";
 import { Skeleton } from "../ui/Motion";
 import { AppChrome } from "./AppChrome";
+import { ActesDemandables } from "./circuits/ActesDemandables";
 import { ConfigurerCircuits } from "./circuits/ConfigurerCircuits";
+import { ElementsConfigurables } from "./circuits/ElementsConfigurables";
 import { Icone } from "../ui/Icone";
 
 const CARD = "rounded-xl bg-surface-container-lowest border border-hairline";
@@ -32,6 +34,12 @@ export function CircuitsScreen() {
           ) : null}
 
           <ConfigurerCircuits />
+
+          <ElementsConfigurables famille="conge" />
+
+          <ElementsConfigurables famille="absence" />
+
+          <ActesDemandables />
 
           <section className="space-y-4 motion-rise" style={{ "--delay": "80ms" } as CSSProperties} aria-labelledby="titre-parcours">
             <div>

@@ -2,6 +2,7 @@ from django.conf import settings
 from django.contrib import admin
 from django.http import FileResponse, HttpResponseNotFound
 from django.urls import include, path, re_path
+from django.views.decorators.clickjacking import xframe_options_sameorigin
 from django.views.static import serve
 
 DIST = settings.BASE_DIR.parent / "client" / "dist"
@@ -23,6 +24,7 @@ def application_front(request, chemin=""):
     return FileResponse(index.open("rb"))
 
 
+@xframe_options_sameorigin
 def media(request, path):
     """Sert les fichiers déposés ; le dossier est lu à chaque requête, pas au chargement des routes."""
     return serve(request, path, document_root=settings.MEDIA_ROOT)

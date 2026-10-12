@@ -2800,3 +2800,371 @@ def test_chaque_utilisateur_change_son_mot_de_passe(api):
 
     assert api.post("/api/v1/auth/login/", {"matricule": "349812K", "password": "Sigrh-Dev-2026"}, format="json").status_code == 401
     assert api.post("/api/v1/auth/login/", {"matricule": "349812K", "password": "Ministere-Portefeuille-27"}, format="json").status_code == 200
+
+
+def test_enfants_a_charge_ajout_et_retrait(api):
+    token = _token(api)
+    auth = {"HTTP_AUTHORIZATION": f"Token {token}"}
+    url = "/api/v1/agents/349812K/enfants/"
+    incomplet = api.post(url, {"nom": "Koné", "prenoms": "Awa"}, format="json", **auth)
+    assert incomplet.status_code == 400
+    futur = api.post(url, {"nom": "Koné", "prenoms": "Awa", "sexe": "F", "date_naissance": "2999-01-01"}, format="json", **auth)
+    assert futur.status_code == 400
+    ajout = api.post(
+        url,
+        {"nom": "Koné", "prenoms": "Awa", "sexe": "F", "date_naissance": "2015-04-02", "lieu_naissance": "Bouaké"},
+        format="json",
+        **auth,
+    )
+    assert ajout.status_code == 201
+    enfants = ajout.json()["famille"]["enfants"]
+    assert [(e["nom"], e["sexe"], e["date_naissance"], e["lieu_naissance"]) for e in enfants] == [("Koné", "Fille", "2015-04-02", "Bouaké")]
+    retrait = api.delete(f"{url}{enfants[0]['id']}/", **auth)
+    assert retrait.status_code == 200
+    assert retrait.json()["famille"]["enfants"] == []
+
+
+def test_deposer_document_du_dossier_numerique(api, tmp_path, settings):
+    from django.core.files.uploadedfile import SimpleUploadedFile
+
+    settings.MEDIA_ROOT = tmp_path
+    token = _token(api)
+    auth = {"HTTP_AUTHORIZATION": f"Token {token}"}
+    url = "/api/v1/agents/349812K/documents/"
+    pdf = lambda: SimpleUploadedFile("acte.pdf", b"%PDF-1.4 test", content_type="application/pdf")  # noqa: E731
+
+    assert api.post(url, {"rubrique": "inconnue", "type_document": "cv", "fichier": pdf()}, format="multipart", **auth).status_code == 400
+    assert api.post(url, {"rubrique": "diplomes", "type_document": "acte_mariage", "fichier": pdf()}, format="multipart", **auth).status_code == 400
+    assert api.post(url, {"rubrique": "diplomes", "type_document": "cv"}, format="multipart", **auth).status_code == 400
+    mauvais = SimpleUploadedFile("virus.exe", b"MZ", content_type="application/octet-stream")
+    assert api.post(url, {"rubrique": "diplomes", "type_document": "cv", "fichier": mauvais}, format="multipart", **auth).status_code == 400
+
+    reponse = api.post(
+        url,
+        {"rubrique": "etat_civil", "type_document": "acte_naissance_enfant", "precision": "Awa", "date_expiration": "2030-01-31", "fichier": pdf()},
+        format="multipart",
+        **auth,
+    )
+    assert reponse.status_code == 201
+    corps = reponse.json()
+    piece = next(item for item in corps["pieces"] if item["intitule"] == "Acte de naissance d'un enfant — Awa")
+    assert piece["categorie"] == "Actes d'état civil"
+    assert piece["date_expiration"] == "2030-01-31"
+    assert piece["fichier_url"]
+    assert [rubrique["code"] for rubrique in corps["catalogue_documents"]] == ["etat_civil", "diplomes", "administratifs"]
+
+
+def _jeton(api, matricule: str) -> dict:
+    login = api.post("/api/v1/auth/login/", {"matricule": matricule, "password": "Sigrh-Dev-2026"}, format="json")
+    assert login.status_code == 200, login.content
+    return {"HTTP_AUTHORIZATION": f"Token {login.json()['token']}"}
+
+
+def test_demande_acte_parcours_complet(api):
+    from datetime import date, timedelta
+
+    agent = _jeton(api, "394812H")
+    drh = _jeton(api, "DRH-2018-044")
+    depot = "/api/v1/agents/394812H/actes-demandes/"
+
+    # Seul l'agent demande en son nom ; le formulaire est contrôlé.
+    assert api.post("/api/v1/agents/349812K/actes-demandes/", {"type": "permission", "motif": "x"}, format="json", **agent).status_code == 403
+    assert api.post(depot, {"type": "inconnu", "motif": "x"}, format="json", **agent).status_code == 400
+    assert api.post(depot, {"type": "attestation-travail", "motif": ""}, format="json", **agent).status_code == 400
+    demain = date.today() + timedelta(days=1)
+    assert api.post(depot, {"type": "permission", "motif": "Décès", "debut": demain.isoformat()}, format="json", **agent).status_code == 400
+    passe = (date.today() - timedelta(days=3)).isoformat()
+    assert api.post(depot, {"type": "permission", "motif": "Décès", "debut": passe, "fin": demain.isoformat()}, format="json", **agent).status_code == 400
+
+    reponse = api.post(depot, {"type": "attestation-travail", "motif": "Dossier de visa", "destinataire": "Ambassade"}, format="json", **agent)
+    assert reponse.status_code == 201
+    demande = next(item for item in reponse.json()["demandes"] if item["categorie"] == "acte")
+    reference = demande["reference"]
+    assert demande["etape"].startswith("Étape 2") and demande["destinataire"] == "Ambassade"
+    assert [visa["avis"] for visa in demande["visas"]] == ["Déposée", "En attente", "En attente", "En attente"]
+
+    # L'agent ne vise pas sa propre demande ; l'acte n'est pas encore délivré.
+    assert api.post(f"/api/v1/demandes-actes/{reference}/decision/", {"sens": "valider"}, format="json", **agent).status_code == 403
+    assert api.get(f"/api/v1/demandes-actes/{reference}/document/", **agent).status_code == 409
+    assert reference in [item["reference"] for item in api.get("/api/v1/demandes-actes/", **drh).json()["a_traiter"]]
+
+    assert api.post(f"/api/v1/demandes-actes/{reference}/decision/", {"sens": "refuser"}, format="json", **drh).status_code == 400
+    for _ in range(2):
+        assert api.post(f"/api/v1/demandes-actes/{reference}/decision/", {"sens": "valider"}, format="json", **drh).status_code == 200
+    final = api.post(f"/api/v1/demandes-actes/{reference}/decision/", {"sens": "valider"}, format="json", **drh)
+    assert final.status_code == 403
+
+    pdf = api.get(f"/api/v1/demandes-actes/{reference}/document/", **agent)
+    assert pdf.status_code == 200 and pdf["Content-Type"] == "application/pdf"
+
+    # Refus motivé : la demande est close, sans acte.
+    autre = api.post(depot, {"type": "permission", "motif": "Mariage", "debut": demain.isoformat(), "fin": demain.isoformat()}, format="json", **agent)
+    ref2 = [item for item in autre.json()["demandes"] if item["categorie"] == "acte" and item["type_acte"] == "permission"][0]["reference"]
+    refus = api.post(f"/api/v1/demandes-actes/{ref2}/decision/", {"sens": "refuser", "motif": "Période de clôture"}, format="json", **drh)
+    assert refus.status_code == 200
+    assert api.get(f"/api/v1/demandes-actes/{ref2}/document/", **agent).status_code == 409
+    assert api.post(f"/api/v1/demandes-actes/{ref2}/decision/", {"sens": "valider"}, format="json", **drh).status_code == 403
+
+
+def test_permission_delivree_inscrite_aux_absences_et_quota(api):
+    from datetime import date, timedelta
+
+    from personnel.models import Absence
+
+    agent = _jeton(api, "394812H")
+    drh = _jeton(api, "DRH-2018-044")
+    depot = "/api/v1/agents/394812H/actes-demandes/"
+    lundi = date.today() + timedelta(days=(7 - date.today().weekday()) % 7 or 7)
+
+    # Le quota d'autorisations spéciales est contrôlé dès le dépôt.
+    trop = api.post(depot, {"type": "autorisation-speciale", "motif": "x", "debut": lundi.isoformat(), "fin": (lundi + timedelta(days=27)).isoformat()}, format="json", **agent)
+    assert trop.status_code == 400 and "dépasse" in trop.json()["detail"]
+
+    lot = api.post(depot, {"type": "autorisation-speciale", "motif": "Mariage d'un frère", "debut": lundi.isoformat(), "fin": (lundi + timedelta(days=1)).isoformat()}, format="json", **agent)
+    assert lot.status_code == 201
+    reference = next(item for item in lot.json()["demandes"] if item["categorie"] == "acte")["reference"]
+    assert not Absence.objects.filter(justificatif=f"Acte {reference}").exists()
+    for _ in range(2):
+        assert api.post(f"/api/v1/demandes-actes/{reference}/decision/", {"sens": "valider"}, format="json", **drh).status_code == 200
+
+    absence = Absence.objects.get(justificatif=f"Acte {reference}")
+    assert absence.agent.matricule == "394812H"
+    assert absence.type_autorisation == "autorisation-speciale" and absence.jours == 2
+    assert absence.decision == "validee" and absence.debut == lundi
+    dossier = api.get("/api/v1/agents/394812H/", **agent).json()
+    assert dossier["conges"]["autorisations_restantes"] == dossier["conges"]["autorisations"] - sum(
+        item["jours"] for item in dossier["absences"] if "autorisation" in item["nature"].lower() and item["debut"][:4] == str(date.today().year)
+    )
+    pdf = api.get(f"/api/v1/demandes-actes/{reference}/document/", **agent)
+    assert pdf.status_code == 200 and pdf.content.startswith(b"%PDF")
+
+
+def test_modification_du_dossier_reservee_a_l_agent_et_aux_responsables(api):
+    simple = _jeton(api, "394812H")
+    drh = _jeton(api, "DRH-2018-044")
+    enfant = {"nom": "Koné", "prenoms": "Awa", "sexe": "F"}
+
+    # Un agent ne touche pas au dossier d'un autre.
+    assert api.post("/api/v1/agents/349812K/enfants/", enfant, format="json", **simple).status_code == 403
+    assert api.post("/api/v1/agents/349812K/photo/", {}, format="multipart", **simple).status_code == 403
+    assert api.post("/api/v1/agents/349812K/piece-identite/", {"type_piece": "cni", "numero": "1"}, format="multipart", **simple).status_code == 403
+    assert api.post("/api/v1/agents/349812K/documents/", {"rubrique": "diplomes", "type_document": "cv"}, format="multipart", **simple).status_code == 403
+    assert api.delete("/api/v1/agents/349812K/enfants/1/", **simple).status_code == 403
+
+    # Il gère le sien, et le droit est annoncé au front.
+    propre = api.post("/api/v1/agents/394812H/enfants/", enfant, format="json", **simple)
+    assert propre.status_code == 201 and propre.json()["modifiable"] is True
+    assert api.get("/api/v1/agents/394812H/", **simple).json()["modifiable"] is True
+
+    # Le DRH gère le dossier d'un agent de son périmètre.
+    assert api.post("/api/v1/agents/394812H/enfants/", enfant, format="json", **drh).status_code == 201
+
+
+def test_justificatif_de_demande_visible_et_fichiers_lisibles_depuis_le_front(api, tmp_path, settings):
+    from datetime import date, timedelta
+
+    from django.core.files.uploadedfile import SimpleUploadedFile
+
+    settings.MEDIA_ROOT = tmp_path
+    agent = _jeton(api, "394812H")
+    drh = _jeton(api, "DRH-2018-044")
+    depot = "/api/v1/agents/394812H/actes-demandes/"
+    jour = (date.today() + timedelta(days=3)).isoformat()
+    base = {"type": "permission-speciale", "motif": "Décès", "debut": jour, "fin": jour}
+
+    mauvais = SimpleUploadedFile("virus.exe", b"MZ")
+    assert api.post(depot, {**base, "justificatif": mauvais}, format="multipart", **agent).status_code == 400
+
+    pdf = SimpleUploadedFile("deces.pdf", b"%PDF-1.4 test", content_type="application/pdf")
+    reponse = api.post(depot, {**base, "justificatif": pdf}, format="multipart", **agent)
+    assert reponse.status_code == 201
+    demande = next(item for item in reponse.json()["demandes"] if item["categorie"] == "acte")
+    url = demande["justificatif_url"]
+    assert url.startswith("/sigrh/media/justificatifs/")
+
+    # Le responsable voit le justificatif dans sa file.
+    file_drh = api.get("/api/v1/demandes-actes/", **drh).json()["a_traiter"]
+    assert [item["justificatif_url"] for item in file_drh if item["reference"] == demande["reference"]] == [url]
+
+    # Le fichier se lit depuis le front : accès croisé autorisé, et affichable dans la page de même origine.
+    lecture = api.get(url, HTTP_ORIGIN="http://127.0.0.1:9100")
+    assert lecture.status_code == 200
+    assert lecture["Access-Control-Allow-Origin"] == "http://127.0.0.1:9100"
+    assert lecture["X-Frame-Options"] == "SAMEORIGIN"
+
+
+def test_actes_configurables_et_circuit_par_defaut_ou_attribue(api):
+    from datetime import date, timedelta
+
+    agent = _jeton(api, "394812H")
+    drh = _jeton(api, "DRH-2018-044")
+    depot = "/api/v1/agents/394812H/actes-demandes/"
+
+    # Les cinq actes d'origine alimentent la liste déroulante et se retrouvent dans la configuration.
+    types = api.get("/api/v1/demandes-actes/", **agent).json()["types"]
+    assert [item["libelle"] for item in types][:2] == ["Attestation de travail", "Attestation de présence au poste"]
+    configuration = api.get("/api/v1/circuits/configuration/", **drh).json()
+    assert len(configuration["elements"]["actes"]) == 5
+
+    # Un nouvel acte se crée dans la configuration ; il apparaît aussitôt dans le choix de l'agent.
+    cree = api.post("/api/v1/circuits/actes/", {"libelle": "Certificat de scolarité", "destinataire": True, "justificatif": "Joindre le livret"}, format="json", **drh)
+    assert cree.status_code == 201
+    acte = cree.json()
+    assert acte["code"] == "certificat-de-scolarite" and acte["circuit_id"] is None
+    assert api.post("/api/v1/circuits/actes/", {"libelle": "certificat de SCOLARITÉ"}, format="json", **drh).status_code == 400
+    assert api.post("/api/v1/circuits/actes/", {"libelle": " "}, format="json", **drh).status_code == 400
+    assert "Certificat de scolarité" in [item["libelle"] for item in api.get("/api/v1/demandes-actes/", **agent).json()["types"]]
+    modifie = api.put(f"/api/v1/circuits/actes/{acte['id']}/", {"libelle": "Certificat de scolarité des enfants", "periode": False}, format="json", **drh)
+    assert modifie.status_code == 200 and modifie.json()["code"] == "certificat-de-scolarite"
+
+    # Sans circuit attribué : circuit par défaut (chef de service, DRH, délivrance).
+    defaut = api.post(depot, {"type": acte["code"], "motif": "Inscription"}, format="json", **agent).json()
+    visas = next(item for item in defaut["demandes"] if item["type_acte"] == acte["code"])["visas"]
+    assert [visa["instance"] for visa in visas] == ["Requête déposée", "Visa du chef de service", "Visa DRH", "Acte délivré"]
+
+    # Attribué à un circuit configuré : une seule étape, tenue par le Directeur.
+    circuit = api.post(
+        "/api/v1/circuits/configuration/",
+        {"nom": "Circuit court", "etapes": [{"instance": "Directeur", "fonction": "DRH"}], "attributions": [{"famille": "acte", "code": "attestation-travail"}]},
+        format="json",
+        **drh,
+    )
+    assert circuit.status_code == 201
+    assert circuit.json()["attributions"] == [{"famille": "acte", "code": "attestation-travail", "libelle": "Attestation de travail"}]
+    assert api.post("/api/v1/circuits/configuration/", {"nom": "X", "etapes": [{"instance": "Directeur"}], "attributions": [{"famille": "acte", "code": "inconnu"}]}, format="json", **drh).status_code == 400
+
+    court = api.post(depot, {"type": "attestation-travail", "motif": "Visa"}, format="json", **agent).json()
+    demande = next(item for item in court["demandes"] if item["type_acte"] == "attestation-travail")
+    assert [visa["instance"] for visa in demande["visas"]] == ["Requête déposée", "Directeur", "Acte délivré"]
+    assert demande["etape"].startswith("Étape 2 : Directeur")
+    decision = api.post(f"/api/v1/demandes-actes/{demande['reference']}/decision/", {"sens": "valider"}, format="json", **drh)
+    assert decision.status_code == 200
+    assert api.get(f"/api/v1/demandes-actes/{demande['reference']}/document/", **agent).status_code == 200
+
+    # Un acte aux demandes en cours ne se retire pas ; une fois traitées, si.
+    assert api.delete(f"/api/v1/circuits/actes/{acte['id']}/", **drh).status_code == 409
+    ref = next(item for item in defaut["demandes"] if item["type_acte"] == acte["code"])["reference"]
+    for _ in range(2):
+        api.post(f"/api/v1/demandes-actes/{ref}/decision/", {"sens": "valider"}, format="json", **drh)
+    assert api.delete(f"/api/v1/circuits/actes/{acte['id']}/", **drh).status_code == 200
+    assert acte["code"] not in [item["code"] for item in api.get("/api/v1/demandes-actes/", **agent).json()["types"]]
+
+
+def test_sous_rubriques_d_actes_et_heritage_du_circuit(api):
+    agent = _jeton(api, "394812H")
+    drh = _jeton(api, "DRH-2018-044")
+    depot = "/api/v1/agents/394812H/actes-demandes/"
+
+    # « Permission spéciale d'absence » est rangée sous « Permission », qui garde son propre sens.
+    types = api.get("/api/v1/demandes-actes/", **agent).json()["types"]
+    par_code = {item["code"]: item for item in types}
+    assert par_code["permission-speciale"]["parent"] == "permission" and par_code["permission"]["parent"] == ""
+    codes = [item["code"] for item in types]
+    assert codes.index("permission-speciale") == codes.index("permission") + 1
+
+    elements = {item["code"]: item for item in api.get("/api/v1/circuits/configuration/", **drh).json()["elements"]["actes"]}
+    assert elements["permission-speciale"]["parent"] == "permission"
+    permission_id, speciale_id = elements["permission"]["id"], elements["permission-speciale"]["id"]
+
+    # Un seul niveau ; pas de boucle ; une rubrique qui a des sous-rubriques ne se retire pas.
+    assert api.put(f"/api/v1/circuits/actes/{permission_id}/", {"libelle": "Permission", "parent": "permission-speciale"}, format="json", **drh).status_code == 400
+    assert api.put(f"/api/v1/circuits/actes/{speciale_id}/", {"libelle": "Permission spéciale d'absence", "parent": "permission-speciale"}, format="json", **drh).status_code == 400
+    assert api.post("/api/v1/circuits/actes/", {"libelle": "Sous-sous", "parent": "permission-speciale"}, format="json", **drh).status_code == 400
+    assert api.post("/api/v1/circuits/actes/", {"libelle": "Autre", "parent": "inconnue"}, format="json", **drh).status_code == 400
+    assert api.delete(f"/api/v1/circuits/actes/{permission_id}/", **drh).status_code == 409
+
+    # Une sous-rubrique se crée sous une rubrique.
+    mariage = api.post("/api/v1/circuits/actes/", {"libelle": "Permission de mariage", "parent": "permission", "periode": True}, format="json", **drh)
+    assert mariage.status_code == 201 and mariage.json()["parent"] == "permission"
+
+    # Sans circuit propre, une sous-rubrique suit le circuit de sa rubrique.
+    api.post(
+        "/api/v1/circuits/configuration/",
+        {"nom": "Circuit permissions", "etapes": [{"instance": "Directeur", "fonction": "DRH"}], "attributions": [{"famille": "acte", "code": "permission"}]},
+        format="json",
+        **drh,
+    )
+    types = {item["code"]: item for item in api.get("/api/v1/demandes-actes/", **agent).json()["types"]}
+    assert types["permission"]["circuit"] == ["Directeur"]
+    assert types["permission-speciale"]["circuit"] == ["Directeur"]
+    assert types["permission-de-mariage"]["circuit"] == ["Directeur"]
+    assert types["autorisation-speciale"]["circuit"] == ["Visa du chef de service", "Visa DRH"]
+
+
+def test_conges_et_absences_configurables_et_demandables_par_l_agent(api):
+    from datetime import date, timedelta
+
+    agent = _jeton(api, "394812H")
+    autre = _jeton(api, "349812K")
+    drh = _jeton(api, "DRH-2018-044")
+    depot = "/api/v1/agents/394812H/conges/demande/"
+    lundi = date.today() + timedelta(days=(7 - date.today().weekday()) % 7 or 7)
+    periode = {"debut": lundi.isoformat(), "fin": (lundi + timedelta(days=3)).isoformat(), "interim": "Collègue"}
+
+    # Congés : sous-rubriques d'un seul niveau, noms uniques, congé annuel protégé.
+    elements = api.get("/api/v1/circuits/configuration/", **drh).json()["elements"]
+    annuel = next(item for item in elements["conges"] if item["code"] == "conge-annuel")
+    assert all("id" in item for item in elements["conges"] + elements["absences"])
+    cree = api.post("/api/v1/circuits/elements/conge/", {"libelle": "Congé d'étude", "parent": ""}, format="json", **drh)
+    assert cree.status_code == 201 and cree.json()["code"] == "conge-detude"
+    assert api.post("/api/v1/circuits/elements/conge/", {"libelle": "CONGÉ d'étude"}, format="json", **drh).status_code == 400
+    sous = api.post("/api/v1/circuits/elements/conge/", {"libelle": "Congé d'étude à l'étranger", "parent": "conge-detude"}, format="json", **drh)
+    assert sous.status_code == 201 and sous.json()["parent"] == "conge-detude"
+    assert api.post("/api/v1/circuits/elements/conge/", {"libelle": "Trop profond", "parent": sous.json()["code"]}, format="json", **drh).status_code == 400
+    assert api.delete(f"/api/v1/circuits/elements/conge/{cree.json()['id']}/", **drh).status_code == 409
+    assert api.delete(f"/api/v1/circuits/elements/conge/{annuel['id']}/", **drh).status_code == 409
+    assert api.post("/api/v1/circuits/elements/inconnu/", {"libelle": "x"}, format="json", **drh).status_code == 400
+
+    # Absences : renommer sans changer le code, créer, attribuer un circuit.
+    absence = api.post("/api/v1/circuits/elements/absence/", {"libelle": "Absence pour concours"}, format="json", **drh).json()
+    renomme = api.put(f"/api/v1/circuits/elements/absence/{absence['id']}/", {"libelle": "Absence pour concours professionnel"}, format="json", **drh)
+    assert renomme.status_code == 200 and renomme.json()["code"] == absence["code"]
+    api.post(
+        "/api/v1/circuits/configuration/",
+        {"nom": "Circuit concours", "etapes": [{"instance": "Directeur", "fonction": "DRH"}], "attributions": [{"famille": "absence", "code": absence["code"]}]},
+        format="json",
+        **drh,
+    )
+
+    # Ce que l'agent voit dans son espace suit la configuration.
+    dossier = api.get("/api/v1/agents/394812H/", **agent).json()
+    assert absence["code"] in [item["code"] for item in dossier["types_absences"]]
+    assert "conge-detude" in [item["code"] for item in dossier["types_conges"]]
+
+    # Il dépose une absence configurée : elle suit le circuit attribué.
+    assert api.post("/api/v1/agents/349812K/conges/demande/", {"type": absence["code"], **periode}, format="json", **agent).status_code == 403
+    reponse = api.post(depot, {"type": absence["code"], **periode}, format="json", **agent)
+    assert reponse.status_code == 201
+    demande = next(item for item in reponse.json()["demandes"] if item["nature"].startswith("Absence pour concours professionnel"))
+    assert demande["etape"].startswith("Étape 2 : Directeur")
+    assert [visa["instance"] for visa in demande["visas"]][:2] == ["Requête déposée", "Directeur"]
+    assert api.post(depot, {"type": "inconnu", **periode}, format="json", **agent).status_code == 400
+
+    # Une absence en cours ne se retire pas à la légère : sans demande de congé liée, elle se retire.
+    assert api.delete(f"/api/v1/circuits/elements/absence/{absence['id']}/", **drh).status_code == 200
+    assert api.delete(f"/api/v1/circuits/elements/conge/{sous.json()['id']}/", **drh).status_code == 200
+    assert api.delete(f"/api/v1/circuits/elements/conge/{cree.json()['id']}/", **drh).status_code == 200
+    assert autre  # le jeton d'un autre agent n'a servi qu'à vérifier le refus ci-dessus
+
+
+def test_sous_rubrique_de_conge_suit_le_circuit_de_sa_rubrique(api):
+    from datetime import date, timedelta
+
+    agent = _jeton(api, "394812H")
+    drh = _jeton(api, "DRH-2018-044")
+    lundi = date.today() + timedelta(days=(7 - date.today().weekday()) % 7 or 7)
+    api.post(
+        "/api/v1/circuits/configuration/",
+        {"nom": "Circuit maladie", "etapes": [{"instance": "Directeur", "fonction": "DRH"}], "attributions": [{"famille": "conge", "code": "conge-maladie"}]},
+        format="json",
+        **drh,
+    )
+    reponse = api.post(
+        "/api/v1/agents/394812H/conges/demande/",
+        {"type": "maladie-courte", "debut": lundi.isoformat(), "fin": (lundi + timedelta(days=2)).isoformat(), "interim": "Collègue"},
+        format="json",
+        **agent,
+    )
+    assert reponse.status_code == 201
+    demande = next(item for item in reponse.json()["demandes"] if item["nature"].startswith("Congé de maladie de courte durée"))
+    assert [visa["instance"] for visa in demande["visas"]][:2] == ["Requête déposée", "Directeur"]

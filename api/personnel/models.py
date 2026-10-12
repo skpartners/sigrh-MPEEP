@@ -76,6 +76,55 @@ class Agent(models.Model):
     categorie = models.CharField(max_length=40, blank=True)
     sexe = models.CharField(max_length=1, choices=[("H", "Homme"), ("F", "Femme")], default="H")
     date_naissance = models.DateField(null=True, blank=True)
+    lieu_naissance = models.CharField(max_length=160, blank=True)
+    nom_jeune_fille = models.CharField(max_length=120, blank=True)
+    statut_matrimonial = models.CharField(
+        max_length=12,
+        blank=True,
+        choices=[
+            ("celibataire", "Célibataire"),
+            ("marie", "Marié(e)"),
+            ("veuf", "Veuf / veuve"),
+            ("divorce", "Divorcé(e)"),
+        ],
+    )
+    date_mariage = models.DateField(null=True, blank=True)
+    type_piece_identite = models.CharField(
+        max_length=20,
+        blank=True,
+        choices=[
+            ("cni", "Carte nationale d'identité (CNI)"),
+            ("passeport", "Passeport"),
+            ("attestation", "Attestation d'identité"),
+            ("permis", "Permis de conduire"),
+            ("consulaire", "Carte consulaire"),
+        ],
+    )
+    numero_piece_identite = models.CharField(max_length=40, blank=True)
+    piece_identite = models.FileField(upload_to="identite/%Y/%m", blank=True)
+    niveau_etude = models.CharField(
+        max_length=10,
+        blank=True,
+        choices=[
+            ("cepe", "CEPE"),
+            ("bepc", "BEPC"),
+            ("bac", "BAC"),
+            ("licence", "Licence"),
+            ("master", "Master"),
+            ("doctorat", "Doctorat"),
+        ],
+    )
+    libelle_diplome = models.CharField(max_length=240, blank=True)
+    domaine_formation = models.CharField(max_length=160, blank=True)
+    conjoint_nom = models.CharField(max_length=120, blank=True)
+    conjoint_prenoms = models.CharField(max_length=160, blank=True)
+    conjoint_telephone = models.CharField(max_length=40, blank=True)
+    conjoint_courriel = models.EmailField(blank=True)
+    adresse_residence = models.CharField(max_length=240, blank=True)
+    ville = models.CharField(max_length=120, blank=True)
+    telephone_secondaire = models.CharField(max_length=40, blank=True)
+    contact_urgence_nom = models.CharField(max_length=160, blank=True)
+    contact_urgence_telephone = models.CharField(max_length=40, blank=True)
     telephone = models.CharField(max_length=40, blank=True)
     courriel = models.EmailField(blank=True)
     localisation = models.CharField(max_length=200, blank=True)
@@ -196,6 +245,13 @@ class Demande(models.Model):
     echeance = models.CharField(max_length=80)
     depose_le = models.DateField()
     categorie = models.CharField(max_length=40)
+    # Demande d'acte déposée par l'agent (categorie « acte »).
+    type_acte = models.CharField(max_length=40, blank=True)
+    motif = models.TextField(blank=True)
+    debut = models.DateField(null=True, blank=True)
+    fin = models.DateField(null=True, blank=True)
+    destinataire = models.CharField(max_length=160, blank=True)
+    justificatif = models.FileField(upload_to="justificatifs/%Y/%m", blank=True)
 
     class Meta:
         ordering = ["-depose_le"]
@@ -349,6 +405,25 @@ class TypeAbsence(models.Model):
         return self.libelle
 
 
+class ActeDemandable(models.Model):
+    """Acte que l'agent peut demander depuis son profil ; configuré avec les circuits de validation."""
+
+    code = models.SlugField(max_length=40, unique=True)
+    libelle = models.CharField(max_length=160)
+    icone = models.CharField(max_length=40, default="description")
+    periode = models.BooleanField(default=False, help_text="L'agent indique une date de début et une date de fin.")
+    destinataire = models.BooleanField(default=False, help_text="L'agent peut préciser à qui l'acte est destiné.")
+    justificatif = models.CharField(max_length=200, blank=True, help_text="Conseil affiché pour le justificatif à joindre.")
+    ordre = models.PositiveSmallIntegerField(default=0)
+    parent = models.ForeignKey("self", null=True, blank=True, on_delete=models.PROTECT, related_name="enfants")
+
+    class Meta:
+        ordering = ["ordre", "libelle"]
+
+    def __str__(self) -> str:
+        return self.libelle
+
+
 class CircuitValidation(models.Model):
     """Chaîne de visas, attribuée ensuite à un congé ou à une absence précis."""
 
@@ -378,6 +453,7 @@ class AttributionCircuit(models.Model):
     class Famille(models.TextChoices):
         CONGE = "conge", "Congé"
         ABSENCE = "absence", "Absence"
+        ACTE = "acte", "Acte administratif"
 
     circuit = models.ForeignKey(CircuitValidation, on_delete=models.CASCADE, related_name="attributions")
     famille = models.CharField(max_length=20, choices=Famille.choices)
@@ -666,6 +742,20 @@ class SituationSociale(models.Model):
         return self.quotite - self.engagements
 
 
+class Enfant(models.Model):
+    """Enfant à charge d'un agent, tel que déclaré dans son dossier."""
+
+    agent = models.ForeignKey(Agent, on_delete=models.CASCADE, related_name="enfants")
+    nom = models.CharField(max_length=120)
+    prenoms = models.CharField(max_length=160)
+    sexe = models.CharField(max_length=1, choices=[("H", "Garçon"), ("F", "Fille")])
+    date_naissance = models.DateField(null=True, blank=True)
+    lieu_naissance = models.CharField(max_length=160, blank=True)
+
+    class Meta:
+        ordering = ["date_naissance", "id"]
+
+
 class AyantDroit(models.Model):
     agent = models.ForeignKey(Agent, on_delete=models.CASCADE, related_name="ayants_droit")
     nom = models.CharField(max_length=160)
@@ -731,6 +821,7 @@ class PieceJointe(models.Model):
     taille_ko = models.PositiveIntegerField()
     verifiee = models.BooleanField(default=True)
     fichier = models.FileField(upload_to="pieces/%Y/%m", blank=True)
+    date_expiration = models.DateField(null=True, blank=True)
 
     class Meta:
         ordering = ["categorie", "-date_depot"]

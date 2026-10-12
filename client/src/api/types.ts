@@ -176,9 +176,42 @@ export type Dashboard = {
 };
 
 export type Dossier = AgentBrief & {
+  /** Droit de modifier le dossier ; absent quand le serveur ne le précise pas (le serveur reste juge). */
+  modifiable?: boolean;
   anciennete: string;
   prise_service: string;
   situation_administrative: { libelle: string; valeur: string }[];
+  etat_civil: {
+    nom: string;
+    prenoms: string;
+    nom_jeune_fille: string;
+    sexe: string;
+    date_naissance: string;
+    lieu_naissance: string;
+    statut_matrimonial: string;
+    date_mariage: string;
+    type_piece_identite: string;
+    type_piece_identite_libelle: string;
+    numero_piece_identite: string;
+    piece_identite_url: string;
+    piece_identite_nom: string;
+    adresse_residence: string;
+    ville: string;
+    telephone: string;
+    telephone_secondaire: string;
+    courriel: string;
+    contact_urgence_nom: string;
+    contact_urgence_telephone: string;
+  };
+  famille: {
+    conjoint: { nom: string; prenoms: string; telephone: string; courriel: string };
+    enfants: { id: number; nom: string; prenoms: string; sexe: string; date_naissance: string; lieu_naissance: string }[];
+  };
+  parcours_academique: {
+    niveau_etude: string;
+    libelle_diplome: string;
+    domaine_formation: string;
+  };
   situation_saisie: {
     organisme: string;
     direction: string;
@@ -209,6 +242,7 @@ export type Dossier = AgentBrief & {
     autorisations_restantes: number;
   };
   types_conges: { code: string; libelle: string; enfants: { code: string; libelle: string }[] }[];
+  types_absences: { code: string; libelle: string }[];
   types_formations: { code: string; libelle: string; publics: string[]; piece_requise: boolean; piece_libelle: string }[];
   sessions_formations: { code: string; libelle: string; type: string; cadre: string; objectif: string }[];
   types_actes: { code: string; libelle: string }[];
@@ -295,7 +329,8 @@ export type Dossier = AgentBrief & {
     statut: string;
     certification: string;
   }[];
-  pieces: { id: number; intitule: string; categorie: string; date_depot: string; taille_ko: number; verifiee: boolean; fichier_url: string }[];
+  pieces: { id: number; intitule: string; categorie: string; date_depot: string; taille_ko: number; verifiee: boolean; fichier_url: string; date_expiration: string }[];
+  catalogue_documents: { code: string; libelle: string; types: { code: string; libelle: string }[] }[];
   demandes: {
     reference: string;
     nature: string;
@@ -305,6 +340,12 @@ export type Dossier = AgentBrief & {
     echeance: string;
     depose_le: string;
     categorie: string;
+    type_acte: string;
+    motif: string;
+    debut: string;
+    fin: string;
+    destinataire: string;
+    justificatif_url: string;
     visas: {
       ordre: number;
       instance: string;
@@ -394,6 +435,7 @@ export type CarrieresRegistres = {
 };
 
 export type ElementCircuit = {
+  id: number;
   code: string;
   libelle: string;
   parent: string;
@@ -405,12 +447,12 @@ export type CircuitConfigure = {
   id: number;
   nom: string;
   etapes: { ordre: number; instance: string; fonction: string }[];
-  attributions: { famille: "conge" | "absence"; code: string; libelle: string }[];
+  attributions: { famille: "conge" | "absence" | "acte"; code: string; libelle: string }[];
 };
 
 export type ConfigurationCircuits = {
   circuits: CircuitConfigure[];
-  elements: { conges: ElementCircuit[]; absences: ElementCircuit[] };
+  elements: { conges: ElementCircuit[]; absences: ElementCircuit[]; actes: ElementCircuit[] };
   roles: { role: string; description: string }[];
 };
 
