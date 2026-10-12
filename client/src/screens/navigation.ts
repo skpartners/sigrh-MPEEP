@@ -26,12 +26,19 @@ export const NAV: SectionNav[] = [
         acces: { module: "Statistiques & RBAC", fonction: "Tableau de bord" },
       },
       {
-        to: "/app/dossiers",
+        to: "/app/agents",
         icone: "badge",
-        libelle: "Mon profil",
-        resume: "Le dossier individuel : identité, situation, carrière, pièces et exports.",
+        libelle: "Profil agent",
+        resume: "Le profil agent permet de consulter et de mettre à jour ses informations personnelles, familiales et professionnelles, ainsi que de gérer ses demandes d’actes et ses documents administratifs.",
         acces: { module: "Dossier Agent", fonction: "Consultation du dossier" },
-      },
+        enfants: [
+          { to: "/app/profil-agent", end: true, icone: "person", libelle: "Accueil", acces: { module: "Profil agent", fonction: "Accueil" } },
+          { to: "/app/profil-agent/etat-civil", icone: "badge", libelle: "État civil", acces: { module: "Profil agent", fonction: "État civil" } },
+          { to: "/app/profil-agent/situation-administrative", icone: "work", libelle: "Situation administrative", acces: { module: "Profil agent", fonction: "Situation administrative" } },
+          { to: "/app/profil-agent/liste-des-enfants", icone: "family_restroom", libelle: "Liste des enfants", acces: { module: "Profil agent", fonction: "Liste des enfants" } },
+          { to: "/app/profil-agent/mes-documents-administratifs", icone: "folder_open", libelle: "Mes documents administratifs", acces: { module: "Profil agent", fonction: "Mes documents administratifs" } },
+        ],
+      }
     ],
   },
   {
