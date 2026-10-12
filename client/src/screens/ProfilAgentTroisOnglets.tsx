@@ -46,8 +46,12 @@ export function ProfilAgentTroisOnglets({ agent }: { agent: Dossier }) {
     /nom|prénom|naissance|sexe|mari|adresse|ville|téléphone|telephone|courriel|email|urgence|cni|identité/i.test(ligne.libelle)
   );
   const lignesAcademiques = lignesAdmin.filter((ligne) =>
-    /diplôme|diplome|étude|etude|formation initiale|spécialité|specialite|niveau académique|niveau academique/i.test(ligne.libelle)
+    /diplôme|diplome|étude|etude|formation initiale|spécialité|specialite|niveau académique|niveau academique|domaine de formation/i.test(ligne.libelle)
   );
+  const valeurAdmin = (motifs: RegExp): string | undefined => {
+    const ligne = lignesAdmin.find((item) => motifs.test(item.libelle));
+    return ligne?.valeur == null || !String(ligne.valeur).trim() ? undefined : String(ligne.valeur);
+  };
 
   function choisirFichier(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0] ?? null;
@@ -124,19 +128,44 @@ export function ProfilAgentTroisOnglets({ agent }: { agent: Dossier }) {
               </Bloc>
 
               <Bloc titre="Parcours académique" icone="school">
-                {lignesAcademiques.length ? (
-                  <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6">
-                    {lignesAcademiques.map((ligne) => <Champ key={ligne.libelle} label={ligne.libelle} value={ligne.valeur} />)}
-                  </dl>
-                ) : agent.formations.length ? (
-                  <p className="font-body-sm text-on-surface-variant">
-                    {agent.formations.length} formation(s) sont associées au dossier. Les intitulés détaillés des diplômes ne sont pas affichés ici, car les champs correspondants ne sont pas confirmés dans le type de données fourni.
-                  </p>
-                ) : <p className="font-body-sm text-on-surface-variant">Aucune information académique détaillée n’est disponible dans les données chargées.</p>}
+                <p className="font-body-sm text-on-surface-variant mb-3">Les champs ci-dessous sont prévus pour afficher le niveau d’études, le diplôme le plus élevé et le domaine de formation. Les valeurs restent « Non renseigné » si le dossier ne les fournit pas.</p>
+                <dl className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6">
+                  <Champ label="Niveau d’étude" value={valeurAdmin(/niveau.*(étude|etude|académique|academique)|étude|etude/i)} />
+                  <Champ label="Libellé du diplôme le plus élevé" value={valeurAdmin(/libellé.*diplôme|libelle.*diplome|diplôme.*élevé|diplome.*eleve|intitulé.*diplôme|intitule.*diplome/i)} />
+                  <Champ label="Domaine de formation" value={valeurAdmin(/domaine.*formation|spécialité|specialite|filière|filiere/i)} />
+                </dl>
+                <p className="font-body-sm text-on-surface-variant mt-3">Niveaux prévus : CEPE, BEPC, BAC, LICENCE, MASTER et DOCTORAT.</p>
               </Bloc>
 
-              <Bloc titre="Conjoint et enfants" icone="family_restroom">
-                <p className="font-body-sm text-on-surface-variant">Les informations concernant le conjoint et les enfants ne sont pas exposées dans les données actuellement disponibles de ce dossier. Elles pourront être affichées lorsqu’elles seront fournies par le backend.</p>
+              <Bloc titre="Liste du conjoint et des enfants" icone="family_restroom">
+                <h3 className="font-title-md text-title-md text-on-surface font-semibold mb-2">Conjoint</h3>
+                <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6">
+                  <Champ label="Nom et prénoms du conjoint" value={valeurAdmin(/conjoint.*(nom|prénom)|nom.*conjoint|époux|epoux|épouse|epouse/i)} />
+                  <Champ label="Contacts du conjoint" value={valeurAdmin(/contact.*conjoint|conjoint.*contact|téléphone.*conjoint|telephone.*conjoint/i)} />
+                </dl>
+
+                <div className="mt-6">
+                  <h3 className="font-title-md text-title-md text-on-surface font-semibold mb-2">Enfants à charge</h3>
+                  <div className="overflow-x-auto rounded-lg border border-hairline">
+                    <table className="w-full text-left text-sm">
+                      <thead className="bg-surface-container-low text-on-surface-variant">
+                        <tr>
+                          <th className="px-3 py-3 font-semibold">Nom et prénoms</th>
+                          <th className="px-3 py-3 font-semibold">Sexe</th>
+                          <th className="px-3 py-3 font-semibold">Date de naissance</th>
+                          <th className="px-3 py-3 font-semibold">Lieu de naissance</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td className="px-3 py-3 border-t border-hairline text-on-surface-variant" colSpan={4}>
+                            Aucune liste d’enfants structurée n’est disponible dans les données chargées. Les colonnes ci-dessus définissent les informations attendues pour chaque enfant.
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
               </Bloc>
             </div>
           )}
