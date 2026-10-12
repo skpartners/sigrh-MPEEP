@@ -31,7 +31,8 @@ import { EtiquettesTableaux } from "./ui/EtiquettesTableaux";
 import { PageMotion, TopProgress } from "./ui/Motion";
 import { TempsReelProvider } from "./ui/TempsReel";
 import { AgentScreen } from "./screens/AgentScreen";
-import { GrhScreen } from "./screens/GRHScreen";
+import { GrhScreen } from "./screens/GrhScreen";
+import { ActualiserInformationsAgent } from "./screens/ActualiserInformationsAgent";
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: false, refetchOnWindowFocus: false } },
@@ -61,7 +62,8 @@ export function App() {
 
               <Route path="/app/agents" element={<RequireAuth><AgentScreen /></RequireAuth>} />
               <Route path="/app/agents/:matricule" element={<RequireAuth><AgentScreen /></RequireAuth>} />
-
+              <Route path="/app/agents-actualisation-informations" element={<RequireAuth><ActualiserInformationsAgent /></RequireAuth>} />
+             
               <Route path="/app/grh" element={<RequireAuth><GrhScreen /></RequireAuth>} />
 
               <Route path="/app/carrieres" element={<RequireAuth><CarrieresScreen /></RequireAuth>} />

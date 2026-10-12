@@ -14,27 +14,197 @@ import { AppChrome } from "./AppChrome";
 const CARD = "rounded-xl bg-surface-container-lowest border border-hairline";
 const CHAMP = "w-full h-10 px-3 rounded border border-outline-variant bg-surface-container-lowest font-body-md text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-primary";
 
-const ENTREES_MENU: { groupe: string; titre: string; module: string; fonction: string }[] = [
-  { groupe: "Pilotage central", titre: "Tableau de bord", module: "Statistiques & RBAC", fonction: "Tableau de bord" },
-  { groupe: "Pilotage central", titre: "Mon profil", module: "Dossier Agent", fonction: "Consultation du dossier" },
-  { groupe: "Carrières & actes", titre: "Accueil", module: "Carrières & Actes", fonction: "Accueil" },
-  { groupe: "Carrières & actes", titre: "Situation administrative", module: "Carrières & Actes", fonction: "Situation administrative" },
-  { groupe: "Carrières & actes", titre: "Absences", module: "Carrières & Actes", fonction: "Absences" },
-  { groupe: "Carrières & actes", titre: "Congés", module: "Carrières & Actes", fonction: "Congés" },
-  { groupe: "Carrières & actes", titre: "Procédures disciplinaires", module: "Carrières & Actes", fonction: "Procédures disciplinaires" },
-  { groupe: "Carrières & actes", titre: "Fin de carrière", module: "Carrières & Actes", fonction: "Fin de carrière" },
-  { groupe: "Action sociale", titre: "Action sociale", module: "Social & Santé", fonction: "Action sociale" },
-  { groupe: "Formation continue", titre: "Formation continue", module: "Formations", fonction: "Formation continue" },
-  { groupe: "GPEC", titre: "GPEC", module: "GPEC", fonction: "GPEC" },
-  { groupe: "GPEC", titre: "Expression des besoins", module: "GPEC", fonction: "Expression des besoins" },
-  { groupe: "GPEC", titre: "Recrutement", module: "GPEC", fonction: "Recrutement" },
-  { groupe: "Métier", titre: "Communication", module: "Statistiques & RBAC", fonction: "Communication" },
-  { groupe: "Gouvernance", titre: "Statistiques", module: "Statistiques & RBAC", fonction: "Statistiques" },
-  { groupe: "Paramètres", titre: "Accueil", module: "Statistiques & RBAC", fonction: "Paramètres" },
-  { groupe: "Paramètres", titre: "Circuits de validation", module: "Statistiques & RBAC", fonction: "Circuits et habilitations" },
-  { groupe: "Paramètres", titre: "Habilitations", module: "Statistiques & RBAC", fonction: "Habilitations" },
-  { groupe: "Paramètres", titre: "Gestion des utilisateurs", module: "Statistiques & RBAC", fonction: "Comptes utilisateurs" },
-  { groupe: "Paramètres", titre: "Structures du ministère", module: "Statistiques & RBAC", fonction: "Structures du ministère" },
+const ENTREES_MENU: {
+  groupe: string;
+  titre: string;
+  module: string;
+  fonction: string;
+}[] = [
+  // PILOTAGE CENTRAL
+  {
+    groupe: "Pilotage central",
+    titre: "Tableau de bord",
+    module: "Statistiques & RBAC",
+    fonction: "Tableau de bord",
+  },
+  {
+    groupe: "Pilotage central",
+    titre: "Profil agent",
+    module: "Dossier Agent",
+    fonction: "Consultation du dossier",
+  },
+
+  // PROFIL AGENT
+  {
+    groupe: "Profil agent",
+    titre: "Accueil",
+    module: "Dossier Agent",
+    fonction: "Consultation du dossier",
+  },
+  {
+    groupe: "Profil agent",
+    titre: "Demandes d'actes",
+    module: "Dossier Agent",
+    fonction: "Demandes d'actes",
+  },
+  {
+    groupe: "Profil agent",
+    titre: "Actualiser mes informations",
+    module: "Dossier Agent",
+    fonction: "Actualisation des informations",
+  },
+
+  // CARRIÈRES ET ACTES / GRH
+  {
+    groupe: "Carrières & actes",
+    titre: "Accueil",
+    module: "Carrières & Actes",
+    fonction: "Accueil",
+  },
+  {
+    groupe: "Carrières & actes",
+    titre: "Situation administrative",
+    module: "Carrières & Actes",
+    fonction: "Situation administrative",
+  },
+  {
+    groupe: "Carrières & actes",
+    titre: "Absences",
+    module: "Carrières & Actes",
+    fonction: "Absences",
+  },
+  {
+    groupe: "Carrières & actes",
+    titre: "Congés",
+    module: "Carrières & Actes",
+    fonction: "Congés",
+  },
+  {
+    groupe: "Carrières & actes",
+    titre: "Procédures disciplinaires",
+    module: "Carrières & Actes",
+    fonction: "Procédures disciplinaires",
+  },
+  {
+    groupe: "Carrières & actes",
+    titre: "Fin de carrière",
+    module: "Carrières & Actes",
+    fonction: "Fin de carrière",
+  },
+  {
+    groupe: "GRH",
+    titre: "Accueil",
+    module: "GRH",
+    fonction: "Accueil",
+  },
+  {
+    groupe: "GRH",
+    titre: "Gestion des carrières",
+    module: "GRH",
+    fonction: "Gestion des carrières",
+  },
+  {
+    groupe: "GRH",
+    titre: "Action sociale",
+    module: "GRH",
+    fonction: "Action sociale",
+  },
+  {
+    groupe: "GRH",
+    titre: "Formation continue",
+    module: "GRH",
+    fonction: "Formation continue",
+  },
+  {
+    groupe: "GRH",
+    titre: "Programmations des effectifs",
+    module: "GRH",
+    fonction: "Programmations des effectifs",
+  },
+
+  // ACTION SOCIALE
+  {
+    groupe: "Action sociale",
+    titre: "Action sociale",
+    module: "Social & Santé",
+    fonction: "Action sociale",
+  },
+
+  // FORMATION
+  {
+    groupe: "Formation continue",
+    titre: "Formation continue",
+    module: "Formations",
+    fonction: "Formation continue",
+  },
+
+  // GPEC
+  {
+    groupe: "GPEC",
+    titre: "GPEC",
+    module: "GPEC",
+    fonction: "GPEC",
+  },
+  {
+    groupe: "GPEC",
+    titre: "Expression des besoins",
+    module: "GPEC",
+    fonction: "Expression des besoins",
+  },
+  {
+    groupe: "GPEC",
+    titre: "Recrutement",
+    module: "GPEC",
+    fonction: "Recrutement",
+  },
+
+  // COMMUNICATION
+  {
+    groupe: "Métier",
+    titre: "Communication",
+    module: "Statistiques & RBAC",
+    fonction: "Communication",
+  },
+
+  // STATISTIQUES
+  {
+    groupe: "Gouvernance",
+    titre: "Statistiques",
+    module: "Statistiques & RBAC",
+    fonction: "Statistiques",
+  },
+
+  // PARAMÈTRES ET ADMINISTRATION
+  {
+    groupe: "Paramètres",
+    titre: "Accueil",
+    module: "Statistiques & RBAC",
+    fonction: "Paramètres",
+  },
+  {
+    groupe: "Paramètres",
+    titre: "Circuits de validation",
+    module: "Statistiques & RBAC",
+    fonction: "Circuits et habilitations",
+  },
+  {
+    groupe: "Paramètres",
+    titre: "Habilitations",
+    module: "Statistiques & RBAC",
+    fonction: "Habilitations",
+  },
+  {
+    groupe: "Paramètres",
+    titre: "Gestion des utilisateurs",
+    module: "Statistiques & RBAC",
+    fonction: "Comptes utilisateurs",
+  },
+  {
+    groupe: "Paramètres",
+    titre: "Structures du ministère",
+    module: "Statistiques & RBAC",
+    fonction: "Structures du ministère",
+  },
 ];
 
 function groupesMenu(entrees: typeof ENTREES_MENU): { titre: string; taille: number; simple: boolean }[] {
