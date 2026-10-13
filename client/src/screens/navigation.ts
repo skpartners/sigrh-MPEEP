@@ -1,4 +1,3 @@
-
 import type { SessionUser } from "../api/types";
 
 export type AccesMenu = {
@@ -29,6 +28,13 @@ export type SectionNav = {
   liens: LienNav[];
 };
 
+/**
+ * Configuration centrale de la navigation du SIGRH.
+ *
+ * IMPORTANT :
+ * Les noms des modules et des fonctions doivent correspondre
+ * aux clés des habilitations renvoyées par Django.
+ */
 export const NAV: SectionNav[] = [
   {
     groupe: "Pilotage central",
@@ -102,12 +108,13 @@ export const NAV: SectionNav[] = [
     liens: [
       {
         to: "/app/grh",
+        end: true,
         icone: "assignment",
         libelle: "GRH",
         resume:
           "La GRH permet d'assurer la gestion des carrières, des congés, des absences, des procédures disciplinaires, des fins de carrière, de la formation continue et de la programmation des effectifs.",
         acces: {
-          module: "Carrières & Actes",
+          module: "GRH",
           fonction: "Accueil",
         },
         enfants: [
@@ -122,7 +129,7 @@ export const NAV: SectionNav[] = [
             },
           },
           {
-            to: "/app/grh/gestion-des-carrieres",
+            to: "/app/grh/gestion-carrieres",
             icone: "work_history",
             libelle: "Gestion des carrières",
             acces: {
@@ -149,12 +156,12 @@ export const NAV: SectionNav[] = [
             },
           },
           {
-            to: "/app/grh/programmation-des-effectifs",
+            to: "/app/grh/programmation-effectifs",
             icone: "groups",
-            libelle: "Programmations des effectifs",
+            libelle: "Programmation des effectifs",
             acces: {
               module: "GRH",
-              fonction: "Programmations des effectifs",
+              fonction: "Programmation des effectifs",
             },
           },
         ],
@@ -251,8 +258,23 @@ export const NAV: SectionNav[] = [
 ];
 
 /**
- * Retourne le droit précis de la fonction si défini.
- * Sinon, utilise le droit du module.
+ * Normalise une valeur de droit pour éviter les problèmes
+ * de casse et d'espaces en début ou en fin de chaîne.
+ */
+function normaliserDroit(droit: unknown): string | null {
+  if (typeof droit !== "string") return null;
+
+  const valeur = droit.trim().toLowerCase();
+  return valeur || null;
+}
+
+/**
+ * Retourne le droit de la fonction si celui-ci est défini.
+ *
+ * Si le droit de la fonction n'est pas présent, le droit
+ * global du module est utilisé.
+ *
+ * Un refus explicite au niveau de la fonction reste prioritaire.
  */
 export function droitMenu(
   acces: SessionUser["acces"],
@@ -261,26 +283,34 @@ export function droitMenu(
   if (!acces) return "refus";
 
   if (cle.fonction) {
-    const detail = acces.fonctions?.[`${cle.module}|${cle.fonction}`];
+    const cleFonction = `${cle.module}|${cle.fonction}`;
+    const detail = normaliserDroit(acces.fonctions?.[cleFonction]);
 
-    if (detail) return detail;
+    if (detail !== null) {
+      return detail;
+    }
   }
 
-  return acces.modules?.[cle.module] ?? "refus";
+  const module = normaliserDroit(acces.modules?.[cle.module]);
+
+  return module ?? "refus";
 }
 
 /**
- * Un lien est autorisé si son droit n'est pas refusé.
+ * Vérifie si un droit permet d'afficher un lien.
  */
 export function menuAutorise(
   acces: SessionUser["acces"],
   cle: AccesMenu,
 ): boolean {
-  return droitMenu(acces, cle) !== "refus";
+  const droit = droitMenu(acces, cle);
+
+  return droit !== "refus" && droit !== "interdit";
 }
 
 /**
- * Un module est ouvert si le parent ou au moins un enfant est autorisé.
+ * Un module est accessible si le parent ou au moins
+ * un de ses enfants est accessible.
  */
 export function moduleAutorise(
   acces: SessionUser["acces"],
@@ -288,66 +318,33 @@ export function moduleAutorise(
 ): boolean {
   return (
     menuAutorise(acces, lien.acces) ||
-    sousMenus(lien).some((enfant) => menuAutorise(acces, enfant.acces))
+    sousMenus(lien).some((enfant) =>
+      menuAutorise(acces, enfant.acces),
+    )
   );
 }
 
 /**
- * Destination du module : parent autorisé, sinon premier enfant autorisé.
+ * Détermine la première destination accessible du module.
  */
-
 export function destinationModule(
   acces: SessionUser["acces"],
   lien: LienNav,
 ): string {
-  if (menuAutorise(acces, lien.acces)) return lien.to;
-
-  return (
-    sousMenus(lien).find((enfant) =>
-      menuAutorise(acces, enfant.acces),
-    )?.to ?? "/app"
-  );
-}
-
-
-/**
- * Détermine si la page courante est interdite.
- */
-export function pageHorsHabilitation(
-  pathname: string,
-  hash: string,
-  acces: SessionUser["acces"],
-): boolean {
-  if (!acces) return false;
-
-  const choisi = pageCourante(pathname, hash);
-
-  return choisi ? !menuAutorise(acces, choisi.acces) : false;
-}
-
-/**
- * Redirige vers une page autorisée du même module.
- */
-export function repliHabilitation(
-  pathname: string,
-  hash: string,
-  acces: SessionUser["acces"],
-): string | null {
-  if (!acces || !pageHorsHabilitation(pathname, hash, acces)) {
-    return null;
+  if (menuAutorise(acces, lien.acces)) {
+    return lien.to;
   }
 
-  const menu = menuCourant(pathname, hash);
-
-  if (!menu) return "/app";
-
-  const ouvert = [menu, ...sousMenus(menu)].find((item) =>
-    menuAutorise(acces, item.acces),
+  const enfantAutorise = sousMenus(lien).find((enfant) =>
+    menuAutorise(acces, enfant.acces),
   );
 
-  return ouvert?.to ?? "/app";
+  return enfantAutorise?.to ?? "/app";
 }
 
+/**
+ * Recense les liens comportant une ancre.
+ */
 const ANCRES = NAV.flatMap((section) =>
   section.liens.flatMap((lien) => [
     lien.to,
@@ -356,7 +353,7 @@ const ANCRES = NAV.flatMap((section) =>
 ).filter((to) => to.includes("#"));
 
 /**
- * Gère correctement l'état actif des liens avec ou sans ancre.
+ * Détermine si un lien est actif.
  */
 export function lienActif(
   to: string,
@@ -366,25 +363,40 @@ export function lienActif(
 ): boolean {
   const [chemin, ancre] = to.split("#");
 
-  if (ancre) return pathname === chemin && hash === `#${ancre}`;
+  if (ancre) {
+    return pathname === chemin && hash === `#${ancre}`;
+  }
 
-  if (ANCRES.includes(`${pathname}${hash}`)) return false;
+  // Évite qu'une route sans ancre soit active lorsqu'une
+  // ancre distincte est sélectionnée sur la même page.
+  if (ANCRES.includes(`${pathname}${hash}`)) {
+    return false;
+  }
 
   return end
     ? pathname === chemin
     : pathname === chemin || pathname.startsWith(`${chemin}/`);
 }
 
+/**
+ * Représentation commune des pages de navigation.
+ */
+type PageNav = {
+  to: string;
+  end?: boolean;
+  acces: AccesMenu;
+  libelle: string;
+};
+
+/**
+ * Recherche la page correspondant au chemin courant.
+ * La correspondance la plus précise est prioritaire.
+ */
 function pageCourante(
   pathname: string,
   hash: string,
-): { acces: AccesMenu; libelle: string } | null {
-  const candidats: {
-    to: string;
-    end?: boolean;
-    acces: AccesMenu;
-    libelle: string;
-  }[] = [];
+): PageNav | null {
+  const candidats: PageNav[] = [];
 
   for (const section of NAV) {
     for (const lien of section.liens) {
@@ -400,9 +412,59 @@ function pageCourante(
     lienActif(item.to, item.end, pathname, hash),
   );
 
-  actifs.sort((a, b) => b.to.length - a.to.length);
+  actifs.sort((a, b) => {
+    if (b.to.length !== a.to.length) {
+      return b.to.length - a.to.length;
+    }
+
+    // En cas d'égalité, privilégie une correspondance exacte.
+    const exactA = pathname === a.to ? 1 : 0;
+    const exactB = pathname === b.to ? 1 : 0;
+
+    return exactB - exactA;
+  });
 
   return actifs[0] ?? null;
+}
+
+/**
+ * Détermine si la page actuelle est hors habilitation.
+ */
+export function pageHorsHabilitation(
+  pathname: string,
+  hash: string,
+  acces: SessionUser["acces"],
+): boolean {
+  if (!acces) return false;
+
+  const page = pageCourante(pathname, hash);
+
+  // Une route qui n'est pas déclarée dans NAV n'est pas
+  // évaluée par cette fonction.
+  return page ? !menuAutorise(acces, page.acces) : false;
+}
+
+/**
+ * Propose une destination accessible dans le même module.
+ */
+export function repliHabilitation(
+  pathname: string,
+  hash: string,
+  acces: SessionUser["acces"],
+): string | null {
+  if (!acces || !pageHorsHabilitation(pathname, hash, acces)) {
+    return null;
+  }
+
+  const menu = menuCourant(pathname, hash);
+
+  if (!menu) return "/app";
+
+  const destination = [menu, ...sousMenus(menu)].find((item) =>
+    menuAutorise(acces, item.acces),
+  );
+
+  return destination?.to ?? "/app";
 }
 
 /**
@@ -416,12 +478,14 @@ export function libellePage(
 }
 
 /**
- * Les enfants sont affichés uniquement s'ils sont distincts du parent.
+ * Retourne les enfants distincts du lien parent.
  */
 export function sousMenus(lien: LienNav): EnfantNav[] {
   const enfants = lien.enfants ?? [];
 
-  return enfants.some((enfant) => enfant.to !== lien.to) ? enfants : [];
+  return enfants.some((enfant) => enfant.to !== lien.to)
+    ? enfants
+    : [];
 }
 
 /**
@@ -432,15 +496,19 @@ export function menuCourant(
   hash: string,
 ): LienNav | null {
   let choisi: LienNav | null = null;
-  let score = -1;
+  let longueurMax = -1;
 
   for (const section of NAV) {
     for (const lien of section.liens) {
-      for (const cible of [lien, ...(lien.enfants ?? [])]) {
-        if (!lienActif(cible.to, cible.end, pathname, hash)) continue;
+      const cibles = [lien, ...(lien.enfants ?? [])];
 
-        if (cible.to.length > score) {
-          score = cible.to.length;
+      for (const cible of cibles) {
+        if (!lienActif(cible.to, cible.end, pathname, hash)) {
+          continue;
+        }
+
+        if (cible.to.length > longueurMax) {
+          longueurMax = cible.to.length;
           choisi = lien;
         }
       }

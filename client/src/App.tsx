@@ -35,6 +35,7 @@ import { GrhScreen } from "./screens/GrhScreen";
 import ActualiserInformationsAgents from "./screens/ActualiserInformationsAgents";
 import { ActualiserMesInformationsAgent } from "./screens/ActualiserMesInformationsAgent";
 import DemandeActes from "./screens/DemandeActes";
+import GestionCarrieres from "./screens/GestionCarrieres";
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: false, refetchOnWindowFocus: false } },
@@ -69,6 +70,9 @@ export function App() {
               <Route path="/app/agents/demandes-d-actes" element={<RequireAuth><DemandeActes /></RequireAuth>} />
 
               <Route path="/app/grh" element={<RequireAuth><GrhScreen /></RequireAuth>} />
+              <Route path="/app/grh/gestion-carrieres" element={<RequireAuth><GestionCarrieres /></RequireAuth>} />
+              <Route path="/app/grh/action-sociale" element={<RequireAuth><SocialScreen /></RequireAuth>}/>
+              <Route path="/app/grh/formation-continue" element={<RequireAuth><FormationScreen /></RequireAuth>}/>
 
               <Route path="/app/carrieres" element={<RequireAuth><CarrieresScreen /></RequireAuth>} />
               <Route path="/app/carrieres/dotation" element={<Navigate to="/app/gpec/recrutement" replace />} />

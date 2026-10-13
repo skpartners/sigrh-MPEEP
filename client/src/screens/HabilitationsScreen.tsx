@@ -101,43 +101,43 @@ const ENTREES_MENU: {
 
   // GRH
   {
-    groupe: "GRH",
+    groupe: "Métier",
     titre: "Accueil",
     module: "GRH",
     fonction: "Accueil",
   },
   {
-    groupe: "GRH",
+    groupe: "Métier",
     titre: "Gestion des carrières",
     module: "GRH",
     fonction: "Gestion des carrières",
   },
   {
-    groupe: "GRH",
+    groupe: "Métier",
     titre: "Action sociale",
     module: "GRH",
     fonction: "Action sociale",
   },
   {
-    groupe: "GRH",
+    groupe: "Métier",
     titre: "Formation continue",
     module: "GRH",
     fonction: "Formation continue",
   },
   {
-    groupe: "GRH",
+    groupe: "Métier",
     titre: "Programmations des effectifs",
     module: "GRH",
     fonction: "Programmations des effectifs",
   },
 
   // ACTION SOCIALE
-  {
-    groupe: "Action sociale",
-    titre: "Action sociale",
-    module: "Social & Santé",
-    fonction: "Action sociale",
-  },
+  // {
+  //   groupe: "Action sociale",
+  //   titre: "Action sociale",
+  //   module: "Social & Santé",
+  //   fonction: "Action sociale",
+  // },
 
   // FORMATION
   {
