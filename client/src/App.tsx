@@ -32,7 +32,9 @@ import { PageMotion, TopProgress } from "./ui/Motion";
 import { TempsReelProvider } from "./ui/TempsReel";
 import { AgentScreen } from "./screens/AgentScreen";
 import { GrhScreen } from "./screens/GrhScreen";
-import { ActualiserInformationsAgent } from "./screens/ActualiserInformationsAgent";
+import ActualiserInformationsAgents from "./screens/ActualiserInformationsAgents";
+import { ActualiserMesInformationsAgent } from "./screens/ActualiserMesInformationsAgent";
+import DemandeActes from "./screens/DemandeActes";
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: false, refetchOnWindowFocus: false } },
@@ -62,8 +64,10 @@ export function App() {
 
               <Route path="/app/agents" element={<RequireAuth><AgentScreen /></RequireAuth>} />
               <Route path="/app/agents/:matricule" element={<RequireAuth><AgentScreen /></RequireAuth>} />
-              <Route path="/app/agents-actualisation-informations" element={<RequireAuth><ActualiserInformationsAgent /></RequireAuth>} />
-             
+              <Route path="/app/agents-actualiser-informations" element={<RequireAuth><ActualiserInformationsAgents /></RequireAuth>} />
+              <Route path="/app/agents-actualiser-mes-informations" element={<RequireAuth><ActualiserMesInformationsAgent /></RequireAuth>} />
+              <Route path="/app/agents/demandes-d-actes" element={<RequireAuth><DemandeActes /></RequireAuth>} />
+
               <Route path="/app/grh" element={<RequireAuth><GrhScreen /></RequireAuth>} />
 
               <Route path="/app/carrieres" element={<RequireAuth><CarrieresScreen /></RequireAuth>} />

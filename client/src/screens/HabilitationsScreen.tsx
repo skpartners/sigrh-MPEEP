@@ -14,6 +14,7 @@ import { AppChrome } from "./AppChrome";
 const CARD = "rounded-xl bg-surface-container-lowest border border-hairline";
 const CHAMP = "w-full h-10 px-3 rounded border border-outline-variant bg-surface-container-lowest font-body-md text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-primary";
 
+
 const ENTREES_MENU: {
   groupe: string;
   titre: string;
@@ -53,8 +54,14 @@ const ENTREES_MENU: {
     module: "Dossier Agent",
     fonction: "Actualisation des informations",
   },
+  {
+    groupe: "Profil agent",
+    titre: "Actualiser informations agents",
+    module: "Dossier Agent",
+    fonction: "Actualisation des informations agents",
+  },
 
-  // CARRIÈRES ET ACTES / GRH
+  // CARRIÈRES ET ACTES
   {
     groupe: "Carrières & actes",
     titre: "Accueil",
@@ -91,6 +98,8 @@ const ENTREES_MENU: {
     module: "Carrières & Actes",
     fonction: "Fin de carrière",
   },
+
+  // GRH
   {
     groupe: "GRH",
     titre: "Accueil",
@@ -174,7 +183,7 @@ const ENTREES_MENU: {
     fonction: "Statistiques",
   },
 
-  // PARAMÈTRES ET ADMINISTRATION
+  // PARAMÈTRES
   {
     groupe: "Paramètres",
     titre: "Accueil",
@@ -206,6 +215,7 @@ const ENTREES_MENU: {
     fonction: "Structures du ministère",
   },
 ];
+
 
 function groupesMenu(entrees: typeof ENTREES_MENU): { titre: string; taille: number; simple: boolean }[] {
   const groupes: { titre: string; taille: number; simple: boolean }[] = [];
