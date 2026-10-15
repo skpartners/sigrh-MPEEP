@@ -8,7 +8,7 @@ import { reducedMotion, useSlideNavigate } from "../ui/Motion";
 import { PublicHeaderNav } from "./PublicHeaderNav";
 import { useHauteurFixe } from "../ui/HauteurFixe";
 import { Icone } from "../ui/Icone";
-import { LogoMinistere, useLogo } from "../ui/Logo";
+import { LogoMinistere, srcArmoiries } from "../ui/Logo";
 
 /** Extrait l'entier de tête d'une chaîne (ex : "1 247 agents" → 1247) et anime le comptage.
  *  Si la valeur ne commence pas par un chiffre, elle s'affiche directement sans animation. */
@@ -86,7 +86,6 @@ function ChiffreAnime({ chiffre, ton }: { chiffre: { valeur: string; libelle: st
 const TONS_CHIFFRE = ["text-secondary", "text-primary", "text-tertiary"];
 
 export function HomeScreen() {
-  const logo = useLogo();
   const enteteRef = useRef<HTMLElement>(null);
   useHauteurFixe(enteteRef, "--haut-entete");
   const slideTo = useSlideNavigate();
@@ -225,8 +224,8 @@ export function HomeScreen() {
                 <div className={"relative w-full max-w-xs aspect-square overflow-hidden rounded-full bg-primary-container border border-primary-fixed/20 shadow-xl"}>
                   <img
                     alt={nomMinistre ? `Portrait de ${nomMinistre}` : portrait ? "Portrait de la ministre" : "Armoiries de la République de Côte d'Ivoire"}
-                    className={"absolute inset-0 h-full w-full object-cover"}
-                    src={portrait || logo.src}
+                    className={portrait ? "absolute inset-0 h-full w-full object-cover" : "absolute inset-[12%] h-[76%] w-[76%] object-contain"}
+                    src={portrait || srcArmoiries()}
                   />
                 </div>
                 <div className={"text-center"}>

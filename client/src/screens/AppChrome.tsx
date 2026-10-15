@@ -283,28 +283,21 @@ export function AppChrome({ children, sansSidebar = false, actions }: { children
       <footer ref={piedRef} className="app-pied fixed tres-court:static bottom-0 inset-x-0 z-50 bg-white/15 backdrop-blur-2xl border-t border-white/10 shadow-[0_-1px_16px_color-mix(in_oklab,var(--color-primary)_8%,transparent)] py-3 sm:py-4 court:py-2 px-4 sm:px-8">
         {/* Ligne accent animée — Jitter gradient sweep (footer) */}
         <div className="motion-gradient-sweep absolute top-0 left-0 right-0 h-0.5" aria-hidden="true" />
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-3 text-center sm:text-left">
-          <div className="flex items-center gap-2.5">
-            <LogoMinistere alt="" className="h-7 w-7 object-contain opacity-50 shrink-0"  aria-hidden="true" />
-            <div className="flex flex-col text-left">
-              <span className="font-label-md text-label-md font-bold flex items-center gap-0.5">
-                <span className="text-primary">SIGRH</span>
-                <span className="text-secondary">·</span>
-                <span className="text-primary">MPEEP</span>
-              </span>
-              <span className="hidden sm:block court:hidden font-label-sm text-label-sm text-on-surface-variant leading-none">
-                Ministère du Portefeuille de l'État et des Entreprises Publiques
-              </span>
-            </div>
-          </div>
-          <nav className="flex flex-wrap items-center justify-center sm:justify-end gap-x-4 gap-y-1" aria-label="Informations légales">
-            <Link to="/conditions-generales" className="font-label-sm text-label-sm font-semibold text-on-surface-variant hover:text-primary transition-colors">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-4">
+          <p className="font-label-sm text-label-sm text-on-surface-variant text-center sm:text-left">
+            © {new Date().getFullYear()} République de Côte d'Ivoire
+          </p>
+          <nav className="flex flex-wrap items-center justify-center sm:justify-end gap-x-4 gap-y-1" aria-label="Informations légales et assistance">
+            <Link to="/app/aide" className={LIEN_PIED}>
+              Aide
+            </Link>
+            <Link to="/conditions-generales" className={LIEN_PIED}>
               CGU
             </Link>
-            <Link to="/confidentialite" className="font-label-sm text-label-sm font-semibold text-on-surface-variant hover:text-primary transition-colors">
+            <Link to="/confidentialite" className={LIEN_PIED}>
               Confidentialité
             </Link>
-            <Link to="/protection-des-donnees" className="font-label-sm text-label-sm font-semibold text-on-surface-variant hover:text-primary transition-colors">
+            <Link to="/protection-des-donnees" className={LIEN_PIED}>
               Protection des données
             </Link>
           </nav>
@@ -313,6 +306,8 @@ export function AppChrome({ children, sansSidebar = false, actions }: { children
     </div>
   );
 }
+
+const LIEN_PIED = "font-label-sm text-label-sm font-semibold text-on-surface-variant hover:text-primary transition-colors";
 
 const PAGES_FIXES: Record<string, { libelle: string; icone: string; resume: string }> = {
   "/app/aide": { libelle: "Aide & documentation", icone: "help", resume: "Guides d'utilisation et explications détaillées des modules du SIGRH." },
