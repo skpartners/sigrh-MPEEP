@@ -24,6 +24,13 @@ type Procedure = {
   stade_detail: string;
   avis: Avis;
   avis_libelle: string;
+  phase: string;
+  phase_libelle: string;
+  decision: string;
+  sanction_nature: string;
+  sanction_libelle: string;
+  date_decision: string;
+  executee_le: string;
 };
 type Teinte = "primary" | "secondary" | "error";
 type DegreEchelle = {
@@ -38,11 +45,13 @@ type Registre = {
   registre_texte: { titre?: string; texte?: string };
   calendrier: { titre?: string; texte?: string };
   amnistie: { titre?: string; sous_titre?: string; regle?: string; texte?: string; mention?: string; vide?: string };
-  suivi: { titre?: string; texte?: string };
   indicateurs: { instruction: number; dans_les_delais: number; sanctions_premier_degre: number; avertissements: number; blames: number; sessions: number; second_degre: number };
   regularite: { taux?: number; detail?: string; controle?: string; visa?: string };
   procedures: Procedure[];
   etats_session: { code: string; libelle: string }[];
+  phases: { code: string; libelle: string }[];
+  avis_possibles: { code: string; libelle: string }[];
+  natures_sanction: { code: string; libelle: string }[];
   sessions: { code: string; intitule: string; date: string; etat: "convoquee" | "a_confirmer" | "tenue"; etat_libelle: string; ordre_du_jour: string; description: string; composition: string[]; lieu: string }[];
   effacements: { agent: AgentBrief; nature: string; annee: number; le: string }[];
   agents: { matricule: string; nom_complet: string; organisme_sigle: string }[];
@@ -66,7 +75,6 @@ const ICONE_AVIS: Record<Avis, string> = {
   classee: "folder_off",
 };
 const MOIS = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."];
-const JOURS = ["Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"];
 
 function jourLocal(): string {
   const quand = new Date();
@@ -76,11 +84,6 @@ function jourLocal(): string {
 function dateCourte(iso: string): string {
   const [annee, mois, jour] = iso.slice(0, 10).split("-").map(Number);
   return `${String(jour).padStart(2, "0")} ${MOIS[mois - 1]} ${annee}`;
-}
-
-function dateSeance(iso: string): string {
-  const quand = new Date(iso);
-  return `${JOURS[quand.getDay()]} ${dateCourte(iso)} • ${String(quand.getHours()).padStart(2, "0")}:${String(quand.getMinutes()).padStart(2, "0")}`;
 }
 
 function deuxChiffres(valeur: number | undefined): string {
@@ -95,10 +98,9 @@ export function DisciplineScreen() {
   const [page, setPage] = useState(1);
   const [saisie, setSaisie] = useState(false);
   const [dossier, setDossier] = useState<Procedure | null>(null);
-  const [seance, setSeance] = useState(false);
+  const [edition, setEdition] = useState<Procedure | null>(null);
   const donnees = registre.data;
   const indicateurs = donnees?.indicateurs;
-  const delai = donnees?.regles.delai_jours ?? 30;
   const degres = donnees?.echelle.degres ?? [];
   const procedures = donnees?.procedures ?? [];
   const filtrees = useMemo(
@@ -109,13 +111,12 @@ export function DisciplineScreen() {
   const pageCourante = Math.min(page, pages);
   const visibles = filtrees.slice((pageCourante - 1) * PAR_PAGE, pageCourante * PAR_PAGE);
   const entites = [...new Set(procedures.map((item) => item.agent.organisme_sigle))].sort();
-  const prochaine = donnees?.sessions[0];
 
   return (
     <AppChrome>
       <div className="flex flex-col w-full">
         <div className="px-6 lg:px-8 py-6 space-y-8 mx-auto w-full">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 motion-rise">
+          <section className="bg-surface-container-lowest p-6 rounded-xl relative overflow-hidden flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 motion-rise">
             <div className="space-y-1.5">
               <nav className="flex flex-wrap items-center gap-2 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">
                 {(donnees?.entete.fil ?? []).map((etape, index, fil) => (
@@ -140,16 +141,16 @@ export function DisciplineScreen() {
             <div className="flex flex-wrap items-center gap-3 shrink-0">
               <button className="inline-flex items-center gap-2 px-3 py-1.5 rounded bg-primary text-on-primary font-label-md text-label-md font-semibold hover:bg-primary-container transition-colors" type="button" onClick={() => setSaisie(true)}>
                 <Icone nom="add_moderator" className="text-lg" />
-                <span>Saisir la commission paritaire</span>
+                <span>Saisir une sanction</span>
               </button>
             </div>
-          </div>
+          </section>
           {/* Indicateurs */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Indicateur index={0} titre="Dossiers en instruction" icone="pending_actions" liseret="bg-secondary-container" teinte="text-secondary" valeur={deuxChiffres(indicateurs?.instruction)} legende="Phase contradictoire active" legendeCouleur="text-secondary font-semibold" pied={`Délai d'instruction de ${delai} jours`} piedValeur={indicateurs ? `${indicateurs.dans_les_delais} dans les délais` : "—"} piedCouleur="text-primary" />
-            <Indicateur index={1} titre={`Sanctions du 1er degré (${donnees?.exercice ?? ""})`} icone="assignment_late" liseret="bg-primary" teinte="text-primary" valeur={deuxChiffres(indicateurs?.sanctions_premier_degre)} legende="Actes notifiés" pied={indicateurs ? `${indicateurs.avertissements} avertissement${indicateurs.avertissements > 1 ? "s" : ""} • ${indicateurs.blames} blâme${indicateurs.blames > 1 ? "s" : ""}` : "—"} piedValeur="Notifiés RH" piedCouleur="text-on-surface" />
-            <Indicateur index={2} titre="Sessions paritaires à venir" icone="groups" liseret="bg-secondary" teinte="text-secondary" valeur={deuxChiffres(indicateurs?.sessions)} legende={prochaine ? `Prochaine : ${dateCourte(prochaine.date)}` : "Aucune session fixée"} legendeCouleur="text-secondary font-semibold" pied="Dossiers du 2nd degré" piedValeur={indicateurs ? String(indicateurs.second_degre) : "—"} piedCouleur="text-secondary" />
-            <Indicateur index={3} titre="Régularité & contradictoire" icone="fact_check" liseret="bg-primary-container" teinte="text-primary" valeur={donnees?.regularite.taux != null ? `${donnees.regularite.taux}%` : "—"} valeurCouleur="text-primary" legende={donnees?.regularite.detail ?? ""} pied={donnees?.regularite.controle ?? ""} piedValeur={donnees?.regularite.visa ?? ""} piedCouleur="text-primary" />
+            <Indicateur index={0} titre="Dossiers en instruction" icone="pending_actions" liseret="bg-secondary-container" teinte="text-secondary" valeur={deuxChiffres(indicateurs?.instruction)} />
+            <Indicateur index={1} titre={`Sanctions du 1er degré (${donnees?.exercice ?? ""})`} icone="assignment_late" liseret="bg-primary" teinte="text-primary" valeur={deuxChiffres(indicateurs?.sanctions_premier_degre)} />
+            <Indicateur index={2} titre="Sessions paritaires à venir" icone="groups" liseret="bg-secondary" teinte="text-secondary" valeur={deuxChiffres(indicateurs?.sessions)} />
+            <Indicateur index={3} titre="Procédures dans les délais" icone="fact_check" liseret="bg-primary-container" teinte="text-primary" valeur={donnees?.regularite.taux != null ? `${donnees.regularite.taux}%` : "—"} valeurCouleur="text-primary" />
           </div>
           {donnees?.echelle.titre ? (
             <div className="bg-surface-container-lowest rounded-xl shadow-sm p-6 space-y-4">
@@ -224,30 +225,28 @@ export function DisciplineScreen() {
               <table className="w-full text-left">
                 <thead>
                   <tr className="bg-surface-container-low text-on-surface-variant font-label-md text-label-md tracking-wider uppercase">
-                    <th className="py-3.5 px-6 font-semibold">Réf. procédure</th>
-                    <th className="py-3.5 px-6 font-semibold">Agent mis en cause & société</th>
-                    <th className="py-3.5 px-6 font-semibold">Nature du grief</th>
-                    <th className="py-3.5 px-6 font-semibold">Rapporteur & délais ({delai} j)</th>
-                    <th className="py-3.5 px-6 font-semibold" data-min="">Stade du contradictoire</th>
-                    <th className="py-3.5 px-6 font-semibold">Avis</th>
-                    <th className="py-3.5 px-6 text-right font-semibold">Actions</th>
+                    <th className="py-3 px-6 font-semibold">Procédure</th>
+                    <th className="py-3 px-6 font-semibold">Agent</th>
+                    <th className="py-3 px-6 font-semibold">Grief</th>
+                    <th className="py-3 px-6 font-semibold">Phase</th>
+                    <th className="py-3 px-6 text-right font-semibold"><span className="sr-only">Actions</span></th>
                   </tr>
                 </thead>
                 <tbody className="text-on-surface font-body-sm text-body-sm">
                   {registre.isPending ? (
                     <tr>
-                      <td colSpan={7} className="py-4 px-6"><Skeleton className="h-10 w-full" /></td>
+                      <td colSpan={5} className="py-4 px-6"><Skeleton className="h-10 w-full" /></td>
                     </tr>
                   ) : registre.isError ? (
                     <tr>
-                      <td colSpan={7} className="py-6 px-6 text-error">Le registre disciplinaire n'a pas pu être chargé.</td>
+                      <td colSpan={5} className="py-6 px-6 text-error">Le registre disciplinaire n'a pas pu être chargé.</td>
                     </tr>
                   ) : visibles.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="py-6 px-6 text-on-surface-variant">Aucune procédure ne correspond à ces filtres.</td>
+                      <td colSpan={5} className="py-6 px-6 text-on-surface-variant">Aucune procédure ne correspond à ces filtres.</td>
                     </tr>
                   ) : (
-                    visibles.map((item) => <LigneProcedure key={item.id} procedure={item} delai={delai} onOuvrir={() => setDossier(item)} />)
+                    visibles.map((item) => <LigneProcedure key={item.id} procedure={item} onOuvrir={() => setDossier(item)} onModifier={() => setEdition(item)} />)
                   )}
                 </tbody>
               </table>
@@ -267,128 +266,17 @@ export function DisciplineScreen() {
               </div>
             </div>
           </div>
-          {/* Sessions paritaires et effacements */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            <div className="lg:col-span-7 bg-surface-container-lowest rounded-xl shadow-sm p-6 space-y-6">
-              <div className="flex flex-wrap items-center justify-between gap-3 pb-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded bg-surface-container-low text-primary flex items-center justify-center font-bold">
-                    <Icone nom="event_available" className="text-xl" />
-                  </div>
-                  <div>
-                    <h2 className="font-headline-sm text-headline-sm text-on-surface font-bold">{donnees?.calendrier.titre}</h2>
-                    {donnees?.calendrier.texte ? <p className="font-label-sm text-label-sm text-on-surface-variant">{donnees.calendrier.texte}</p> : null}
-                  </div>
-                </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  {prochaine?.lieu ? <span className="px-2.5 py-1 bg-surface-container text-on-surface rounded font-code-num text-code-num font-semibold">{prochaine.lieu}</span> : null}
-                  <button className="inline-flex items-center gap-2 px-3 py-2 rounded bg-primary text-on-primary font-label-md text-label-md font-semibold hover:bg-primary-container transition-colors" type="button" onClick={() => setSeance(true)}>
-                    <Icone nom="event" className="text-lg" />
-                    Fixer une session
-                  </button>
-                </div>
-              </div>
-              <div className="space-y-4">
-                {(donnees?.sessions ?? []).length === 0 ? (
-                  <p className="font-body-sm text-body-sm text-on-surface-variant">Aucune session n'est fixée.</p>
-                ) : (
-                  donnees?.sessions.map((session) => (
-                    <div key={session.code} className="p-4 bg-surface-container-low rounded-lg space-y-3">
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className={`px-2 py-0.5 rounded font-label-sm text-label-sm font-bold uppercase ${session.etat === "convoquee" ? "bg-primary text-on-primary" : "bg-surface-container text-on-surface-variant"}`}>
-                            {session.intitule} {session.code}
-                          </span>
-                          <span className="font-label-md text-label-md text-on-surface font-bold">{dateSeance(session.date)}</span>
-                        </div>
-                        <span className={`font-code-num text-label-sm font-bold ${session.etat === "convoquee" ? "text-secondary" : "text-on-surface-variant"}`}>{session.etat_libelle}</span>
-                      </div>
-                      <div className="space-y-1.5">
-                        <p className="font-label-md text-label-md text-on-surface font-semibold">Ordre du jour : {session.ordre_du_jour}</p>
-                        <p className="font-body-sm text-body-sm text-on-surface-variant">{session.description}</p>
-                      </div>
-                      {session.composition.length ? (
-                        <div className="pt-2 flex flex-wrap items-center gap-2 font-label-sm text-label-sm">
-                          <span className="text-on-surface-variant font-medium">Composition :</span>
-                          {session.composition.map((membre, index) => (
-                            <span key={membre} className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-surface-container-lowest text-on-surface font-semibold">
-                              <Icone nom={index === 0 ? "how_to_reg" : "badge"} className={`text-xs ${index === 0 ? "text-primary" : "text-secondary"}`} />
-                              {membre}
-                            </span>
-                          ))}
-                        </div>
-                      ) : null}
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-            <div className="lg:col-span-5 bg-surface-container-lowest rounded-xl shadow-sm p-6 space-y-6 flex flex-col">
-              <div className="space-y-4">
-                <div className="flex items-center gap-3 pb-2">
-                  <div className="w-9 h-9 rounded bg-surface-container-low text-primary flex items-center justify-center font-bold">
-                    <Icone nom="auto_fix_high" className="text-xl" />
-                  </div>
-                  <div>
-                    <h2 className="font-headline-sm text-headline-sm text-on-surface font-bold">{donnees?.amnistie.titre}</h2>
-                    {donnees?.amnistie.sous_titre ? <p className="font-label-sm text-label-sm text-on-surface-variant">{donnees.amnistie.sous_titre}</p> : null}
-                  </div>
-                </div>
-                <div className="p-3.5 bg-surface-container-low rounded space-y-1.5 text-on-surface">
-                  <div className="flex items-center gap-2">
-                    <Icone nom="verified" className="text-primary text-base" />
-                    <span className="font-label-sm text-label-sm font-bold uppercase tracking-wide">{donnees?.amnistie.regle}</span>
-                  </div>
-                  {donnees?.amnistie.texte ? (
-                    <p className="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">{donnees.amnistie.texte}</p>
-                  ) : null}
-                </div>
-                <div className="space-y-2.5">
-                  <span className="font-label-md text-label-md text-on-surface font-bold">Prochaines échéances d'effacement :</span>
-                  {(donnees?.effacements ?? []).length === 0 ? (
-                    <p className="font-body-sm text-body-sm text-on-surface-variant">{donnees?.amnistie.vide}</p>
-                  ) : (
-                    donnees?.effacements.map((item) => (
-                      <div key={`${item.agent.matricule}-${item.le}`} className="p-3 bg-surface-container-low/60 rounded flex items-center justify-between gap-3">
-                        <div className="min-w-0">
-                          <p className="font-label-md text-label-md font-semibold text-on-surface">{item.agent.nom_complet}</p>
-                          <p className="font-code-num text-label-sm text-on-surface-variant">{item.nature} {item.annee} • Mat. {item.agent.matricule}</p>
-                        </div>
-                        <div className="text-right shrink-0">
-                          <span className="inline-block px-2 py-0.5 rounded bg-surface-container text-primary font-code-num text-label-sm font-bold">Effacement le {dateCourte(item.le)}</span>
-                          {donnees?.amnistie.mention ? <span className="block font-label-sm text-label-sm text-on-surface-variant mt-0.5">{donnees.amnistie.mention}</span> : null}
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-          {donnees?.suivi.titre ? (
-            <div className="bg-surface-container-lowest rounded-xl p-5 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded bg-surface-container-low text-primary flex items-center justify-center shrink-0">
-                  <Icone nom="security" className="text-2xl" />
-                </div>
-                <div className="space-y-0.5">
-                  <p className="font-label-md text-label-md text-on-surface font-bold uppercase tracking-wide">{donnees.suivi.titre}</p>
-                  {donnees.suivi.texte ? <p className="font-body-sm text-body-sm text-on-surface-variant">{donnees.suivi.texte}</p> : null}
-                </div>
-              </div>
-            </div>
-          ) : null}
         </div>
       </div>
       {saisie ? <SaisineCommission agents={donnees?.agents ?? []} degres={degres} onClose={() => setSaisie(false)} /> : null}
+      {edition && donnees ? <ModifierProcedure procedure={edition} registre={donnees} onClose={() => setEdition(null)} /> : null}
       {dossier ? <DossierInstruction procedure={dossier} onClose={() => setDossier(null)} /> : null}
-      {seance ? <FixerSession agents={donnees?.agents ?? []} etats={donnees?.etats_session ?? []} onClose={() => setSeance(false)} /> : null}
     </AppChrome>
   );
 }
 
-function Indicateur({ titre, icone, liseret, teinte, valeur, valeurCouleur = "text-on-surface", legende, legendeCouleur = "text-on-surface-variant", pied, piedValeur, piedCouleur, index = 0 }: {
-  titre: string; icone: string; liseret: string; teinte: string; valeur: string; valeurCouleur?: string; legende: string; legendeCouleur?: string; pied: string; piedValeur: string; piedCouleur: string; index?: number;
+function Indicateur({ titre, icone, liseret, teinte, valeur, valeurCouleur = "text-on-surface", index = 0 }: {
+  titre: string; icone: string; liseret: string; teinte: string; valeur: string; valeurCouleur?: string; index?: number;
 }) {
   return (
     <div className="bg-surface-container-lowest p-5 rounded-xl shadow-sm flex flex-col justify-between relative overflow-hidden motion-card-appear" style={{ "--delay": `${index * 80}ms` } as CSSProperties}>
@@ -399,13 +287,8 @@ function Indicateur({ titre, icone, liseret, teinte, valeur, valeurCouleur = "te
           <Icone nom={icone} className="text-lg" />
         </span>
       </div>
-      <div className="mt-4 flex items-baseline gap-3">
+      <div className="mt-4">
         <span className={`font-code-num text-3xl font-bold ${valeurCouleur}`}>{valeur}</span>
-        <span className={`font-label-sm text-label-sm ${legendeCouleur}`}>{legende}</span>
-      </div>
-      <div className="mt-3 pt-3 flex items-center justify-between gap-2 text-on-surface-variant font-label-sm text-label-sm bg-surface-container-low/60 -mx-5 -mb-5 px-5 py-2">
-        <span>{pied}</span>
-        <span className={`font-code-num font-bold ${piedCouleur}`}>{piedValeur}</span>
       </div>
     </div>
   );
@@ -415,70 +298,55 @@ function convocationDe(procedure: Procedure): Promise<void> {
   return telecharger(`${ROUTE}${procedure.id}/convocation/`, `convocation-${procedure.reference}.pdf`);
 }
 
-function LigneProcedure({ procedure, delai, onOuvrir }: { procedure: Procedure; delai: number; onOuvrir: () => void }) {
+function LigneProcedure({ procedure, onOuvrir, onModifier }: { procedure: Procedure; onOuvrir: () => void; onModifier: () => void }) {
   const feedback = useFeedback();
+  const client = useQueryClient();
+  const supprimer = useMutation({
+    mutationFn: () => api(`${ROUTE}${procedure.id}/`, { method: "DELETE" }),
+    onSuccess: async () => {
+      await client.invalidateQueries({ queryKey: ["carrieres-discipline"] });
+      feedback.toast("Procédure supprimée", procedure.reference);
+    },
+    onError: (erreur) => feedback.toast("Suppression impossible", erreur instanceof ApiError ? erreur.message : undefined, "error"),
+  });
+  async function retirer() {
+    if (await feedback.confirm(`Supprimer la procédure ${procedure.reference} ?`, { message: "Elle disparaît aussi du profil de l'agent, avec la sanction qu'elle a produite.", confirmLabel: "Supprimer" })) supprimer.mutate();
+  }
   const { agent } = procedure;
-  const restant = procedure.jours_restants;
-  const ecoule = Math.min(100, Math.max(0, ((delai - restant) / Math.max(delai, 1)) * 100));
   const close = procedure.avis === "sanction" || procedure.avis === "classee";
   return (
     <tr className="hover:bg-surface-container-low/50 transition-colors">
-      <td className="py-4 px-6 align-top">
-        <div className="flex flex-col">
-          <span className="font-code-num text-code-num text-primary font-bold">{procedure.reference}</span>
-          <span className="font-label-sm text-label-sm text-on-surface-variant mt-0.5">Saisine : {dateCourte(procedure.saisine)}</span>
-        </div>
+      <td className="py-3 px-6 align-top">
+        <span className="block font-code-num text-code-num text-primary font-bold">{procedure.reference}</span>
+        <span className="font-label-sm text-label-sm text-on-surface-variant">{dateCourte(procedure.saisine)}</span>
       </td>
-      <td className="py-4 px-6 align-top">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded bg-surface-container text-primary flex items-center justify-center font-bold text-xs shrink-0">{agent.initiales}</div>
-          <div className="min-w-0">
-            <p className="font-label-lg text-label-lg font-semibold text-on-surface leading-tight">{agent.nom_complet}</p>
-            <p className="font-code-num text-label-sm text-on-surface-variant">Mat. {agent.matricule}</p>
-            <span className="inline-block mt-1 px-1.5 py-0.5 bg-surface-container font-label-sm text-label-sm text-primary rounded font-semibold">{agent.organisme_sigle}</span>
-          </div>
-        </div>
+      <td className="py-3 px-6 align-top">
+        <span className="block font-label-lg text-label-lg font-semibold text-on-surface leading-tight">{agent.nom_complet}</span>
+        <span className="font-label-sm text-label-sm text-on-surface-variant">{agent.organisme_sigle}</span>
       </td>
-      <td className="py-4 px-6 align-top">
-        <div className="space-y-1">
-          <span className={`px-2 py-0.5 rounded font-label-sm text-label-sm font-semibold inline-block ${procedure.degre >= 2 ? "bg-error-container text-on-error-container" : "bg-secondary-fixed text-on-secondary-fixed"}`}>
-            {procedure.grief} · {procedure.degre}{procedure.degre === 1 ? "er" : "e"} degré
-          </span>
-          <p className="text-on-surface-variant text-xs line-clamp-2">{procedure.description}</p>
-        </div>
+      <td className="py-3 px-6 align-top">
+        <span className="block text-on-surface">{procedure.grief}</span>
+        <span className={`mt-1 inline-block px-2 py-0.5 rounded font-label-sm text-label-sm font-semibold ${procedure.degre >= 2 ? "bg-error-container text-on-error-container" : "bg-secondary-fixed text-on-secondary-fixed"}`}>
+          {procedure.degre}{procedure.degre === 1 ? "er" : "e"} degré
+        </span>
       </td>
-      <td className="py-4 px-6 align-top">
-        <div className="space-y-1">
-          <p className="font-label-md text-label-md text-on-surface font-medium">{procedure.rapporteur}</p>
-          {close ? (
-            <span className="font-label-sm text-label-sm text-on-surface-variant">Instruction close</span>
-          ) : (
-            <div className="flex items-center gap-2">
-              <div className="w-20 bg-surface-container h-1.5 rounded-full overflow-hidden">
-                <div className={`motion-fill h-full ${restant < 7 ? "bg-error" : "bg-secondary-container"}`} style={{ width: `${ecoule}%` }} />
-              </div>
-              <span className={`font-code-num text-label-sm font-bold ${restant < 0 ? "text-error" : "text-secondary"}`}>{restant >= 0 ? `J - ${restant}` : `Dépassé de ${-restant} j`}</span>
-            </div>
-          )}
-        </div>
-      </td>
-      <td className="py-4 px-6 align-top">
-        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-surface-container rounded">
-          <span className="w-1.5 h-1.5 rounded-full bg-secondary" />
-          <span className="font-label-sm text-label-sm font-semibold text-on-surface">{procedure.stade}</span>
-        </div>
-        {procedure.stade_detail ? <p className="font-label-sm text-label-sm text-on-surface-variant mt-1">{procedure.stade_detail}</p> : null}
-      </td>
-      <td className="py-4 px-6 align-top">
-        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded font-label-sm text-label-sm font-semibold ${close ? "bg-surface-container-high text-on-surface" : "bg-secondary-fixed text-on-secondary-fixed-variant"}`}>
+      <td className="py-3 px-6 align-top">
+        <span className="block font-label-md text-label-md font-semibold text-on-surface">{procedure.phase_libelle}</span>
+        <span className={`mt-1 inline-flex items-center gap-1 px-2 py-0.5 rounded font-label-sm text-label-sm font-semibold ${close ? "bg-surface-container-high text-on-surface" : "bg-secondary-fixed text-on-secondary-fixed-variant"}`}>
           <Icone nom={ICONE_AVIS[procedure.avis]} className="text-xs" />
           {procedure.avis_libelle}
         </span>
       </td>
-      <td className="py-4 px-6 align-top text-right">
+      <td className="py-3 px-6 align-top text-right">
         <div className="flex items-center justify-end gap-1">
           <button className="p-1.5 text-on-surface-variant hover:text-primary hover:bg-surface-container rounded transition-colors" title="Consulter le dossier d'instruction" aria-label={`Consulter le dossier ${procedure.reference}`} type="button" onClick={onOuvrir}>
             <Icone nom="folder_open" className="text-lg" />
+          </button>
+          <button className="p-1.5 text-on-surface-variant hover:text-primary hover:bg-surface-container rounded transition-colors" title="Modifier la procédure" aria-label={`Modifier la procédure ${procedure.reference}`} type="button" onClick={onModifier}>
+            <Icone nom="edit" className="text-lg" />
+          </button>
+          <button className="p-1.5 text-on-surface-variant hover:text-error hover:bg-surface-container rounded transition-colors disabled:opacity-50" title="Supprimer la procédure" aria-label={`Supprimer la procédure ${procedure.reference}`} type="button" disabled={supprimer.isPending} onClick={() => void retirer()}>
+            <Icone nom="delete" className="text-lg" />
           </button>
           <button className="p-1.5 text-on-surface-variant hover:text-primary hover:bg-surface-container rounded transition-colors" title="Générer la convocation" aria-label={`Générer la convocation ${procedure.reference}`} type="button" onClick={() => void feedback.run("Préparation de la convocation…", () => convocationDe(procedure), { success: { title: "Convocation prête", message: procedure.reference }, error: "La convocation n'a pas été générée." })}>
             <Icone nom="mark_email_read" className="text-lg" />
@@ -500,8 +368,12 @@ function DossierInstruction({ procedure, onClose }: { procedure: Procedure; onCl
     ["Rapporteur", procedure.rapporteur],
     ["Saisine", dateCourte(procedure.saisine)],
     ["Échéance", dateCourte(procedure.echeance)],
-    ["Stade", procedure.stade_detail ? `${procedure.stade} — ${procedure.stade_detail}` : procedure.stade],
+    ["Phase", procedure.stade_detail ? `${procedure.phase_libelle} — ${procedure.stade_detail}` : procedure.phase_libelle],
     ["Avis", procedure.avis_libelle],
+    ...(procedure.decision ? [
+      ["Décision", `${procedure.decision}${procedure.sanction_libelle ? ` (${procedure.sanction_libelle})` : ""} · ${dateCourte(procedure.date_decision)}`],
+      ["Exécution", procedure.executee_le ? dateCourte(procedure.executee_le) : "Non exécutée"],
+    ] : []),
   ];
   return (
     <Modale
@@ -539,103 +411,7 @@ function DossierInstruction({ procedure, onClose }: { procedure: Procedure; onCl
 const CHAMP = "w-full h-10 px-3 rounded border border-outline-variant bg-surface-container-lowest text-on-surface font-body-sm text-body-sm focus:outline-none focus:ring-2 focus:ring-primary";
 const LIBELLE = "block font-label-md text-label-md text-on-surface font-semibold mb-1";
 
-type SeanceCreee = { code: string; intitule: string };
-
-/** Inscrit une séance à venir : date, lieu, ordre du jour et membres choisis parmi les agents. */
-function FixerSession({ agents, etats, onClose }: { agents: Registre["agents"]; etats: Registre["etats_session"]; onClose: () => void }) {
-  const client = useQueryClient();
-  const feedback = useFeedback();
-  const [saisie, setSaisie] = useState({ intitule: "", date: "", heure: "09:30", lieu: "", etat: "a_confirmer", ordre_du_jour: "", description: "" });
-  const [membres, setMembres] = useState<string[]>([]);
-  const envoi = useMutation({
-    mutationFn: () => api<SeanceCreee>("/api/v1/carrieres/discipline/sessions/", { method: "POST", body: JSON.stringify({ ...saisie, composition: membres }) }),
-    onSuccess: async (item) => {
-      await client.invalidateQueries({ queryKey: ["carrieres-discipline"] });
-      feedback.toast("Session fixée", `${item.intitule} · ${item.code}`);
-      onClose();
-    },
-  });
-  const champ = (cle: keyof typeof saisie) => (event: { target: { value: string } }) => setSaisie({ ...saisie, [cle]: event.target.value });
-  const restants = agents.filter((agent) => !membres.includes(agent.matricule));
-  return (
-    <Modale
-      titre="Fixer une session paritaire"
-      sousTitre="La séance est inscrite au calendrier de la commission."
-      icone="event"
-      taille="lg"
-      onClose={onClose}
-      onSubmit={() => envoi.mutate()}
-      libelleValider="Inscrire la séance"
-      enCours={envoi.isPending}
-      erreur={envoi.error instanceof ApiError ? envoi.error.message : envoi.isError ? "La séance n'a pas été inscrite." : undefined}
-    >
-      <div className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <label className="block">
-            <span className={LIBELLE}>Intitulé <span className="text-error">*</span></span>
-            <input className={CHAMP} required maxLength={120} value={saisie.intitule} onChange={champ("intitule")} placeholder="Session ordinaire" />
-          </label>
-          <label className="block">
-            <span className={LIBELLE}>État</span>
-            <select className={CHAMP} value={saisie.etat} onChange={champ("etat")}>
-              {etats.map((etat) => (
-                <option key={etat.code} value={etat.code}>{etat.libelle}</option>
-              ))}
-            </select>
-          </label>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <label className="block">
-            <span className={LIBELLE}>Date <span className="text-error">*</span></span>
-            <input className={CHAMP} required type="date" min={jourLocal()} value={saisie.date} onChange={champ("date")} />
-          </label>
-          <label className="block">
-            <span className={LIBELLE}>Heure <span className="text-error">*</span></span>
-            <input className={CHAMP} required type="time" value={saisie.heure} onChange={champ("heure")} />
-          </label>
-          <label className="block">
-            <span className={LIBELLE}>Lieu</span>
-            <input className={CHAMP} maxLength={120} value={saisie.lieu} onChange={champ("lieu")} placeholder="Salle du conseil" />
-          </label>
-        </div>
-        <label className="block">
-          <span className={LIBELLE}>Ordre du jour <span className="text-error">*</span></span>
-          <input className={CHAMP} required maxLength={240} value={saisie.ordre_du_jour} onChange={champ("ordre_du_jour")} />
-        </label>
-        <label className="block">
-          <span className={LIBELLE}>Précisions</span>
-          <textarea className={`${CHAMP} h-auto py-2`} rows={3} value={saisie.description} onChange={champ("description")} />
-        </label>
-        <div className="space-y-2">
-          <label className="block">
-            <span className={LIBELLE}>Composition</span>
-            <select className={CHAMP} value="" onChange={(event) => { if (event.target.value) setMembres([...membres, event.target.value]); }}>
-              <option value="">Ajouter un membre…</option>
-              {restants.map((agent) => (
-                <option key={agent.matricule} value={agent.matricule}>{agent.nom_complet} · {agent.organisme_sigle}</option>
-              ))}
-            </select>
-          </label>
-          {membres.length ? (
-            <div className="flex flex-wrap gap-2">
-              {membres.map((matricule) => {
-                const agent = agents.find((item) => item.matricule === matricule);
-                return (
-                  <button key={matricule} type="button" className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-surface-container text-on-surface font-label-sm text-label-sm font-semibold" onClick={() => setMembres(membres.filter((item) => item !== matricule))}>
-                    {agent?.nom_complet ?? matricule}
-                    <Icone nom="close" className="text-sm" />
-                  </button>
-                );
-              })}
-            </div>
-          ) : null}
-        </div>
-      </div>
-    </Modale>
-  );
-}
-
-/** Saisir la commission : la procédure s'ouvre en instruction, avec son rapporteur et un délai de 30 jours. */
+/** Saisir une sanction : la procédure s'ouvre en instruction, avec son rapporteur et un délai de 30 jours. */
 function SaisineCommission({ agents, degres, onClose }: { agents: Registre["agents"]; degres: DegreEchelle[]; onClose: () => void }) {
   const client = useQueryClient();
   const feedback = useFeedback();
@@ -644,7 +420,7 @@ function SaisineCommission({ agents, degres, onClose }: { agents: Registre["agen
     mutationFn: () => api<Procedure>(ROUTE, { method: "POST", body: JSON.stringify({ ...saisie, degre: Number(saisie.degre) }) }),
     onSuccess: async (item) => {
       await client.invalidateQueries({ queryKey: ["carrieres-discipline"] });
-      feedback.toast("Commission saisie", `${item.reference} · ${item.agent.nom_complet}`);
+      feedback.toast("Sanction saisie", `${item.reference} · ${item.agent.nom_complet}`);
       onClose();
     },
   });
@@ -659,7 +435,7 @@ function SaisineCommission({ agents, degres, onClose }: { agents: Registre["agen
   };
   return (
     <Modale
-      titre="Saisir la commission paritaire"
+      titre="Saisir une sanction"
       sousTitre="La procédure s'ouvre en instruction : l'agent dispose de 30 jours pour le contradictoire."
       icone="add_moderator"
       taille="lg"
@@ -705,6 +481,122 @@ function SaisineCommission({ agents, degres, onClose }: { agents: Registre["agen
               <option key={agent.matricule} value={agent.matricule}>{agent.nom_complet} · {agent.organisme_sigle}</option>
             ))}
           </select>
+        </label>
+      </div>
+    </Modale>
+  );
+}
+
+/** Fait avancer la procédure : demande d'explication, instruction devant le conseil, décision et exécution. */
+function ModifierProcedure({ procedure, registre, onClose }: { procedure: Procedure; registre: Registre; onClose: () => void }) {
+  const client = useQueryClient();
+  const feedback = useFeedback();
+  const [saisie, setSaisie] = useState({
+    phase: procedure.phase,
+    grief: procedure.grief,
+    description: procedure.description,
+    degre: String(procedure.degre),
+    rapporteur: "",
+    stade_detail: procedure.stade_detail,
+    avis: registre.avis_possibles.some((a) => a.code === procedure.avis) ? procedure.avis : "",
+    decision: procedure.decision,
+    sanction_nature: procedure.sanction_nature,
+    date_decision: procedure.date_decision,
+    executee_le: procedure.executee_le,
+  });
+  const decision = saisie.phase === "decision_execution";
+  const envoi = useMutation({
+    mutationFn: () => api<Procedure>(`${ROUTE}${procedure.id}/`, {
+      method: "PATCH",
+      body: JSON.stringify({ ...saisie, degre: Number(saisie.degre), rapporteur: saisie.rapporteur || undefined, avis: saisie.avis || undefined }),
+    }),
+    onSuccess: async (item) => {
+      await client.invalidateQueries({ queryKey: ["carrieres-discipline"] });
+      feedback.toast("Procédure mise à jour", `${item.reference} · ${item.phase_libelle}`);
+      onClose();
+    },
+  });
+  const champ = (cle: keyof typeof saisie) => (event: { target: { value: string } }) => setSaisie({ ...saisie, [cle]: event.target.value });
+  const degres = registre.echelle.degres ?? [];
+  return (
+    <Modale
+      titre={`Modifier ${procedure.reference}`}
+      sousTitre={`${procedure.agent.nom_complet} · l'agent suit ces étapes depuis son profil`}
+      icone="edit"
+      taille="lg"
+      onClose={onClose}
+      onSubmit={() => envoi.mutate()}
+      enCours={envoi.isPending}
+      erreur={envoi.error instanceof ApiError ? envoi.error.message : envoi.isError ? "La procédure n'a pas été mise à jour." : undefined}
+    >
+      <div className="space-y-4">
+        <label className="block">
+          <span className={LIBELLE}>Phase de la procédure</span>
+          <select className={CHAMP} value={saisie.phase} onChange={champ("phase")}>
+            {registre.phases.map((phase) => <option key={phase.code} value={phase.code}>{phase.libelle}</option>)}
+          </select>
+        </label>
+        {decision ? (
+          <div className="space-y-4 rounded-lg bg-surface-container-low p-4">
+            <label className="block">
+              <span className={LIBELLE}>Sanction prononcée</span>
+              <select className={CHAMP} value={saisie.sanction_nature} onChange={champ("sanction_nature")}>
+                <option value="">Aucune (classement sans suite)</option>
+                {registre.natures_sanction.map((nature) => <option key={nature.code} value={nature.code}>{nature.libelle}</option>)}
+              </select>
+            </label>
+            <label className="block">
+              <span className={LIBELLE}>Décision <span className="text-error">*</span></span>
+              <input className={CHAMP} required maxLength={240} value={saisie.decision} onChange={champ("decision")} placeholder="Ex. : blâme notifié par arrêté n°…" />
+            </label>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <label className="block">
+                <span className={LIBELLE}>Date de la décision <span className="text-error">*</span></span>
+                <input className={CHAMP} required type="date" max={jourLocal()} value={saisie.date_decision} onChange={champ("date_decision")} />
+              </label>
+              <label className="block">
+                <span className={LIBELLE}>Date d'exécution</span>
+                <input className={CHAMP} type="date" min={saisie.date_decision || undefined} value={saisie.executee_le} onChange={champ("executee_le")} />
+              </label>
+            </div>
+          </div>
+        ) : (
+          <label className="block">
+            <span className={LIBELLE}>Avis</span>
+            <select className={CHAMP} value={saisie.avis} onChange={champ("avis")}>
+              <option value="">Selon la phase</option>
+              {registre.avis_possibles.map((avis) => <option key={avis.code} value={avis.code}>{avis.libelle}</option>)}
+            </select>
+          </label>
+        )}
+        <label className="block">
+          <span className={LIBELLE}>Précision sur l'étape</span>
+          <input className={CHAMP} maxLength={160} value={saisie.stade_detail} onChange={champ("stade_detail")} placeholder="Ex. : réponse attendue avant le…" />
+        </label>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <label className="block">
+            <span className={LIBELLE}>Degré de sanction encouru</span>
+            <select className={CHAMP} value={saisie.degre} onChange={champ("degre")}>
+              {degres.map((degre) => <option key={degre.degre} value={degre.degre}>{degre.option}</option>)}
+            </select>
+          </label>
+          <label className="block">
+            <span className={LIBELLE}>Rapporteur (actuel : {procedure.rapporteur})</span>
+            <select className={CHAMP} value={saisie.rapporteur} onChange={champ("rapporteur")}>
+              <option value="">Conserver</option>
+              {registre.agents.filter((agent) => agent.matricule !== procedure.agent.matricule).map((agent) => (
+                <option key={agent.matricule} value={agent.matricule}>{agent.nom_complet} · {agent.organisme_sigle}</option>
+              ))}
+            </select>
+          </label>
+        </div>
+        <label className="block">
+          <span className={LIBELLE}>Nature du grief <span className="text-error">*</span></span>
+          <input className={CHAMP} required maxLength={160} value={saisie.grief} onChange={champ("grief")} />
+        </label>
+        <label className="block">
+          <span className={LIBELLE}>Faits reprochés <span className="text-error">*</span></span>
+          <textarea className={`${CHAMP} h-auto py-2`} required rows={3} value={saisie.description} onChange={champ("description")} />
         </label>
       </div>
     </Modale>

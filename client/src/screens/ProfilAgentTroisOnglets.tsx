@@ -1,4 +1,6 @@
-import { useState, type FormEvent, type ReactNode, type ChangeEvent } from "react";
+import { BesoinsResponsable, useMesBesoins } from "./BesoinsResponsable";
+import { MobiliteAgent } from "./dotation/MobiliteAgent";
+import { createContext, useContext, useState, type FormEvent, type ReactNode, type ChangeEvent } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { ApiError, api, mediaUrl } from "../api/client";
 import { useFeedback } from "../ui/Feedback";
@@ -7,16 +9,52 @@ import { useSearchParams } from "react-router-dom";
 import { DemandesActes } from "./DemandesActes";
 import { DemandesConges } from "./DemandesConges";
 import { DocumentsAgent } from "./DocumentsAgent";
+import { CollecteAgent, pastilleCollecte } from "./formation/CollecteAgent";
 import { Icone } from "../ui/Icone";
 import { EditeurPhoto, Portrait } from "../ui/PhotoProfil";
 
-type OngletProfil = "profil" | "documents" | "conges" | "demandes";
-const ONGLETS: OngletProfil[] = ["profil", "documents", "conges", "demandes"];
+type OngletProfil = "profil" | "documents" | "conges" | "demandes" | "formation" | "besoins" | "disposition";
+const ONGLETS: OngletProfil[] = ["profil", "documents", "conges", "demandes", "formation", "besoins", "disposition"];
+
+const ETAPES_DISCIPLINE: [string, string][] = [
+  ["demande_explication", "Demande d’explication"],
+  ["instruction_conseil", "Instruction devant le conseil de discipline"],
+  ["decision_execution", "Décision et exécution"],
+];
 
 const PAGE = "w-full px-4 sm:px-6 lg:px-8 py-6 mx-auto flex-1";
 const CARD = "bg-surface-container-lowest rounded-xl border border-hairline p-6";
 
-function Champ({ label, value }: { label: string; value?: string | number | null }) {
+type Brouillon = Record<string, string>;
+const EditionContexte = createContext<{ edition: boolean; brouillon: Brouillon; maj: (cle: string, valeur: string) => void }>({
+  edition: false, brouillon: {}, maj: () => undefined,
+});
+
+const OPTIONS_SEXE: [string, string][] = [["H", "Homme"], ["F", "Femme"]];
+const OPTIONS_STATUT: [string, string][] = [["", "Non renseigné"], ["celibataire", "Célibataire"], ["marie", "Marié(e)"], ["veuf", "Veuf / veuve"], ["divorce", "Divorcé(e)"]];
+const OPTIONS_NIVEAU: [string, string][] = [["", "Non renseigné"], ["cepe", "CEPE"], ["bepc", "BEPC"], ["bac", "BAC"], ["licence", "Licence"], ["master", "Master"], ["doctorat", "Doctorat"]];
+
+function Champ({ label, value, nom, type = "text", options }: {
+  label: string; value?: string | number | null; nom?: string; type?: "text" | "date" | "email" | "tel"; options?: [string, string][];
+}) {
+  const { edition, brouillon, maj } = useContext(EditionContexte);
+  if (edition && nom) {
+    const id = `profil-${nom}`;
+    const valeur = brouillon[nom] ?? "";
+    return (
+      <div className="py-3 border-b border-hairline min-w-0">
+        <label htmlFor={id} className="font-label-sm text-label-sm text-on-surface-variant block">{label}</label>
+        {options ? (
+          <select id={id} value={valeur} onChange={(e) => maj(nom, e.target.value)} className={`${CHAMP_FORM} mt-1`}>
+            {options.map(([code, libelle]) => <option key={code} value={code}>{libelle}</option>)}
+          </select>
+        ) : (
+          <input id={id} type={type} value={valeur} onChange={(e) => maj(nom, e.target.value)}
+            max={type === "date" ? new Date().toISOString().slice(0, 10) : undefined} className={`${CHAMP_FORM} mt-1`} />
+        )}
+      </div>
+    );
+  }
   return (
     <div className="py-3 border-b border-hairline min-w-0">
       <dt className="font-label-sm text-label-sm text-on-surface-variant">{label}</dt>
@@ -47,7 +85,8 @@ const CHAMP_FORM = "w-full rounded-lg border border-outline-variant bg-surface-c
 
 /** Le type de pièce est renseigné d’abord ; le document ne se charge qu’ensuite. */
 function PieceIdentite({ agent }: { agent: Dossier }) {
-  const modifiable = agent.modifiable !== false;
+  const { edition } = useContext(EditionContexte);
+  const modifiable = agent.modifiable !== false && edition;
   const client = useQueryClient();
   const feedback = useFeedback();
   const ec = agent.etat_civil;
@@ -141,7 +180,8 @@ function PieceIdentite({ agent }: { agent: Dossier }) {
 
 /** Liste des enfants à charge, avec déclaration et retrait. */
 function EnfantsACharge({ agent }: { agent: Dossier }) {
-  const modifiable = agent.modifiable !== false;
+  const { edition } = useContext(EditionContexte);
+  const modifiable = agent.modifiable !== false && edition;
   const client = useQueryClient();
   const feedback = useFeedback();
   const vide = { nom: "", prenoms: "", sexe: "", date_naissance: "", lieu_naissance: "" };
@@ -275,22 +315,72 @@ function Bloc({ titre, icone, children }: { titre: string; icone: string; childr
 }
 
 export function ProfilAgentTroisOnglets({ agent }: { agent: Dossier }) {
+  const mesBesoins = useMesBesoins(agent.modifiable !== false);
+  const responsable = mesBesoins.data?.responsable === true;
+  const besoinsAttendus = mesBesoins.data?.responsable === true && Boolean(mesBesoins.data.campagne?.ouverte) && mesBesoins.data.fiches.length === 0;
   const [params] = useSearchParams();
   const demande = params.get("onglet") as OngletProfil | null;
   const [onglet, setOnglet] = useState<OngletProfil>(demande && ONGLETS.includes(demande) ? demande : "profil");
   const [photoOuverte, setPhotoOuverte] = useState(false);
   const modifiable = agent.modifiable !== false;
+  const client = useQueryClient();
+  const feedback = useFeedback();
+  const [edition, setEdition] = useState(false);
+  const [brouillon, setBrouillon] = useState<Brouillon>({});
+  const [erreur, setErreur] = useState("");
+  const [enCours, setEnCours] = useState(false);
+
+  function brouillonDe(a: Dossier): Brouillon {
+    const e = a.etat_civil;
+    return {
+      nom: e.nom, prenoms: e.prenoms, nom_jeune_fille: e.nom_jeune_fille, sexe: e.sexe_code,
+      date_naissance: e.date_naissance, lieu_naissance: e.lieu_naissance,
+      statut_matrimonial: e.statut_matrimonial_code, date_mariage: e.date_mariage,
+      adresse_residence: e.adresse_residence, ville: e.ville, telephone: e.telephone,
+      telephone_secondaire: e.telephone_secondaire, courriel: e.courriel,
+      contact_urgence_nom: e.contact_urgence_nom, contact_urgence_telephone: e.contact_urgence_telephone,
+      niveau_etude: a.parcours_academique.niveau_etude_code, libelle_diplome: a.parcours_academique.libelle_diplome,
+      domaine_formation: a.parcours_academique.domaine_formation,
+      conjoint_nom: a.famille.conjoint.nom, conjoint_prenoms: a.famille.conjoint.prenoms,
+      conjoint_telephone: a.famille.conjoint.telephone, conjoint_courriel: a.famille.conjoint.courriel,
+    };
+  }
+
+  function ouvrirEdition() {
+    setBrouillon(brouillonDe(agent));
+    setErreur("");
+    setEdition(true);
+  }
+
+  async function enregistrerProfil() {
+    setErreur("");
+    setEnCours(true);
+    try {
+      const dossier = await feedback.run(
+        "Enregistrement de vos informations…",
+        () => api<Dossier>(`/api/v1/agents/${encodeURIComponent(agent.matricule)}/profil/`, { method: "PATCH", body: JSON.stringify(brouillon) }),
+        { success: { title: "Informations mises à jour", message: `Le dossier de ${agent.nom_complet} est à jour.` } },
+      );
+      client.setQueryData(["agent", agent.matricule], dossier);
+      setEdition(false);
+    } catch (cause) {
+      setErreur(cause instanceof ApiError ? cause.message : "Les informations n’ont pas pu être enregistrées.");
+    } finally {
+      setEnCours(false);
+    }
+  }
 
   const lignesAdmin = agent.situation_administrative ?? [];
   const ec = agent.etat_civil;
 
 
   return (
+    <EditionContexte.Provider value={{ edition, brouillon, maj: (cle, valeur) => setBrouillon((b) => ({ ...b, [cle]: valeur })) }}>
     <div className={PAGE}>
       <div className="motion-content flex flex-col w-full">
         <div className={`${CARD} mb-6`}>
           <div className="flex flex-col sm:flex-row sm:items-center gap-5">
-            {modifiable ? (
+            {modifiable && edition ? (
             <button
               type="button"
               onClick={() => setPhotoOuverte(true)}
@@ -316,7 +406,30 @@ export function ProfilAgentTroisOnglets({ agent }: { agent: Dossier }) {
                 <span className="px-2.5 py-1 rounded bg-surface-container-low text-on-surface-variant font-label-sm">Situation : {agent.situation || "Non renseignée"}</span>
               </div>
             </div>
+            {modifiable ? (
+              <div className="sm:ml-auto flex flex-wrap items-center gap-2">
+                {edition ? (
+                  <>
+                    <button type="button" onClick={() => void enregistrerProfil()} disabled={enCours}
+                      className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 font-label-md text-on-primary disabled:opacity-60">
+                      <Icone nom="save" />{enCours ? "Enregistrement…" : "Enregistrer"}
+                    </button>
+                    <button type="button" onClick={() => { setEdition(false); setErreur(""); }} disabled={enCours}
+                      className="inline-flex items-center gap-2 rounded-lg border border-outline-variant px-4 py-2.5 font-label-md text-on-surface disabled:opacity-60">
+                      <Icone nom="close" />Annuler
+                    </button>
+                  </>
+                ) : (
+                  <button type="button" onClick={ouvrirEdition}
+                    className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 font-label-md text-on-primary">
+                    <Icone nom="edit" />Mettre à jour mes informations
+                  </button>
+                )}
+              </div>
+            ) : null}
           </div>
+          {edition ? <p className="mt-3 text-sm text-on-surface-variant">Mode modification : les zones de saisie sont actives dans les sections du profil et des documents. « Enregistrer » valide l’état civil, le parcours académique et le conjoint ; la pièce d’identité, les enfants et les documents s’enregistrent depuis leur propre formulaire. Les demandes de congé et d’actes restent toujours disponibles.</p> : null}
+          {erreur ? <p role="alert" className="mt-3 text-sm text-error">{erreur}</p> : null}
         </div>
 
         <div className="bg-surface-container-lowest rounded-xl border border-hairline mb-6 p-1 flex flex-wrap gap-1" role="tablist" aria-label="Sections du profil agent">
@@ -325,11 +438,20 @@ export function ProfilAgentTroisOnglets({ agent }: { agent: Dossier }) {
             ["documents", "folder_open", "Mes documents"],
             ["conges", "event_available", "Demande de congé"],
             ["demandes", "description", "Demande d’actes"],
-          ] as const).map(([id, icone, libelle]) => (
+            ["formation", "school", "Formation"],
+            ...(responsable ? [["besoins", "post_add", "Expression des besoins"]] : []),
+            ...(modifiable ? [["disposition", "swap_horiz", "Mobilité"]] : []),
+          ] as [OngletProfil, string, string][]).map(([id, icone, libelle]) => (
             <button key={id} id={`profil-tab-${id}`} role="tab" aria-selected={onglet === id} aria-controls="profil-tab-panel"
               type="button" onClick={() => setOnglet(id)}
               className={`inline-flex items-center gap-2 rounded-lg px-4 py-3 font-label-md text-label-md transition-colors ${onglet === id ? "bg-primary text-on-primary font-semibold" : "text-on-surface-variant hover:bg-surface-container-low"}`}>
               <Icone nom={icone} className="text-lg" />{libelle}
+              {(id === "formation" && pastilleCollecte(agent)) || (id === "besoins" && besoinsAttendus) ? (
+                <span className="relative flex h-2 w-2" aria-label="Collecte en attente">
+                  <span className="absolute inset-0 rounded-full bg-secondary-container motion-pulse-dot" />
+                  <span className="relative h-2 w-2 rounded-full bg-secondary-container" />
+                </span>
+              ) : null}
             </button>
           ))}
         </div>
@@ -340,29 +462,29 @@ export function ProfilAgentTroisOnglets({ agent }: { agent: Dossier }) {
               <Bloc titre="État civil" icone="badge">
                 <div className="space-y-6">
                   <GroupeEtatCivil titre="Identification">
-                    <Champ label="Nom" value={ec.nom} />
-                    <Champ label="Prénoms" value={ec.prenoms} />
-                    <Champ label="Nom de jeune fille" value={ec.nom_jeune_fille} />
-                    <Champ label="Sexe" value={ec.sexe} />
-                    <Champ label="Date de naissance" value={dateFr(ec.date_naissance)} />
-                    <Champ label="Lieu de naissance" value={ec.lieu_naissance} />
+                    <Champ label="Nom" value={ec.nom} nom="nom" />
+                    <Champ label="Prénoms" value={ec.prenoms} nom="prenoms" />
+                    <Champ label="Nom de jeune fille" value={ec.nom_jeune_fille} nom="nom_jeune_fille" />
+                    <Champ label="Sexe" value={ec.sexe} nom="sexe" options={OPTIONS_SEXE} />
+                    <Champ label="Date de naissance" value={dateFr(ec.date_naissance)} nom="date_naissance" type="date" />
+                    <Champ label="Lieu de naissance" value={ec.lieu_naissance} nom="lieu_naissance" />
                   </GroupeEtatCivil>
                   <GroupeEtatCivil titre="Situation matrimoniale">
-                    <Champ label="Statut matrimonial" value={ec.statut_matrimonial} />
-                    <Champ label="Date du mariage" value={dateFr(ec.date_mariage)} />
+                    <Champ label="Statut matrimonial" value={ec.statut_matrimonial} nom="statut_matrimonial" options={OPTIONS_STATUT} />
+                    <Champ label="Date du mariage" value={dateFr(ec.date_mariage)} nom="date_mariage" type="date" />
                   </GroupeEtatCivil>
                   <section>
                     <h3 className="font-label-md text-label-md text-primary font-bold uppercase tracking-wide">Pièce d’identité</h3>
                     <PieceIdentite agent={agent} />
                   </section>
                   <GroupeEtatCivil titre="Coordonnées">
-                    <Champ label="Adresse de résidence" value={ec.adresse_residence} />
-                    <Champ label="Ville / commune" value={ec.ville} />
-                    <Champ label="Téléphone principal" value={ec.telephone} />
-                    <Champ label="Téléphone secondaire" value={ec.telephone_secondaire} />
-                    <Champ label="Adresse e-mail" value={ec.courriel} />
-                    <Champ label="Personne à contacter en cas d’urgence" value={ec.contact_urgence_nom} />
-                    <Champ label="Téléphone de la personne à contacter" value={ec.contact_urgence_telephone} />
+                    <Champ label="Adresse de résidence" value={ec.adresse_residence} nom="adresse_residence" />
+                    <Champ label="Ville / commune" value={ec.ville} nom="ville" />
+                    <Champ label="Téléphone principal" value={ec.telephone} nom="telephone" type="tel" />
+                    <Champ label="Téléphone secondaire" value={ec.telephone_secondaire} nom="telephone_secondaire" type="tel" />
+                    <Champ label="Adresse e-mail" value={ec.courriel} nom="courriel" type="email" />
+                    <Champ label="Personne à contacter en cas d’urgence" value={ec.contact_urgence_nom} nom="contact_urgence_nom" />
+                    <Champ label="Téléphone de la personne à contacter" value={ec.contact_urgence_telephone} nom="contact_urgence_telephone" type="tel" />
                   </GroupeEtatCivil>
                 </div>
               </Bloc>
@@ -380,20 +502,84 @@ export function ProfilAgentTroisOnglets({ agent }: { agent: Dossier }) {
                 </dl>
               </Bloc>
 
+              <Bloc titre="Parcours professionnel" icone="timeline">
+                {agent.parcours.length === 0 ? (
+                  <p className="font-body-sm text-on-surface-variant">Aucun événement de carrière enregistré pour le moment.</p>
+                ) : (
+                  <ol className="space-y-3">
+                    {agent.parcours.map((etape) => (
+                      <li key={`${etape.origine}-${etape.id}`} className="border-l-2 border-primary pl-4">
+                        <p className="flex flex-wrap items-center gap-2">
+                          <span className="px-2 py-0.5 rounded bg-primary-fixed text-on-primary-fixed font-label-sm">{etape.type_libelle}</span>
+                          <span className="font-label-sm text-on-surface-variant">{dateFr(etape.date_effet)}</span>
+                        </p>
+                        <p className="mt-1 font-body-md text-on-surface font-semibold">{etape.intitule}</p>
+                        {etape.reference_acte ? <p className="font-body-sm text-on-surface-variant">{etape.reference_acte}</p> : null}
+                        {etape.detail ? <p className="font-body-sm text-on-surface-variant">{etape.detail}</p> : null}
+                        {etape.document_url ? (
+                          <a href={mediaUrl(etape.document_url)} target="_blank" rel="noreferrer" className="mt-1 inline-flex items-center gap-1 font-label-sm text-primary underline">
+                            <Icone nom="attach_file" className="text-sm" />Voir l’acte
+                          </a>
+                        ) : null}
+                      </li>
+                    ))}
+                  </ol>
+                )}
+              </Bloc>
+
+              <Bloc titre="Suivi disciplinaire" icone="gavel">
+                {agent.discipline.length === 0 ? (
+                  <p className="font-body-sm text-on-surface-variant">Aucune procédure disciplinaire.</p>
+                ) : (
+                  <ul className="space-y-4">
+                    {agent.discipline.map((procedure) => (
+                      <li key={procedure.reference} className="rounded-lg border border-hairline p-4">
+                        <p className="flex flex-wrap items-center gap-2">
+                          <span className="font-code-num font-bold text-primary">{procedure.reference}</span>
+                          <span className="px-2 py-0.5 rounded bg-secondary-fixed text-on-secondary-fixed font-label-sm">{procedure.degre === 1 ? "1er" : `${procedure.degre}e`} degré</span>
+                          <span className="font-label-sm text-on-surface-variant">Ouverte le {dateFr(procedure.saisine)}</span>
+                        </p>
+                        <p className="mt-2 font-body-md text-on-surface font-semibold">{procedure.grief}</p>
+                        <p className="font-body-sm text-on-surface-variant whitespace-pre-wrap">{procedure.description}</p>
+                        <ol className="mt-3 flex flex-wrap gap-2" aria-label="Étapes de la procédure">
+                          {ETAPES_DISCIPLINE.map(([code, libelle]) => {
+                            const rang = ETAPES_DISCIPLINE.findIndex(([c]) => c === procedure.phase);
+                            const atteinte = ETAPES_DISCIPLINE.findIndex(([c]) => c === code) <= rang;
+                            return (
+                              <li key={code} aria-current={code === procedure.phase ? "step" : undefined}
+                                className={`px-2.5 py-1 rounded-full font-label-sm ${code === procedure.phase ? "bg-primary text-on-primary" : atteinte ? "bg-primary-fixed text-on-primary-fixed" : "bg-surface-container text-on-surface-variant"}`}>
+                                {libelle}
+                              </li>
+                            );
+                          })}
+                        </ol>
+                        {procedure.decision ? (
+                          <p className="mt-3 font-body-sm text-on-surface">
+                            <strong>Décision du {dateFr(procedure.date_decision)} :</strong> {procedure.decision}
+                            {procedure.sanction_libelle ? ` (${procedure.sanction_libelle})` : ""}
+                            {procedure.executee_le ? ` · exécutée le ${dateFr(procedure.executee_le)}` : " · en attente d’exécution"}
+                          </p>
+                        ) : null}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </Bloc>
+
               <Bloc titre="Parcours académique" icone="school">
                 <dl className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6">
-                  <Champ label="Niveau d’étude" value={agent.parcours_academique.niveau_etude} />
-                  <Champ label="Libellé du diplôme le plus élevé" value={agent.parcours_academique.libelle_diplome} />
-                  <Champ label="Domaine de formation" value={agent.parcours_academique.domaine_formation} />
+                  <Champ label="Niveau d’étude" value={agent.parcours_academique.niveau_etude} nom="niveau_etude" options={OPTIONS_NIVEAU} />
+                  <Champ label="Libellé du diplôme le plus élevé" value={agent.parcours_academique.libelle_diplome} nom="libelle_diplome" />
+                  <Champ label="Domaine de formation" value={agent.parcours_academique.domaine_formation} nom="domaine_formation" />
                 </dl>
               </Bloc>
 
               <Bloc titre="Conjoint" icone="favorite">
                 <dl className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6">
-                  <Champ label="Nom" value={agent.famille.conjoint.nom} />
-                  <Champ label="Prénoms" value={agent.famille.conjoint.prenoms} />
-                  <Champ label="Téléphone" value={agent.famille.conjoint.telephone} />
-                  <Champ label="Adresse e-mail" value={agent.famille.conjoint.courriel} />
+                  <Champ label="Nom" value={agent.famille.conjoint.nom} nom="conjoint_nom" />
+                  <Champ label="Prénoms" value={agent.famille.conjoint.prenoms} nom="conjoint_prenoms" />
+                  <Champ label="Téléphone" value={agent.famille.conjoint.telephone} nom="conjoint_telephone" type="tel" />
+                  <Champ label="Adresse e-mail" value={agent.famille.conjoint.courriel} nom="conjoint_courriel" type="email" />
                 </dl>
               </Bloc>
 
@@ -406,7 +592,7 @@ export function ProfilAgentTroisOnglets({ agent }: { agent: Dossier }) {
           {onglet === "documents" && (
             <div className="space-y-4">
               <Bloc titre="Dossier personnel numérique" icone="folder_open">
-                <DocumentsAgent agent={agent} />
+                <DocumentsAgent agent={agent} edition={edition} />
               </Bloc>
             </div>
           )}
@@ -414,9 +600,16 @@ export function ProfilAgentTroisOnglets({ agent }: { agent: Dossier }) {
           {onglet === "conges" && <DemandesConges agent={agent} />}
 
           {onglet === "demandes" && <DemandesActes agent={agent} />}
+
+          {onglet === "formation" && <CollecteAgent agent={agent} />}
+
+          {onglet === "besoins" && responsable && <BesoinsResponsable />}
+
+          {onglet === "disposition" && modifiable && <MobiliteAgent />}
         </div>
       </div>
       {photoOuverte ? <EditeurPhoto agent={agent} onClose={() => setPhotoOuverte(false)} /> : null}
     </div>
+    </EditionContexte.Provider>
   );
 }

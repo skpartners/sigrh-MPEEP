@@ -45,8 +45,8 @@ function typeDe(piece: Piece, rubrique: Rubrique) {
 }
 
 /** Onglet « Mes documents » : dossier personnel numérique en trois rubriques. */
-export function DocumentsAgent({ agent }: { agent: Dossier }) {
-  const modifiable = agent.modifiable !== false;
+export function DocumentsAgent({ agent, edition = true }: { agent: Dossier; edition?: boolean }) {
+  const modifiable = agent.modifiable !== false && edition;
   const [depot, setDepot] = useState<{ rubrique: string; type: string } | null>(null);
   const [apercu, setApercu] = useState<Piece | null>(null);
 

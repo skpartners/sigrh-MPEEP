@@ -15,11 +15,11 @@ from .models import (
     Agent,
     DistinctionCarriere,
     DossierRetraite,
-    PilotageFinCarriere,
     PosteSensible,
     TypeFinCarriere,
 )
 from .present import GRADES_65_ANS, agent_brief
+from .visibilite import agent_visible, agents_visibles, refus_hors_perimetre
 
 HORIZON_ADMISSION = 365
 
@@ -76,8 +76,6 @@ def dossier_row(item: DossierRetraite, aujourd_hui: date) -> dict:
         "decret": item.decret,
         "date_decret": item.date_decret.isoformat() if item.date_decret else None,
         "date_cessation": item.date_cessation.isoformat() if item.date_cessation else None,
-        "idr": item.idr,
-        "pension": item.pension,
         "statut": item.statut,
         "statut_libelle": item.get_statut_display(),
         "statut_detail": item.statut_detail,
@@ -102,14 +100,14 @@ def assurer_admissions(aujourd_hui: date) -> None:
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
-def tableau(_request):
+def tableau(request):
     aujourd_hui = timezone.localdate()
     assurer_admissions(aujourd_hui)
-    agents = list(Agent.objects.exclude(date_naissance=None))
-    dossiers = list(DossierRetraite.objects.select_related("agent", "agent__organisme", "motif"))
+    agents = list(agents_visibles(Agent.objects.exclude(date_naissance=None), request.user))
+    dossiers = list(agents_visibles(DossierRetraite.objects.select_related("agent", "agent__organisme", "motif"), request.user, "agent__matricule"))
     lignes = [dossier_row(item, aujourd_hui) for item in dossiers]
     dans_l_annee = [ligne for ligne in lignes if ligne["date_limite"] and (date.fromisoformat(ligne["date_limite"]) - aujourd_hui).days <= 365]
-    postes = list(PosteSensible.objects.select_related("titulaire", "titulaire__organisme"))
+    postes = list(agents_visibles(PosteSensible.objects.select_related("titulaire", "titulaire__organisme"), request.user, "titulaire__matricule"))
     pyramide = []
     for code, libelle, minimum, maximum in TRANCHES:
         membres = [agent for agent in agents if minimum <= _age(agent.date_naissance, aujourd_hui) <= maximum]
@@ -124,8 +122,9 @@ def tableau(_request):
                 "cadres": sum(1 for agent in membres if agent.grade.startswith("A")),
             }
         )
-    pilotage = _pilotage(aujourd_hui.year)
-    liquides = [ligne for ligne in lignes if ligne["statut"] in {"transmis", "notifie"}]
+    pilotage = _pilotage()
+    transmis = [ligne for ligne in lignes if ligne["statut"] in {"transmis", "notifie"}]
+    pilotage["renouvellement"] = _renouvellement(agents, len(dans_l_annee), aujourd_hui)
     return Response(
         {
             "exercice": aujourd_hui.year,
@@ -135,8 +134,9 @@ def tableau(_request):
                 "departs_cadres": sum(1 for ligne in dans_l_annee if ligne["agent"]["grade"].startswith("A")),
                 "postes": len(postes),
                 "binomes": sum(1 for poste in postes if poste.successeur),
-                "idr": sum(ligne["idr"] for ligne in lignes),
-                "idr_liquidees": round(sum(ligne["idr"] for ligne in liquides) * 100 / max(1, sum(ligne["idr"] for ligne in lignes))),
+                "dossiers": len(lignes),
+                "transmis": len(transmis),
+                "cessations": sum(1 for ligne in lignes if not ligne["automatique"]),
             },
             "pyramide": pyramide,
             "dossiers": lignes,
@@ -148,41 +148,32 @@ def tableau(_request):
             "statuts": [{"code": code, "libelle": libelle} for code, libelle in DossierRetraite.Statut.choices],
             "agents": [
                 {"matricule": agent.matricule, "nom_complet": agent.nom_complet, "organisme_sigle": agent.organisme.sigle}
-                for agent in Agent.objects.select_related("organisme").order_by("nom", "prenoms")
+                for agent in agents_visibles(Agent.objects.select_related("organisme"), request.user).order_by("nom", "prenoms")
             ],
             **pilotage,
         }
     )
 
 
-def _pilotage(annee: int) -> dict:
-    item = PilotageFinCarriere.objects.first()
+def _pilotage() -> dict:
     actions = [
         {"id": action.id, "titre": action.titre, "detail": action.detail, "quand": action.quand, "valeur": action.valeur}
         for action in ActionAccompagnement.objects.all()
     ]
     distinctions = [
-        {"id": distinction.id, "rang": distinction.rang, "titre": distinction.titre, "detail": distinction.detail, "etat": distinction.etat}
+        _distinction(distinction)
         for distinction in DistinctionCarriere.objects.all()
     ]
-    if item is None:
-        return {
-            "entete": {},
-            "passerelle": {},
-            "cgrae": {},
-            "renouvellement": {},
-            "accompagnement": {"actions": actions},
-            "distinctions": distinctions,
-        }
-    reference = item.reference.replace("{annee}", str(annee))
-    return {
-        "entete": {"fil": item.fil or [], "titre": item.titre, "chapeau": item.chapeau},
-        "passerelle": {"reference": reference, "modele": item.reference, "etat": item.etat_passerelle},
-        "cgrae": {"taux": float(item.taux_cgrae), "detail": item.detail_cgrae},
-        "renouvellement": {"texte": item.renouvellement},
-        "accompagnement": {"titre": item.programme_titre, "texte": item.programme_texte, "actions": actions},
-        "distinctions": distinctions,
-    }
+    return {"renouvellement": {}, "accompagnement": {"actions": actions}, "distinctions": distinctions}
+
+
+def _renouvellement(agents: list, sortants: int, aujourd_hui: date) -> dict:
+    """Agents entrés au ministère sur les douze derniers mois, rapportés aux départs des douze mois à venir."""
+    depuis = aujourd_hui.replace(year=aujourd_hui.year - 1) if not (aujourd_hui.month == 2 and aujourd_hui.day == 29) else aujourd_hui.replace(year=aujourd_hui.year - 1, day=28)
+    entrants = sum(1 for agent in agents if agent.prise_service_ministere and depuis <= agent.prise_service_ministere <= aujourd_hui)
+    if not entrants and not sortants:
+        return {"texte": ""}
+    return {"texte": f"{entrants} entrant{'s' if entrants > 1 else ''} sur 12 mois pour {sortants} sortant{'s' if sortants > 1 else ''} prévu{'s' if sortants > 1 else ''}"}
 
 
 def _poste_row(poste: PosteSensible) -> dict:
@@ -229,14 +220,12 @@ def _dossier_depuis(donnees, agent: Agent | None = None, entree_actuelle: date |
     if donnees.get("entree_service") and entree is None:
         return Response({"detail": "La date d'entrée en service est invalide."}, status=400)
     age = _entier(donnees.get("age_limite"), 60)
-    idr = _entier(donnees.get("idr"), 0)
-    pension = _entier(donnees.get("pension"), 0)
-    if age is None or not 40 <= age <= 75 or idr is None or idr < 0 or pension is None or pension < 0:
-        return Response({"detail": "L'âge limite, l'indemnité et la pension doivent être des montants valides."}, status=400)
+    if age is None or not 40 <= age <= 75:
+        return Response({"detail": "L'âge limite doit être compris entre 40 et 75 ans."}, status=400)
     statut = (donnees.get("statut") or DossierRetraite.Statut.VISITE).strip()
     if statut not in DossierRetraite.Statut.values:
         return Response({"detail": "Ce statut de dossier n'existe pas."}, status=400)
-    return agent, entree, age, idr, pension, statut, (donnees.get("statut_detail") or "").strip()[:160]
+    return agent, entree, age, statut, (donnees.get("statut_detail") or "").strip()[:160]
 
 
 def _report(donnees, item: DossierRetraite):
@@ -278,8 +267,8 @@ def creer_dossier(request):
             status=409,
         )
     agent = _agent(donnees.get("matricule") or "")
-    if agent is None:
-        return Response({"detail": "Choisissez un agent du système."}, status=400)
+    if agent is None or not agent_visible(request.user, agent):
+        return Response({"detail": "Choisissez un agent de votre périmètre."}, status=400)
     if DossierRetraite.objects.filter(agent=agent).exists():
         return Response({"detail": "Cet agent a déjà un dossier de fin de carrière."}, status=409)
     cessation = _date(donnees.get("date_cessation"))
@@ -297,6 +286,8 @@ def creer_dossier(request):
 @permission_classes([IsAuthenticated])
 def dossier(request, pk: int):
     item = get_object_or_404(DossierRetraite.objects.select_related("agent", "agent__organisme", "motif"), pk=pk)
+    if not agent_visible(request.user, item.agent):
+        return refus_hors_perimetre()
     if request.method == "DELETE":
         if _automatique(item):
             return Response({"detail": "L'admission à la retraite est automatique. Ce dossier ne se retire pas."}, status=409)
@@ -310,13 +301,11 @@ def dossier(request, pk: int):
         lu = _dossier_depuis(request.data, item.agent, item.entree_service)
         if isinstance(lu, Response):
             return lu
-        _, entree, _, idr, pension, statut, detail = lu
+        _, entree, _, statut, detail = lu
         item.age_limite = age
         item.decret = decret
         item.date_decret = date_decret
         item.entree_service = entree
-        item.idr = idr
-        item.pension = pension
         item.statut = statut
         item.statut_detail = detail
         item.save()
@@ -373,6 +362,8 @@ def creer_poste(request):
     if isinstance(lu, Response):
         return lu
     intitule, titulaire, depart, successeur, progression, commentaire = lu
+    if not agent_visible(request.user, titulaire):
+        return refus_hors_perimetre()
     item = PosteSensible.objects.create(
         intitule=intitule, titulaire=titulaire, depart=depart, successeur=successeur, progression=progression, commentaire=commentaire,
     )
@@ -383,6 +374,8 @@ def creer_poste(request):
 @permission_classes([IsAuthenticated])
 def poste(request, pk: int):
     item = get_object_or_404(PosteSensible.objects.select_related("titulaire", "titulaire__organisme"), pk=pk)
+    if not agent_visible(request.user, item.titulaire):
+        return refus_hors_perimetre()
     if request.method == "DELETE":
         item.delete()
         return Response(status=204)
@@ -435,6 +428,18 @@ def motif(request, pk: int):
     return Response({"id": item.id, "code": item.code, "libelle": item.libelle, "automatique": False})
 
 
+def _distinction(item: DistinctionCarriere) -> dict:
+    return {
+        "id": item.id, "rang": item.rang, "titre": item.titre, "detail": item.detail, "etat": item.etat,
+        "famille": item.famille, "famille_libelle": item.get_famille_display(),
+    }
+
+
+def _famille(data, defaut: str = "autre") -> str:
+    valeur = str(data.get("famille") or defaut)
+    return valeur if valeur in {code for code, _libelle in DistinctionCarriere.FAMILLES} else defaut
+
+
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def creer_distinction(request):
@@ -445,9 +450,9 @@ def creer_distinction(request):
     ordre = (DistinctionCarriere.objects.order_by("-ordre").values_list("ordre", flat=True).first() or 0) + 1
     item = DistinctionCarriere.objects.create(
         rang=rang[:12], titre=titre[:200], detail=(request.data.get("detail") or "").strip()[:240],
-        etat=(request.data.get("etat") or "").strip()[:80], ordre=ordre,
+        etat=(request.data.get("etat") or "").strip()[:80], famille=_famille(request.data), ordre=ordre,
     )
-    return Response({"id": item.id, "rang": item.rang, "titre": item.titre, "detail": item.detail, "etat": item.etat}, status=201)
+    return Response(_distinction(item), status=201)
 
 
 @api_view(["PATCH", "DELETE"])
@@ -465,8 +470,9 @@ def distinction(request, pk: int):
     item.titre = titre[:200]
     item.detail = (request.data.get("detail") or "").strip()[:240]
     item.etat = (request.data.get("etat") or "").strip()[:80]
+    item.famille = _famille(request.data, item.famille)
     item.save()
-    return Response({"id": item.id, "rang": item.rang, "titre": item.titre, "detail": item.detail, "etat": item.etat})
+    return Response(_distinction(item))
 
 
 @api_view(["POST"])
@@ -499,40 +505,3 @@ def action(request, pk: int):
     item.valeur = (request.data.get("valeur") or "").strip()[:80]
     item.save()
     return Response({"id": item.id, "titre": item.titre, "detail": item.detail, "quand": item.quand, "valeur": item.valeur})
-
-
-@api_view(["PATCH"])
-@permission_classes([IsAuthenticated])
-def pilotage(request):
-    """Met à jour l'en-tête, la passerelle, le taux CGRAE, le renouvellement et le programme."""
-    donnees = request.data
-    titre = (donnees.get("titre") or "").strip()
-    if not titre:
-        return Response({"detail": "Le titre de la page est obligatoire."}, status=400)
-    taux = donnees.get("taux_cgrae")
-    try:
-        taux = float(taux)
-    except (TypeError, ValueError):
-        return Response({"detail": "Le taux d'arrimage CGRAE doit être un nombre."}, status=400)
-    if not 0 <= taux <= 100:
-        return Response({"detail": "Le taux d'arrimage CGRAE va de 0 à 100."}, status=400)
-    fil = donnees.get("fil") or []
-    if not isinstance(fil, list) or not all(str(etape).strip() for etape in fil):
-        return Response({"detail": "Le fil d'Ariane est une liste de libellés."}, status=400)
-    with transaction.atomic():
-        item = PilotageFinCarriere.objects.select_for_update().first()
-        if item is None:
-            item = PilotageFinCarriere.objects.create(titre=titre[:240], taux_cgrae=taux)
-        item.fil = [str(etape).strip()[:80] for etape in fil]
-        item.titre = titre[:240]
-        item.chapeau = (donnees.get("chapeau") or "").strip()
-        item.reference = (donnees.get("reference") or "").strip()[:80]
-        if "etat_passerelle" in donnees:
-            item.etat_passerelle = (donnees.get("etat_passerelle") or "").strip()[:180]
-        item.taux_cgrae = taux
-        item.detail_cgrae = (donnees.get("detail_cgrae") or "").strip()[:180]
-        item.renouvellement = (donnees.get("renouvellement") or "").strip()[:180]
-        item.programme_titre = (donnees.get("programme_titre") or "").strip()[:200]
-        item.programme_texte = (donnees.get("programme_texte") or "").strip()
-        item.save()
-    return Response(_pilotage(timezone.localdate().year))

@@ -6,7 +6,6 @@ class Organisme(models.Model):
     code = models.SlugField(max_length=40, unique=True)
     nom = models.CharField(max_length=220)
     sigle = models.CharField(max_length=40, blank=True)
-    quorum_presence = models.PositiveSmallIntegerField(default=65)
 
     class Meta:
         ordering = ["nom"]
@@ -558,9 +557,27 @@ class SessionFormation(models.Model):
     type_formation = models.ForeignKey(TypeFormation, on_delete=models.PROTECT, related_name="sessions")
     libelle = models.CharField(max_length=160, default="")
     cadre_budgetaire = models.CharField(max_length=160, default="")
+    CADRES = [
+        ("hors_ci_courte", "Formation de courte durée"),
+        ("hors_ci_longue", "Formation de longue durée"),
+        ("ci_ministere", "Formations dispensées par le ministère"),
+        ("ci_concours", "Formations après concours professionnel"),
+        ("ci_partenaires", "Formations dispensées par des partenaires techniques"),
+    ]
+    ZONES = {"hors_ci": "Formation hors Côte d'Ivoire", "ci": "Formation en Côte d'Ivoire"}
+
+    @staticmethod
+    def zone_du_cadre(cadre: str) -> str:
+        return "hors_ci" if cadre.startswith("hors_ci") else "ci" if cadre else ""
+
+    @property
+    def zone_libelle(self) -> str:
+        return self.ZONES.get(self.zone_du_cadre(self.cadre), "")
+    cadre = models.CharField(max_length=20, choices=CADRES, blank=True, default="")
     objectif = models.CharField(max_length=240, default="")
     ouverte = models.BooleanField(default=False)
     ouverte_le = models.DateField(null=True, blank=True)
+    inscriptions_fin = models.DateField(null=True, blank=True, help_text="Dernier jour des inscriptions")
     prestataire = models.ForeignKey(Prestataire, on_delete=models.SET_NULL, null=True, blank=True, related_name="sessions")
     lieu = models.CharField(max_length=160, blank=True)
     formateur = models.CharField(max_length=160, blank=True)
@@ -589,6 +606,26 @@ class InscriptionFormation(models.Model):
     # Émargement et évaluation à chaud, saisis par la sous-direction pendant la session.
     present = models.BooleanField(null=True, blank=True)
     note_satisfaction = models.PositiveSmallIntegerField(null=True, blank=True, help_text="De 1 à 5")
+    # Suivi de l'agent : issue particulière (abandon, report) et observation de la sous-direction.
+    ISSUES = [("abandon", "Abandon"), ("reporte", "Reportée")]
+    issue = models.CharField(max_length=10, choices=ISSUES, blank=True, default="")
+    observation = models.CharField(max_length=240, blank=True, default="")
+
+
+class FormationExterne(models.Model):
+    """Formation suivie par un agent hors du plan du ministère : le ministère n'en est pas l'organisateur, il en suit l'agent."""
+
+    agent = models.ForeignKey(Agent, on_delete=models.CASCADE, related_name="formations_externes")
+    intitule = models.CharField(max_length=200)
+    cadre = models.CharField(max_length=20, choices=SessionFormation.CADRES)
+    dispensateur = models.CharField(max_length=200, blank=True, help_text="Établissement, partenaire ou organisme qui forme")
+    lieu = models.CharField(max_length=160, blank=True, help_text="Ville et pays")
+    date_debut = models.DateField()
+    date_fin = models.DateField(null=True, blank=True)
+    observation = models.CharField(max_length=240, blank=True)
+
+    class Meta:
+        ordering = ["-date_debut", "agent__nom"]
 
 
 class PlanFormation(models.Model):
@@ -602,8 +639,40 @@ class PlanFormation(models.Model):
         ordering = ["-annee"]
 
 
+class CollecteBesoinFormation(models.Model):
+    """Campagne : le ministère demande à chaque agent d'exprimer ses besoins, ou de dire RAS."""
+
+    annee = models.PositiveSmallIntegerField()
+    date_limite = models.DateField()
+    communique = models.CharField(max_length=280, blank=True)
+    lancee_le = models.DateTimeField()
+    lancee_par = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name="collectes_formation")
+    cloturee_le = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-lancee_le"]
+
+    @property
+    def ouverte(self) -> bool:
+        return self.cloturee_le is None
+
+
+class CollecteReponseFormation(models.Model):
+    """Réponse d'un agent à une collecte : besoins saisis, ou RAS."""
+
+    collecte = models.ForeignKey(CollecteBesoinFormation, on_delete=models.CASCADE, related_name="reponses")
+    agent = models.ForeignKey(Agent, on_delete=models.CASCADE, related_name="reponses_collecte_formation")
+    ras = models.BooleanField(default=False)
+    repondu_le = models.DateTimeField()
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["collecte", "agent"], name="collecte_reponse_agent_unique"),
+        ]
+
+
 class BesoinFormation(models.Model):
-    """Besoin exprimé par une structure, à couvrir par une session du plan."""
+    """Besoin exprimé par un agent (collecte) ou formulé par la sous-direction, à couvrir par un module."""
 
     class Priorite(models.TextChoices):
         HAUTE = "haute", "Haute"
@@ -612,11 +681,13 @@ class BesoinFormation(models.Model):
 
     class Statut(models.TextChoices):
         EXPRIME = "exprime", "Exprimé"
-        RETENU = "retenu", "Retenu au plan"
-        COUVERT = "couvert", "Couvert par une session"
+        RETENU = "retenu", "Formulé au plan"
+        COUVERT = "couvert", "Couvert par un module"
 
     annee = models.PositiveSmallIntegerField()
-    organisme = models.ForeignKey(Organisme, on_delete=models.PROTECT, related_name="besoins_formation")
+    structure = models.ForeignKey("EntiteTutelle", on_delete=models.PROTECT, related_name="besoins_formation")
+    agent = models.ForeignKey(Agent, null=True, blank=True, on_delete=models.SET_NULL, related_name="besoins_formation")
+    collecte = models.ForeignKey(CollecteBesoinFormation, null=True, blank=True, on_delete=models.SET_NULL, related_name="besoins")
     type_formation = models.ForeignKey(TypeFormation, on_delete=models.PROTECT, related_name="besoins")
     intitule = models.CharField(max_length=200)
     effectif = models.PositiveSmallIntegerField(default=1)
@@ -654,8 +725,6 @@ class Absence(models.Model):
     decision = models.CharField(max_length=20, choices=Decision.choices, blank=True)
     motif_decision = models.TextField(blank=True)
     decide_le = models.DateField(null=True, blank=True)
-    impact_solde = models.CharField(max_length=80, blank=True)
-    impact_detail = models.CharField(max_length=120, blank=True)
 
     # Congés soumis à l'arbitrage de la sous-direction des carrières (écran Carrières · Congés).
     class Instruction(models.TextChoices):
@@ -669,6 +738,8 @@ class Absence(models.Model):
 
     instruction = models.CharField(max_length=20, choices=Instruction.choices, blank=True)
     interim_detail = models.CharField(max_length=120, blank=True)
+    # Demande déposée par l'agent depuis son profil, dont cette absence est l'inscription au registre.
+    demande = models.OneToOneField("Demande", null=True, blank=True, on_delete=models.SET_NULL, related_name="absence_liee")
 
     class Meta:
         ordering = ["-debut"]
@@ -720,26 +791,10 @@ class PrestationSociale(models.Model):
 
 
 class SituationSociale(models.Model):
-    """Barème de quotité cessible de l'agent, servi à l'onglet action sociale."""
+    """Couverture maladie de l'agent, servie à l'onglet action sociale."""
 
     agent = models.OneToOneField(Agent, on_delete=models.CASCADE, related_name="situation_sociale")
     numero_cmu = models.CharField(max_length=40, blank=True)
-    traitement_brut = models.PositiveIntegerField(help_text="FCFA")
-    cotisations = models.PositiveIntegerField(help_text="FCFA")
-    engagements = models.PositiveIntegerField(default=0, help_text="Prélèvements en cours, FCFA")
-    taux_quotite = models.DecimalField(max_digits=5, decimal_places=2, default=33)
-
-    @property
-    def solde_nette(self) -> int:
-        return self.traitement_brut - self.cotisations
-
-    @property
-    def quotite(self) -> int:
-        return round(self.solde_nette * float(self.taux_quotite) / 100)
-
-    @property
-    def marge(self) -> int:
-        return self.quotite - self.engagements
 
 
 class Enfant(models.Model):
@@ -958,6 +1013,10 @@ class EntiteTutelle(models.Model):
         "self", null=True, blank=True, on_delete=models.PROTECT, related_name="enfants",
     )
     ordre = models.PositiveSmallIntegerField(default=0)
+    quorum_presence_pourcent = models.PositiveSmallIntegerField(
+        null=True, blank=True,
+        help_text="Présence minimale de la structure ; vide : celle de la structure qui la contient, puis le quorum par défaut",
+    )
 
     class Meta:
         ordering = ["ordre", "nom"]
@@ -1022,6 +1081,106 @@ class DemandeDotation(models.Model):
         ordering = ["-recu_le", "-id"]
 
 
+class MouvementAgent(models.Model):
+    """Affectation d'un nouvel agent ou réaffectation d'un fonctionnaire après concours professionnel.
+
+    La structure précédente est conservée : c'est la trace de l'agent avant sa réaffectation.
+    """
+
+    class Type(models.TextChoices):
+        AFFECTATION = "affectation", "Affectation"
+        REAFFECTATION = "reaffectation", "Réaffectation après concours professionnel"
+
+    class Categorie(models.TextChoices):
+        FONCTIONNAIRE = "fonctionnaire", "Fonctionnaire"
+        CONTRACTUEL = "contractuel", "Contractuel"
+
+    reference = models.CharField(max_length=32, unique=True)
+    type = models.CharField(max_length=14, choices=Type.choices)
+    categorie = models.CharField(max_length=14, choices=Categorie.choices, default=Categorie.FONCTIONNAIRE)
+    agent = models.ForeignKey(Agent, on_delete=models.CASCADE, related_name="affectations_dotation")
+    structure = models.ForeignKey(EntiteTutelle, on_delete=models.PROTECT, related_name="mouvements_recus")
+    structure_precedente = models.ForeignKey(EntiteTutelle, null=True, blank=True, on_delete=models.SET_NULL, related_name="mouvements_quittes")
+    precedente_nom = models.CharField(max_length=240, blank=True, help_text="Structure de l'agent avant le mouvement, conservée même si elle n'est plus au référentiel")
+    emploi = models.ForeignKey("EmploiReferentiel", null=True, blank=True, on_delete=models.SET_NULL, related_name="mouvements")
+    concours = models.CharField(max_length=200, blank=True, help_text="Concours professionnel réussi (réaffectation)")
+    date_effet = models.DateField()
+    reference_acte = models.CharField(max_length=120, blank=True)
+    document = models.FileField(upload_to="mouvements/%Y/%m", blank=True)
+    observation = models.CharField(max_length=240, blank=True)
+    etape = models.OneToOneField("EtapeParcours", null=True, blank=True, on_delete=models.SET_NULL, related_name="mouvement")
+    cree_le = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-date_effet", "-id"]
+
+
+class MiseADisposition(models.Model):
+    """Demande de l'agent d'être mis à disposition d'une autre structure.
+
+    La hiérarchie en prend connaissance et accepte ou rejette avec motif. La DRH constate ensuite la mise à
+    disposition et la suit : le constat ouvre la période dans les positions administratives de l'agent.
+    """
+
+    class Statut(models.TextChoices):
+        EN_ATTENTE = "en_attente", "En attente de la hiérarchie"
+        ACCEPTEE = "acceptee", "Acceptée, à constater par la DRH"
+        REJETEE = "rejetee", "Rejetée par la hiérarchie"
+        CONSTATEE = "constatee", "Constatée par la DRH"
+
+    agent = models.ForeignKey(Agent, on_delete=models.CASCADE, related_name="mises_a_disposition")
+    demande = models.OneToOneField(Demande, null=True, blank=True, on_delete=models.SET_NULL, related_name="mise_a_disposition")
+    position = models.OneToOneField("PositionAdministrative", null=True, blank=True, on_delete=models.SET_NULL, related_name="mise_a_disposition")
+    ministere_accueil = models.CharField(max_length=200, blank=True, help_text="Vide : le même ministère")
+    structure_accueil = models.CharField(max_length=200)
+    date_debut = models.DateField()
+    date_fin = models.DateField(null=True, blank=True)
+    motif = models.CharField(max_length=240, blank=True)
+    avis_document = models.FileField(upload_to="mises_a_disposition/%Y/%m", help_text="Avis favorable de la structure d'accueil")
+    statut = models.CharField(max_length=12, choices=Statut.choices, default=Statut.EN_ATTENTE)
+    motif_decision = models.TextField(blank=True)
+    decide_par = models.CharField(max_length=160, blank=True)
+    decide_le = models.DateField(null=True, blank=True)
+    constate_le = models.DateField(null=True, blank=True)
+    reference_acte = models.CharField(max_length=120, blank=True)
+    observation = models.CharField(max_length=240, blank=True)
+    depose_le = models.DateField()
+
+    class Meta:
+        ordering = ["-depose_le", "-id"]
+
+
+class Redeploiement(models.Model):
+    """Agent envoyé dans une autre structure par sa hiérarchie, pour les besoins du service."""
+
+    class Statut(models.TextChoices):
+        DECLENCHE = "declenche", "Déclenché, en attente de la hiérarchie montante"
+        CONNU = "connu", "Pris en connaissance, suivi par la DRH"
+        EFFECTUE = "effectue", "Effectué"
+
+    reference = models.CharField(max_length=32, unique=True)
+    agent = models.ForeignKey(Agent, on_delete=models.CASCADE, related_name="redeploiements")
+    initiateur = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name="redeploiements_declenches")
+    initiateur_nom = models.CharField(max_length=160, blank=True)
+    structure_origine = models.ForeignKey(EntiteTutelle, null=True, blank=True, on_delete=models.SET_NULL, related_name="redeploiements_quittes")
+    origine_nom = models.CharField(max_length=240, blank=True)
+    structure_destination = models.ForeignKey(EntiteTutelle, on_delete=models.PROTECT, related_name="redeploiements_recus")
+    motif = models.TextField(help_text="Le besoin du service qui justifie le redéploiement")
+    date_effet = models.DateField(null=True, blank=True)
+    statut = models.CharField(max_length=10, choices=Statut.choices, default=Statut.DECLENCHE)
+    connaissance_par = models.CharField(max_length=160, blank=True)
+    connaissance_le = models.DateField(null=True, blank=True)
+    observation_connaissance = models.CharField(max_length=240, blank=True)
+    effectue_le = models.DateField(null=True, blank=True)
+    reference_acte = models.CharField(max_length=120, blank=True)
+    observation = models.CharField(max_length=240, blank=True)
+    etape = models.OneToOneField("EtapeParcours", null=True, blank=True, on_delete=models.SET_NULL, related_name="redeploiement")
+    depose_le = models.DateField()
+
+    class Meta:
+        ordering = ["-depose_le", "-id"]
+
+
 class AlertePoste(models.Model):
     entite = models.ForeignKey(EntiteTutelle, on_delete=models.PROTECT, related_name="alertes_postes")
     intitule = models.CharField(max_length=200)
@@ -1063,57 +1222,32 @@ class JournalEffectif(models.Model):
 
 
 class CampagneBesoin(models.Model):
+    """Appel lancé aux responsables de structure pour qu'ils expriment leurs besoins en agents de l'État."""
+
     exercice = models.PositiveSmallIntegerField(unique=True)
     ouverte = models.BooleanField(default=True)
-    cadrage = models.CharField(max_length=180)
-    pea_max = models.PositiveIntegerField()
-    volume_precedent = models.PositiveIntegerField(default=0)
+    cadrage = models.CharField(max_length=240, blank=True, help_text="Consigne adressée aux responsables")
+    ouverte_le = models.DateField(null=True, blank=True)
+    limite = models.DateField(null=True, blank=True, help_text="Date limite de réponse")
 
     class Meta:
         ordering = ["-exercice"]
 
 
-class FiliereBesoin(models.Model):
-    code = models.SlugField(max_length=40, unique=True)
-    libelle = models.CharField(max_length=200)
-    icone = models.CharField(max_length=40)
-    requis = models.PositiveIntegerField()
-    couverts = models.PositiveIntegerField()
-    ordre = models.PositiveSmallIntegerField(default=0)
-
-    class Meta:
-        ordering = ["ordre", "libelle"]
-
-
 class FicheBesoin(models.Model):
-    class Nature(models.TextChoices):
-        CREATION = "creation", "Création nette de poste"
-        REMPLACEMENT = "remplacement", "Remplacement départ retraite"
-        MOBILITE = "mobilite", "Mobilité inter-entreprises"
-        RENFORT = "renfort", "Renfort stratégique provisoire"
-
-    class Statut(models.TextChoices):
-        FAVORABLE = "favorable", "Arbitré favorable DGPE"
-        INSTRUCTION = "instruction", "En attente d'avis technique"
-        COMPLEMENT = "complement", "Renvoyé pour complément"
-        REJET = "rejet", "Rejeté (contrainte PEA)"
+    """Besoin exprimé par le responsable d'une structure : fonctionnaires et contractuels demandés pour un profil."""
 
     reference = models.CharField(max_length=32, unique=True)
+    campagne = models.ForeignKey(CampagneBesoin, null=True, on_delete=models.CASCADE, related_name="fiches")
     entite = models.ForeignKey(EntiteTutelle, on_delete=models.PROTECT, related_name="fiches_besoin")
-    direction = models.CharField(max_length=180)
-    profil = models.CharField(max_length=200)
+    auteur = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name="fiches_besoin")
+    emploi = models.ForeignKey("EmploiReferentiel", null=True, blank=True, on_delete=models.SET_NULL, related_name="fiches_besoin")
+    profil = models.CharField(max_length=200, help_text="Libellé de l'emploi demandé")
     grade = models.CharField(max_length=40, blank=True)
-    specialite = models.CharField(max_length=120, blank=True)
-    volume = models.PositiveSmallIntegerField()
-    motif = models.CharField(max_length=240)
-    nature = models.CharField(max_length=20, choices=Nature.choices)
-    statut = models.CharField(max_length=20, choices=Statut.choices, default=Statut.INSTRUCTION)
-    arbitrage = models.CharField(max_length=180, blank=True)
-    visa = models.CharField(max_length=180, blank=True)
-    detail = models.CharField(max_length=240, blank=True)
-    cout_annuel = models.BigIntegerField(default=0)
-    critique = models.BooleanField(default=False)
-    postes_accordes = models.PositiveSmallIntegerField(default=0)
+    motif = models.CharField(max_length=240, blank=True)
+    fonctionnaires = models.PositiveSmallIntegerField(default=0)
+    contractuels = models.PositiveSmallIntegerField(default=0)
+    volume = models.PositiveSmallIntegerField(help_text="Fonctionnaires et contractuels demandés")
     depose_le = models.DateTimeField()
 
     class Meta:
@@ -1143,6 +1277,17 @@ class ProcedureDisciplinaire(models.Model):
     stade_detail = models.CharField(max_length=160, blank=True)
     avis = models.CharField(max_length=20, choices=Avis.choices, default=Avis.INSTRUCTION)
 
+    class Phase(models.TextChoices):
+        DEMANDE_EXPLICATION = "demande_explication", "Demande d'explication"
+        INSTRUCTION_CONSEIL = "instruction_conseil", "Instruction devant le conseil de discipline"
+        DECISION_EXECUTION = "decision_execution", "Décision et exécution"
+
+    phase = models.CharField(max_length=20, choices=Phase.choices, default=Phase.DEMANDE_EXPLICATION)
+    sanction_nature = models.CharField(max_length=20, blank=True, help_text="Nature de la sanction prononcée (décision et exécution)")
+    decision = models.CharField(max_length=240, blank=True)
+    date_decision = models.DateField(null=True, blank=True)
+    executee_le = models.DateField(null=True, blank=True)
+
     class Meta:
         ordering = ["saisine", "reference"]
 
@@ -1159,6 +1304,9 @@ class SanctionDisciplinaire(models.Model):
         REVOCATION = "revocation", "Révocation"
 
     agent = models.ForeignKey(Agent, on_delete=models.CASCADE, related_name="sanctions")
+    procedure = models.ForeignKey(
+        "ProcedureDisciplinaire", null=True, blank=True, on_delete=models.CASCADE, related_name="sanctions",
+    )
     nature = models.CharField(max_length=20, choices=Nature.choices)
     degre = models.PositiveSmallIntegerField(default=1)
     prononcee_le = models.DateField()
@@ -1205,8 +1353,6 @@ class DossierRetraite(models.Model):
     date_cessation = models.DateField(null=True, blank=True, help_text="Date d'effet des cessations saisies (démission, décès…).")
     decret = models.CharField(max_length=80, blank=True, help_text="Référence du décret présidentiel qui reporte la retraite.")
     date_decret = models.DateField(null=True, blank=True)
-    idr = models.PositiveIntegerField(default=0, help_text="Indemnité de départ à la retraite, en FCFA")
-    pension = models.PositiveIntegerField(default=0, help_text="Pension mensuelle provisoire, en FCFA")
     statut = models.CharField(max_length=20, choices=Statut.choices, default=Statut.VISITE)
     statut_detail = models.CharField(max_length=160, blank=True)
 
@@ -1263,10 +1409,16 @@ class ActionAccompagnement(models.Model):
 class DistinctionCarriere(models.Model):
     """Décoration instruite avant la radiation des cadres."""
 
+    FAMILLES = [
+        ("prix_excellence", "Prix d'excellence"),
+        ("ordre_merite", "Distinction dans l'ordre du mérite de la fonction publique"),
+        ("autre", "Autre distinction"),
+    ]
     rang = models.CharField(max_length=12)
     titre = models.CharField(max_length=200)
     detail = models.CharField(max_length=240, blank=True)
     etat = models.CharField(max_length=80, blank=True)
+    famille = models.CharField(max_length=20, choices=FAMILLES, default="autre")
     ordre = models.PositiveSmallIntegerField(default=0)
 
     class Meta:
@@ -1356,6 +1508,8 @@ class EmploiReferentiel(models.Model):
     famille = models.CharField(max_length=40)
     grade = models.ForeignKey(GradeReferentiel, on_delete=models.PROTECT, related_name="emplois")
     ordre = models.PositiveSmallIntegerField(default=0)
+    SOURCES = [("fonction_publique", "Reconnu par la Fonction publique"), ("ministere", "Ajouté par le ministère")]
+    source = models.CharField(max_length=20, choices=SOURCES, default="fonction_publique")
 
     class Meta:
         ordering = ["ordre", "libelle"]
@@ -1606,9 +1760,12 @@ class ParametresMinistere(models.Model):
     civilite = models.CharField(max_length=20, blank=True, choices=Civilite.choices)
     nom = models.CharField(max_length=160, blank=True)
     photo = models.FileField(upload_to="ministere", blank=True)
+    logo = models.FileField(upload_to="ministere/logo", blank=True, help_text="Logo de la structure ; vide : les armoiries par défaut")
+    donnees_reelles = models.BooleanField(default=False, help_text="Vrai une fois l'effectif réel chargé : plus de données de démonstration")
     connexion_active = models.BooleanField(default=False)
     admin_matricule = models.CharField(max_length=150, blank=True)
     inactivite_minutes = models.PositiveSmallIntegerField(default=15)
+    quorum_presence_pourcent = models.PositiveSmallIntegerField(default=65)
     delai_visa_acte_jours = models.PositiveSmallIntegerField(default=2)
     delai_validation_hierarchie_jours = models.PositiveSmallIntegerField(default=3)
     couleur_principale = models.CharField(max_length=7, default="#042F32")
@@ -1635,3 +1792,88 @@ class RappelRetour(models.Model):
             models.UniqueConstraint(fields=["destinataire", "cle"], name="rappel_retour_unique"),
         ]
         verbose_name = "rappel de retour"
+
+
+class ValidationBesoin(models.Model):
+    """Décision prise, par emploi, à une étape de la programmation.
+
+    La Conférence de programmation valide d'abord les besoins exprimés ; le Catalogue des
+    Mesures Nouvelles retient ensuite ceux qui sont financés. Le bilan de satisfaction
+    compare le volume retenu au catalogue avec la dotation effectivement actée.
+    """
+
+    class Etape(models.TextChoices):
+        CONFERENCE = "conference", "Conférence de programmation"
+        CATALOGUE = "catalogue", "Catalogue des mesures nouvelles"
+
+    campagne = models.ForeignKey(CampagneBesoin, on_delete=models.CASCADE, related_name="validations")
+    emploi = models.ForeignKey("EmploiReferentiel", on_delete=models.CASCADE, related_name="validations_besoin")
+    etape = models.CharField(max_length=12, choices=Etape.choices)
+    class Decision(models.TextChoices):
+        MAINTENU = "maintenu", "Maintenu"
+        MODIFIE = "modifie", "Modifié"
+
+    decision = models.CharField(max_length=8, choices=Decision.choices, default=Decision.MAINTENU)
+    fonctionnaires = models.PositiveSmallIntegerField(default=0, help_text="Fonctionnaires validés à cette étape")
+    contractuels = models.PositiveSmallIntegerField(default=0, help_text="Contractuels validés à cette étape")
+    volume = models.PositiveSmallIntegerField(help_text="Agents validés à cette étape")
+    reference = models.CharField(max_length=80, blank=True, help_text="Procès-verbal ou référence du catalogue")
+    observations = models.CharField(max_length=240, blank=True)
+    valide_le = models.DateField()
+
+    class Meta:
+        ordering = ["-valide_le", "-id"]
+        constraints = [models.UniqueConstraint(fields=["campagne", "emploi", "etape"], name="validation_unique_par_emploi_et_etape")]
+
+
+class EtapeParcours(models.Model):
+    """Événement du parcours professionnel d'un agent : position, nomination, promotion, mutation…"""
+
+    class Type(models.TextChoices):
+        POSITION = "position", "Position"
+        NOMINATION = "nomination", "Nomination"
+        PROMOTION = "promotion", "Promotion"
+        MUTATION = "mutation", "Mutation"
+        AUTRE = "autre", "Autre événement"
+
+    agent = models.ForeignKey(Agent, on_delete=models.CASCADE, related_name="parcours")
+    type = models.CharField(max_length=12, choices=Type.choices)
+    intitule = models.CharField(max_length=200)
+    date_effet = models.DateField()
+    reference_acte = models.CharField(max_length=120, blank=True)
+    detail = models.CharField(max_length=300, blank=True)
+    cree_le = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-date_effet", "-id"]
+
+
+class PositionAdministrative(models.Model):
+    """Période pendant laquelle l'agent n'est pas en activité normale : détachement, mise à disposition, disponibilité, hors-cadre."""
+
+    class Type(models.TextChoices):
+        DETACHEMENT = "detachement", "Détachement"
+        MISE_A_DISPOSITION = "mise_a_disposition", "Mise à disposition"
+        DISPONIBILITE = "disponibilite", "Disponibilité"
+        HORS_CADRE = "hors_cadre", "Position hors-cadre"
+
+    # Libellé porté par la situation de l'agent tant que la période est en cours.
+    SITUATIONS = {
+        "detachement": "En détachement",
+        "mise_a_disposition": "Mis à disposition",
+        "disponibilite": "En disponibilité",
+        "hors_cadre": "Position hors-cadre",
+    }
+
+    agent = models.ForeignKey(Agent, on_delete=models.CASCADE, related_name="positions")
+    type = models.CharField(max_length=20, choices=Type.choices)
+    structure_accueil = models.CharField(max_length=200, blank=True, help_text="Administration, société ou institution d'accueil")
+    motif = models.CharField(max_length=200, blank=True)
+    date_debut = models.DateField()
+    date_fin = models.DateField(null=True, blank=True, help_text="Vide : la période est sans terme fixé")
+    reference_acte = models.CharField(max_length=120, blank=True)
+    detail = models.CharField(max_length=300, blank=True)
+    document = models.FileField(upload_to="positions/%Y/%m", blank=True, help_text="Acte qui prononce la position")
+
+    class Meta:
+        ordering = ["-date_debut", "-id"]

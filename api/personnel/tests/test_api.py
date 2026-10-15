@@ -286,7 +286,7 @@ def test_dossier_agent(api):
     ]
     valeurs = {ligne["libelle"]: ligne["valeur"] for ligne in body["situation_administrative"]}
     assert valeurs["Matricule"] == "349812K"
-    assert valeurs["Sous-Direction"].startswith("Sous-Direction")
+    assert valeurs["Direction"] == "Direction des Affaires Financières"  # structure des Paramètres
     assert valeurs["Emploi"] == "Corps des Administrateurs Financiers"
     assert valeurs["Type Agent"] == "Fonctionnaire"
     assert valeurs["Mode Recrutement"] == "Concours"
@@ -935,9 +935,8 @@ def test_dossier_social_vient_de_la_base(api):
     auth = _auth(api)
     dossier = api.get("/api/v1/agents/340188P/", **auth).json()
     social = dossier["social"]
-    assert social["traitement_brut"] > 0
-    assert social["solde_nette"] == social["traitement_brut"] - social["cotisations"]
-    assert social["quotite"] == round(social["solde_nette"] * social["taux_quotite"] / 100)
+    assert social["cmu"]
+    assert not {"traitement_brut", "cotisations", "solde_nette", "quotite", "marge"} & set(social)
     assert social["enveloppe"]["allouee"] == 120_000_000
     assert social["enveloppe"]["engagee"] == 72_800_000
     assert social["enveloppe"]["ligne"] == "7412-Action-Soc"
@@ -1010,7 +1009,7 @@ def test_photo_de_la_ministre_dans_les_parametres(api, tmp_path, settings):
     assert depart["photo_url"] == ""
     assert depart["peut_modifier"] is True
     assert depart["inactivite_minutes"] == 15
-    assert depart["delais"] == {"visa_acte_jours": 2, "validation_hierarchie_jours": 3}
+    assert depart["delais"] == {"visa_acte_jours": 2, "validation_hierarchie_jours": 3, "quorum_presence_pourcent": 65}
     assert depart["civilite"] == ""
     assert depart["nom"] == ""
 
@@ -1099,7 +1098,7 @@ def test_photo_de_la_ministre_dans_les_parametres(api, tmp_path, settings):
         **auth,
     )
     assert delais.status_code == 200
-    assert delais.json()["delais"] == {"visa_acte_jours": 5, "validation_hierarchie_jours": 7}
+    assert delais.json()["delais"] == {"visa_acte_jours": 5, "validation_hierarchie_jours": 7, "quorum_presence_pourcent": 65}
     assert api.get("/api/v1/public/couleurs/").json() == {"principale": "#042F32", "accent": "#D6FFCB"}
     refuse_couleurs = api.post("/api/v1/parametres/couleurs/", {"principale": "#112233", "accent": "#ddeeff"}, format="json", **agent_auth)
     assert refuse_couleurs.status_code == 403
@@ -1328,7 +1327,8 @@ def test_dotation_et_expression_des_besoins(api):
     assert page.status_code == 200
     corps = page.json()
     assert corps["effectif"] == 4826
-    assert corps["plafond"] == 5050
+    assert corps["plafond"] == corps["effectif"] + sum(branche["besoins"] for branche in corps["branches"])
+    assert all(branche["plafond"] == branche["effectif"] + branche["besoins"] for branche in corps["branches"])
     assert len(corps["demandes"]) == 4
     assert "masse_salariale" not in corps
     assert "economie" not in corps
@@ -1410,19 +1410,11 @@ def test_dotation_et_expression_des_besoins(api):
 
     plafond = api.post(
         "/api/v1/dotation/branches/cabinet/plafond/",
-        {"plafond": 800, "motif": "Réduction"},
-        format="json",
-        **auth,
-    )
-    assert plafond.status_code == 400
-    ajuste = api.post(
-        "/api/v1/dotation/branches/cabinet/plafond/",
         {"plafond": 950, "motif": "Marge pour les structures du cabinet"},
         format="json",
         **auth,
     )
-    assert ajuste.status_code == 200
-    assert api.get("/api/v1/dotation/", **auth).json()["plafond"] == 5100
+    assert plafond.status_code == 400
 
     import io
     import zipfile
@@ -1483,43 +1475,8 @@ def test_dotation_et_expression_des_besoins(api):
 
     besoins = api.get("/api/v1/besoins/", **auth)
     assert besoins.status_code == 200
-    assert besoins.json()["volume"] == 16
-    assert besoins.json()["postes_favorables"] == 4
-
-    fiche = api.post(
-        "/api/v1/besoins/fiches/",
-        {
-            "entite": "dchc",
-            "direction": "Direction du Capital Humain et de la Communication",
-            "profil": "Chargé des effectifs",
-            "volume": 1,
-            "motif": "Suivi des plafonds",
-            "nature": "creation",
-            "grade": "A3",
-            "specialite": "Gestion des effectifs",
-        },
-        format="json",
-        **auth,
-    )
-    assert fiche.status_code == 201
-    assert api.get("/api/v1/besoins/", **auth).json()["volume"] == 17
-
-    arbitrage = api.post(
-        f"/api/v1/besoins/fiches/{fiche.json()['reference']}/instruire/",
-        {"statut": "favorable", "motif": "Poste ouvert dans la marge du plafond.", "visa": "DRH", "postes_accordes": 1},
-        format="json",
-        **auth,
-    )
-    assert arbitrage.status_code == 200
-    assert arbitrage.json()["postes_accordes"] == 1
-
-    trop = api.post(
-        f"/api/v1/besoins/fiches/{fiche.json()['reference']}/instruire/",
-        {"statut": "favorable", "motif": "Trop large", "postes_accordes": 9},
-        format="json",
-        **auth,
-    )
-    assert trop.status_code == 400
+    assert besoins.json()["totaux"]["volume"] == 16
+    assert len(besoins.json()["fiches"]) == 5
 
     plan = api.get("/api/v1/besoins/export/", **auth)
     assert plan.status_code == 200
@@ -1536,6 +1493,11 @@ def test_gestion_des_utilisateurs(api):
     drh = next(item for item in corps["utilisateurs"] if item["matricule"] == "DRH-2018-044")
     assert drh["role"] == "Directeur" and drh["moi"] is True and drh["alerte"] == ""
     koffi = next(item for item in corps["utilisateurs"] if item["matricule"] == "349812K")
+    assert koffi["alerte"] == ""
+    from personnel.models import Profil
+
+    Profil.objects.filter(user__username="349812K").update(structure=None)
+    koffi = next(item for item in api.get("/api/v1/utilisateurs/", **auth).json()["utilisateurs"] if item["matricule"] == "349812K")
     assert koffi["alerte"] == "Ce compte n'est rattaché à aucune structure."
 
     hors_hierarchie = api.post(
@@ -1610,6 +1572,9 @@ def test_gestion_des_utilisateurs(api):
     assert note.statut == "cloture"
     assert Publication.objects.filter(perimetre_detail="interim:dgpe:USR-2026-DC", statut="diffuse").exists()
 
+    from personnel.models import Profil
+
+    Profil.objects.filter(structure__code="svc-courrier").update(structure=None)
     nomme = api.post(
         "/api/v1/utilisateurs/",
         {
@@ -1782,6 +1747,7 @@ def test_gestion_des_utilisateurs(api):
     )
     assert doublon.status_code == 400
 
+    Profil.objects.filter(structure__code="sd-formation").exclude(user__username="USR-2026-01").update(structure=None)
     suspendu = api.patch(
         "/api/v1/utilisateurs/USR-2026-01/",
         {"actif": False, "role": "Sous directeur", "structure": "sd-formation"},
@@ -1809,6 +1775,9 @@ def test_gestion_des_utilisateurs(api):
 
 
 def test_habilitations_personnelles_d_un_compte(api):
+    from personnel.models import Profil
+
+    Profil.objects.filter(structure__code__in=["svc-actes", "svc-courrier"]).update(structure=None)
     from personnel.models import Profil
 
     auth = _auth(api)
@@ -1956,6 +1925,9 @@ def test_habilitations_personnelles_d_un_compte(api):
 
 
 def test_precisions_personnelles_d_un_compte(api):
+    from personnel.models import Profil
+
+    Profil.objects.filter(structure__code__in=["svc-actes", "svc-courrier"]).update(structure=None)
     from personnel.models import Profil
 
     auth = _auth(api)
@@ -2122,6 +2094,9 @@ def test_matrice_habilitations_modifiable(api):
 
 
 def test_menu_suit_l_habilitation(api):
+    from personnel.models import Profil
+
+    Profil.objects.filter(structure__code__in=["svc-actes", "svc-courrier"]).update(structure=None)
     auth = _auth(api)
     moi = api.get("/api/v1/me/", **auth).json()
     assert moi["acces"]["modules"]["GPEC"] == "validation"

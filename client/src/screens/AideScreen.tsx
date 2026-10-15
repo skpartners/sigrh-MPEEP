@@ -261,17 +261,17 @@ const MODULES: ModuleAide[] = [
       "Il sert à accepter ou refuser une demande, à en garder le justificatif et l'intérim, et à mesurer l'assiduité du service.",
     ],
     cas: [
-      "Un agent est convoqué à un jury deux jours. Vous validez l'autorisation, vous notez l'intérim, et le solde n'est pas touché.",
+      "Un agent est convoqué à un jury deux jours. Vous validez l'autorisation et vous notez l'intérim.",
       "Une absence de cinq jours sans justificatif est invalidée. La retenue d'un trentième par jour est consignée, et le visa du DRH était requis au-delà de 72 heures.",
     ],
     circuit: [
       "La demande est en attente de décision.",
-      "Le gestionnaire valide ou invalide. Le motif est obligatoire. L'invalidation emporte une retenue sur le solde.",
+      "Le gestionnaire valide ou invalide. Le motif est obligatoire.",
       "Au-delà de 72 heures, le visa du directeur des ressources humaines est requis avant la décision.",
     ],
     obligations: [
       "Toute autorisation de plus de 72 heures requiert le visa du directeur des ressources humaines.",
-      "La décision (validée ou invalidée) est motivée. Elle peut avoir un impact sur le solde.",
+      "La décision (validée ou invalidée) est motivée.",
     ],
     fonctionnement: [
       "Le registre distingue l'autorisation d'absence, l'autorisation spéciale et la permission spéciale.",
@@ -280,7 +280,7 @@ const MODULES: ModuleAide[] = [
     ],
     fonctionnalites: [
       "Instruire une autorisation.",
-      "Consulter le justificatif, l'intérim et l'impact sur le solde.",
+      "Consulter le justificatif, l'intérim et le motif de la décision.",
       "Exporter le relevé d'assiduité en PDF.",
     ],
     exports: [
@@ -391,7 +391,7 @@ const MODULES: ModuleAide[] = [
     resume: "Les départs à la limite d'âge et la préparation de la relève.",
     fait: [
       "Il anticipe les départs à la retraite à partir de l'âge et du grade.",
-      "Il sert à voir qui quitte les cadres dans les douze mois, et à préparer le successeur et le dossier de pension avant la radiation.",
+      "Il sert à voir qui quitte les cadres dans les douze mois, et à préparer le successeur avant la radiation.",
     ],
     cas: [
       "Un directeur de grade A4 atteint 65 ans dans dix mois. Vous ouvrez son dossier de retraite et vous désignez le successeur du poste de direction.",
@@ -418,53 +418,7 @@ const MODULES: ModuleAide[] = [
     ],
     marche: [
       "Ouvrez Fin de carrière et triez par échéance.",
-      "Pour chaque départ à douze mois, vérifiez le successeur et le dossier de pension.",
-    ],
-  },
-  {
-    id: "social",
-    icone: "volunteer_activism",
-    titre: "Action sociale",
-    chemin: "/app/action-sociale",
-    resume: "Les aides, prêts et secours, et la quotité cessible de l'agent.",
-    fait: [
-      "Il instruit les prestations sociales : aides, prêts et secours, pour l'agent ou un ayant droit.",
-      "Il sert à vérifier que le montant tient dans la quotité et dans l'enveloppe, puis à faire passer la commission jusqu'au mandat.",
-    ],
-    cas: [
-      "Un secours décès est déposé avec l'acte. La quotité couvre le montant. Vous transmettez à la commission, puis vous mandatez une fois la requête conforme.",
-      "La facture manque. La requête reste en pièces manquantes et ne peut pas être mandatée.",
-    ],
-    circuit: [
-      "La requête attend l'avis de la commission.",
-      "Des pièces manquantes la renvoient. Une requête complète et conforme part à l'ordonnancement.",
-      "Seule une requête conforme se mandate. Le mandat la verse au dossier de l'agent.",
-    ],
-    obligations: [
-      "Une demande incomplète reste en pièces manquantes tant que le justificatif n'est pas versé.",
-      "Le montant engagé ne peut pas dépasser la quotité cessible ni la marge restante de l'agent.",
-      "L'enveloppe de l'exercice borne les mandats de l'organisme.",
-    ],
-    fonctionnement: [
-      "Chaque prestation a une référence, une nature, un objet, un montant, un ayant droit et un statut d'instruction.",
-      "Les états vont de l'avis de la commission au mandat, en passant par la conformité et les pièces manquantes.",
-      "Le dossier social de l'agent rappelle le numéro CMU, le solde net, la quotité et la marge.",
-      "Le rapport social PDF se télécharge depuis le dossier.",
-    ],
-    fonctionnalites: [
-      "Instruire une aide, un prêt ou un secours.",
-      "Suivre la commission, l'ordonnancement et le mandat.",
-      "Consulter les ayants droit et l'enveloppe.",
-      "Exporter le rapport social d'un agent.",
-    ],
-    exports: [
-      "L'écran Action sociale ne produit pas de fichier. Le rapport se prend dans le dossier de l'agent, onglet Action sociale.",
-      "Le bouton Rapport annuel social (PDF) télécharge social-{matricule}.pdf : prestations, quotité et ayants droit de cet agent.",
-    ],
-    marche: [
-      "Ouvrez la demande et contrôlez les pièces et la quotité.",
-      "Transmettez à la commission si le dossier est complet.",
-      "Après mandat, la prestation figure au dossier de l'agent.",
+      "Pour chaque départ à douze mois, vérifiez le successeur.",
     ],
   },
   {
@@ -472,14 +426,14 @@ const MODULES: ModuleAide[] = [
     icone: "school",
     titre: "Formation continue",
     chemin: "/app/formation",
-    resume: "Le plan, le catalogue, les sessions, les candidatures et le passeport de compétences.",
+    resume: "Les formations organisées par le ministère pour ses agents : collecte des besoins, modules, candidatures et dossier.",
     fait: [
-      "Il tient le plan de formation de l'exercice : le catalogue, les sessions, les candidatures et le passeport de chaque agent.",
-      "Il sert à ouvrir une session, à viser les inscriptions et à verser les heures et la certification au dossier.",
+      "Il lance la collecte des besoins auprès des agents, formule les réponses, monte les modules et ouvre les inscriptions.",
+      "Il vise ou refuse les candidatures avec un motif, selon le circuit, et tient le parcours de formation de chaque agent.",
     ],
     cas: [
-      "Une session de rédaction a encore deux places. Vous visez la candidature du chef de service, la sous-direction contrôle, le DRH notifie l'agent.",
-      "La session affiche complet. La candidature suivante ne part pas au DRH. Vous orientez l'agent vers une autre date du catalogue.",
+      "La collecte est ouverte. Un agent renseigne deux besoins dans son profil ; un autre indique RAS. Vous fusionnez les besoins voisins et vous montez un module.",
+      "Vous ouvrez les inscriptions. Chaque agent est notifié. Vous validez ou refusez avec un motif, qui lui est renvoyé.",
     ],
     circuit: [
       "L'agent dépose l'inscription. La requête est enregistrée.",
@@ -492,12 +446,10 @@ const MODULES: ModuleAide[] = [
       "Le plan de formation reste dans le cadrage de l'exercice.",
     ],
     fonctionnement: [
-      "Le pilotage montre le recensement des besoins, le budget, les évaluations et les prochaines sessions.",
-      "Les rubriques couvrent le catalogue, les sessions, les candidatures, les prestataires et le passeport.",
-      "Depuis le dossier, l'agent s'inscrit à une session ouverte. Les heures et la certification sont versées à son dossier.",
+      "Les rubriques couvrent la collecte des besoins, les modules, les candidatures, les formateurs et le dossier de formation.",
+      "L'agent répond à la collecte (besoins ou RAS) et s'inscrit à un module ouvert depuis son profil. Les heures sont versées à son dossier.",
     ],
     fonctionnalites: [
-      "Paramétrer le plan et suivre les indicateurs.",
       "Ouvrir ou fermer une session.",
       "Valider une étape du circuit d'inscription.",
       "Exporter le tableau de la formation.",
@@ -517,43 +469,43 @@ const MODULES: ModuleAide[] = [
     icone: "groups",
     titre: "Expression des besoins",
     chemin: "/app/gpec/expression-des-besoins",
-    resume: "Les fiches de besoin de l'exercice, dans la limite des plafonds d'emplois.",
+    resume: "L'appel lancé aux responsables de structure, leurs réponses et leur centralisation.",
     fait: [
-      "Il recueille, structure par structure, les postes dont le ministère a besoin pour l'exercice.",
-      "Il sert à déposer une fiche, à la faire instruire et à obtenir un avis : postes accordés, complément demandé ou rejet.",
+      "Il lance un appel à tous les responsables de structure : chacun indique les fonctionnaires et les contractuels dont sa structure a besoin.",
+      "Il regroupe les réponses par structure : le service remonte à la sous-direction, qui remonte à la direction.",
     ],
     cas: [
-      "Une direction perd deux départs à la retraite. Elle dépose une fiche de remplacement, marquée critique, dans la limite du plafond.",
-      "Le volume demandé dépasse le plafond. L'avis accorde moins de postes, ou renvoie la fiche pour complément.",
+      "Le DRH lance l'appel avec une date limite. Chaque responsable est prévenu et répond depuis son profil.",
+      "Une direction regarde ce que ses services et ses sous-directions ont demandé, et le total centralisé.",
     ],
     circuit: [
-      "La fiche est déposée et reste en attente d'avis technique.",
-      "L'arbitrage la rend favorable, la renvoie pour complément, ou la rejette.",
-      "L'avis favorable indique les postes accordés. Ce nombre ne peut pas dépasser le volume demandé.",
+      "Le DRH lance l'appel : les responsables de structure sont notifiés.",
+      "Chaque responsable exprime ses besoins depuis l'onglet Expression des besoins de son profil.",
+      "Les réponses sont centralisées par structure. Le DRH clôture l'appel.",
     ],
     obligations: [
-      "Une fiche se dépose pendant la campagne ouverte, dans le cadrage des plafonds.",
-      "Un volume qui dépasse le plafond est rejeté ou renvoyé.",
-      "Une fiche critique doit être motivée : départ, risque ou renfort.",
+      "Seuls les responsables de structure voient l'appel et répondent.",
+      "Un besoin ne se saisit que pendant que l'appel est ouvert et avant sa date limite.",
+      "Un responsable ne saisit que pour sa propre structure.",
     ],
     fonctionnement: [
-      "La fiche nomme la structure, le profil, le grade, la spécialité, le volume et la nature : création, remplacement, mobilité ou renfort.",
-      "Les statuts sont l'instruction technique, le complément, l'avis favorable ou le rejet.",
-      "Le nombre de postes accordés peut être inférieur au volume demandé.",
+      "Un besoin nomme la structure, le profil demandé, le grade, le nombre de fonctionnaires, le nombre de contractuels et le motif.",
+      "Le tableau de centralisation donne, pour chaque structure, ce qu'elle exprime et le total avec les structures qui lui sont rattachées.",
+      "Chacun voit son périmètre : le DRH tout le ministère, un responsable sa structure et celles qu'elle contient.",
     ],
     fonctionnalites: [
-      "Déposer et suivre une fiche.",
-      "Marquer une fiche critique.",
-      "Arbitrer, renvoyer ou rejeter.",
+      "Lancer et clôturer l'appel.",
+      "Exprimer, modifier et retirer un besoin depuis son profil.",
+      "Suivre la centralisation par structure et exporter le plan.",
     ],
     exports: [
-      "Le bouton Exporter le plan, en haut de page, télécharge plan-besoins-{date}.pdf.",
-      "C'est le plan prévisionnel des fiches déposées pour l'exercice.",
+      "Le bouton Exporter le plan télécharge plan-besoins-{date}.pdf.",
+      "C'est le plan des besoins exprimés pour l'exercice, dans votre périmètre.",
     ],
     marche: [
-      "Déposez la fiche avec le motif et le volume.",
-      "Suivez l'avis technique. Répondez si un complément est demandé.",
-      "L'avis favorable indique les postes accordés.",
+      "Ouvrez l'onglet Expression des besoins de votre profil.",
+      "Ajoutez un besoin par profil demandé, avec fonctionnaires et contractuels.",
+      "Suivez la remontée de vos structures rattachées.",
     ],
   },
   {
@@ -561,19 +513,18 @@ const MODULES: ModuleAide[] = [
     icone: "person_add",
     titre: "Recrutement et dotation",
     chemin: "/app/gpec/recrutement",
-    resume: "Les plafonds d'emplois, les mouvements de postes et les postes critiques non pourvus.",
+    resume: "Les plafonds d'emplois et les mouvements de postes.",
     fait: [
       "Il applique les plafonds d'emplois et suit les mouvements : affectation, mise à disposition, redéploiement et réaffectation.",
-      "Il sert à accorder un poste dans la marge du plafond, et à signaler un emploi critique qui reste vacant.",
+      "Il sert à accorder un poste dans la marge du plafond.",
     ],
     cas: [
-      "Un emploi d'ingénieur est déjà tenu dans le ministère et reste vacant. Vous le signalez, vous choisissez cet intitulé, puis vous lancez l'appel.",
       "Une affectation ferait dépasser le plafond de la branche. La demande est rejetée. Vous exportez la gestion PDF pour l'arbitrage.",
     ],
     circuit: [
       "La demande entre en arbitrage, puis au contrôle des emplois.",
       "L'avis favorable l'acte. Le dépassement du plafond la rejette.",
-      "Seule une demande actée se notifie. Une alerte de poste critique se saisit directement : elle ne suit pas ce circuit.",
+      "Seule une demande actée se notifie.",
     ],
     obligations: [
       "On ne pourvoit pas un emploi avec une personne extérieure au ministère. La liste des postes est celle des emplois déjà tenus par des agents.",
@@ -581,13 +532,10 @@ const MODULES: ModuleAide[] = [
       "Les boutons Exporter le registre, Gestion (PDF) et Historique portent sur toute la dotation, pas sur un seul onglet.",
     ],
     fonctionnement: [
-      "L'exercice fixe les plafonds par branche et le fondement (décret).",
+      "Le plafond de chaque branche s'ajuste tout seul : effectif en poste plus les besoins exprimés par ses structures.",
       "Les mouvements sont l'affectation, la mise à disposition, le redéploiement et la réaffectation après concours.",
-      "Les postes critiques non pourvus sont saisis ici : structure, intitulé reconnu, nombre de postes, ancienneté de la vacance, situation et piste. Ils ne sont pas calculés automatiquement.",
-      "Lancer un appel transforme les alertes ouvertes en demandes d'affectation.",
     ],
     fonctionnalites: [
-      "Saisir, modifier, consulter et retirer une alerte de poste critique.",
       "Instruire une demande de dotation.",
       "Exporter le registre Excel et la gestion complète en PDF.",
       "Lire le journal des décisions.",
@@ -599,14 +547,13 @@ const MODULES: ModuleAide[] = [
     ],
     marche: [
       "Contrôlez le plafond de la branche avant d'accorder un poste.",
-      "Pour un poste vacant, cliquez Signaler un poste, choisissez un intitulé déjà tenu dans le ministère, puis enregistrez.",
       "Exportez la gestion PDF pour l'arbitrage de l'exercice.",
     ],
   },
   {
     id: "communication",
     icone: "campaign",
-    titre: "Communication",
+    titre: "Documents publics & communication",
     chemin: "/app/communication",
     resume: "Les notes, circulaires et annonces, du brouillon jusqu'à la publication.",
     fait: [
@@ -918,7 +865,6 @@ const RUBRIQUES: Rubrique[] = [
     ],
     enfants: ["carrieres", "situation", "absences", "conges", "discipline", "fin-carriere"].map(parId),
   },
-  { genre: "page", module: parId("social") },
   { genre: "page", module: parId("formation") },
   {
     genre: "groupe",
@@ -928,7 +874,7 @@ const RUBRIQUES: Rubrique[] = [
     chemin: "/app/gpec/expression-des-besoins",
     resume: "Le menu relie ce que les structures demandent et la façon dont les postes sont pourvus, dans les plafonds.",
     cas: [
-      "La campagne est ouverte. Expression des besoins recueille les fiches. Recrutement transforme les postes accordés en affectations, sans dépasser le plafond.",
+      "La campagne est ouverte. Expression des besoins recueille les besoins des responsables de structure. Recrutement transforme les postes accordés en affectations, sans dépasser le plafond.",
       "Un emploi vacant est déjà tenu dans le ministère. Vous le signalez dans Recrutement, pas dans une fiche de création.",
     ],
     enfants: ["besoins", "recrutement"].map(parId),
@@ -1227,25 +1173,22 @@ const VOLETS: Record<string, Volet[]> = {
     { id: "dossier-carriere", titre: "Carrière, actes et mutations", texte: "Les arrêtés et décisions versés au dossier, avec leur statut. Seul un acte validé se télécharge.", cas: "Avant de signer une mutation, vous ouvrez cet onglet et vous relisez le dernier arrêté encore en instruction." },
     { id: "dossier-notations", titre: "Notations et évaluations", texte: "Les notes de l'agent, l'évaluateur et le bulletin PDF.", cas: "La commission demande la note. Vous ouvrez l'onglet et vous sortez le bulletin individuel." },
     { id: "dossier-conges", titre: "Congés et absences", texte: "Les droits, le consommé, le reliquat et le relevé PDF.", cas: "L'agent demande 21 jours. Vous comparez au reliquat affiché ici avant de laisser partir la demande." },
-    { id: "dossier-social", titre: "Action sociale et prêts", texte: "Le numéro CMU, la quotité, la marge et le rapport social PDF.", cas: "Un prêt est demandé. Vous vérifiez ici que le montant tient encore dans la quotité." },
+    { id: "dossier-social", titre: "Action sociale et prêts", texte: "Le numéro CMU, les ayants droit et le rapport social PDF.", cas: "Un prêt est demandé. Vous vérifiez ici les prestations déjà accordées." },
     { id: "dossier-formation", titre: "Formation et parcours", texte: "Les sessions suivies, les heures et les certifications.", cas: "Après une session close, les heures apparaissent dans cet onglet et dans le PDF du dossier." },
     { id: "dossier-pieces", titre: "Pièces jointes", texte: "Les scans déposés, téléchargeables un par un ou en archive ZIP.", cas: "L'inspection demande le dossier. Vous exportez l'archive plutôt que de renvoyer chaque scan." },
   ],
   formation: [
-    { id: "formation-pilotage", titre: "Pilotage", texte: "Les indicateurs du plan : besoins, budget, évaluations et prochaines sessions.", cas: "En début de mois, vous ouvrez Pilotage pour voir combien de candidatures attendent encore un visa." },
-    { id: "formation-modules", titre: "Modules", texte: "Les sessions : dates, places, lieu, prestataire. Une session complète ou fermée ne reçoit plus de candidature.", cas: "Il reste deux places. Vous laissez la session ouverte. À complet, vous la fermez." },
-    { id: "formation-candidatures", titre: "Candidatures", texte: "Chaque inscription suit le chef de service, la sous-direction, puis le visa du DRH.", cas: "Le chef a visé. Vous prenez le dossier à l'étape de la sous-direction et vous le transmettez si la pièce exigée est là." },
-    { id: "formation-besoins", titre: "Besoins", texte: "Les besoins exprimés par les structures, à couvrir par une session du plan.", cas: "Trois structures demandent la même rédaction administrative. Vous ouvrez une session plutôt que trois modules isolés." },
-    { id: "formation-catalogue", titre: "Catalogue", texte: "Les types de formation retenus, avec les fonctionnaires concernés et la pièce exigée.", cas: "Un nouveau cycle de dirigeants est décidé. Vous l'ajoutez au catalogue avant d'ouvrir la session." },
-    { id: "formation-prestataires", titre: "Prestataires", texte: "Les organismes qui dispensent les sessions.", cas: "La session change d'organisme. Vous mettez le prestataire à jour pour que le plan Excel porte le bon nom." },
-    { id: "formation-passeport", titre: "Passeport", texte: "Les compétences et certifications déjà versées aux dossiers.", cas: "Un agent postule à une session avancée. Le passeport montre qu'il a déjà le module préalable." },
+    { id: "formation-besoins", titre: "Besoins", texte: "La collecte envoyée aux agents : chacun renseigne ses besoins dans son profil, ou indique RAS.", cas: "Vous lancez la collecte. Les agents sont notifiés. Tant qu'ils n'ont pas répondu, l'alerte clignote sur leur espace." },
+    { id: "formation-modules", titre: "Modules", texte: "Trier, fusionner et formuler les besoins, puis monter les modules et ouvrir les inscriptions pour une période.", cas: "Deux agents ont demandé la même rédaction. Vous fusionnez, vous montez un module, vous ouvrez les inscriptions : chacun est notifié." },
+    { id: "formation-candidatures", titre: "Candidatures", texte: "Valider ou invalider avec un motif, selon le circuit chef de service → SD Formation → DRH.", cas: "Le profil ne correspond pas. Vous refusez avec un motif : l'agent le reçoit dans ses notifications." },
+    { id: "formation-prestataires", titre: "Prestataires", texte: "Les formateurs et structures formatrices auxquels le ministère fait appel.", cas: "Un cabinet est retenu pour un module. Vous l'enregistrez ici avant de le rattacher à la session." },
+    { id: "formation-passeport", titre: "Dossier de formation", texte: "L'historique du parcours de formation d'un agent.", cas: "Après la clôture d'un module, les heures et l'attestation apparaissent dans ce dossier." },
   ],
   recrutement: [
     { id: "recrutement-affectation", titre: "Affectation", texte: "L'arrivée d'un fonctionnaire déjà dans le ministère sur un emploi, dans le plafond de la branche.", cas: "Un lauréat déjà matriculé rejoint la DGPE. Vous saisissez l'affectation dans cet onglet, pas une création de poste extérieur." },
     { id: "recrutement-disposition", titre: "Mise à disposition", texte: "Un agent du ministère est mis à disposition d'une autre structure, sans sortir des effectifs.", cas: "Un cadre part six mois à la présidence tout en restant payé par le ministère. Vous enregistrez la mise à disposition." },
     { id: "recrutement-redeploiement", titre: "Redéploiement", texte: "Un emploi se déplace d'une structure à une autre, dans le même plafond.", cas: "Un poste vacant de la SNDI est repris par la DGPE. Le redéploiement déplace l'emploi sans augmenter le plafond." },
     { id: "recrutement-reaffectation", titre: "Réaffectation après concours", texte: "L'agent change d'emploi après un concours professionnel.", cas: "Le concours est publié. Vous réaffectez l'agent sur le nouvel emploi, toujours choisi parmi les intitulés déjà tenus." },
-    { id: "recrutement-alertes", titre: "Postes critiques", texte: "Un emploi déjà tenu, resté vacant, que vous signalez vous-même. Lancer un appel transforme les alertes ouvertes en demandes.", cas: "Le poste de directeur est vide depuis quarante jours. Vous le signalez, puis vous lancez l'appel à candidatures." },
   ],
   structures: [
     { id: "structures-organigramme", titre: "Organigramme", texte: "Les pôles, puis les directions, sous-directions et services, chacun avec son parent.", cas: "Une sous-direction est créée. Vous l'ajoutez sous sa direction avant d'y rattacher des comptes." },

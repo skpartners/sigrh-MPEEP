@@ -9,7 +9,7 @@ from django.utils.dateparse import parse_date
 
 from .circuits_config import etapes_pour_absence, etapes_pour_conge
 from .inscriptions import _reference
-from .models import Demande, TypeAbsence, TypeConge, VisaDemande
+from .models import Absence, Demande, TypeAbsence, TypeConge, VisaDemande
 
 ETAPE = ("Étape 2 : chef de service", "Avis hiérarchique attendu")
 
@@ -62,7 +62,35 @@ def deposer(agent, payload: dict) -> str | None:
             categorie="conge",
         )
         _visas(demande, aujourd_hui, debut, fin, interim, observations, configurees)
+        if absence is not None:
+            _inscrire_au_registre(demande, absence, agent, debut, fin, jours, interim)
     return None
+
+
+# Nature d'autorisation du registre des absences selon le type de demande de l'agent ; à défaut, une autorisation d'absence.
+AUTORISATION_PAR_TYPE = {
+    "convenance-personnelle": Absence.TypeAutorisation.AUTORISATION,
+    "evenement-familial": Absence.TypeAutorisation.PERMISSION,
+    "formation": Absence.TypeAutorisation.SPECIALE,
+    "mission": Absence.TypeAutorisation.SPECIALE,
+}
+
+
+def _inscrire_au_registre(demande: Demande, absence: TypeAbsence, agent, debut: date, fin: date, jours: int, interim: str) -> None:
+    """La demande d'absence de l'agent apparaît dans « Suivi des absences », à statuer par le gestionnaire."""
+    Absence.objects.create(
+        agent=agent,
+        demande=demande,
+        nature=absence.libelle,
+        debut=debut,
+        fin=fin,
+        jours=jours,
+        statut="En instruction",
+        interim=interim,
+        type_autorisation=AUTORISATION_PAR_TYPE.get(absence.code, Absence.TypeAutorisation.AUTORISATION),
+        justificatif=f"Demande {demande.reference}",
+        decision=Absence.Decision.EN_ATTENTE,
+    )
 
 
 def _annuel(type_conge: TypeConge) -> bool:

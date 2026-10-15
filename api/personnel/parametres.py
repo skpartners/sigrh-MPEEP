@@ -45,6 +45,30 @@ def portrait_url() -> str:
     return objet.photo.url
 
 
+def logo_url() -> str:
+    objet = _parametres()
+    if objet is None or not objet.logo:
+        return ""
+    return objet.logo.url
+
+
+def referentiel_emplois() -> dict:
+    from .models import EmploiReferentiel, GradeReferentiel
+
+    return {
+        "emplois_fonction_publique": EmploiReferentiel.objects.filter(source="fonction_publique").count(),
+        "emplois_ministere": EmploiReferentiel.objects.filter(source="ministere").count(),
+        "grades": GradeReferentiel.objects.count(),
+    }
+
+
+def effectif_charge() -> dict:
+    from .import_effectif import donnees_factices_presentes
+    from .models import Agent
+
+    return {"agents": Agent.objects.count(), "donnees_factices": donnees_factices_presentes()}
+
+
 def identite_ministre() -> dict:
     objet = _parametres()
     if objet is None:
@@ -103,10 +127,22 @@ def delai_validation_hierarchie_jours() -> int:
     return objet.delai_validation_hierarchie_jours
 
 
+QUORUM_PRESENCE_DEFAUT = 65
+
+
+def quorum_presence() -> int:
+    """Taux minimal de présence d'une structure, en pourcentage."""
+    objet = _parametres()
+    if objet is None or not objet.quorum_presence_pourcent:
+        return QUORUM_PRESENCE_DEFAUT
+    return objet.quorum_presence_pourcent
+
+
 def delais() -> dict:
     return {
         "visa_acte_jours": delai_visa_acte_jours(),
         "validation_hierarchie_jours": delai_validation_hierarchie_jours(),
+        "quorum_presence_pourcent": quorum_presence(),
     }
 
 
@@ -133,6 +169,9 @@ def couleurs() -> dict:
 def _ligne(user) -> dict:
     return {
         "photo_url": portrait_url(),
+        "logo_url": logo_url(),
+        "referentiel": referentiel_emplois(),
+        "effectif": effectif_charge(),
         "peut_modifier": _peut_modifier(user),
         "inactivite_minutes": inactivite_minutes(),
         "delais": delais(),
@@ -302,7 +341,17 @@ def enregistrer_delais(request):
     objet, _cree = ParametresMinistere.objects.get_or_create(pk=1)
     objet.delai_visa_acte_jours = visa
     objet.delai_validation_hierarchie_jours = hierarchie
-    objet.save(update_fields=["delai_visa_acte_jours", "delai_validation_hierarchie_jours"])
+    champs = ["delai_visa_acte_jours", "delai_validation_hierarchie_jours"]
+    if request.data.get("quorum_presence_pourcent") not in (None, ""):
+        try:
+            quorum = int(request.data["quorum_presence_pourcent"])
+        except (TypeError, ValueError):
+            quorum = 0
+        if not 1 <= quorum <= 100:
+            return Response({"detail": "Le quorum de présence est un pourcentage entre 1 et 100."}, status=400)
+        objet.quorum_presence_pourcent = quorum
+        champs.append("quorum_presence_pourcent")
+    objet.save(update_fields=champs)
     return Response(_ligne(request.user))
 
 
@@ -327,3 +376,123 @@ def enregistrer_couleurs(request):
     objet.couleur_accent = accent.upper()
     objet.save(update_fields=["couleur_principale", "couleur_accent"])
     return Response(_ligne(request.user))
+
+
+TAILLE_MAX_LOGO = 2 * 1024 * 1024
+
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def identite_publique(_request):
+    """Le logo de la structure, lu avant la connexion pour habiller aussi le portail."""
+    return Response({"logo_url": logo_url()})
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+@parser_classes([MultiPartParser, FormParser])
+def deposer_logo(request):
+    if not _peut_modifier(request.user):
+        return Response({"detail": "Cette action est hors de votre habilitation."}, status=403)
+    fichier = request.FILES.get("fichier")
+    if fichier is None:
+        return Response({"detail": "Choisissez un logo."}, status=400)
+    if Path(fichier.name).suffix.lower() not in EXTENSIONS:
+        return Response({"detail": "Le logo doit être une image PNG, JPG ou WEBP."}, status=400)
+    if fichier.size > TAILLE_MAX_LOGO:
+        return Response({"detail": "Le logo dépasse 2 Mo."}, status=400)
+    from PIL import Image, UnidentifiedImageError
+
+    try:
+        Image.open(fichier).verify()
+        fichier.seek(0)
+    except (UnidentifiedImageError, OSError):
+        return Response({"detail": "Ce fichier n'est pas une image lisible."}, status=400)
+    objet, _cree = ParametresMinistere.objects.get_or_create(pk=1)
+    if objet.logo:
+        objet.logo.delete(save=False)
+    objet.logo = fichier
+    objet.save(update_fields=["logo"])
+    return Response(_ligne(request.user))
+
+
+@api_view(["DELETE"])
+@permission_classes([IsAuthenticated])
+def retirer_logo(request):
+    if not _peut_modifier(request.user):
+        return Response({"detail": "Cette action est hors de votre habilitation."}, status=403)
+    objet = _parametres()
+    if objet is not None and objet.logo:
+        objet.logo.delete(save=False)
+        objet.logo = ""
+        objet.save(update_fields=["logo"])
+    return Response(_ligne(request.user))
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def modele_emplois(request):
+    from django.http import HttpResponse
+
+    from .import_structures import modele_emplois as construire
+
+    reponse = HttpResponse(construire(), content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    reponse["Content-Disposition"] = 'attachment; filename="modele-emplois-fonction-publique.xlsx"'
+    return reponse
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+@parser_classes([MultiPartParser, FormParser])
+def importer_emplois(request):
+    """Charge les emplois et les grades reconnus par la Fonction publique."""
+    from .import_structures import ImportInvalide, importer_emplois as charger
+
+    if not _peut_modifier(request.user):
+        return Response({"detail": "Cette action est hors de votre habilitation."}, status=403)
+    fichier = request.FILES.get("fichier")
+    if fichier is None:
+        return Response({"detail": "Choisissez un classeur Excel (.xlsx)."}, status=400)
+    try:
+        return Response(charger(fichier.read()))
+    except ImportInvalide as exc:
+        corps = {"detail": exc.message}
+        if exc.erreurs:
+            corps["erreurs"] = exc.erreurs
+        return Response(corps, status=400)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def modele_effectif(request):
+    """Classeur modèle de l'effectif du ministère, documenté, à renseigner puis à charger."""
+    from django.http import HttpResponse
+
+    from .import_effectif import modele
+
+    reponse = HttpResponse(modele(), content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    reponse["Content-Disposition"] = 'attachment; filename="modele-agents-du-ministere.xlsx"'
+    return reponse
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+@parser_classes([MultiPartParser, FormParser])
+def importer_effectif(request):
+    """Charge l'effectif en un bloc : agents, rattachements et comptes de connexion (matricule@2026)."""
+    from .import_agents import ImportInvalide
+    from .import_effectif import importer
+
+    if not _peut_modifier(request.user):
+        return Response({"detail": "Cette action est hors de votre habilitation."}, status=403)
+    fichier = request.FILES.get("fichier")
+    if fichier is None:
+        return Response({"detail": "Choisissez un classeur Excel (.xlsx)."}, status=400)
+    remplacer = str(request.data.get("remplacer") or "").lower() in {"1", "true", "oui", "on"}
+    try:
+        return Response(importer(fichier.read(), request.user, remplacer))
+    except ImportInvalide as exc:
+        corps = {"detail": exc.message}
+        if exc.erreurs:
+            corps["erreurs"] = exc.erreurs
+        return Response(corps, status=400)

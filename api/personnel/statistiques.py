@@ -10,6 +10,7 @@ from django.db.models.functions import ExtractYear
 from django.utils import timezone
 
 from .classeur import habiller
+from .effectifs import _appliquer_plafonds
 from .models import (
     Absence,
     Acte,
@@ -50,7 +51,7 @@ class FiltreInconnu(ValueError):
     pass
 
 
-def calculer(organisme: str = "", segment: str = "", exercice: str = "") -> dict:
+def calculer(organisme: str = "", segment: str = "", exercice: str = "", visibles: set[str] | None = None) -> dict:
     code = (organisme or "").strip()
     tranche = (segment or "").strip().upper()
     if code and not EntiteTutelle.objects.filter(code=code).exists():
@@ -61,7 +62,7 @@ def calculer(organisme: str = "", segment: str = "", exercice: str = "") -> dict
     jour = timezone.localdate()
     annee = _annee_demandee(exercice, jour)
     annee_suivante = annee + 1
-    qs = Agent.objects.all()
+    qs = Agent.objects.all() if visibles is None else Agent.objects.filter(matricule__in=visibles)
     if code:
         nom_structure = EntiteTutelle.objects.get(code=code).nom
         qs = qs.filter(Q(structure=nom_structure) | Q(direction=nom_structure))
@@ -109,7 +110,7 @@ def calculer(organisme: str = "", segment: str = "", exercice: str = "") -> dict
             "plafond": item.plafond,
             "occupation": _pct(item.effectif, item.plafond),
         }
-        for item in BranchePlafond.objects.all()
+        for item in _appliquer_plafonds(list(BranchePlafond.objects.all()))
     ]
     effectif = sum(item["effectif"] for item in branches)
     plafond = sum(item["plafond"] for item in branches)
@@ -119,7 +120,7 @@ def calculer(organisme: str = "", segment: str = "", exercice: str = "") -> dict
     payload = {
         "exercice": annee,
         "filtre": filtre,
-        "agents": Agent.objects.count(),
+        "agents": Agent.objects.count() if visibles is None else len(ids),
         "comptes": Profil.objects.count(),
         "comptes_actifs": User.objects.filter(is_active=True, profil__isnull=False).count(),
         "structures": EntiteTutelle.objects.count(),

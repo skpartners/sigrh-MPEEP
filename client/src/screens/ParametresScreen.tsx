@@ -15,10 +15,15 @@ import {
 import { useFeedback } from "../ui/Feedback";
 import { BOUTON_DANGER, BOUTON_PRIMAIRE, BOUTON_SECONDAIRE } from "../ui/Modale";
 import { AppChrome } from "./AppChrome";
+import { CarteEffectif } from "./EffectifCarte";
+import { CarteEmplois, CarteLogo } from "./ParametresReferentiel";
 import { Icone } from "../ui/Icone";
 
 type Parametres = {
   photo_url: string;
+  logo_url: string;
+  referentiel: { emplois_fonction_publique: number; emplois_ministere: number; grades: number };
+  effectif: { agents: number; donnees_factices: boolean };
   peut_modifier: boolean;
   civilite: string;
   nom: string;
@@ -26,6 +31,7 @@ type Parametres = {
   delais: {
     visa_acte_jours: number;
     validation_hierarchie_jours: number;
+    quorum_presence_pourcent?: number;
   };
   couleurs: Couleurs;
 };
@@ -49,6 +55,7 @@ export function ParametresScreen() {
   const [inactivite, setInactivite] = useState("15");
   const [delaiVisa, setDelaiVisa] = useState("2");
   const [delaiHierarchie, setDelaiHierarchie] = useState("3");
+  const [quorum, setQuorum] = useState("65");
   const [erreurDelais, setErreurDelais] = useState("");
   const apercuRef = useRef("");
 
@@ -69,6 +76,7 @@ export function ParametresScreen() {
     setInactivite(String(page.data.inactivite_minutes ?? 15));
     setDelaiVisa(String(page.data.delais?.visa_acte_jours ?? 2));
     setDelaiHierarchie(String(page.data.delais?.validation_hierarchie_jours ?? 3));
+    setQuorum(String(page.data.delais?.quorum_presence_pourcent ?? 65));
   }, [page.data]);
 
   const data = page.data;
@@ -102,12 +110,17 @@ export function ParametresScreen() {
     const minutes = Number(inactivite);
     const visa = Number(delaiVisa);
     const hierarchie = Number(delaiHierarchie);
+    const quorumPresence = Number(quorum);
     if (!Number.isInteger(minutes) || minutes < 1 || minutes > 240) {
       setErreurDelais("Indiquez une durée d'inactivité entre 1 et 240 minutes.");
       return;
     }
     if (!Number.isInteger(visa) || visa < 1 || visa > 90 || !Number.isInteger(hierarchie) || hierarchie < 1 || hierarchie > 90) {
       setErreurDelais("Indiquez une durée de visa ou de validation entre 1 et 90 jours.");
+      return;
+    }
+    if (!Number.isInteger(quorumPresence) || quorumPresence < 1 || quorumPresence > 100) {
+      setErreurDelais("Indiquez un quorum de présence entre 1 et 100 %.");
       return;
     }
     setEnCours(true);
@@ -122,13 +135,13 @@ export function ParametresScreen() {
           });
           return api<Parametres>("/api/v1/parametres/delais/", {
             method: "POST",
-            body: JSON.stringify({ visa_acte_jours: visa, validation_hierarchie_jours: hierarchie }),
+            body: JSON.stringify({ visa_acte_jours: visa, validation_hierarchie_jours: hierarchie, quorum_presence_pourcent: quorumPresence }),
           });
         },
         {
           success: {
             title: "Délais enregistrés",
-            message: `Inactivité : ${minutes} min. Visa d'un acte : ${visa} j. Validation hiérarchique : ${hierarchie} j.`,
+            message: `Inactivité : ${minutes} min. Visa d'un acte : ${visa} j. Validation hiérarchique : ${hierarchie} j. Quorum de présence : ${quorumPresence} %.`,
           },
         },
       );
@@ -332,6 +345,12 @@ export function ParametresScreen() {
           </div>
         </section>
 
+        <CarteEffectif reglages={data} />
+
+        <CarteLogo reglages={data} />
+
+        <CarteEmplois reglages={data} />
+
         <section className="motion-rise rounded-xl border border-hairline bg-surface-container-lowest p-6" style={{ "--delay": "160ms" } as CSSProperties} aria-labelledby="titre-delais">
           <h2 id="titre-delais" className="font-headline-sm text-headline-sm text-on-surface">Délais</h2>
           <p className="mt-1 font-body-sm text-body-sm text-on-surface-variant">
@@ -342,6 +361,7 @@ export function ParametresScreen() {
               Inactivité : {data.inactivite_minutes} minute{data.inactivite_minutes > 1 ? "s" : ""}.
               Visa d'un acte : {data.delais?.visa_acte_jours ?? 2} jour{(data.delais?.visa_acte_jours ?? 2) > 1 ? "s" : ""}.
               Validation par la hiérarchie : {data.delais?.validation_hierarchie_jours ?? 3} jour{(data.delais?.validation_hierarchie_jours ?? 3) > 1 ? "s" : ""}.
+              Quorum de présence : {data.delais?.quorum_presence_pourcent ?? 65} %.
               La modification est réservée aux comptes habilités à saisir ces paramètres.
             </p>
           ) : (
@@ -392,6 +412,20 @@ export function ParametresScreen() {
                   value={delaiHierarchie}
                   disabled={enCours || !data}
                   onChange={(event) => setDelaiHierarchie(event.target.value)}
+                />
+              </label>
+              <label className="block space-y-1.5">
+                <span className="font-label-sm text-label-sm text-on-surface-variant">Quorum de présence par défaut (%)</span>
+                <input
+                  className={`${CHAMP} w-28`}
+                  type="number"
+                  min={1}
+                  max={100}
+                  step={1}
+                  inputMode="numeric"
+                  value={quorum}
+                  disabled={enCours || !data}
+                  onChange={(event) => setQuorum(event.target.value)}
                 />
               </label>
               <button type="submit" className={BOUTON_PRIMAIRE} disabled={enCours || !data}>Enregistrer</button>

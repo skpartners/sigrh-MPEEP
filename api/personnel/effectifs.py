@@ -3,7 +3,7 @@
 from datetime import date
 
 from django.db import transaction
-from django.db.models import Count, Max
+from django.db.models import Count, Max, Sum
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -22,17 +22,39 @@ from .models import (
     DemandeDotation,
     EmploiReferentiel,
     EntiteTutelle,
+    FicheBesoin,
     GradeReferentiel,
     PoleMinisteriel,
     ExerciceDotation,
-    FicheBesoin,
-    FiliereBesoin,
     JournalEffectif,
     Notification,
     Passerelle,
 )
 
 OUVERTS = {DemandeDotation.Statut.ARBITRAGE, DemandeDotation.Statut.VISA_CF}
+
+
+def _besoins_par_pole() -> dict[str, int]:
+    """Volume demandé par les structures, regroupé selon le pôle (cabinet, DGPE, DGPN)."""
+    campagne = CampagneBesoin.objects.order_by("-exercice").first()
+    fiches = FicheBesoin.objects.all()
+    if campagne is not None:
+        fiches = fiches.filter(campagne=campagne)
+    totaux: dict[str, int] = {}
+    for ligne in fiches.values("entite__pole__code").annotate(total=Sum("volume")):
+        code = ligne["entite__pole__code"]
+        if code:
+            totaux[code] = ligne["total"] or 0
+    return totaux
+
+
+def _appliquer_plafonds(branches: list[BranchePlafond]) -> list[BranchePlafond]:
+    """Le plafond d'une branche est l'effectif en poste plus les besoins exprimés par ses structures."""
+    besoins = _besoins_par_pole()
+    for item in branches:
+        item.besoins = besoins.get(item.code, 0)
+        item.plafond = item.effectif + item.besoins
+    return branches
 
 
 def _auteur(user) -> str:
@@ -112,8 +134,12 @@ def _options(choices):
 
 
 def _entites():
+    from .parametres import quorum_presence
+    from .rattachement import seuils_effectifs
+
+    seuils = seuils_effectifs(quorum_presence())
     return [
-        _ligne_structure(item)
+        _ligne_structure(item, seuils)
         for item in EntiteTutelle.objects.select_related("pole", "parent")
     ]
 
@@ -146,32 +172,6 @@ def _demande(item: DemandeDotation) -> dict:
     }
 
 
-def _fiche(item: FicheBesoin) -> dict:
-    moment = timezone.localtime(item.depose_le)
-    return {
-        "reference": item.reference,
-        "entite": item.entite.nom,
-        "entite_code": item.entite.code,
-        "direction": item.direction,
-        "profil": item.profil,
-        "grade": item.grade,
-        "specialite": item.specialite,
-        "volume": item.volume,
-        "motif": item.motif,
-        "nature": item.nature,
-        "nature_libelle": item.get_nature_display(),
-        "statut": item.statut,
-        "statut_libelle": item.get_statut_display(),
-        "arbitrage": item.arbitrage,
-        "visa": item.visa,
-        "detail": item.detail,
-        "critique": item.critique,
-        "postes_accordes": item.postes_accordes,
-        "depose_le": moment.date().isoformat(),
-        "heure": moment.strftime("%H:%M"),
-    }
-
-
 def _classeur(nom: str, titre: str, sous_titre: str, notice: str, entetes: list[str], lignes: list[list], *, paysage: bool = False) -> HttpResponse:
     contenu = habiller([{
         "nom": "Données",
@@ -189,7 +189,7 @@ def _classeur(nom: str, titre: str, sous_titre: str, notice: str, entetes: list[
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def dotation(_request):
-    branches = list(BranchePlafond.objects.all())
+    branches = _appliquer_plafonds(list(BranchePlafond.objects.all()))
     effectif = sum(item.effectif for item in branches)
     plafond = sum(item.plafond for item in branches)
     demandes = DemandeDotation.objects.select_related("entite")
@@ -218,6 +218,7 @@ def dotation(_request):
                 "icone": item.icone,
                 "effectif": item.effectif,
                 "plafond": item.plafond,
+                "besoins": item.besoins,
                 "vacants": max(0, item.plafond - item.effectif),
                 "taux": round(1000 * item.effectif / item.plafond) / 10 if item.plafond else 0,
                 "note": item.note,
@@ -399,25 +400,12 @@ def notifier_dotation(request, reference: str):
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
-def ajuster_plafond(request, code: str):
-    plafond, erreur = _entier(request.data, "plafond", "Le plafond", 0, 100000)
-    if erreur:
-        return Response({"detail": erreur}, status=400)
-    motif, erreur = _texte(request.data, "motif", "Le motif", 200)
-    if erreur:
-        return Response({"detail": erreur}, status=400)
-    with transaction.atomic():
-        branche = get_object_or_404(BranchePlafond.objects.select_for_update(), code=code)
-        if plafond < branche.effectif:
-            return Response(
-                {"detail": f"Le plafond ne peut pas être inférieur à l'effectif en poste ({branche.effectif})."},
-                status=400,
-            )
-        branche.plafond = plafond
-        branche.note = motif
-        branche.save(update_fields=["plafond", "note"])
-        _journal(request.user, f"Plafond {branche.libelle} ajusté à {plafond}")
-    return Response({"code": branche.code, "plafond": branche.plafond, "note": branche.note})
+def ajuster_plafond(_request, code: str):
+    get_object_or_404(BranchePlafond, code=code)
+    return Response(
+        {"detail": "Le plafond s'ajuste tout seul : effectif en poste plus les besoins exprimés par les structures."},
+        status=400,
+    )
 
 
 @api_view(["POST"])
@@ -604,7 +592,7 @@ def lancer_appel(request):
 def exporter_dotation_pdf(_request):
     from .rapports.documents import rendre_dotation
 
-    branches = list(BranchePlafond.objects.all())
+    branches = _appliquer_plafonds(list(BranchePlafond.objects.all()))
     demandes = list(DemandeDotation.objects.select_related("entite"))
     ouvertes = [item for item in demandes if item.statut in OUVERTS]
     exercice = ExerciceDotation.objects.order_by("-annee").first()
@@ -663,136 +651,6 @@ def exporter_dotation(_request):
     )
 
 
-@api_view(["GET"])
-@permission_classes([IsAuthenticated])
-def besoins(_request):
-    fiches = list(FicheBesoin.objects.select_related("entite"))
-    volume = sum(item.volume for item in fiches)
-    favorables = [item for item in fiches if item.statut == FicheBesoin.Statut.FAVORABLE]
-    postes_favorables = sum(item.postes_accordes for item in favorables)
-    critiques = sum(item.volume for item in fiches if item.critique)
-    campagne = CampagneBesoin.objects.order_by("-exercice").first()
-    precedent = campagne.volume_precedent if campagne else 0
-    variation = round(1000 * (volume - precedent) / precedent) / 10 if precedent else None
-    remplacements = sum(1 for item in fiches if item.nature == FicheBesoin.Nature.REMPLACEMENT or "retraite" in item.motif.lower())
-    actees = Passerelle.objects.filter(statut=Passerelle.Statut.ACTEE)
-    return Response({
-        "exercice": campagne.exercice if campagne else timezone.localdate().year,
-        "ouverte": campagne.ouverte if campagne else False,
-        "cadrage": campagne.cadrage if campagne else "",
-        "pea_max": campagne.pea_max if campagne else 0,
-        "volume": volume,
-        "entites": len({item.entite_id for item in fiches}),
-        "variation": variation,
-        "favorables": len(favorables),
-        "postes_favorables": postes_favorables,
-        "taux_favorable": round(1000 * len(favorables) / len(fiches)) / 10 if fiches else 0,
-        "critiques": critiques,
-        "alerte_retraites": remplacements,
-        "agents_repositionnes": sum(item.effectif for item in actees),
-        "filieres": [
-            {
-                "code": item.code,
-                "libelle": item.libelle,
-                "icone": item.icone,
-                "requis": item.requis,
-                "couverts": item.couverts,
-                "taux": round(100 * item.couverts / item.requis) if item.requis else 0,
-            }
-            for item in FiliereBesoin.objects.all()
-        ],
-        "fiches": [_fiche(item) for item in fiches],
-        "entites_liste": _entites(),
-        "natures": _options(FicheBesoin.Nature.choices),
-        "statuts": _options(FicheBesoin.Statut.choices),
-    })
-
-
-@api_view(["POST"])
-@permission_classes([IsAuthenticated])
-def creer_fiche(request):
-    entite, erreur = _entite(request.data)
-    if erreur:
-        return Response({"detail": erreur}, status=400)
-    direction, erreur = _texte(request.data, "direction", "La direction", 180)
-    if erreur:
-        return Response({"detail": erreur}, status=400)
-    profil, erreur = _texte(request.data, "profil", "Le profil", 200)
-    if erreur:
-        return Response({"detail": erreur}, status=400)
-    grade, erreur = _texte(request.data, "grade", "Le grade", 40, obligatoire=False)
-    if erreur:
-        return Response({"detail": erreur}, status=400)
-    specialite, erreur = _texte(request.data, "specialite", "La spécialité", 120, obligatoire=False)
-    if erreur:
-        return Response({"detail": erreur}, status=400)
-    volume, erreur = _entier(request.data, "volume", "Le volume", 1, 500)
-    if erreur:
-        return Response({"detail": erreur}, status=400)
-    motif, erreur = _texte(request.data, "motif", "Le motif", 240)
-    if erreur:
-        return Response({"detail": erreur}, status=400)
-    nature, erreur = _choix(request.data, "nature", FicheBesoin.Nature.choices, "Le type de mouvement")
-    if erreur:
-        return Response({"detail": erreur}, status=400)
-    with transaction.atomic():
-        annee = timezone.localdate().year
-        item = FicheBesoin.objects.create(
-            reference=_reference("BES", FicheBesoin, annee),
-            entite=entite,
-            direction=direction,
-            profil=profil,
-            grade=grade,
-            specialite=specialite,
-            volume=volume,
-            motif=motif,
-            nature=nature,
-            critique=bool(request.data.get("critique")),
-            depose_le=timezone.now(),
-        )
-        _journal(request.user, f"Fiche de besoin {item.reference} déposée · {entite.nom}")
-        _notifier(
-            request.user,
-            "Fiche d'expression déposée",
-            f"{item.reference} · {profil}",
-            "/app/gpec/expression-des-besoins",
-        )
-    return Response(_fiche(item), status=201)
-
-
-@api_view(["POST"])
-@permission_classes([IsAuthenticated])
-def instruire_fiche(request, reference: str):
-    statut, erreur = _choix(request.data, "statut", FicheBesoin.Statut.choices, "La décision")
-    if erreur:
-        return Response({"detail": erreur}, status=400)
-    motif, erreur = _texte(request.data, "motif", "Le motif", 240)
-    if erreur:
-        return Response({"detail": erreur}, status=400)
-    visa, erreur = _texte(request.data, "visa", "Le visa", 180, obligatoire=False)
-    if erreur:
-        return Response({"detail": erreur}, status=400)
-    accordes, erreur = _entier(request.data, "postes_accordes", "Les postes accordés", 0, 500)
-    if erreur:
-        return Response({"detail": erreur}, status=400)
-    with transaction.atomic():
-        item = get_object_or_404(FicheBesoin.objects.select_for_update().select_related("entite"), reference=reference)
-        if accordes > item.volume:
-            return Response({"detail": "Les postes accordés ne peuvent pas dépasser le volume demandé."}, status=400)
-        item.statut = statut
-        item.detail = motif
-        item.visa = visa
-        item.postes_accordes = accordes if statut == FicheBesoin.Statut.FAVORABLE else 0
-        if statut == FicheBesoin.Statut.FAVORABLE:
-            mobilite = "dont mobilité" if item.nature == FicheBesoin.Nature.MOBILITE else "postes"
-            item.arbitrage = f"Favorable : {item.postes_accordes} {mobilite}"
-        else:
-            item.arbitrage = item.get_statut_display()
-        item.save(update_fields=["statut", "detail", "visa", "postes_accordes", "arbitrage"])
-        _journal(request.user, f"Arbitrage {item.reference} · {item.get_statut_display()}")
-    return Response(_fiche(item))
-
-
 def _saisie_structure(data, actuelle=None):
     from .structures import ALIAS_NIVEAUX, NIVEAUX, niveau_depuis_nom
 
@@ -838,7 +696,16 @@ def _saisie_structure(data, actuelle=None):
                 return None, "Un service se rattache à une sous-direction ou, à défaut, à une direction centrale."
         if actuelle is not None and _remonte_a(parent, actuelle.pk):
             return None, "Ce rattachement formerait une boucle."
-    return {"nom": nom, "pole": pole, "niveau": niveau, "parent": parent}, None
+    brut = data.get("quorum_presence_pourcent")
+    quorum = None
+    if brut not in (None, ""):
+        try:
+            quorum = int(brut)
+        except (TypeError, ValueError):
+            quorum = 0
+        if not 1 <= quorum <= 100:
+            return None, "Le quorum de présence est un pourcentage entre 1 et 100."
+    return {"nom": nom, "pole": pole, "niveau": niveau, "parent": parent, "quorum_presence_pourcent": quorum}, None
 
 
 def _remonte_a(structure, identifiant: int) -> bool:
@@ -852,11 +719,17 @@ def _remonte_a(structure, identifiant: int) -> bool:
     return False
 
 
-def _ligne_structure(item):
+def _ligne_structure(item, seuils=None):
+    from .parametres import quorum_presence
+    from .rattachement import seuils_effectifs
     from .structures import NIVEAUX
 
     libelles = dict(NIVEAUX)
+    effectif, herite = (seuils if seuils is not None else seuils_effectifs(quorum_presence())).get(item.id, (quorum_presence(), True))
     return {
+        "quorum_presence_pourcent": item.quorum_presence_pourcent,
+        "quorum_effectif": effectif,
+        "quorum_herite": herite,
         "code": item.code,
         "nom": item.nom,
         "pole": item.pole.code,
@@ -905,6 +778,7 @@ def _ligne_emploi(item) -> dict:
         "famille": item.famille,
         "famille_libelle": dict(FAMILLES).get(item.famille, item.famille),
         "grade": item.grade.code,
+        "source": item.source,
     }
 
 
@@ -995,7 +869,7 @@ def creer_emploi(request):
     if erreur:
         return Response({"detail": erreur}, status=400)
     ordre = (EmploiReferentiel.objects.aggregate(dernier=Max("ordre"))["dernier"] or 0) + 1
-    item = EmploiReferentiel.objects.create(code=_code_libre(saisie["libelle"], EmploiReferentiel, "emploi"), ordre=ordre, **saisie)
+    item = EmploiReferentiel.objects.create(code=_code_libre(saisie["libelle"], EmploiReferentiel, "emploi"), ordre=ordre, source="ministere", **saisie)
     return Response(_ligne_emploi(item), status=201)
 
 
@@ -1074,7 +948,34 @@ def structure(request, code: str):
     item.pole = saisie["pole"]
     item.niveau = saisie["niveau"]
     item.parent = saisie["parent"]
-    item.save(update_fields=["nom", "pole", "niveau", "parent"])
+    item.quorum_presence_pourcent = saisie["quorum_presence_pourcent"]
+    item.save(update_fields=["nom", "pole", "niveau", "parent", "quorum_presence_pourcent"])
+    return Response(_ligne_structure(item))
+
+
+@api_view(["PATCH"])
+@permission_classes([IsAuthenticated])
+def quorum_structure(request, code: str):
+    """Règle le quorum de présence d'une structure (vide : il redevient hérité). Réservé à son responsable et à ses supérieurs."""
+    from .rattachement import structures_reglables
+
+    item = EntiteTutelle.objects.filter(code=code).first()
+    if item is None:
+        return Response({"detail": "Structure introuvable."}, status=404)
+    reglables = structures_reglables(request.user)
+    if reglables is not None and item.id not in reglables:
+        return Response({"detail": "Seul le responsable de cette structure, ou l'un de ses supérieurs, règle son quorum."}, status=403)
+    brut = request.data.get("quorum_presence_pourcent")
+    quorum = None
+    if brut not in (None, ""):
+        try:
+            quorum = int(brut)
+        except (TypeError, ValueError):
+            quorum = 0
+        if not 1 <= quorum <= 100:
+            return Response({"detail": "Le quorum de présence est un pourcentage entre 1 et 100."}, status=400)
+    item.quorum_presence_pourcent = quorum
+    item.save(update_fields=["quorum_presence_pourcent"])
     return Response(_ligne_structure(item))
 
 
@@ -1121,16 +1022,3 @@ def pole(request, code: str):
     item.nom = nom
     item.save(update_fields=["nom"])
     return Response(_ligne_pole(item))
-
-
-@api_view(["GET"])
-@permission_classes([IsAuthenticated])
-def exporter_besoins(_request):
-    from .rapports.documents import rendre_plan_besoins
-
-    fiches = list(FicheBesoin.objects.select_related("entite"))
-    contenu = rendre_plan_besoins(fiches)
-    nom = f"plan-besoins-{date.today().isoformat()}.pdf"
-    reponse = HttpResponse(contenu, content_type="application/pdf")
-    reponse["Content-Disposition"] = f'attachment; filename="{nom}"'
-    return reponse

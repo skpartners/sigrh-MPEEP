@@ -8,7 +8,6 @@ function valeurs(agent: Dossier) {
   const social = agent.social;
   const enveloppe = social?.enveloppe && social.enveloppe.allouee > 0 ? social.enveloppe : null;
   const dispositif = (code: string, defaut: string) => social?.dispositifs.find((item) => item.code === code)?.valeur ?? defaut;
-  const quotite = social && social.traitement_brut > 0 ? social : null;
   const compte = agent.prestations.length;
   return {
     nom: agent.nom_complet,
@@ -28,21 +27,12 @@ function valeurs(agent: Dossier) {
           : `${enveloppe.demandes} demandes en instance d'instruction paritaire.`,
     envDate: enveloppe?.session_date ?? "Jeudi 19 Mars 2026",
     envContact: enveloppe?.contact || "Mme A. Bakayoko (Poste 4410)",
-    qBrut: quotite ? groupe(quotite.traitement_brut) : "1 054 200",
-    qCotisations: quotite ? groupe(quotite.cotisations) : "211 700",
-    qNette: quotite ? groupe(quotite.solde_nette) : "842 500",
-    qPart: quotite ? pourcent(quotite.part_quotite) : "34.1",
-    qEngagements: quotite ? pourcent(quotite.part_engagements) : "11.2",
-    qTaux: quotite ? (Number.isInteger(quotite.taux_quotite) ? String(quotite.taux_quotite) : pourcent(quotite.taux_quotite)) : "33",
-    qQuotite: quotite ? groupe(quotite.quotite) : "278 025",
     dispSecoursDeces: dispositif("secours-deces", "Plafond : 1 500 000 FCFA"),
     dispHospitalisation: dispositif("hospitalisation", "Prise en charge : jusqu'à 80%"),
     dispAllocationRentree: dispositif("allocation-rentree", "150 000 FCFA / enfant"),
     dispTauxBonifie: dispositif("taux-bonifie", "Taux Bonifié 3.5%"),
     dispPretImmobilier: dispositif("pret-immobilier", "25 000 000 FCFA"),
     dispPretMensualites: dispositif("pret-mensualites", "180 mensualités"),
-    dispAvance: dispositif("avance", "3 000 000 FCFA"),
-    dispAvanceDuree: dispositif("avance-duree", "24 mois (taux 0%)"),
     visite: ligneVisite(agent.visite_medicale),
     visiteCourte: agent.visite_medicale.toLowerCase().startsWith("à jour") ? "À Jour (Conforme)" : agent.visite_medicale.split("(")[0].trim() || "À jour",
     comptePrestations: compte > 1 ? `${compte} requêtes sur ${compte} dossiers enregistrés` : compte === 1 ? "1 requête sur 1 dossier enregistré" : "0 requête sur 0 dossier enregistré",
@@ -306,41 +296,6 @@ export function OngletSocial({ agent }: { agent: Dossier }) {
                 <span className="font-label-md text-label-md font-bold text-primary">{v.envContact}</span>
               </div>
             </div>
-            {/* Simulation Interactive de Quotité Cessible */}
-            <div className="bg-surface-container-lowest p-6 rounded shadow-sm space-y-4">
-              <div className="flex items-center justify-between pb-1">
-                <h3 className="font-headline-sm text-headline-sm text-on-surface font-bold flex items-center gap-2">
-                  <Icone nom="calculate" className="text-primary" />
-                  {" "}{"Barème & Quotité Cessible (Décret 2013-481)"}
-                </h3>
-                <span className="font-code-num text-label-sm text-on-surface-variant font-bold">Seuil Max : 33.33%</span>
-              </div>
-              <div className="p-4 rounded bg-surface-container-low space-y-3 font-body-sm text-body-sm">
-                <div className="flex justify-between items-center text-on-surface-variant">
-                  <span>Traitement Brut Soumis à Retenue :</span>
-                  {" "}
-                  <span className="font-code-num text-on-surface font-semibold">{v.qBrut} FCFA</span>
-                </div>
-                <div className="flex justify-between items-center text-on-surface-variant">
-                  <span>Cotisations Légales (CGRAE, CMU, IGR) :</span>
-                  {" "}
-                  <span className="font-code-num text-error font-semibold">- {v.qCotisations} FCFA</span>
-                </div>
-                <div className="flex justify-between items-center font-bold text-on-surface pt-2">
-                  <span>Solde Nette Réglementaire :</span>
-                  {" "}
-                  <span className="font-code-num text-primary">{v.qNette} FCFA</span>
-                </div>
-                <div className="w-full bg-surface-container-high h-2 rounded-full overflow-hidden my-1">
-                  <div className="motion-fill bg-primary h-full rounded-full" style={{ width: `${v.qPart}%` }} />
-                </div>
-                <div className="flex justify-between text-label-sm font-label-sm text-on-surface-variant">
-                  <span>Prélèvements en cours ({v.qEngagements}%)</span>
-                  {" "}
-                  <span>Plafond légal {v.qTaux}% ({v.qQuotite} FCFA)</span>
-                </div>
-              </div>
-            </div>
           </div>
           {/* Right Column: Volet Prêts Immobiliers & Avances d'Équipement (7 cols) */}
           <div className="lg:col-span-7 space-y-6">
@@ -402,48 +357,6 @@ export function OngletSocial({ agent }: { agent: Dossier }) {
                     <span>Simuler le plan de prêt</span>
                     {" "}
                     <Icone nom="arrow_forward" className="text-sm" />
-                  </button>
-                </div>
-                {/* Avance sur solde / Réhabilitation habitat */}
-                <div className="p-5 rounded bg-surface-container-low flex flex-col justify-between space-y-4">
-                  <div>
-                    <div className="flex items-center justify-between">
-                      <span className="p-2 rounded bg-surface-container-lowest text-secondary">
-                        <Icone nom="construction" />
-                      </span>
-                      {" "}
-                      <span className="px-2 py-0.5 rounded bg-surface-container text-on-surface font-label-sm text-label-sm font-semibold">
-                        Trésor Public
-                      </span>
-                    </div>
-                    <h3 className="font-label-lg text-label-lg font-bold text-on-surface mt-3">
-                      {"Avance Solde • Réhabilitation & Travaux"}
-                    </h3>
-                    <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">
-                      Financement direct sans intérêts bancaires pour réhabilitation du domicile principal ou équipement ménager.
-                    </p>
-                    <div className="mt-3 space-y-1.5 text-on-surface-variant font-label-sm text-label-sm">
-                      <div className="flex justify-between">
-                        <span>Montant max :</span>
-                        {" "}
-                        <strong className="text-on-surface font-code-num">{v.dispAvance}</strong>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Remboursement :</span>
-                        {" "}
-                        <strong className="text-on-surface font-code-num">{v.dispAvanceDuree}</strong>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Prélèvement :</span>
-                        {" "}
-                        <strong className="text-on-surface">Retenue à la source</strong>
-                      </div>
-                    </div>
-                  </div>
-                  <button type="button" className="w-full py-2 px-3 rounded bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-label-md font-semibold transition-colors flex items-center justify-center gap-1.5 shadow-sm" data-soon={`Cette action porte sur le dossier de ${v.nom}. Elle sera versée à son circuit de validation.`}>
-                    <span>Demander formulaire officiel</span>
-                    {" "}
-                    <Icone nom="assignment" className="text-sm" />
                   </button>
                 </div>
               </div>
@@ -571,7 +484,7 @@ export function OngletSocial({ agent }: { agent: Dossier }) {
             <Icone nom="verified_user" className="text-primary text-2xl" />
             <div>
               <span className="font-label-md text-label-md font-bold text-on-surface block">
-                {"Visa Contrôle Financier & Direction de la Solde"}
+                {"Visa Contrôle Financier"}
               </span>
               {" "}
               <span className="font-body-sm text-body-sm text-on-surface-variant">

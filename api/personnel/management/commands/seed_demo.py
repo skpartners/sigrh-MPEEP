@@ -14,6 +14,8 @@ from django.utils import timezone
 
 from personnel.structures import POLES, RATTACHEMENTS, STRUCTURES
 from personnel.models import (
+    EmploiReferentiel,
+    BesoinFormation,
     Absence,
     Acte,
     Agent,
@@ -30,7 +32,6 @@ from personnel.models import (
     EtapeCircuit,
     ExerciceDotation,
     FicheBesoin,
-    FiliereBesoin,
     JournalEffectif,
     Passerelle,
     Evaluation,
@@ -97,11 +98,12 @@ class Command(BaseCommand):
         from personnel import models as modeles
         from personnel.demo_formation import charger as charger_formation
 
-        charger_formation(lambda nom: getattr(modeles, nom))
         from personnel import demo_ecrans
 
         demo_ecrans.charger_tout(lambda nom: getattr(modeles, nom))
         self._effectifs(drh)
+        # Après les structures : les besoins de formation sont portés par celles des paramètres.
+        charger_formation(lambda nom: getattr(modeles, nom))
         self._communications(drh)
         self._nomenclature()
         from personnel.habilitations_defaut import appliquer
@@ -147,37 +149,37 @@ class Command(BaseCommand):
         #  prise de service, congés consommés 2026, localisation, habilitation)
         rows = [
             ("349812K", "KOFFI", "Yao Christian", "H", date(1978, 6, 14), "Corps des Administrateurs Financiers", "A4", "3", 1845,
-             "Sous-Direction du Suivi des Sociétés d'État", "dgpe", 2015, 12, "Immeuble SCIAM, 14e étage, Plateau, Abidjan", "Secret administratif (niveau 2)"),
+             "Direction des Affaires Financières", "dgpe", 2015, 12, "Immeuble SCIAM, 14e étage, Plateau, Abidjan", "Secret administratif (niveau 2)"),
             ("318490K", "KONÉ", "Amadou Bakary", "H", date(1969, 2, 3), "Corps des Administrateurs Civils", "A4", "2", 1720,
              "Direction Générale du Portefeuille de l'État", "dgpe", 1996, 8, "Immeuble SCIAM, 15e étage, Plateau, Abidjan", "Secret administratif (niveau 2)"),
             ("394812H", "KOUASSI", "Jean-Baptiste", "H", date(1984, 11, 22), "Administrateurs des Services Financiers", "A4", "3", 820,
-             "Direction des Participations Financières", "dgpe", 2012, 5, "Immeuble SCIAM, 13e étage, Plateau, Abidjan", "Confidentiel (niveau 1)"),
+             "Direction de la Stratégie et de l'Expertise", "dgpe", 2012, 5, "Immeuble SCIAM, 13e étage, Plateau, Abidjan", "Confidentiel (niveau 1)"),
             ("411904C", "YAO", "Constant Sylvain", "H", date(1981, 4, 9), "Cadres des sociétés d'État", "A3", "2", 1100,
              "Direction des Ressources Humaines", "petroci", 2010, 14, "Immeuble Les Hévéas, Plateau, Abidjan", "Confidentiel (niveau 1)"),
             ("288103A", "BAMBA", "Aïcha épouse DIABY", "F", date(1975, 8, 30), "Administrateurs du patrimoine", "A2", "4", 980,
-             "Direction du Patrimoine Immobilier", "sogepie", 2003, 0, "Tour SOGEPIE, Cocody, Abidjan", "Confidentiel (niveau 1)"),
+             "Direction du Portefeuille du Secteur Tertiaire", "sogepie", 2003, 0, "Tour SOGEPIE, Cocody, Abidjan", "Confidentiel (niveau 1)"),
             ("340188P", "ADJOUMANI", "Kouadio", "H", date(1986, 1, 17), "Corps des Administrateurs Civils", "A3", "1", 940,
              "Direction Générale du Portefeuille de l'État", "dgpe", 2016, 6, "Immeuble SCIAM, 14e étage, Plateau, Abidjan", "Diffusion restreinte"),
             ("402771K", "TRAORÉ", "Brahima", "H", date(1979, 9, 5), "Cadres pétroliers", "B1", "3", 640,
-             "Direction de l'Exploitation", "petroci", 2006, 10, "Base logistique de Vridi, Abidjan", "Diffusion restreinte"),
+             "Direction du Portefeuille des Secteurs Primaire et Secondaire", "petroci", 2006, 10, "Base logistique de Vridi, Abidjan", "Diffusion restreinte"),
             ("509231M", "BROU", "Estelle", "F", date(1990, 3, 12), "Gestionnaires du patrimoine", "A1", "2", 760,
-             "Secrétariat Général", "sogepie", 2017, 4, "Tour SOGEPIE, Cocody, Abidjan", "Diffusion restreinte"),
+             "Cabinet", "sogepie", 2017, 4, "Tour SOGEPIE, Cocody, Abidjan", "Diffusion restreinte"),
             ("418902X", "KOUADIO", "Aya Marcelle", "F", date(1988, 12, 1), "Ingénieurs de l'énergie", "A3", "1", 700,
-             "Direction de l'Exploitation", "ci-energies", 2014, 9, "Siège CI-ENERGIES, Treichville, Abidjan", "Diffusion restreinte"),
+             "Direction du Portefeuille des Secteurs Primaire et Secondaire", "ci-energies", 2014, 9, "Siège CI-ENERGIES, Treichville, Abidjan", "Diffusion restreinte"),
             ("392104D", "TRAORÉ", "Bakary", "H", date(1972, 7, 19), "Agents d'exécution portuaire", "B1", "2", 520,
-             "Service des Moyens Généraux", "paa", 1998, 15, "Zone portuaire, Treichville, Abidjan", "Public"),
+             "Service des Moyens Généraux (DGPE)", "paa", 1998, 15, "Zone portuaire, Treichville, Abidjan", "Public"),
             ("501229K", "N'GUESSAN", "Éric Yao", "H", date(1963, 5, 28), "Ingénieurs généraux des travaux publics", "A7", "1", 2100,
-             "Direction Technique", "bnetd", 1991, 3, "Siège BNETD, Cocody, Abidjan", "Secret administratif (niveau 2)"),
+             "Direction de la Stratégie, de la Planification et des Statistiques", "bnetd", 1991, 3, "Siège BNETD, Cocody, Abidjan", "Secret administratif (niveau 2)"),
             ("476112P", "SORO", "Karidja", "F", date(1992, 10, 8), "Agents administratifs", "B2", "3", 480,
-             "Service de l'Action Sociale", "dgpe", 2018, 7, "Immeuble SCIAM, 11e étage, Plateau, Abidjan", "Public"),
+             "SD Action Sociale", "dgpe", 2018, 7, "Immeuble SCIAM, 11e étage, Plateau, Abidjan", "Public"),
             ("455870T", "TRAORÉ", "Mariam épouse CISSÉ", "F", date(1977, 2, 25), "Corps des Administrateurs Financiers", "A5", "2", 1980,
-             "Direction Financière", "petroci", 2001, 11, "Immeuble Les Hévéas, Plateau, Abidjan", "Secret administratif (niveau 2)"),
+             "Direction des Affaires Financières", "petroci", 2001, 11, "Immeuble Les Hévéas, Plateau, Abidjan", "Secret administratif (niveau 2)"),
             ("289043B", "YAO", "Kouassi Florent", "H", date(1966, 9, 14), "Corps des Inspecteurs du Trésor", "A6", "1", 2010,
              "Inspection Générale", "dgpe", 1993, 2, "Immeuble SCIAM, 16e étage, Plateau, Abidjan", "Secret administratif (niveau 2)"),
             ("367215R", "OUATTARA", "Ibrahim", "H", date(1983, 6, 2), "Ingénieurs informaticiens", "A3", "3", 1030,
              "Direction des Systèmes d'Information", "sndi", 2009, 12, "Siège SNDI, Plateau, Abidjan", "Confidentiel (niveau 1)"),
             ("523406L", "GBAGBO", "Adjoua Laetitia", "F", date(1994, 4, 21), "Attachés d'administration", "A2", "1", 650,
-             "Direction des Programmes", "ansut", 2020, 5, "Siège ANSUT, Cocody, Abidjan", "Diffusion restreinte"),
+             "Direction de la Communication et des Relations Publiques", "ansut", 2020, 5, "Siège ANSUT, Cocody, Abidjan", "Diffusion restreinte"),
         ]
         found = {}
         for (matricule, nom, prenoms, sexe, naissance, corps, grade, echelon, indice, structure, org,
@@ -229,7 +231,7 @@ class Command(BaseCommand):
 
     @staticmethod
     def _rattachement(libelle: str) -> tuple[str, str, str]:
-        if libelle.startswith("Sous-Direction") or libelle.startswith("Sous-direction"):
+        if libelle.startswith(("Sous-Direction", "Sous-direction", "SD ")):
             return "", libelle, ""
         if libelle.startswith("Service"):
             return "", "", libelle
@@ -450,10 +452,6 @@ class Command(BaseCommand):
                 self._enveloppe(organisme)
 
     def _situation_sociale(self, agent: Agent) -> None:
-        indice = max(agent.indice or 800, 400)
-        brut = int(round(indice * 1120 / 100) * 100)
-        cotisations = int(round(brut * 0.20 / 100) * 100)
-        engagements = int(round(brut * self.rng.uniform(0.05, 0.12) / 100) * 100)
         SituationSociale.objects.update_or_create(
             agent=agent,
             defaults={
@@ -461,10 +459,6 @@ class Command(BaseCommand):
                     f"CI-{self.rng.randint(1, 999):03d}-{self.rng.randint(2020, 2026)}-"
                     f"{self.rng.randint(1000, 9999)}-{self.rng.randint(1, 99):02d}"
                 ),
-                "traitement_brut": brut,
-                "cotisations": cotisations,
-                "engagements": engagements,
-                "taux_quotite": 33,
             },
         )
 
@@ -681,7 +675,7 @@ class Command(BaseCommand):
         Demande.objects.all().delete()
         for reference, matricule, nature, icone, etape, responsable, echeance, depose, categorie in [
             ("DM-2026-0891", "418902X", "Congé annuel (21 j)", "calendar_month", "Étape 2 : chef de service Exploitation", "Avis hiérarchique attendu", "J-1 avant relance", date(2026, 3, 14), "conge"),
-            ("DM-2026-0874", "392104D", "Prêt d'équipement ménager", "volunteer_activism", "Étape 3 : SD Action Sociale", "Calcul de la quotité cessible", "Conforme sous 48 h", date(2026, 3, 11), "social"),
+            ("DM-2026-0874", "392104D", "Prêt d'équipement ménager", "volunteer_activism", "Étape 3 : SD Action Sociale", "Examen du dossier et des pièces", "Conforme sous 48 h", date(2026, 3, 11), "social"),
             ("DM-2026-0869", "501229K", "Cycle des dirigeants", "school", "Étape 4 : signature DRH", "Visa préalable SD Formation OK", "Priorité haute", date(2026, 3, 9), "formation"),
             ("DM-2026-0852", "476112P", "Secours médical urgent", "local_hospital", "Étape 3 : complément requis", "Facture normalisée manquante", "Retournée à l'agent", date(2026, 3, 8), "social"),
             ("DM-2026-0847", "288103A", "Congé annuel (30 j)", "calendar_month", "Étape 4 : signature DRH", "Intérim validé par la DGA", "Prise d'effet le 10 mars", date(2026, 3, 2), "conge"),
@@ -966,10 +960,11 @@ class Command(BaseCommand):
     def _effectifs(self, drh: User) -> None:
         for modele in (
             FicheBesoin, DemandeDotation, AlertePoste, Passerelle, JournalEffectif,
-            FiliereBesoin, BranchePlafond, CampagneBesoin, ExerciceDotation,
+            BranchePlafond, CampagneBesoin, ExerciceDotation,
         ):
             modele.objects.all().delete()
         entites = {}
+        BesoinFormation.objects.all().delete()
         Profil.objects.update(structure=None)
         EntiteTutelle.objects.update(parent=None)
         EntiteTutelle.objects.all().delete()
@@ -990,6 +985,15 @@ class Command(BaseCommand):
         drh.profil.role = "Directeur"
         drh.profil.habilitations = ["validation"] * (ModuleHabilitation.objects.count() or 6)
         drh.profil.save(update_fields=["structure", "role", "habilitations"])
+        # Des responsables de démonstration, rattachés sous la direction des ressources humaines.
+        for matricule, code, role in (
+            ("476112P", "sd-carrieres", "Sous directeur"), ("411904C", "sd-formation", "Sous directeur"),
+            ("349812K", "svc-actes", "Chef de service"), ("455870T", "svc-courrier", "Chef de service"),
+        ):
+            profil = Profil.objects.filter(user__username=matricule).first()
+            if profil is not None:
+                profil.structure, profil.role, profil.superieur = entites[code], role, drh
+                profil.save(update_fields=["structure", "role", "superieur"])
 
         ExerciceDotation.objects.create(
             annee=2026,
@@ -1043,37 +1047,30 @@ class Command(BaseCommand):
         ):
             JournalEffectif.objects.create(reference=reference, titre=titre, auteur=auteur, cree_le=quand)
 
-        CampagneBesoin.objects.create(
+        campagne = CampagneBesoin.objects.create(
             exercice=2026,
             ouverte=True,
-            cadrage="Cadrage des plafonds d'emplois validé",
-            pea_max=5050,
-            volume_precedent=14,
+            cadrage="Indiquez les fonctionnaires et les contractuels dont votre structure a besoin.",
+            ouverte_le=date.today() - timedelta(days=12),
+            limite=date.today() + timedelta(days=30),
         )
-        for ordre, code, libelle, icone, requis, couverts in (
-            (1, "petrole", "Ingénierie pétrolière et transition énergétique", "oil_barrel", 54, 39),
-            (2, "numerique", "Gouvernance numérique et protection des données", "security", 32, 21),
-            (3, "audit", "Audit, contrôle de gestion et trésorerie", "account_balance", 40, 32),
-            (4, "juridique", "Marchés publics et contentieux", "gavel", 18, 14),
-        ):
-            FiliereBesoin.objects.create(
-                code=code, libelle=libelle, icone=icone, requis=requis, couverts=couverts, ordre=ordre,
-            )
 
         def moment(jour, heure, minute):
             return timezone.make_aware(datetime(2026, 2, jour, heure, minute))
 
+        # référence, structure, profil, grade, fonctionnaires, contractuels, motif, dépôt
         fiches = (
-            ("BES-2026-042", "drh", "Direction des Ressources Humaines", "Gestionnaire des carrières", "A3", "Effectifs", 3, "Départs en retraite et tenue des dossiers", "creation", "favorable", "Favorable : 2 postes", "Avis favorable de la DRH", "Marge du plafond : 4 emplois", True, 2, moment(18, 10, 42)),
-            ("BES-2026-039", "dsi", "Direction des Systèmes d'Information", "Administrateur du système d'information", "A4", "Systèmes d'information", 5, "Sécurisation du système d'information du ministère", "creation", "instruction", "Instruction technique en cours", "Instruction en cours", "5 postes demandés au titre du plafond", True, 0, moment(17, 15, 15)),
-            ("BES-2026-031", "daj-dgpe", "Direction des Affaires Juridiques (DGPE)", "Juriste des sociétés d'État", "A4", "Droit des sociétés", 2, "Contentieux des participations de l'État", "creation", "favorable", "Favorable : 2 postes", "Avis favorable", "Dans le plafond de la DGPE", False, 2, moment(14, 9, 30)),
-            ("BES-2026-027", "smg-dgpe", "Service des Moyens Généraux (DGPE)", "Gestionnaire des moyens généraux", "B3", "Logistique", 4, "Renfort du service des moyens généraux", "mobilite", "rejet", "Reconversion interne exigée", "Plafond d'emplois dépassé", "Vivier interne disponible", False, 0, moment(11, 16, 48)),
-            ("BES-2026-022", "dspq", "Direction du Suivi de la Performance et de la Qualité", "Chargé du suivi de la performance", "A5", "Performance", 2, "Suivi des indicateurs des directions", "renfort", "complement", "Renvoyé pour évaluation", "Volume compatible avec le plafond", "Dans le plafond de la DGPN", False, 0, moment(8, 11, 20)),
+            ("BES-2026-042", "drh", "Gestionnaire des carrières", "A3", 2, 1, "Départs en retraite et tenue des dossiers", moment(18, 10, 42)),
+            ("BES-2026-039", "dsi", "Administrateur du système d'information", "A4", 3, 2, "Sécurisation du système d'information du ministère", moment(17, 15, 15)),
+            ("BES-2026-031", "daj-dgpe", "Juriste des sociétés d'État", "A4", 2, 0, "Contentieux des participations de l'État", moment(14, 9, 30)),
+            ("BES-2026-027", "smg-dgpe", "Gestionnaire des moyens généraux", "B3", 1, 3, "Renfort du service des moyens généraux", moment(11, 16, 48)),
+            ("BES-2026-022", "dspq", "Chargé du suivi de la performance", "A5", 1, 1, "Suivi des indicateurs des directions", moment(8, 11, 20)),
         )
-        for reference, code, direction, profil, grade, specialite, volume, motif, nature, statut, arbitrage, visa, detail, critique, accordes, depose in fiches:
+        emplois = list(EmploiReferentiel.objects.select_related("grade").order_by("ordre", "id")[:len(fiches)])
+        for index, (reference, code, profil, grade, fonctionnaires, contractuels, motif, depose) in enumerate(fiches):
+            emploi = EmploiReferentiel.objects.select_related("grade").filter(libelle__iexact=profil).first() or (emplois[index] if index < len(emplois) else None)
             FicheBesoin.objects.create(
-                reference=reference, entite=entites[code], direction=direction, profil=profil,
-                grade=grade, specialite=specialite, volume=volume, motif=motif, nature=nature,
-                statut=statut, arbitrage=arbitrage, visa=visa, detail=detail,
-                critique=critique, postes_accordes=accordes, depose_le=depose,
+                reference=reference, campagne=campagne, entite=entites[code], emploi=emploi,
+                profil=emploi.libelle if emploi else profil, grade=emploi.grade.code if emploi else grade, motif=motif,
+                fonctionnaires=fonctionnaires, contractuels=contractuels, volume=fonctionnaires + contractuels, depose_le=depose,
             )

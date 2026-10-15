@@ -1,37 +1,23 @@
 import { useQuery } from "@tanstack/react-query";
-import { useMemo, useRef, useState, type CSSProperties } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { api, mediaUrl, telecharger } from "../api/client";
-import type { Dashboard, Kpi, SessionUser, Ton } from "../api/types";
+import type { Dashboard, SessionUser } from "../api/types";
 import { Pagination, usePagination } from "../ui/Pagination";
 import { Portrait } from "../ui/PhotoProfil";
 import { useFeedback, wait } from "../ui/Feedback";
 import { useAction } from "../ui/useAction";
-import { EASE_IN, EASE_OUT, Skeleton, reducedMotion, useCounterOnReveal } from "../ui/Motion";
+import { EASE_IN, EASE_OUT, Skeleton, reducedMotion } from "../ui/Motion";
 import { AppChrome } from "./AppChrome";
-import { BoutonExcel, EtatAbsences, EtatDotations, EtatEffectifs, EtatFormation } from "./dashboard/Etats";
-import { exporterKpi, exporterVisas } from "./dashboard/exportsTdb";
+import { BoutonExcel } from "./dashboard/Etats";
+import { EtatsPersonnel } from "./dashboard/EtatsPersonnel";
+import { exporterVisas } from "./dashboard/exportsTdb";
 import { Icone } from "../ui/Icone";
 
 /** Actes affichés par page dans la file des visas. */
 const VISAS_PAR_PAGE = 2;
 const CARD = "bg-surface-container-lowest rounded-xl border border-hairline";
 
-const TON_ICONE: Record<Ton, string> = {
-  primary: "bg-surface-container text-primary",
-  secondary: "bg-secondary-fixed text-secondary",
-  tertiary: "bg-surface-container text-tertiary",
-};
-const TON_BARRE: Record<Ton, string> = {
-  primary: "bg-primary",
-  secondary: "bg-secondary-container",
-  tertiary: "bg-tertiary-container",
-};
-const TON_BADGE: Record<Kpi["badge_ton"], string> = {
-  positif: "bg-primary-fixed text-on-primary-fixed",
-  alerte: "bg-error-container text-on-error-container",
-  neutre: "bg-surface-container text-primary",
-};
 const CATEGORIE_ICONE: Record<string, string> = {
   carriere: "arrow_upward",
   social: "real_estate_agent",
@@ -102,81 +88,15 @@ export function DashboardScreen() {
             </div>
           ) : null}
 
-          {/* Indicateurs clés */}
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
-            {data
-              ? data.kpis.map((kpi, i) => (
-                <CarteKpi key={kpi.libelle} kpi={kpi} index={i} onExporter={() => exporterKpi(kpi, data.exercice, data.etats)} />
-              ))
-              : [0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-48 rounded-xl" />)}
-          </div>
-
           <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
             <FileVisas visas={data?.visas} signatureUrl={me.data?.signature_url ?? ""} />
-            <EtatDotations etats={data?.etats} className="xl:col-span-5" />
           </div>
 
-          <EtatEffectifs etats={data?.etats} />
-
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
-            <EtatAbsences etats={data?.etats} exercice={data?.exercice ?? new Date().getFullYear()} />
-            <EtatFormation etats={data?.etats} exercice={data?.exercice ?? new Date().getFullYear()} />
-          </div>
+          <EtatsPersonnel />
 
         </div>
       </div>
     </AppChrome>
-  );
-}
-
-function CarteKpi({ kpi, index, onExporter }: { kpi: Kpi; index: number; onExporter: () => void }) {
-  const valeurAnimee = useCounterOnReveal(kpi.valeur);
-  return (
-    <div
-      className={`${CARD} motion-content p-5 flex flex-col justify-between`}
-      style={{ "--delay": `${index * 60}ms` } as CSSProperties}
-    >
-      <div className="flex items-center justify-between gap-3 mb-3">
-        <span className={`font-label-sm text-label-sm font-bold uppercase tracking-wider ${kpi.ton === "secondary" ? "text-on-secondary-container" : "text-on-surface-variant"}`}>
-          {kpi.libelle}
-        </span>
-        <div className="flex items-center gap-2">
-          <BoutonExcel titre={kpi.libelle} onExporter={onExporter} />
-          <div className={`p-2 rounded-lg ${TON_ICONE[kpi.ton]}`}>
-            <Icone nom={kpi.icone} className="text-xl" />
-          </div>
-        </div>
-      </div>
-      <div>
-        <div className="flex flex-wrap items-baseline gap-2">
-          <span className={`font-headline-xl text-headline-xl tracking-tight font-bold tabular-nums ${kpi.ton === "secondary" && !kpi.unite ? "text-secondary" : "text-on-surface"}`}>
-            {valeurAnimee}
-          </span>
-          {kpi.unite ? <span className="font-label-sm text-label-sm text-on-surface-variant font-bold">{kpi.unite}</span> : null}
-          {kpi.badge ? <span className={`font-label-sm text-label-sm px-1.5 py-0.5 rounded font-semibold ${TON_BADGE[kpi.badge_ton]}`}>{kpi.badge}</span> : null}
-        </div>
-        <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">{kpi.detail}</p>
-      </div>
-      {kpi.jauge ? (
-        <div className="mt-4 bg-surface-container-low/60 rounded p-2.5 space-y-1.5">
-          <div className="flex justify-between gap-2 font-label-sm text-label-sm">
-            <span className={kpi.ton === "primary" ? "text-primary font-semibold" : "text-on-surface-variant"}>{kpi.jauge.gauche}</span>
-            <span className={kpi.ton === "secondary" ? "text-secondary font-bold" : "text-on-surface-variant font-medium"}>{kpi.jauge.droite}</span>
-          </div>
-          <div className="w-full h-2 bg-surface-container rounded-full overflow-hidden" aria-hidden="true">
-            <div
-              className={`${TON_BARRE[kpi.ton]} motion-fill h-full rounded-full`}
-              style={{ width: `${kpi.jauge.pourcentage}%`, "--delay": `${200 + index * 60}ms` } as CSSProperties}
-            />
-          </div>
-        </div>
-      ) : null}
-      {kpi.repartition ? (
-        <ul className="mt-4 flex items-center justify-between gap-2 font-label-sm text-label-sm bg-secondary-fixed/30 rounded p-2.5 text-on-secondary-container">
-          {kpi.repartition.map((part) => <li key={part}>{part}</li>)}
-        </ul>
-      ) : null}
-    </div>
   );
 }
 
@@ -200,7 +120,7 @@ function FileVisas({ visas, signatureUrl }: { visas: Dashboard["visas"] | undefi
   const { page, pages, total, visibles, aller } = usePagination(restants, "visas", VISAS_PAR_PAGE);
 
   return (
-    <section className={`xl:col-span-7 ${CARD} overflow-hidden flex flex-col`} aria-labelledby="titre-visas">
+    <section className={`xl:col-span-12 ${CARD} overflow-hidden flex flex-col`} aria-labelledby="titre-visas">
       <div className="p-5 flex flex-wrap items-center justify-between gap-3 bg-surface-container-low/40">
         <div className="flex items-center gap-2.5">
           <Icone nom="rule" className="text-primary text-2xl" />

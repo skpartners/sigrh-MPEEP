@@ -66,7 +66,7 @@ def charger_absences(modele) -> None:
     Absence = modele("Absence")
     aujourd_hui = date.today()
     Absence.objects.exclude(type_autorisation="").delete()
-    for matricule, type_code, justificatif, decalage, duree, decision, motif, impact, detail in AUTORISATIONS:
+    for matricule, type_code, justificatif, decalage, duree, decision, motif, _impact, _detail in AUTORISATIONS:
         agent = Agent.objects.filter(matricule=matricule).first()
         if agent is None:
             continue
@@ -84,11 +84,7 @@ def charger_absences(modele) -> None:
             decision=decision,
             motif_decision=motif,
             decide_le=aujourd_hui + timedelta(days=min(decalage + duree, 0)) if decision != "en_attente" else None,
-            impact_solde=impact,
-            impact_detail=detail,
         )
-    # Le taux de présentéisme provient du pointage, qui n'est pas encore relié à la base.
-    _bloc(modele, "absences", "presenteisme", {"taux": 97.4, "evolution": 0.8, "objectif": 96.0})
 
 
 # --- Congés (arbitrage de la sous-direction des carrières) --------------------------------
@@ -99,37 +95,9 @@ ARBITRAGES = [
     ("349812K", "Congé annuel principal", 12, 16, "Mme SORO Karidja", "Intérim désigné par la direction", "pret_signature"),
     ("367215R", "Congé de paternité", 2, 3, "Permanence du service assurée", "Équipe d'astreinte du service", "approbation_auto"),
     ("523406L", "Congé de maternité", 20, 98, "Certificat médical homologué", "Remplacement par intérim acté", "remplacement"),
-    ("392104D", "Congé annuel principal", 5, 31, "Quorum du service sous 60 %", "Trois agents du service déjà en congé", "conflit_quorum"),
+    ("392104D", "Congé annuel principal", 5, 31, "Intérim désigné par la direction", "Intérim validé par le chef de service", "pret_signature"),
     ("501229K", "Congé annuel principal", -20, 12, "M. YAO Kouassi Florent", "Intérim assuré", "signe"),
 ]
-
-CONGES = {
-    "campagne": {"reference": "ARRET-MPEEP/DRH/{annee}-T1", "synchronisation": "Validée à 08:30 GMT", "seuil": 65},
-    "presence": {"taux": 81.6, "seuil": 65.0},
-    "trimestres": [
-        {"titre": "T2 • Pâques / Avril", "departs": 18, "texte": "Congés courts et reliquats N-1. Impact opérationnel maîtrisé.", "etat": "Continuité assurée (82 % de présence)", "ton": "neutre"},
-        {"titre": "T3 • Trêve estivale (juillet-août)", "departs": 34, "texte": "Pic majeur de l'année. Arbitrage des binômes stratégiques requis.", "etat": "Optimisation des intérims en cours", "ton": "attention"},
-        {"titre": "T4 • Fin d'année (décembre)", "departs": 28, "texte": "Clôture budgétaire et arrêtés collectifs programmés.", "etat": "Quorum prévu à 72 % (conforme)", "ton": "neutre"},
-    ],
-    "mensuel": [88, 86, 81, 82, 89, 84, 66, 67, 85, 87, 88, 72],
-    "quorums": [
-        {"entite": "PETROCI Holding", "presence": 84, "detail": "48 départs au T1"},
-        {"entite": "CI-ENERGIES", "presence": 79, "detail": "72 départs au T1"},
-        {"entite": "BNETD", "presence": 88, "detail": "24 départs au T1"},
-        {"entite": "SOGEPIE", "presence": 68, "detail": "Seuil critique approché"},
-        {"entite": "Port Autonome d'Abidjan", "presence": 82, "detail": "115 départs au T1"},
-    ],
-    "reliquats": {
-        "echeance": "30 avril",
-        "options": [
-            {"titre": "1. Consommation immédiate", "texte": "Départ programmé avant l'échéance avec accord exprès du supérieur hiérarchique.", "jours": 2480, "part": 60, "ton": "neutre"},
-            {"titre": "2. Compte épargne-temps (CET)", "texte": "Versement automatique sous réserve du plafond réglementaire de 10 jours.", "jours": 1140, "part": 28, "ton": "sobre"},
-            {"titre": "3. Indemnisation dérogatoire", "texte": "Nécessité impérieuse de service attestée par arrêté du ministre de tutelle.", "jours": 500, "part": 12, "ton": "attention"},
-        ],
-        "circulaire": "Circulaire ministérielle n° 0042/MPEEP/DRH",
-    },
-}
-
 
 RELIQUATS = {"455870T": 8, "349812K": 5, "392104D": 12, "289043B": 6, "418902X": 3}
 
@@ -158,11 +126,9 @@ def charger_conges(modele) -> None:
             instruction=instruction,
             decide_le=aujourd_hui + timedelta(days=decalage - 5) if instruction == "signe" else None,
         )
-    # Reliquats N-1 de quelques agents, à apurer avant l'échéance de la campagne.
+    # Reliquats N-1 de quelques agents.
     for matricule, report in RELIQUATS.items():
         Agent.objects.filter(matricule=matricule).update(report_conges=report)
-    for cle, contenu in CONGES.items():
-        _bloc(modele, "conges", cle, contenu)
 
 
 # --- Procédures disciplinaires --------------------------------------------------------------
@@ -240,7 +206,6 @@ def charger_discipline(modele) -> None:
             ordre_du_jour=f"Instruction des dossiers {' et '.join(references)}" if references else "Recours gracieux et demandes de réhabilitation",
             description=description, composition=composition, lieu="Salle du conseil • DGPE",
         )
-    _bloc(modele, "discipline", "regularite", {"taux": 100, "detail": "Zéro vice de forme", "controle": "Communication des pièces", "visa": "Visa"})
     verser_cadre_discipline(modele)
 
 
@@ -343,20 +308,16 @@ def verser_cadre_discipline(modele) -> None:
     """Verse le barème, les règles et les textes de l'écran, sans toucher aux dossiers déjà saisis."""
     for cle, contenu in CADRE_DISCIPLINE.items():
         _bloc(modele, "discipline", cle, contenu)
-    bloc = modele("BlocEcran").objects.filter(ecran="discipline", cle="regularite").first()
-    if bloc is not None and "visa" not in (bloc.contenu or {}):
-        bloc.contenu = {**(bloc.contenu or {}), "visa": "Visa"}
-        bloc.save(update_fields=["contenu"])
 
 
 # --- Fin de carrière -------------------------------------------------------------------------------
 
-# matricule, âge limite, entrée en service, IDR, pension mensuelle, statut, détail
+# matricule, âge limite, entrée en service, statut, détail
 RETRAITES = [
-    ("289043B", 60, date(1991, 3, 1), 18_450_000, 940_000, "notifie", "Livret de pension généré"),
-    ("392104D", 55, date(1997, 10, 6), 11_350_000, 620_000, "quittance", "Audit de clôture en cours"),
-    ("501229K", 65, date(1990, 9, 3), 24_800_000, 1_250_000, "arrete", "Visa du contrôle financier accordé"),
-    ("318490K", 60, date(1995, 1, 9), 14_200_000, 815_000, "visite", "Convocation à la médecine du travail"),
+    ("289043B", 60, date(1991, 3, 1), "notifie", "Livret de pension généré"),
+    ("392104D", 55, date(1997, 10, 6), "quittance", "Audit de clôture en cours"),
+    ("501229K", 65, date(1990, 9, 3), "arrete", "Visa du contrôle financier accordé"),
+    ("318490K", 60, date(1995, 1, 9), "visite", "Convocation à la médecine du travail"),
 ]
 
 # intitulé, titulaire, successeur, progression du tutorat (%), commentaire
@@ -375,9 +336,6 @@ FIN_CARRIERE = {
             "et sécurisation de la relève des postes sensibles."
         ),
     },
-    "passerelle": {"reference": "EXERCICE-{annee}-REG-09", "etat": "Passerelle CGRAE / CNPS synchronisée"},
-    "cgrae": {"taux": 98.2, "detail": "Zéro rupture de solde à M+1"},
-    "renouvellement": {"texte": "1 agent entrant pour 1,15 sortant"},
     "accompagnement": {
         "titre": "Programme « Retraite active & sérénité »",
         "texte": "Sessions de préparation à la transition : gestion du patrimoine, entrepreneuriat après la carrière, couverture santé complémentaire.",
@@ -400,11 +358,11 @@ def charger_fin_carriere(modele) -> None:
     Dossier.objects.all().delete()
     Poste.objects.all().delete()
     limites = {}
-    for matricule, age, entree, idr, pension, statut, detail in RETRAITES:
+    for matricule, age, entree, statut, detail in RETRAITES:
         agent = Agent.objects.filter(matricule=matricule).first()
         if agent is None:
             continue
-        champs = {"agent": agent, "age_limite": age, "entree_service": entree, "idr": idr, "pension": pension, "statut": statut, "statut_detail": detail}
+        champs = {"agent": agent, "age_limite": age, "entree_service": entree, "statut": statut, "statut_detail": detail}
         if any(champ.name == "motif" for champ in Dossier._meta.fields):
             retraite = _classe(modele, "TypeFinCarriere")
             motif = retraite.objects.filter(code="retraite").first() if retraite is not None else None
@@ -445,18 +403,11 @@ def verser_pilotage_fin_carriere(modele, remplacer=False) -> None:
         Pilotage.objects.all().delete()
     source = FIN_CARRIERE if remplacer else _source_fin_carriere(modele)
     entete = source["entete"]
-    passerelle = source["passerelle"]
-    cgrae = source["cgrae"]
     accompagnement = source["accompagnement"]
     Pilotage.objects.create(
         fil=entete.get("fil") or [],
         titre=entete.get("titre") or "",
         chapeau=entete.get("chapeau") or "",
-        reference=passerelle.get("reference") or "",
-        etat_passerelle=passerelle.get("etat") or "",
-        taux_cgrae=cgrae.get("taux") or 0,
-        detail_cgrae=cgrae.get("detail") or "",
-        renouvellement=(source.get("renouvellement") or {}).get("texte") or "",
         programme_titre=accompagnement.get("titre") or "",
         programme_texte=accompagnement.get("texte") or "",
     )
@@ -481,9 +432,6 @@ def _source_fin_carriere(modele) -> dict:
         return FIN_CARRIERE
     return {
         "entete": blocs.get("entete") or FIN_CARRIERE["entete"],
-        "passerelle": blocs.get("passerelle") or FIN_CARRIERE["passerelle"],
-        "cgrae": blocs.get("cgrae") or FIN_CARRIERE["cgrae"],
-        "renouvellement": blocs.get("renouvellement") or FIN_CARRIERE["renouvellement"],
         "accompagnement": blocs.get("accompagnement") or FIN_CARRIERE["accompagnement"],
         "distinctions": blocs.get("distinctions") or FIN_CARRIERE["distinctions"],
     }
@@ -502,7 +450,7 @@ REQUETES = [
      "Certificat médical (conforme)", "Accord favorable sous 24 h", True, "conforme", 2),
     ("455870T", "Frais d'obsèques (ascendant)", "Décès du père de l'agent", "Acte de notoriété légalisé", 1_200_000,
      "Extrait d'acte de décès certifié", "Vérification de la DAAF en cours", False, "commission", 5),
-    ("509231M", "Avance à 0 % : rentrée scolaire", "Scolarité de trois enfants", "3 enfants scolarisés", 600_000,
+    ("509231M", "Aide à la rentrée scolaire", "Scolarité de trois enfants", "3 enfants scolarisés", 600_000,
      "Certificats de scolarité (3)", "Quotité cessible vérifiée (18 %)", False, "conforme", 9),
     ("476112P", "Dotation de matériel inclusif", "Écran grossissant et clavier braille", "Agent", 920_000,
      "Avis du médecin du travail", "Approuvé par la commission handicap", False, "conforme", 12),

@@ -1,13 +1,17 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
 import { api } from "../api/client";
 import type { SessionUser } from "../api/types";
 import { Icone } from "../ui/Icone";
 import { AppChrome } from "./AppChrome";
-import { destinationModule, moduleAutorise, NAV, sousMenus, type LienNav } from "./navigation";
+import { destinationModule, moduleAutorise, NAV, sousMenus, type EnfantNav, type LienNav } from "./navigation";
 
-const ACCENTS = [
+/** Sous-menus montrés sur une carte ; les autres se résument en « +N de plus ». */
+const PUCES_VISIBLES = 3;
+
+export const ACCENTS = [
   {
     // Principale — sombre & autoritaire
     barre: "from-primary via-primary/60 to-transparent",
@@ -140,37 +144,29 @@ export function HubScreen() {
             <div className="motion-float-1 absolute -right-10 -top-10 w-52 h-52 rounded-full bg-secondary-container/20 blur-3xl pointer-events-none" aria-hidden="true" />
             <div className="motion-float-2 absolute left-1/3 -bottom-8 w-44 h-44 rounded-full bg-secondary/15 blur-2xl pointer-events-none" aria-hidden="true" />
             <div className="motion-float-1 absolute right-1/4 bottom-0 w-24 h-24 rounded-full bg-secondary-container/10 blur-xl pointer-events-none" aria-hidden="true" style={{ animationDelay: "3.5s" }} />
-            <div className="relative z-10 px-6 sm:px-8 py-7 court:py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-5">
-              <div>
-                <div className="flex flex-wrap items-center gap-2 mb-3">
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-secondary-container/15 border border-secondary-container/30 text-secondary-container font-label-sm text-label-sm font-semibold">
-                    <span className="relative flex items-center justify-center w-2 h-2 shrink-0">
-                      <span className="motion-pulse-dot absolute inset-0 rounded-full bg-secondary-container" aria-hidden="true" />
-                      <span className="relative z-10 w-1.5 h-1.5 rounded-full bg-secondary-container" />
-                    </span>
-                    Session active
+            <div className="relative z-10 px-6 sm:px-8 py-7 court:py-4">
+              <div className="flex flex-wrap items-center gap-2 mb-3">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-secondary-container/15 border border-secondary-container/30 text-secondary-container font-label-sm text-label-sm font-semibold">
+                  <span className="relative flex items-center justify-center w-2 h-2 shrink-0">
+                    <span className="motion-pulse-dot absolute inset-0 rounded-full bg-secondary-container" aria-hidden="true" />
+                    <span className="relative z-10 w-1.5 h-1.5 rounded-full bg-secondary-container" />
                   </span>
-                  {me.data ? (
-                    <span className="font-label-sm text-label-sm text-on-primary/60">
-                      {me.data.fonction}
-                      {" · "}
-                      <strong className="text-on-primary/85 font-semibold">{me.data.organisme_sigle}</strong>
-                    </span>
-                  ) : null}
-                </div>
-                <h1 className="font-headline-lg text-headline-lg sm:font-headline-xl sm:text-headline-xl text-on-primary tracking-tight">
-                  Menu principal
-                </h1>
-                <p className="font-body-md text-body-md text-on-primary/60 mt-1.5 max-w-lg">
-                  Sélectionnez un module pour accéder à ses fonctionnalités.
-                </p>
+                  Session active
+                </span>
+                {me.data ? (
+                  <span className="font-label-sm text-label-sm text-on-primary/60">
+                    {me.data.fonction}
+                    {" · "}
+                    <strong className="text-on-primary/85 font-semibold">{me.data.organisme_sigle}</strong>
+                  </span>
+                ) : null}
               </div>
-              <img
-                alt=""
-                className="hidden sm:block h-20 w-20 object-contain opacity-20 shrink-0"
-                src={`${import.meta.env.BASE_URL}logo.png`}
-                aria-hidden="true"
-              />
+              <h1 className="font-headline-lg text-headline-lg sm:font-headline-xl sm:text-headline-xl text-on-primary tracking-tight">
+                Menu principal
+              </h1>
+              <p className="font-body-md text-body-md text-on-primary/60 mt-1.5 max-w-lg">
+                Sélectionnez un module pour accéder à ses fonctionnalités.
+              </p>
             </div>
             <div className="absolute bottom-0 left-0 right-0 h-px bg-secondary-container/40" aria-hidden="true" />
           </div>
@@ -198,7 +194,7 @@ export function HubScreen() {
             Aucun module ne correspond à « {filtre.trim()} ».
           </p>
         ) : (
-          <div ref={grilleRef} data-no-reveal className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+          <div ref={grilleRef} data-no-reveal className="flex flex-wrap gap-5">
             {liens.map((lien) => {
               const accent = ACCENTS[indexCarte % ACCENTS.length];
               indexCarte += 1;
@@ -207,8 +203,10 @@ export function HubScreen() {
                   key={lien.to}
                   lien={lien}
                   accent={accent}
-                  autorise={Boolean(acces) && moduleAutorise(acces, lien)}
+                  autorise={!lien.bientot && Boolean(acces) && moduleAutorise(acces, lien)}
                   vers={destinationModule(acces, lien)}
+                  bientot={lien.bientot}
+                  className="flex-1 min-w-full md:min-w-[calc((100%-1.25rem)/2)] xl:min-w-[calc((100%-2.5rem)/3)] max-w-full"
                 />
               );
             })}
@@ -219,16 +217,20 @@ export function HubScreen() {
   );
 }
 
-function CarteModule({
+export function CarteModule({
   lien,
   accent,
   autorise,
   vers,
+  bientot,
+  className = "",
 }: {
   lien: LienNav;
   accent: (typeof ACCENTS)[number];
   autorise: boolean;
   vers: string;
+  bientot?: boolean;
+  className?: string;
 }) {
   const enfants = sousMenus(lien);
   const detail = enfants.length > 0
@@ -276,7 +278,7 @@ function CarteModule({
         {/* Sous-menus en chips */}
         {enfants.length > 0 ? (
           <div className="flex flex-wrap gap-1.5" role="list" aria-label={`Sous-menus de ${lien.libelle}`}>
-            {enfants.map((enfant) => (
+            {enfants.slice(0, PUCES_VISIBLES).map((enfant) => (
               <span
                 key={enfant.to}
                 role="listitem"
@@ -286,6 +288,7 @@ function CarteModule({
                 {enfant.libelle}
               </span>
             ))}
+            {enfants.length > PUCES_VISIBLES ? <PuceSuite enfants={enfants.slice(PUCES_VISIBLES)} classe={accent.puce} /> : null}
           </div>
         ) : null}
       </div>
@@ -300,19 +303,19 @@ function CarteModule({
           </span>
         ) : (
           <span className="flex items-center justify-between gap-2 w-full px-4 py-2.5 rounded-xl font-label-md text-label-md bg-surface-container/50 text-on-surface-variant border border-hairline/40">
-            <span>Hors de votre habilitation</span>
-            <Icone nom="lock" className="text-base opacity-50 shrink-0" />
+            <span>{bientot ? "Bientôt disponible" : "Hors de votre habilitation"}</span>
+            <Icone nom={bientot ? "construction" : "lock"} className="text-base opacity-50 shrink-0" />
           </span>
         )}
       </div>
     </>
   );
 
-  const classe = "group relative flex flex-col rounded-2xl bg-white/80 backdrop-blur-2xl border border-white/50 shadow-[0_4px_24px_color-mix(in_oklab,var(--color-primary)_12%,transparent)] overflow-hidden min-h-72 p-5";
+  const classe = `group relative flex flex-col rounded-2xl bg-white/80 backdrop-blur-2xl border border-white/50 shadow-[0_4px_24px_color-mix(in_oklab,var(--color-primary)_12%,transparent)] overflow-hidden min-h-72 p-5 ${className}`;
 
   if (!autorise) {
     return (
-      <article aria-disabled="true" title="Hors de votre habilitation" className={`${classe} opacity-60`}>
+      <article aria-disabled="true" title={bientot ? "Bientôt disponible" : "Hors de votre habilitation"} className={`${classe} opacity-60`}>
         {corps}
       </article>
     );
@@ -321,5 +324,55 @@ function CarteModule({
     <Link to={vers} className={`${classe} hover:shadow-[0_16px_48px_color-mix(in_oklab,var(--color-primary)_20%,transparent)] hover:border-white/70 hover:bg-white/90 transition-[box-shadow,border-color,background-color] duration-300`}>
       {corps}
     </Link>
+  );
+}
+
+/** « +N de plus » : une infobulle liste les sous-menus masqués. Rendue hors de la carte, qui rogne son contenu. */
+function PuceSuite({ enfants, classe }: { enfants: EnfantNav[]; classe: string }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const [position, setPosition] = useState<{ x: number; y: number } | null>(null);
+  const id = useId();
+
+  function montrer() {
+    const boite = ref.current?.getBoundingClientRect();
+    if (boite) setPosition({ x: Math.min(boite.left, window.innerWidth - 280), y: boite.bottom + 6 });
+  }
+
+  return (
+    <>
+      <span
+        ref={ref}
+        role="listitem"
+        tabIndex={0}
+        aria-describedby={position ? id : undefined}
+        onMouseEnter={montrer}
+        onMouseLeave={() => setPosition(null)}
+        onFocus={montrer}
+        onBlur={() => setPosition(null)}
+        className={`inline-flex items-center px-2 py-0.5 rounded-full font-label-sm text-label-sm font-semibold cursor-help ${classe}`}
+      >
+        +{enfants.length} de plus
+      </span>
+      {position
+        ? createPortal(
+            <div
+              id={id}
+              role="tooltip"
+              style={{ left: position.x, top: position.y }}
+              className="fixed z-[80] w-64 rounded-xl border border-hairline bg-surface-container-lowest p-3 shadow-[0_12px_32px_color-mix(in_oklab,var(--color-primary)_22%,transparent)] pointer-events-none"
+            >
+              <ul className="space-y-1.5">
+                {enfants.map((enfant) => (
+                  <li key={enfant.to} className="flex items-center gap-2 font-label-sm text-label-sm text-on-surface">
+                    <Icone nom={enfant.icone} className="text-sm text-primary shrink-0" />
+                    {enfant.libelle}
+                  </li>
+                ))}
+              </ul>
+            </div>,
+            document.body,
+          )
+        : null}
+    </>
   );
 }

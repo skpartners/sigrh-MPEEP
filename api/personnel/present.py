@@ -7,12 +7,16 @@ from .models import (
     Acte,
     Agent,
     AlerteReleve,
+    BesoinFormation,
+    CollecteBesoinFormation,
+    CollecteReponseFormation,
     Demande,
     DispositifSocial,
     EnveloppeSociale,
     LigneAvancement,
     MouvementStrategique,
     PrestationSociale,
+    SanctionDisciplinaire,
     SituationSociale,
     TypeAbsence,
     TypeConge,
@@ -108,9 +112,11 @@ def etat_civil(agent: Agent) -> dict:
         "prenoms": agent.prenoms,
         "nom_jeune_fille": agent.nom_jeune_fille,
         "sexe": agent.get_sexe_display(),
+        "sexe_code": agent.sexe,
         "date_naissance": agent.date_naissance.isoformat() if agent.date_naissance else "",
         "lieu_naissance": agent.lieu_naissance,
         "statut_matrimonial": agent.get_statut_matrimonial_display(),
+        "statut_matrimonial_code": agent.statut_matrimonial,
         "date_mariage": agent.date_mariage.isoformat() if agent.date_mariage else "",
         "type_piece_identite": agent.type_piece_identite,
         "type_piece_identite_libelle": agent.get_type_piece_identite_display(),
@@ -131,6 +137,7 @@ def parcours_academique(agent: Agent) -> dict:
     """Niveau d'étude, diplôme le plus élevé et domaine de formation."""
     return {
         "niveau_etude": agent.get_niveau_etude_display(),
+        "niveau_etude_code": agent.niveau_etude,
         "libelle_diplome": agent.libelle_diplome,
         "domaine_formation": agent.domaine_formation,
     }
@@ -209,15 +216,6 @@ def social_agent(agent: Agent) -> dict:
     demandes = PrestationSociale.objects.filter(agent__organisme=agent.organisme, statut__icontains="instruction").count()
     return {
         "cmu": situation.numero_cmu if situation else "",
-        "traitement_brut": situation.traitement_brut if situation else 0,
-        "cotisations": situation.cotisations if situation else 0,
-        "solde_nette": situation.solde_nette if situation else 0,
-        "engagements": situation.engagements if situation else 0,
-        "taux_quotite": float(situation.taux_quotite) if situation else 0,
-        "quotite": situation.quotite if situation else 0,
-        "marge": situation.marge if situation else 0,
-        "part_engagements": round(situation.engagements / situation.solde_nette * 100, 1) if situation and situation.solde_nette else 0,
-        "part_quotite": round(situation.engagements / situation.quotite * 100, 1) if situation and situation.quotite else 0,
         "ayants_droit": [
             {"initiales": item.initiales, "nom": item.nom, "lien": item.lien, "detail": item.detail, "statut": item.statut}
             for item in agent.ayants_droit.all()
@@ -242,6 +240,25 @@ def social_agent(agent: Agent) -> dict:
 
 def types_actes() -> list[dict]:
     return [{"code": item.code, "libelle": item.libelle} for item in TypeActe.objects.all()]
+
+
+def collecte_formation(agent: Agent) -> dict | None:
+    """Collecte ouverte du ministère, et la réponse déjà donnée par cet agent s'il y en a une."""
+    from .formation import EXERCICE
+
+    collecte = CollecteBesoinFormation.objects.filter(annee=EXERCICE).order_by("-lancee_le").first()
+    if collecte is None:
+        return None
+    reponse = CollecteReponseFormation.objects.filter(collecte=collecte, agent=agent).first()
+    besoins = BesoinFormation.objects.filter(collecte=collecte, agent=agent)
+    return {
+        "ouverte": collecte.ouverte,
+        "date_limite": collecte.date_limite.isoformat(),
+        "communique": collecte.communique,
+        "repondu": reponse is not None,
+        "ras": bool(reponse and reponse.ras),
+        "besoins": [{"id": b.id, "intitule": b.intitule, "priorite": b.priorite} for b in besoins],
+    }
 
 
 def sessions_formations() -> list[dict]:
@@ -307,11 +324,21 @@ def conges_agent(agent: Agent) -> dict:
 
 
 def presence_service(agent: Agent) -> dict:
-    """Présence du jour pour l'agent et ses collègues du même organisme."""
+    """Présence du jour pour l'agent et ses collègues de sa plus petite structure, comparée au quorum de cette structure."""
+    from .parametres import quorum_presence
+    from .rattachement import seuils_effectifs, structure_de, structures_par_nom
+
     jour = date.today()
-    autres = list(
-        Agent.objects.filter(organisme_id=agent.organisme_id).exclude(pk=agent.pk).order_by("nom", "prenoms")[:5]
-    )
+    par_nom = structures_par_nom()
+    entite = structure_de(agent, par_nom)
+    if entite is None:
+        autres, seuil, service = [], quorum_presence(), agent.structure or agent.organisme.nom
+    else:
+        autres = [
+            collegue for collegue in Agent.objects.exclude(pk=agent.pk).order_by("nom", "prenoms")
+            if (autre := structure_de(collegue, par_nom)) is not None and autre.id == entite.id
+        ][:5]
+        seuil, service = seuils_effectifs(quorum_presence())[entite.id][0], entite.nom
     equipe = [agent, *autres]
     couvertes = {
         item.agent_id: item
@@ -345,8 +372,8 @@ def presence_service(agent: Agent) -> dict:
     presents, conges, maladie = _parts([comptes["present"], comptes["conge"], comptes["maladie"]], total)
     return {
         "mois": f"{_MOIS[jour.month - 1].capitalize()} {jour.year}",
-        "service": agent.structure or agent.organisme.nom,
-        "quorum": agent.organisme.quorum_presence,
+        "service": service,
+        "quorum": seuil,
         "membres": membres,
         "presents": presents,
         "conges": conges,
@@ -368,6 +395,61 @@ def _parts(comptes: list[int], total: int) -> tuple[int, int, int]:
     return entiers[0], entiers[1], entiers[2]
 
 
+def parcours_row(item) -> dict:
+    return {
+        "id": item.id,
+        "type": item.type,
+        "type_libelle": item.get_type_display(),
+        "intitule": item.intitule,
+        "date_effet": item.date_effet.isoformat(),
+        "reference_acte": item.reference_acte,
+        "detail": item.detail,
+        "origine": "parcours",
+        "document_url": "",
+    }
+
+
+def parcours_agent(agent: Agent) -> list[dict]:
+    """Événements saisis du parcours, plus les périodes de position (détachement, disponibilité…), du plus récent au plus ancien."""
+    lignes = [parcours_row(item) for item in agent.parcours.all()]
+    for periode in agent.positions.all():
+        fin = f" au {periode.date_fin:%d/%m/%Y}" if periode.date_fin else ", sans terme fixé"
+        lignes.append({
+            "id": periode.id,
+            "type": "position",
+            "type_libelle": periode.get_type_display(),
+            "intitule": f"{periode.get_type_display()} : {periode.structure_accueil}" if periode.structure_accueil else periode.get_type_display(),
+            "date_effet": periode.date_debut.isoformat(),
+            "reference_acte": periode.reference_acte,
+            "detail": " · ".join(filter(None, [periode.motif, f"Du {periode.date_debut:%d/%m/%Y}{fin}"])),
+            "origine": "position",
+            "document_url": periode.document.url if periode.document else "",
+        })
+    return sorted(lignes, key=lambda ligne: ligne["date_effet"], reverse=True)
+
+
+def suivi_disciplinaire(agent: Agent) -> list[dict]:
+    """Procédures disciplinaires de l'agent, telles qu'il les observe dans son profil (sans le rapporteur)."""
+    return [
+        {
+            "reference": item.reference,
+            "saisine": item.saisine.isoformat(),
+            "grief": item.grief,
+            "description": item.description,
+            "degre": item.degre,
+            "phase": item.phase,
+            "phase_libelle": item.get_phase_display(),
+            "avis_libelle": item.get_avis_display(),
+            "decision": item.decision,
+            "sanction": item.sanction_nature,
+            "sanction_libelle": dict(SanctionDisciplinaire.Nature.choices).get(item.sanction_nature, ""),
+            "date_decision": item.date_decision.isoformat() if item.date_decision else "",
+            "executee_le": item.executee_le.isoformat() if item.executee_le else "",
+        }
+        for item in agent.procedures.all().order_by("-saisine", "-id")
+    ]
+
+
 def agent_detail(agent: Agent) -> dict:
     payload = agent_brief(agent)
     payload.update(
@@ -376,6 +458,8 @@ def agent_detail(agent: Agent) -> dict:
             "prise_service": agent.prise_service,
             "situation_administrative": situation_administrative(agent),
             "situation_saisie": situation_saisie(agent),
+            "parcours": parcours_agent(agent),
+            "discipline": suivi_disciplinaire(agent),
             "etat_civil": etat_civil(agent),
             "parcours_academique": parcours_academique(agent),
             "famille": famille(agent),
@@ -386,6 +470,7 @@ def agent_detail(agent: Agent) -> dict:
             "types_absences": types_absences(),
             "types_formations": types_formations(),
             "sessions_formations": sessions_formations(),
+            "collecte_formation": collecte_formation(agent),
             "types_actes": types_actes(),
             "presence": presence_service(agent),
             "actes": [acte_row(acte) for acte in agent.actes.all()],

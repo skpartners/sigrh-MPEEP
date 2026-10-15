@@ -15,7 +15,6 @@ from ..models import (
     DemandeDotation,
     EntiteTutelle,
     Evaluation,
-    FicheBesoin,
     PieceJointe,
     ProcedureDisciplinaire,
     VisaEnAttente,
@@ -29,7 +28,6 @@ from .papier import ORANGE, VERT
 PLAFOND_LIGNES = 8
 OUVERT_ACTE = {Acte.Statut.INSTRUCTION, Acte.Statut.COMPLEMENT, Acte.Statut.ACCORDE}
 OUVERT_DOTATION = {DemandeDotation.Statut.ARBITRAGE, DemandeDotation.Statut.VISA_CF}
-OUVERT_BESOIN = {FicheBesoin.Statut.INSTRUCTION, FicheBesoin.Statut.COMPLEMENT}
 CLOS_PROCEDURE = {ProcedureDisciplinaire.Avis.CLASSEE, ProcedureDisciplinaire.Avis.SANCTION}
 BANDES = ("Moins de 30 ans", "30 à 39 ans", "40 à 49 ans", "50 à 59 ans", "60 ans et plus", "Date non renseignée")
 
@@ -104,11 +102,9 @@ def _corps_chiffre(user) -> dict:
     pieces = PieceJointe.objects.filter(agent__in=agents, verifiee=False)
     entites = _entites_visibles(complet, profil)
     alertes = AlertePoste.objects.filter(traitee=False).select_related("entite")
-    besoins = FicheBesoin.objects.filter(statut__in=OUVERT_BESOIN, critique=True)
     dotations = DemandeDotation.objects.filter(statut__in=OUVERT_DOTATION)
     if entites is not None:
         alertes = alertes.filter(entite_id__in=entites)
-        besoins = besoins.filter(entite_id__in=entites)
         dotations = dotations.filter(entite_id__in=entites)
     return {
         "exercice": exercice,
@@ -136,7 +132,6 @@ def _corps_chiffre(user) -> dict:
         "procedures": list(procedures.select_related("agent").order_by("saisine", "id")),
         "pieces": pieces.count(),
         "alertes": list(alertes.order_by("-jours", "id")),
-        "besoins": list(besoins.order_by("-depose_le", "id")),
         "dotations": list(dotations.order_by("recu_le", "id")),
     }
 
@@ -217,7 +212,7 @@ def _corps_pilotage(feuille, corps: dict) -> list:
         ],
         [1.7, 2.2, 1.8, 0.6],
     )
-    if corps["alertes"] or corps["besoins"] or corps["dotations"]:
+    if corps["alertes"] or corps["dotations"]:
         histoire += [
             Spacer(1, 3 * mm),
             *section(feuille, "Emplois et recrutement"),
@@ -290,11 +285,11 @@ def _tableau_attention(feuille, corps: dict):
     if corps["alertes"]:
         postes = sum(item.postes for item in corps["alertes"])
         lignes.append(["Suivi", "Postes critiques", f"{_compte(len(corps['alertes']), 'alerte')}, {_compte(postes, 'poste')} non pourvus."])
-    if corps["dotations"] or corps["besoins"]:
+    if corps["dotations"]:
         lignes.append([
             "Suivi",
             "Recrutement",
-            f"{_compte(len(corps['dotations']), 'demande de poste', 'demandes de poste')} et {_compte(len(corps['besoins']), 'besoin critique', 'besoins critiques')} sont encore ouverts.",
+            f"{_compte(len(corps['dotations']), 'demande de poste', 'demandes de poste')} sont encore ouvertes.",
         ])
     if not lignes:
         return encadre(
@@ -349,8 +344,6 @@ def _tableau_emplois(feuille, corps: dict):
     lignes = []
     for item in corps["alertes"]:
         lignes.append(["Poste critique", item.entite.nom, item.intitule, f"{_compte(item.postes, 'poste')} · {item.jours} j"])
-    for item in corps["besoins"]:
-        lignes.append(["Besoin critique", item.direction, item.profil, item.get_statut_display()])
     for item in corps["dotations"]:
         lignes.append(["Demande de poste", item.direction, item.poste, item.get_statut_display()])
     return tableau(

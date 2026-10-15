@@ -163,10 +163,28 @@ def perimetre_ids(user: User) -> set[int] | None:
 
 
 def perimetre_matricules(user: User) -> set[str] | None:
+    """None : tout le ministère. Sinon les agents que l'utilisateur supervise.
+
+    Deux sources se complètent : la chaîne des comptes qu'il encadre, et les agents de la structure dont il est
+    responsable (ou intérimaire) et de toutes les structures qu'elle contient. Un responsable ne voit jamais les
+    agents rattachés directement à son supérieur, ni ceux de ses pairs.
+    """
+    from .rattachement import matricules_des_structures, structures_sous
+
     identifiants = perimetre_ids(user)
     if identifiants is None:
         return None
-    return set(User.objects.filter(pk__in=identifiants).values_list("username", flat=True))
+    matricules = set(User.objects.filter(pk__in=identifiants).values_list("username", flat=True))
+    profil = getattr(user, "profil", None)
+    if profil is not None:
+        racines = []
+        if profil.structure_id and profil.role != "Agent":
+            racines.append(profil.structure)
+        if profil.interim_id:
+            racines.append(profil.interim)
+        if racines:
+            matricules |= matricules_des_structures(structures_sous(racines))
+    return matricules
 
 
 def _attributions_identiques(profil: Profil, habilitations, precisions) -> bool:

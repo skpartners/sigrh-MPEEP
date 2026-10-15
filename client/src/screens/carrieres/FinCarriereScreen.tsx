@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Fragment, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { ApiError, api } from "../../api/client";
 import type { AgentBrief } from "../../api/types";
 import { useFeedback } from "../../ui/Feedback";
@@ -22,8 +22,6 @@ type Dossier = {
   decret: string;
   date_decret: string | null;
   date_cessation: string | null;
-  idr: number;
-  pension: number;
   statut: Statut;
   statut_libelle: string;
   statut_detail: string;
@@ -32,18 +30,15 @@ type Dossier = {
 type Tableau = {
   exercice: number;
   effectif: number;
-  indicateurs: { departs: number; departs_cadres: number; postes: number; binomes: number; idr: number; idr_liquidees: number };
+  indicateurs: { departs: number; departs_cadres: number; postes: number; binomes: number; dossiers: number; transmis: number; cessations: number };
   pyramide: { code: string; libelle: string; effectif: number; part: number; hommes: number; femmes: number; cadres: number }[];
   dossiers: Dossier[];
   postes: { id: number; intitule: string; titulaire: AgentBrief; depart: string; successeur: string; progression: number; commentaire: string }[];
   motifs: { id: number; code: string; libelle: string; automatique: boolean }[];
   statuts: { code: Statut; libelle: string }[];
   agents: { matricule: string; nom_complet: string; organisme_sigle: string }[];
-  entete: { fil?: string[]; titre?: string; chapeau?: string };
-  passerelle: { reference?: string; modele?: string; etat?: string };
-  cgrae: { taux?: number; detail?: string };
   renouvellement: { texte?: string };
-  accompagnement: { titre?: string; texte?: string; actions?: { id: number; titre: string; detail: string; quand: string; valeur: string }[] };
+  accompagnement: { actions?: { id: number; titre: string; detail: string; quand: string; valeur: string }[] };
   distinctions: { id: number; rang: string; titre: string; detail: string; etat: string }[];
 };
 
@@ -53,10 +48,8 @@ type Motif = Tableau["motifs"][number];
 type Distinction = Tableau["distinctions"][number];
 type ActionRetraite = NonNullable<Tableau["accompagnement"]["actions"]>[number];
 type Panneau =
-  | { genre: "cadre" }
   | { genre: "dossier"; dossier?: Dossier }
   | { genre: "poste"; poste?: Poste }
-  | { genre: "motif"; motif?: Motif }
   | { genre: "distinction"; distinction?: Distinction }
   | { genre: "action"; action?: ActionRetraite };
 
@@ -88,22 +81,27 @@ function moisAnnee(iso: string): string {
   return `${MOIS_COURTS[mois - 1]} ${annee}`;
 }
 
-function fcfa(valeur: number): string {
-  return valeur.toLocaleString("fr-FR");
-}
-
 /** Fin de carrière : départs, relève des postes sensibles, pyramide des âges et liquidation des droits. */
 export function FinCarriereScreen() {
   const tableau = useQuery({ queryKey: ["carrieres-fin-carriere"], queryFn: () => api<Tableau>("/api/v1/carrieres/fin-de-carriere/") });
   const [entite, setEntite] = useState("");
   const [statut, setStatut] = useState("");
+  const [recherche, setRecherche] = useState("");
   const [panneau, setPanneau] = useState<Panneau | null>(null);
   const retirer = useRetrait();
   const donnees = tableau.data;
   const indicateurs = donnees?.indicateurs;
   const dossiers = donnees?.dossiers ?? [];
-  const filtres = useMemo(() => dossiers.filter((item) => (!entite || item.agent.organisme_sigle === entite) && (!statut || item.statut === statut)), [dossiers, entite, statut]);
-  const pageDossiers = usePagination(filtres, `${entite}|${statut}`);
+  const filtres = useMemo(() => {
+    const terme = recherche.trim().toLowerCase();
+    return dossiers.filter((item) =>
+      (!entite || item.agent.organisme_sigle === entite) &&
+      (!statut || item.statut === statut) &&
+      (!terme || [item.agent.nom_complet, item.agent.matricule, item.agent.fonction, item.agent.grade, item.motif?.libelle ?? ""].some((valeur) => (valeur ?? "").toLowerCase().includes(terme))),
+    );
+  }, [dossiers, entite, statut, recherche]);
+  const pageDossiers = usePagination(filtres, `${entite}|${statut}|${recherche}`);
+  const filtreActif = Boolean(entite || statut || recherche);
   const entites = [...new Set(dossiers.map((item) => item.agent.organisme_sigle))].sort();
   const statuts = [...new Map(dossiers.map((item) => [item.statut, item.statut_libelle])).entries()];
   const plusGrande = Math.max(1, ...(donnees?.pyramide ?? []).map((tranche) => tranche.effectif));
@@ -112,49 +110,27 @@ export function FinCarriereScreen() {
     <AppChrome>
       <div className="flex flex-col w-full">
         <div className="px-6 lg:px-8 py-6 space-y-8 mx-auto w-full">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-            <div className="space-y-1.5">
-              <nav className="flex flex-wrap items-center gap-2 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">
-                {(donnees?.entete.fil ?? []).map((etape, index, fil) => (
-                  <Fragment key={etape}>
-                    {index > 0 ? <Icone nom="chevron_right" className="text-xs" /> : null}
-                    <span className={index === fil.length - 1 ? "text-primary font-bold" : undefined}>{etape}</span>
-                  </Fragment>
-                ))}
-              </nav>
-              <div className="flex flex-wrap items-baseline gap-3">
-                <h1 className="font-headline-lg text-headline-lg text-on-surface tracking-tight">{donnees?.entete.titre}</h1>
-                {donnees?.exercice ? (
-                  <span className="px-2.5 py-0.5 rounded bg-primary-container text-on-primary font-label-sm text-label-sm uppercase font-semibold tracking-wider">
-                    Exercice {donnees.exercice}
-                  </span>
-                ) : null}
-                {donnees?.passerelle.reference ? (
-                  <span className="px-2.5 py-0.5 rounded bg-surface-container text-primary font-code-num text-code-num font-bold">{donnees.passerelle.reference}</span>
-                ) : null}
-              </div>
-              {donnees?.entete.chapeau ? (
-                <p className="font-body-md text-body-md text-on-surface-variant max-w-4xl">{donnees.entete.chapeau}</p>
+          <section className="bg-surface-container-lowest p-6 rounded-xl relative overflow-hidden flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <div className="flex flex-wrap items-baseline gap-3">
+              <h1 className="font-headline-lg text-headline-lg text-on-surface tracking-tight">Gestion des fins de carrière</h1>
+              {donnees?.exercice ? (
+                <span className="px-2.5 py-0.5 rounded bg-primary-container text-on-primary font-label-sm text-label-sm uppercase font-semibold tracking-wider">
+                  Exercice {donnees.exercice}
+                </span>
               ) : null}
             </div>
-            <div className="flex flex-wrap items-center gap-2 shrink-0">
-              <button className="inline-flex items-center gap-2 px-3 py-1.5 rounded bg-surface-container-lowest text-primary font-label-md text-label-md font-semibold shadow-sm hover:bg-surface-container" type="button" onClick={() => setPanneau({ genre: "cadre" })}>
-                <Icone nom="edit" className="text-lg" />
-                Modifier le cadre
-              </button>
-            </div>
-          </div>
+          </section>
           {/* Indicateurs */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <Indicateur titre="Départs sous douze mois" icone="event_busy" liseret="bg-primary" teinte="bg-surface-container-low text-primary" valeur={indicateurs ? String(indicateurs.departs) : "—"} unite="agents" gauche="Limite d'âge atteinte" droite={indicateurs ? `dont ${indicateurs.departs_cadres} cadre${indicateurs.departs_cadres > 1 ? "s" : ""} A` : ""} />
             <Indicateur titre="Postes clés & sensibles" titreCouleur="text-secondary" icone="crisis_alert" liseret="bg-secondary-container" teinte="bg-secondary-fixed text-on-secondary-fixed" valeur={indicateurs ? String(indicateurs.postes) : "—"} valeurCouleur="text-secondary" unite="postes à relever" gauche="Relève à sécuriser" droite={indicateurs ? `${indicateurs.binomes} binôme${indicateurs.binomes > 1 ? "s" : ""} formé${indicateurs.binomes > 1 ? "s" : ""}` : ""} />
-            <Indicateur titre="IDR engagées" icone="receipt_long" liseret="bg-tertiary" teinte="bg-surface-container text-tertiary" valeur={indicateurs ? fcfa(indicateurs.idr) : "—"} unite="FCFA" petite gauche="Ordonnancement DAAF" droite={indicateurs ? `${indicateurs.idr_liquidees} % liquidées` : ""} />
-            <Indicateur titre="Continuité de solde CGRAE" icone="task_alt" liseret="bg-primary" teinte="bg-surface-container-low text-primary" valeur={donnees?.cgrae.taux != null ? `${donnees.cgrae.taux}%` : "—"} valeurCouleur="text-primary" unite="taux d'arrimage" gauche={donnees?.cgrae.detail ?? ""} droite="" />
+            <Indicateur titre="Dossiers transmis à la CGRAE" icone="task_alt" liseret="bg-tertiary" teinte="bg-surface-container text-tertiary" valeur={indicateurs ? String(indicateurs.transmis) : "—"} unite={indicateurs ? `sur ${indicateurs.dossiers} dossier${indicateurs.dossiers > 1 ? "s" : ""}` : ""} gauche="Instruction achevée" droite={indicateurs && indicateurs.dossiers ? `${Math.round((indicateurs.transmis * 100) / indicateurs.dossiers)} %` : ""} />
+            <Indicateur titre="Cessations saisies" icone="gavel" liseret="bg-primary" teinte="bg-surface-container-low text-primary" valeur={indicateurs ? String(indicateurs.cessations) : "—"} unite="dossiers" gauche="Hors admission à la retraite" droite="" />
           </div>
 
           {/* Pyramide et relève */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            <div className="lg:col-span-7 bg-surface-container-lowest p-6 rounded shadow-sm flex flex-col justify-between">
+            <div className="lg:col-span-12 bg-surface-container-lowest p-6 rounded shadow-sm flex flex-col justify-between">
               <div className="pb-4">
                 <h2 className="font-headline-sm text-headline-sm text-on-surface">Pyramide des âges & départs prévisionnels</h2>
                 <p className="font-body-sm text-body-sm text-on-surface-variant">Répartition par âge des {donnees?.effectif ?? "…"} agents suivis, calculée sur leurs dates de naissance</p>
@@ -195,52 +171,11 @@ export function FinCarriereScreen() {
                 </div>
               ) : null}
             </div>
-            <div className="lg:col-span-5 bg-surface-container-lowest p-6 rounded shadow-sm">
-              <div className="flex items-center justify-between gap-2 pb-3">
-                <h2 className="font-headline-sm text-headline-sm text-on-surface">Relève & compétences sensibles</h2>
-                <button className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-primary text-on-primary font-label-sm text-label-sm font-semibold" type="button" onClick={() => setPanneau({ genre: "poste" })}>
-                  <Icone nom="add" className="text-sm" />
-                  Ajouter
-                </button>
-              </div>
-              <p className="font-body-sm text-body-sm text-on-surface-variant mb-4">Binômes de transmission des compétences avant le départ du titulaire.</p>
-              <div className="space-y-3">
-                {(donnees?.postes ?? []).map((poste) => {
-                  const forme = Boolean(poste.successeur);
-                  return (
-                    <div key={poste.id} className="p-3 bg-surface-container-low rounded flex items-center justify-between gap-3">
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="font-label-md text-label-md font-bold text-on-surface truncate">{poste.intitule}</span>
-                          <span className={`w-2 h-2 rounded-full shrink-0 ${forme ? "bg-primary" : "bg-secondary"}`} title={forme ? "Binôme formé" : "Successeur à désigner"} />
-                        </div>
-                        <p className="font-body-sm text-body-sm text-on-surface-variant mt-0.5">
-                          Titulaire : <span className="font-semibold text-on-surface">{poste.titulaire.nom_complet}</span> (départ : {moisAnnee(poste.depart)})
-                        </p>
-                        <p className={`font-label-sm text-label-sm mt-1 flex items-center gap-1 ${forme ? "text-primary" : "text-secondary"}`}>
-                          <Icone nom={forme ? "groups" : "warning"} className="text-sm" />
-                          {forme ? `Successeur : ${poste.successeur} (tutorat à ${poste.progression} %)` : poste.commentaire}
-                        </p>
-                      </div>
-                      <div className="flex flex-col items-end gap-1 shrink-0">
-                        <span className={`px-2 py-0.5 rounded font-label-sm text-label-sm font-bold ${forme ? "bg-primary-fixed text-on-primary-fixed" : "bg-secondary-fixed text-on-secondary-fixed"}`}>
-                          {forme ? "Conforme" : "Alerte RH"}
-                        </span>
-                        <span className="flex">
-                          <button className={ICONE} type="button" aria-label={`Modifier ${poste.intitule}`} onClick={() => setPanneau({ genre: "poste", poste })}><Icone nom="edit" className="text-lg" /></button>
-                          <button className={ICONE} type="button" aria-label={`Supprimer ${poste.intitule}`} onClick={() => void retirer(`${ROUTE}postes/${poste.id}/`, `Retirer le poste « ${poste.intitule} » ?`)}><Icone nom="delete" className="text-lg" /></button>
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
           </div>
 
           {/* Registre des départs */}
           <div className="bg-surface-container-lowest rounded shadow-sm overflow-hidden">
-            <div className="p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="p-6 flex flex-col gap-4">
               <div>
                 <div className="flex flex-wrap items-center gap-2">
                   <h2 className="font-headline-sm text-headline-sm text-on-surface">Registre d'instruction des départs à la retraite</h2>
@@ -248,11 +183,16 @@ export function FinCarriereScreen() {
                 </div>
                 <p className="font-body-sm text-body-sm text-on-surface-variant mt-0.5">L'admission à la retraite s'ouvre à la limite d'âge. Un report se fait par décret présidentiel. Les autres cessations se saisissent.</p>
               </div>
-              <div className="flex flex-wrap items-center gap-2">
-                <button className="inline-flex items-center gap-1 px-3 py-1.5 rounded bg-primary text-on-primary font-label-sm text-label-sm font-semibold" type="button" onClick={() => setPanneau({ genre: "dossier" })}>
-                  <Icone nom="add" className="text-sm" />
-                  Enregistrer une cessation
-                </button>
+              <div className="flex flex-wrap items-center gap-2 w-full">
+                <div className="relative">
+                  <Icone nom="search" className="text-lg absolute left-2.5 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none" />
+                  <input type="search" aria-label="Rechercher un dossier" placeholder="Nom, matricule, grade, motif…" className="w-64 pl-9 pr-8 py-1.5 bg-surface-container-low text-on-surface font-body-sm text-body-sm rounded border-0 focus:ring-1 focus:ring-primary [&::-webkit-search-cancel-button]:hidden" value={recherche} onChange={(event) => setRecherche(event.target.value)} />
+                  {recherche ? (
+                    <button className="absolute right-1.5 top-1/2 -translate-y-1/2 p-0.5 rounded text-on-surface-variant hover:text-primary" type="button" aria-label="Effacer la recherche" onClick={() => setRecherche("")}>
+                      <Icone nom="close" className="text-base" />
+                    </button>
+                  ) : null}
+                </div>
                 <select aria-label="Filtrer par établissement" className="px-3 py-1.5 bg-surface-container-low text-on-surface font-body-sm text-body-sm rounded border-0 focus:ring-1 focus:ring-primary cursor-pointer" value={entite} onChange={(event) => setEntite(event.target.value)}>
                   <option value="">Tous les établissements</option>
                   {entites.map((sigle) => (
@@ -265,6 +205,16 @@ export function FinCarriereScreen() {
                     <option key={code} value={code}>{libelle}</option>
                   ))}
                 </select>
+                {filtreActif ? (
+                  <button className="inline-flex items-center gap-1 px-3 py-1.5 rounded text-primary font-label-sm text-label-sm font-semibold hover:bg-surface-container" type="button" onClick={() => { setRecherche(""); setEntite(""); setStatut(""); }}>
+                    <Icone nom="filter_alt_off" className="text-sm" />
+                    Réinitialiser
+                  </button>
+                ) : null}
+                <button className="inline-flex items-center gap-1 px-3 py-1.5 rounded bg-primary text-on-primary font-label-sm text-label-sm font-semibold" type="button" onClick={() => setPanneau({ genre: "dossier" })}>
+                  <Icone nom="add" className="text-sm" />
+                  Enregistrer une cessation
+                </button>
               </div>
             </div>
             <div className="overflow-x-auto">
@@ -275,7 +225,6 @@ export function FinCarriereScreen() {
                     <th className="py-3 px-4 font-bold">Société / direction</th>
                     <th className="py-3 px-4 font-bold">Grade & ancienneté</th>
                     <th className="py-3 px-4 font-bold">Date limite / âge</th>
-                    <th className="py-3 px-4 font-bold">IDR & pension prov.</th>
                     <th className="py-3 px-4 font-bold" data-min="">Statut réglementaire</th>
                     <th className="py-3 px-4 font-bold text-right">Actions</th>
                   </tr>
@@ -283,11 +232,11 @@ export function FinCarriereScreen() {
                 <tbody className="divide-y divide-surface-container-low font-body-md text-body-md text-on-surface">
                   {tableau.isPending ? (
                     <tr>
-                      <td colSpan={7} className="py-4 px-6"><Skeleton className="h-10 w-full" /></td>
+                      <td colSpan={6} className="py-4 px-6"><Skeleton className="h-10 w-full" /></td>
                     </tr>
                   ) : filtres.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="py-6 px-6 text-on-surface-variant">{tableau.isError ? "Le registre n'a pas pu être chargé." : "Aucun dossier ne correspond à ces filtres."}</td>
+                      <td colSpan={6} className="py-6 px-6 text-on-surface-variant">{tableau.isError ? "Le registre n'a pas pu être chargé." : "Aucun dossier ne correspond à ces filtres."}</td>
                     </tr>
                   ) : (
                     pageDossiers.visibles.map((dossier) => (
@@ -318,10 +267,6 @@ export function FinCarriereScreen() {
                           )}
                         </td>
                         <td className="py-4 px-4">
-                          <span className="font-bold text-on-surface font-code-num text-code-num block">{fcfa(dossier.idr)} FCFA</span>
-                          <span className="font-label-sm text-label-sm text-primary">Pension : {fcfa(dossier.pension)} F/mois</span>
-                        </td>
-                        <td className="py-4 px-4">
                           <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded font-label-sm text-label-sm font-bold ${PASTILLE[dossier.statut]}`}>
                             <span className="w-1.5 h-1.5 rounded-full bg-current opacity-70" />
                             {dossier.statut_libelle}
@@ -341,10 +286,6 @@ export function FinCarriereScreen() {
               </table>
             </div>
             <Pagination page={pageDossiers.page} pages={pageDossiers.pages} total={pageDossiers.total} aller={pageDossiers.aller} libelle="dossier" />
-            <div className="p-4 bg-surface-container-low/70 flex items-center gap-2 text-body-sm font-body-sm text-on-surface-variant">
-              <Icone nom="verified_user" className="text-primary text-base" />
-              <span>Liquidation conforme au Code général de la fonction publique et aux conventions des entreprises publiques.</span>
-            </div>
           </div>
 
           {/* Accompagnement et distinctions */}
@@ -358,14 +299,13 @@ export function FinCarriereScreen() {
                   </span>
                   <div>
                     <span className="font-label-sm text-label-sm text-primary font-bold uppercase tracking-wider">SD Action sociale</span>
-                    <h3 className="font-headline-sm text-headline-sm text-on-surface">{donnees.accompagnement.titre}</h3>
+                    <h3 className="font-headline-sm text-headline-sm text-on-surface">Préparation à la retraite</h3>
                     <button className="mt-1 inline-flex items-center gap-1 text-primary font-label-sm text-label-sm font-semibold" type="button" onClick={() => setPanneau({ genre: "action" })}>
                       <Icone nom="add" className="text-sm" />
                       Ajouter une action
                     </button>
                   </div>
                 </div>
-                <p className="font-body-sm text-body-sm text-on-surface-variant mt-2 leading-relaxed">{donnees.accompagnement.texte}</p>
                 <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {(donnees.accompagnement.actions ?? []).map((action) => (
                     <div key={action.id} className="p-3 bg-surface-container-low rounded">
@@ -402,7 +342,6 @@ export function FinCarriereScreen() {
                     </button>
                   </div>
                 </div>
-                <p className="font-body-sm text-body-sm text-on-surface-variant mt-2 leading-relaxed">Requêtes de décoration pour loyaux services, instruites avant la radiation des cadres.</p>
                 <div className="mt-5 space-y-2.5">
                   {donnees.distinctions.map((distinction, index) => (
                     <div key={distinction.id} className="p-2.5 bg-surface-container-low rounded flex items-center justify-between gap-3">
@@ -423,41 +362,47 @@ export function FinCarriereScreen() {
                 </div>
               </div>
             ) : null}
+          <div className="lg:col-span-2 bg-surface-container-lowest p-6 rounded shadow-sm">
+            <div className="flex items-center justify-between gap-2 pb-3">
+              <h2 className="font-headline-sm text-headline-sm text-on-surface">Relève & compétences sensibles</h2>
+              <button className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-primary text-on-primary font-label-sm text-label-sm font-semibold" type="button" onClick={() => setPanneau({ genre: "poste" })}>
+                <Icone nom="add" className="text-sm" />
+                Ajouter
+              </button>
+            </div>
+            <p className="font-body-sm text-body-sm text-on-surface-variant mb-4">Binômes de transmission des compétences avant le départ du titulaire.</p>
+            <div className="space-y-3">
+              {(donnees?.postes ?? []).map((poste) => {
+                const forme = Boolean(poste.successeur);
+                return (
+                  <div key={poste.id} className="p-3 bg-surface-container-low rounded flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-label-md text-label-md font-bold text-on-surface truncate">{poste.intitule}</span>
+                        <span className={`w-2 h-2 rounded-full shrink-0 ${forme ? "bg-primary" : "bg-secondary"}`} title={forme ? "Binôme formé" : "Successeur à désigner"} />
+                      </div>
+                      <p className="font-body-sm text-body-sm text-on-surface-variant mt-0.5">
+                        Titulaire : <span className="font-semibold text-on-surface">{poste.titulaire.nom_complet}</span> (départ : {moisAnnee(poste.depart)})
+                      </p>
+                      <p className={`font-label-sm text-label-sm mt-1 flex items-center gap-1 ${forme ? "text-primary" : "text-secondary"}`}>
+                        <Icone nom={forme ? "groups" : "warning"} className="text-sm" />
+                        {forme ? `Successeur : ${poste.successeur} (tutorat à ${poste.progression} %)` : poste.commentaire}
+                      </p>
+                    </div>
+                    <div className="flex flex-col items-end gap-1 shrink-0">
+                      <span className={`px-2 py-0.5 rounded font-label-sm text-label-sm font-bold ${forme ? "bg-primary-fixed text-on-primary-fixed" : "bg-secondary-fixed text-on-secondary-fixed"}`}>
+                        {forme ? "Conforme" : "Alerte RH"}
+                      </span>
+                      <span className="flex">
+                        <button className={ICONE} type="button" aria-label={`Modifier ${poste.intitule}`} onClick={() => setPanneau({ genre: "poste", poste })}><Icone nom="edit" className="text-lg" /></button>
+                        <button className={ICONE} type="button" aria-label={`Supprimer ${poste.intitule}`} onClick={() => void retirer(`${ROUTE}postes/${poste.id}/`, `Retirer le poste « ${poste.intitule} » ?`)}><Icone nom="delete" className="text-lg" /></button>
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
-
-          {/* Motifs de cessation */}
-          <div className="bg-surface-container-lowest p-6 rounded shadow-sm">
-            <div className="pb-4">
-              <div className="flex items-center gap-2">
-                <span className="p-1.5 rounded bg-surface-container-low text-tertiary">
-                  <Icone nom="gavel" className="text-base" />
-                </span>
-                <h3 className="font-headline-sm text-headline-sm text-on-surface">Motifs de cessation d'activité</h3>
-                <button className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-primary text-on-primary font-label-sm text-label-sm font-semibold" type="button" onClick={() => setPanneau({ genre: "motif" })}>
-                  <Icone nom="add" className="text-sm" />
-                  Ajouter
-                </button>
-              </div>
-              <p className="font-body-sm text-body-sm text-on-surface-variant mt-0.5">L'admission à la retraite est automatique. Les autres motifs se créent, se modifient et se retirent.</p>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
-              {(donnees?.motifs ?? []).map((motif) => (
-                <div key={motif.id} className="p-4 bg-surface-container-low rounded flex items-start justify-between gap-2">
-                  <h4 className="font-label-lg text-label-lg font-bold text-on-surface">{motif.libelle}</h4>
-                  {motif.automatique ? (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-primary-fixed text-on-primary-fixed font-label-sm text-label-sm font-bold shrink-0">
-                      <Icone nom="lock" className="text-sm" />
-                      Automatique
-                    </span>
-                  ) : (
-                    <span className="flex shrink-0">
-                      <button className={ICONE} type="button" aria-label={`Modifier ${motif.libelle}`} onClick={() => setPanneau({ genre: "motif", motif })}><Icone nom="edit" className="text-lg" /></button>
-                      <button className={ICONE} type="button" aria-label={`Supprimer ${motif.libelle}`} onClick={() => void retirer(`${ROUTE}motifs/${motif.id}/`, `Retirer le motif « ${motif.libelle} » ?`)}><Icone nom="delete" className="text-lg" /></button>
-                    </span>
-                  )}
-                </div>
-              ))}
-            </div>
           </div>
         </div>
       </div>
@@ -514,62 +459,10 @@ function erreurDe(error: unknown, repli: string): string | undefined {
 }
 
 function Editeur({ panneau, donnees, onClose }: { panneau: Panneau; donnees: Tableau; onClose: () => void }) {
-  if (panneau.genre === "cadre") return <FormulaireCadre donnees={donnees} onClose={onClose} />;
   if (panneau.genre === "dossier") return <FormulaireDossier dossier={panneau.dossier} agents={donnees.agents} occupes={donnees.dossiers.map((item) => item.agent.matricule)} statuts={donnees.statuts} motifs={donnees.motifs} onClose={onClose} />;
   if (panneau.genre === "poste") return <FormulairePoste poste={panneau.poste} agents={donnees.agents} onClose={onClose} />;
-  if (panneau.genre === "motif") return <FormulaireMotif motif={panneau.motif} onClose={onClose} />;
   if (panneau.genre === "distinction") return <FormulaireDistinction distinction={panneau.distinction} onClose={onClose} />;
   return <FormulaireAction action={panneau.action} onClose={onClose} />;
-}
-
-function FormulaireCadre({ donnees, onClose }: { donnees: Tableau; onClose: () => void }) {
-  const client = useQueryClient();
-  const feedback = useFeedback();
-  const fil = donnees.entete.fil ?? [];
-  const [saisie, setSaisie] = useState({
-    fil: [fil[0] ?? "", fil[1] ?? "", fil[2] ?? ""],
-    titre: donnees.entete.titre ?? "",
-    chapeau: donnees.entete.chapeau ?? "",
-    reference: donnees.passerelle.modele ?? donnees.passerelle.reference ?? "",
-    taux_cgrae: donnees.cgrae.taux != null ? String(donnees.cgrae.taux) : "",
-    detail_cgrae: donnees.cgrae.detail ?? "",
-    renouvellement: donnees.renouvellement.texte ?? "",
-    programme_titre: donnees.accompagnement.titre ?? "",
-    programme_texte: donnees.accompagnement.texte ?? "",
-  });
-  const envoi = useMutation({
-    mutationFn: () => api(`${ROUTE}pilotage/`, { method: "PATCH", body: JSON.stringify({ ...saisie, fil: saisie.fil.map((etape) => etape.trim()).filter(Boolean), taux_cgrae: Number(saisie.taux_cgrae) }) }),
-    onSuccess: async () => {
-      await client.invalidateQueries({ queryKey: ["carrieres-fin-carriere"] });
-      feedback.toast("Cadre enregistré");
-      onClose();
-    },
-  });
-  const champ = (cle: Exclude<keyof typeof saisie, "fil">) => (event: { target: { value: string } }) => setSaisie({ ...saisie, [cle]: event.target.value });
-  return (
-    <Modale titre="Cadre de la page" sousTitre="En-tête, passerelle, taux CGRAE et programme d'accompagnement." icone="edit" taille="lg" onClose={onClose} onSubmit={() => envoi.mutate()} enCours={envoi.isPending} erreur={erreurDe(envoi.error, "L'enregistrement n'a pas abouti.")}>
-      <div className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {saisie.fil.map((etape, index) => (
-            <label key={index} className="block">
-              <span className={LIBELLE}>Fil d'Ariane {index + 1}</span>
-              <input className={CHAMP} value={etape} onChange={(event) => setSaisie({ ...saisie, fil: saisie.fil.map((item, i) => i === index ? event.target.value : item) })} />
-            </label>
-          ))}
-        </div>
-        <label className="block"><span className={LIBELLE}>Titre <span className="text-error">*</span></span><input className={CHAMP} required value={saisie.titre} onChange={champ("titre")} /></label>
-        <label className="block"><span className={LIBELLE}>Texte d'introduction</span><textarea className={`${CHAMP} h-auto py-2`} rows={3} value={saisie.chapeau} onChange={champ("chapeau")} /></label>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <label className="block"><span className={LIBELLE}>Référence de la passerelle</span><input className={CHAMP} value={saisie.reference} onChange={champ("reference")} /></label>
-          <label className="block"><span className={LIBELLE}>Taux CGRAE (%)</span><input className={CHAMP} required type="number" min={0} max={100} step="0.1" value={saisie.taux_cgrae} onChange={champ("taux_cgrae")} /></label>
-          <label className="block"><span className={LIBELLE}>Détail CGRAE</span><input className={CHAMP} value={saisie.detail_cgrae} onChange={champ("detail_cgrae")} /></label>
-        </div>
-        <label className="block"><span className={LIBELLE}>Ratio de renouvellement</span><input className={CHAMP} value={saisie.renouvellement} onChange={champ("renouvellement")} /></label>
-        <label className="block"><span className={LIBELLE}>Programme d'accompagnement</span><input className={CHAMP} value={saisie.programme_titre} onChange={champ("programme_titre")} /></label>
-        <label className="block"><span className={LIBELLE}>Texte du programme</span><textarea className={`${CHAMP} h-auto py-2`} rows={3} value={saisie.programme_texte} onChange={champ("programme_texte")} /></label>
-      </div>
-    </Modale>
-  );
 }
 
 function ListeAgents({ agents, value, onChange, requis = false, disabled = false }: { agents: AgentChoix[]; value: string; onChange: (valeur: string) => void; requis?: boolean; disabled?: boolean }) {
@@ -593,8 +486,6 @@ function FormulaireAdmission({ dossier, statuts, onClose }: { dossier: Dossier; 
   const feedback = useFeedback();
   const [saisie, setSaisie] = useState({
     entree_service: dossier.entree_service ?? "",
-    idr: String(dossier.idr),
-    pension: String(dossier.pension),
     statut: dossier.statut,
     statut_detail: dossier.statut_detail,
     age: "",
@@ -605,8 +496,6 @@ function FormulaireAdmission({ dossier, statuts, onClose }: { dossier: Dossier; 
     mutationFn: () => {
       const corps: Record<string, unknown> = {
         entree_service: saisie.entree_service,
-        idr: Number(saisie.idr),
-        pension: Number(saisie.pension),
         statut: saisie.statut,
         statut_detail: saisie.statut_detail,
       };
@@ -630,8 +519,6 @@ function FormulaireAdmission({ dossier, statuts, onClose }: { dossier: Dossier; 
         <p className="font-body-sm text-body-sm text-on-surface-variant">Âge retenu : {dossier.age_limite} ans{dossier.decret ? ` · décret ${dossier.decret}${dossier.date_decret ? ` du ${dateLongue(dossier.date_decret)}` : ""}` : ""}. L'admission est automatique. Pour repousser la limite, citez le décret présidentiel.</p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <label className="block"><span className={LIBELLE}>Entrée en service</span><input className={CHAMP} type="date" value={saisie.entree_service} onChange={champ("entree_service")} /></label>
-          <label className="block"><span className={LIBELLE}>IDR (FCFA)</span><input className={CHAMP} required type="number" min={0} value={saisie.idr} onChange={champ("idr")} /></label>
-          <label className="block"><span className={LIBELLE}>Pension mensuelle (FCFA)</span><input className={CHAMP} required type="number" min={0} value={saisie.pension} onChange={champ("pension")} /></label>
           <label className="block">
             <span className={LIBELLE}>Statut</span>
             <select className={CHAMP} value={saisie.statut} onChange={champ("statut")}>
@@ -725,25 +612,6 @@ function FormulairePoste({ poste, agents, onClose }: { poste?: Poste; agents: Ag
         </div>
         <label className="block"><span className={LIBELLE}>Commentaire</span><input className={CHAMP} maxLength={200} value={saisie.commentaire} onChange={champ("commentaire")} /></label>
       </div>
-    </Modale>
-  );
-}
-
-function FormulaireMotif({ motif, onClose }: { motif?: Motif; onClose: () => void }) {
-  const client = useQueryClient();
-  const feedback = useFeedback();
-  const [libelle, setLibelle] = useState(motif?.libelle ?? "");
-  const envoi = useMutation({
-    mutationFn: () => api(motif ? `${ROUTE}motifs/${motif.id}/` : `${ROUTE}motifs/`, { method: motif ? "PATCH" : "POST", body: JSON.stringify({ libelle }) }),
-    onSuccess: async () => {
-      await client.invalidateQueries({ queryKey: ["carrieres-fin-carriere"] });
-      feedback.toast(motif ? "Motif mis à jour" : "Motif ajouté");
-      onClose();
-    },
-  });
-  return (
-    <Modale titre={motif ? "Modifier le motif" : "Ajouter un motif"} icone="gavel" onClose={onClose} onSubmit={() => envoi.mutate()} enCours={envoi.isPending} erreur={erreurDe(envoi.error, "Le motif n'a pas été enregistré.")}>
-      <label className="block"><span className={LIBELLE}>Libellé <span className="text-error">*</span></span><input className={CHAMP} required maxLength={80} value={libelle} onChange={(event) => setLibelle(event.target.value)} /></label>
     </Modale>
   );
 }

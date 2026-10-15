@@ -48,7 +48,6 @@ from .models import (
     Passerelle,
     JournalEffectif,
     CampagneBesoin,
-    FiliereBesoin,
     FicheBesoin,
     CompositionStatistique,
     CampagnePlanConge,
@@ -107,7 +106,6 @@ admin.site.register(AlertePoste)
 admin.site.register(Passerelle)
 admin.site.register(JournalEffectif)
 admin.site.register(CampagneBesoin)
-admin.site.register(FiliereBesoin)
 admin.site.register(FicheBesoin)
 admin.site.register(CompositionStatistique)
 admin.site.register(Publication)

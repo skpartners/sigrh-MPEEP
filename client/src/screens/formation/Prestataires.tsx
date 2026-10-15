@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { dateCourte, nombre, pluriel } from "../../ui/format";
+import { dateCourte, nombre } from "../../ui/format";
 import { useAction } from "../../ui/useAction";
 import type { Prestataire, TableauFormation } from "./types";
 import { BOUTON_ICONE, BOUTON_PRIMAIRE, Badge, CARTE, Case, DateChamp, EnTeteSection, Liste, Modale, Texte, Vide, messageErreur, useEnregistrement } from "./ui";
@@ -34,20 +34,20 @@ export function Prestataires({ data }: { data: TableauFormation }) {
     <section aria-labelledby="titre-prestataires">
       <EnTeteSection
         icone="assured_workload"
-        titre="Prestataires et conventions"
-        sousTitre={`${pluriel(data.indicateurs.prestataires_actifs, "prestataire actif", "prestataires actifs")} · seuls les actifs sont proposés à la planification`}
+        titre="Formateurs et structures formatrices"
+        sousTitre="Le ministère y inscrit les formateurs et les organismes auxquels il fait appel pour former ses agents."
         action={
           <div className="flex flex-wrap items-center gap-4">
             <Case libelle="Afficher les inactifs" coche={inactifs} onChange={setInactifs} />
             <button type="button" className={BOUTON_PRIMAIRE} onClick={() => setEdition("nouveau")}>
               <Icone nom="post_add" className="text-lg" />
-              Nouveau prestataire
+              Nouveau formateur
             </button>
           </div>
         }
       />
       {liste.length === 0 ? (
-        <Vide icone="assured_workload" titre="Aucun prestataire" texte="Référencez les organismes qui dispensent vos modules." />
+        <Vide icone="assured_workload" titre="Aucun formateur" texte="Référencez les formateurs ou les structures formatrices auxquels le ministère fait appel." />
       ) : (
         <ul className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-4">
           {liste.map((p) => (

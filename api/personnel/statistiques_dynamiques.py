@@ -317,13 +317,13 @@ SOURCES: tuple[Source, ...] = (
         "Fiches de besoin",
         FicheBesoin,
         (
-            _c("nature", "Nature", "nature", _choix(FicheBesoin.Nature.choices)),
-            _c("statut", "Statut", "statut", _choix(FicheBesoin.Statut.choices)),
-            _c("entite", "Entité", "entite__nom"),
+            _c("entite", "Structure", "entite__nom"),
+            _c("exercice", "Exercice", "campagne__exercice"),
         ),
         (
-            Mesure("volume", "Volume de postes", "volume"),
-            Mesure("cout_annuel", "Coût annuel (FCFA)", "cout_annuel"),
+            Mesure("volume", "Agents demandés", "volume"),
+            Mesure("fonctionnaires", "Fonctionnaires demandés", "fonctionnaires"),
+            Mesure("contractuels", "Contractuels demandés", "contractuels"),
         ),
         rattachee=False,
     ),
@@ -626,7 +626,7 @@ def champs_demandes(texte) -> list[str]:
     return list(dict.fromkeys(_texte(item) for item in morceaux if _texte(item)))
 
 
-def calculer_cube(source_code, codes_champs, codes_croisements=None, periodes_brutes=None) -> dict:
+def calculer_cube(source_code, codes_champs, codes_croisements=None, periodes_brutes=None, visibles: set[str] | None = None) -> dict:
     """Regroupe la source selon les champs et agrège chaque mesure numérique, croisements compris.
 
     Avec un champ détaillé d'une source croisée (la nature d'une absence), les lignes du calcul sont les
@@ -645,10 +645,14 @@ def calculer_cube(source_code, codes_champs, codes_croisements=None, periodes_br
     if detail:
         modele = PAR_CODE[detail].modele
         qs = modele.objects.filter(**_filtre_periode(detail, periodes))
+        if visibles is not None:
+            qs = qs.filter(agent__matricule__in=visibles)
         prefixe, ref = "agent__", "agent"
         numeriques = list(mesures_croisees(detail))
     else:
         qs = source.modele.objects.all()
+        if visibles is not None:
+            qs = qs.filter(**{("agent__matricule__in" if source.rattachee else "matricule__in"): visibles})
         prefixe, ref = "", "pk"
         numeriques = [item for item in source.mesures if item.numerique]
         numeriques += [item for code in croisements for item in mesures_croisees(code)]

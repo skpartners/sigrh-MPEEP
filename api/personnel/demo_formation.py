@@ -31,6 +31,13 @@ PLANIFICATION = {
     "spec-controle": (1, "", "", None, None, 60, 20, 900_000, False, None),
 }
 
+# Les modules du plan sont dispensés par le ministère lui-même, en Côte d'Ivoire
+CADRES_SESSION = {
+    "prep-admin": "ci_ministere", "prep-redacteur": "ci_ministere", "categ-corps": "ci_ministere", "carr-admis": "ci_ministere",
+    "carr-fonction": "ci_ministere", "perf-pilotage": "ci_ministere", "perf-donnees": "ci_ministere",
+    "spec-controle": "ci_ministere",
+}
+
 # matricule, module, état (2, 3, 4, « retenue », « refusee »), présent, note, motif, déposée (jours)
 CANDIDATURES = [
     ("340188P", "categ-corps", "retenue", True, 5, "", -80),
@@ -95,6 +102,8 @@ def charger(modele, aujourd_hui: date | None = None) -> None:
         if session is None:
             continue
         session.prestataire = prestataires[p]
+        if any(champ.name == "cadre" for champ in SessionFormation._meta.fields):
+            session.cadre = CADRES_SESSION.get(code, session.cadre)
         session.lieu, session.formateur = lieu, formateur
         session.date_debut, session.date_fin = jour(debut), jour(fin)
         session.heures, session.places, session.cout_participant = heures, places, cout
@@ -107,15 +116,20 @@ def charger(modele, aujourd_hui: date | None = None) -> None:
 
     _candidatures(modele, sessions, prestataires, jour)
 
-    Organisme, TypeFormation, BesoinFormation = modele("Organisme"), modele("TypeFormation"), modele("BesoinFormation")
+    Entite, TypeFormation, BesoinFormation = modele("EntiteTutelle"), modele("TypeFormation"), modele("BesoinFormation")
     BesoinFormation.objects.filter(annee=PLAN["annee"]).delete()
-    for index, (org, cycle, intitule, effectif, priorite, statut, module) in enumerate(BESOINS):
-        organisme = Organisme.objects.filter(code=org).first()
+    # Les besoins sont portés par les structures des paramètres, réparties entre elles.
+    # Avant la migration 0105 les besoins dépendent encore d'un organisme : rien à verser à ce stade.
+    if not any(champ.name == "structure" for champ in BesoinFormation._meta.fields):
+        return
+    structures = list(Entite.objects.exclude(niveau="ministere").order_by("id"))
+    for index, (_org, cycle, intitule, effectif, priorite, statut, module) in enumerate(BESOINS):
         type_formation = TypeFormation.objects.filter(code=cycle).first()
-        if organisme is None or type_formation is None:
+        if not structures or type_formation is None:
             continue
+        structure = structures[index % len(structures)]
         BesoinFormation.objects.create(
-            annee=PLAN["annee"], organisme=organisme, type_formation=type_formation, intitule=intitule, effectif=effectif,
+            annee=PLAN["annee"], structure=structure, type_formation=type_formation, intitule=intitule, effectif=effectif,
             priorite=priorite, statut=statut, session=sessions.get(module), exprime_le=jour(-120 + index * 5),
         )
 

@@ -2,8 +2,8 @@ import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-quer
 import { useEffect, useRef, type ReactNode } from "react";
 import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { RequireAuth } from "./auth/RequireAuth";
-import { CarrieresScreen } from "./screens/CarrieresScreen";
-import { AbsencesScreen, CongesScreen, DisciplineScreen, DotationScreen, FinCarriereScreen, SituationScreen } from "./screens/carrieres/Rubriques";
+import { AbsencesScreen, CongesScreen, DisciplineScreen, FinCarriereScreen, SituationScreen } from "./screens/carrieres/Rubriques";
+import { DotationScreen } from "./screens/dotation/DotationScreen";
 import { CircuitsScreen } from "./screens/CircuitsScreen";
 import { HabilitationsScreen } from "./screens/HabilitationsScreen";
 import { StatistiquesScreen } from "./screens/StatistiquesScreen";
@@ -15,7 +15,7 @@ import { UtilisateursScreen } from "./screens/UtilisateursScreen";
 import { AideScreen } from "./screens/AideScreen";
 import { DashboardScreen } from "./screens/DashboardScreen";
 import { DossierScreen } from "./screens/DossierScreen";
-import { BesoinsScreen, SocialScreen } from "./screens/ModuleScreens";
+import { BesoinsScreen } from "./screens/ModuleScreens";
 import { FormationScreen } from "./screens/formation/FormationScreen";
 import { CguScreen } from "./screens/CguScreen";
 import { ConfidentialiteScreen } from "./screens/ConfidentialiteScreen";
@@ -31,6 +31,12 @@ import { EtiquettesTableaux } from "./ui/EtiquettesTableaux";
 import { PageMotion, TopProgress } from "./ui/Motion";
 import { TempsReelProvider } from "./ui/TempsReel";
 import { AgentScreen } from "./screens/AgentScreen";
+import { BilanCarriereScreen } from "./screens/grh/BilanCarriereScreen";
+import { BilanSatisfactionScreen } from "./screens/grh/BilanSatisfactionScreen";
+import { DistinctionsScreen } from "./screens/grh/DistinctionsScreen";
+import { FormationBilanScreen, FormationSuiviScreen } from "./screens/grh/FormationSuiviScreen";
+import { GrhAccueilScreen } from "./screens/grh/GrhAccueilScreen";
+import { ProgrammationScreen } from "./screens/grh/ProgrammationScreen";
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: false, refetchOnWindowFocus: false } },
@@ -59,18 +65,26 @@ export function App() {
               <Route path="/app/dossiers/:matricule" element={<RequireAuth><DossierScreen /></RequireAuth>} />
               <Route path="/app/agents" element={<RequireAuth><AgentScreen /></RequireAuth>} />
               <Route path="/app/agents/:matricule" element={<RequireAuth><AgentScreen /></RequireAuth>} />
-              <Route path="/app/carrieres" element={<RequireAuth><CarrieresScreen /></RequireAuth>} />
+              <Route path="/app/carrieres" element={<Navigate to="/app/carrieres/situation-administrative" replace />} />
               <Route path="/app/carrieres/dotation" element={<Navigate to="/app/gpec/recrutement" replace />} />
               <Route path="/app/carrieres/situation-administrative" element={<RequireAuth><SituationScreen /></RequireAuth>} />
               <Route path="/app/carrieres/absences" element={<RequireAuth><AbsencesScreen /></RequireAuth>} />
               <Route path="/app/carrieres/conges" element={<RequireAuth><CongesScreen /></RequireAuth>} />
               <Route path="/app/carrieres/procedures-disciplinaires" element={<RequireAuth><DisciplineScreen /></RequireAuth>} />
               <Route path="/app/carrieres/fin-de-carriere" element={<RequireAuth><FinCarriereScreen /></RequireAuth>} />
-              <Route path="/app/action-sociale" element={<RequireAuth><SocialScreen /></RequireAuth>} />
               <Route path="/app/formation" element={<RequireAuth><FormationScreen /></RequireAuth>} />
               <Route path="/app/gpec" element={<Navigate to="/app/gpec/expression-des-besoins" replace />} />
               <Route path="/app/gpec/expression-des-besoins" element={<RequireAuth><BesoinsScreen /></RequireAuth>} />
+              <Route path="/app/grh/dotation/*" element={<Navigate to="/app/gpec/recrutement" replace />} />
               <Route path="/app/gpec/recrutement" element={<RequireAuth><DotationScreen /></RequireAuth>} />
+              <Route path="/app/grh" element={<RequireAuth><GrhAccueilScreen /></RequireAuth>} />
+              <Route path="/app/grh/bilan-carriere" element={<RequireAuth><BilanCarriereScreen /></RequireAuth>} />
+              <Route path="/app/grh/distinctions" element={<RequireAuth><DistinctionsScreen /></RequireAuth>} />
+              <Route path="/app/grh/formation/suivi" element={<RequireAuth><FormationSuiviScreen /></RequireAuth>} />
+              <Route path="/app/grh/formation/bilan" element={<RequireAuth><FormationBilanScreen /></RequireAuth>} />
+              <Route path="/app/grh/programmation/conference" element={<RequireAuth><ProgrammationScreen etape="conference" /></RequireAuth>} />
+              <Route path="/app/grh/programmation/catalogue" element={<RequireAuth><ProgrammationScreen etape="catalogue" /></RequireAuth>} />
+              <Route path="/app/grh/programmation/bilan" element={<RequireAuth><BilanSatisfactionScreen /></RequireAuth>} />
               <Route path="/app/circuits" element={<RequireAuth><CircuitsScreen /></RequireAuth>} />
               <Route path="/app/habilitations" element={<RequireAuth><HabilitationsScreen /></RequireAuth>} />
               <Route path="/app/statistiques" element={<RequireAuth><StatistiquesScreen /></RequireAuth>} />

@@ -45,6 +45,7 @@ from .models import (
 from .circuits_config import enregistrer, lister
 from .parametres import identite_ministre, portrait_url
 from .utilisateurs import acces_menu, perimetre_matricules
+from .visibilite import agents_visibles, dans_le_perimetre
 from .statistiques import FiltreInconnu, calculer, classeur, diaporama, lire_echeance, synthese
 from .statistiques_dynamiques import (
     CompositionInvalide,
@@ -357,6 +358,85 @@ def deposer_piece_identite(request, matricule: str):
     return Response(_detail(agent, request.user))
 
 
+CHAMPS_PROFIL_TEXTE = {
+    "nom": 80, "prenoms": 120, "nom_jeune_fille": 120, "lieu_naissance": 160,
+    "adresse_residence": 240, "ville": 120, "telephone": 40, "telephone_secondaire": 40,
+    "contact_urgence_nom": 160, "contact_urgence_telephone": 40,
+    "libelle_diplome": 240, "domaine_formation": 160,
+    "conjoint_nom": 120, "conjoint_prenoms": 160, "conjoint_telephone": 40,
+}
+CHAMPS_PROFIL_COURRIEL = {"courriel", "conjoint_courriel"}
+CHAMPS_PROFIL_DATE = {"date_naissance", "date_mariage"}
+
+
+@api_view(["PATCH"])
+@permission_classes([IsAuthenticated])
+def modifier_profil(request, matricule: str):
+    """Met à jour les informations personnelles : état civil, coordonnées, parcours académique, conjoint."""
+    from datetime import date
+
+    from django.core.exceptions import ValidationError
+    from django.core.validators import validate_email
+
+    agent = get_object_or_404(Agent, matricule=matricule)
+    if not _peut_gerer_dossier(request.user, agent):
+        return _refus_dossier()
+    donnees = request.data
+    modifies: dict = {}
+    for champ, longueur in CHAMPS_PROFIL_TEXTE.items():
+        if champ in donnees:
+            valeur = str(donnees.get(champ) or "").strip()
+            if len(valeur) > longueur:
+                return Response({"detail": f"« {champ} » dépasse {longueur} caractères."}, status=400)
+            modifies[champ] = valeur
+    for champ in CHAMPS_PROFIL_COURRIEL:
+        if champ in donnees:
+            valeur = str(donnees.get(champ) or "").strip()
+            if valeur:
+                try:
+                    validate_email(valeur)
+                except ValidationError:
+                    return Response({"detail": "Une adresse e-mail n'est pas valide."}, status=400)
+            modifies[champ] = valeur
+    for champ in CHAMPS_PROFIL_DATE:
+        if champ in donnees:
+            brut = donnees.get(champ)
+            if not brut:
+                modifies[champ] = None
+                continue
+            try:
+                jour = date.fromisoformat(str(brut))
+            except ValueError:
+                return Response({"detail": "Une date n'est pas valide."}, status=400)
+            if jour > date.today():
+                return Response({"detail": "Une date ne peut pas être dans le futur."}, status=400)
+            modifies[champ] = jour
+    for champ, code_champ, vide_permis in (
+        ("sexe", "sexe", False),
+        ("statut_matrimonial", "statut_matrimonial", True),
+        ("niveau_etude", "niveau_etude", True),
+    ):
+        if champ in donnees:
+            valeur = donnees.get(champ) or ""
+            codes = {code for code, _l in Agent._meta.get_field(code_champ).choices}
+            if valeur == "" and vide_permis:
+                modifies[champ] = ""
+            elif valeur in codes:
+                modifies[champ] = valeur
+            else:
+                return Response({"detail": f"La valeur de « {champ} » n'est pas valide."}, status=400)
+    if ("nom" in modifies and not modifies["nom"]) or ("prenoms" in modifies and not modifies["prenoms"]):
+        return Response({"detail": "Le nom et les prénoms sont obligatoires."}, status=400)
+    for champ, valeur in modifies.items():
+        setattr(agent, champ, valeur)
+    if "nom" in modifies or "prenoms" in modifies:
+        agent.initiales = "".join(m[:1] for m in f"{agent.prenoms} {agent.nom}".split())[:4].upper() or agent.matricule[:4].upper()
+        modifies["initiales"] = agent.initiales
+    if modifies:
+        agent.save(update_fields=list(modifies))
+    return Response(_detail(agent, request.user))
+
+
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def ajouter_enfant(request, matricule: str):
@@ -410,6 +490,7 @@ def retirer_enfant(request, matricule: str, pk: int):
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
+@dans_le_perimetre
 def exporter_dossier(_request, matricule: str):
     from .rapports.documents import rendre_dossier
 
@@ -435,6 +516,7 @@ def exporter_dossier(_request, matricule: str):
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
+@dans_le_perimetre
 def bulletin_notations(_request, matricule: str):
     from .rapports.documents import rendre_notations
 
@@ -449,6 +531,7 @@ def bulletin_notations(_request, matricule: str):
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
+@dans_le_perimetre
 def releve_conges(_request, matricule: str):
     from .rapports.documents import rendre_conges
 
@@ -461,6 +544,7 @@ def releve_conges(_request, matricule: str):
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
+@dans_le_perimetre
 def rapport_social(_request, matricule: str):
     from .rapports.documents import rendre_social
 
@@ -473,6 +557,7 @@ def rapport_social(_request, matricule: str):
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
+@dans_le_perimetre
 def accuser_notation(_request, matricule: str, pk: int):
     """L'agent accuse réception de sa notation : elle passe à « Signée par l'agent »."""
     evaluation = get_object_or_404(Evaluation.objects.select_related("agent"), pk=pk, agent__matricule=matricule)
@@ -491,6 +576,7 @@ def statistiques(request):
             request.GET.get("structure", ""),
             request.GET.get("segment", ""),
             request.GET.get("exercice", ""),
+            perimetre_matricules(request.user),
         ))
     except FiltreInconnu as exc:
         return Response({"detail": str(exc)}, status=400)
@@ -504,6 +590,7 @@ def export_statistiques(request, format_export):
             request.GET.get("structure", ""),
             request.GET.get("segment", ""),
             request.GET.get("exercice", ""),
+            perimetre_matricules(request.user),
         )
     except FiltreInconnu as exc:
         return Response({"detail": str(exc)}, status=400)
@@ -571,6 +658,7 @@ def cube_statistiques(request):
             request.GET.get("champs", ""),
             request.GET.get("croisements", ""),
             request.GET.get("periodes", ""),
+            perimetre_matricules(request.user),
         ))
     except CompositionInvalide as exc:
         return _reponse_composition(exc)
@@ -687,8 +775,8 @@ def _activite() -> list[dict]:
         {
             "cle": "besoins",
             "libelle": "Besoins GPEC",
-            "valeur": _n(FicheBesoin.objects.filter(statut=FicheBesoin.Statut.INSTRUCTION).count()),
-            "detail": f"{_n(FicheBesoin.objects.filter(critique=True, statut=FicheBesoin.Statut.INSTRUCTION).count())} fiches critiques",
+            "valeur": _n(FicheBesoin.objects.filter(campagne__ouverte=True).count()),
+            "detail": f"{_n(FicheBesoin.objects.filter(campagne__ouverte=True).values('entite').distinct().count())} structures ont répondu",
             "icone": "groups",
             "lien": "/app/gpec/expression-des-besoins",
         },
@@ -750,6 +838,9 @@ def exporter_pilotage(request):
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def agents(request):
+    from .positions import echeances_en_cours, synchroniser_tous
+
+    synchroniser_tous()
     query = str(request.query_params.get("q") or "").strip()
     rows = Agent.objects.select_related("organisme")
     matricules = perimetre_matricules(request.user)
@@ -759,7 +850,8 @@ def agents(request):
         rows = rows.filter(nom__icontains=query) | rows.filter(prenoms__icontains=query) | rows.filter(
             matricule__icontains=query
         )
-    return Response([agent_brief(agent) for agent in rows.distinct()])
+    echeances = echeances_en_cours()
+    return Response([{**agent_brief(agent), **echeances.get(agent.matricule, {})} for agent in rows.distinct()])
 
 
 @api_view(["GET"])
@@ -844,6 +936,9 @@ def agent_detail_view(request, matricule: str):
     matricules = perimetre_matricules(request.user)
     if matricules is not None and agent.matricule not in matricules:
         return Response({"detail": "Ce dossier est hors de votre supervision."}, status=404)
+    from .positions import synchroniser_situation
+
+    synchroniser_situation(agent)
     if request.method == "PATCH":
         from .saisie import enregistrer_situation
 
@@ -893,7 +988,8 @@ def valider_inscription(request, reference: str):
     complet = verifier_places(demande)
     if complet:
         return Response({"detail": complet}, status=409)
-    erreur, notifiee = valider_etape(demande, request.user)
+    motif = str(request.data.get("motif") or "").strip()
+    erreur, notifiee = valider_etape(demande, request.user, motif)
     if erreur:
         return Response({"detail": erreur}, status=400)
     demande.refresh_from_db()
@@ -1031,6 +1127,7 @@ def document_demande_acte(request, reference: str):
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
+@dans_le_perimetre
 def archive_pieces(_request, matricule: str):
     from .pieces import archive
 
@@ -1045,6 +1142,7 @@ def archive_pieces(_request, matricule: str):
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
+@dans_le_perimetre
 def telecharger_acte(_request, matricule: str, pk: int):
     import mimetypes
     from pathlib import Path
@@ -1080,11 +1178,11 @@ def types_fin_carriere(_request):
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
-def carrieres(_request):
+def carrieres(request):
     snap = _snapshot()
-    lignes = LigneAvancement.objects.select_related("agent", "agent__organisme")
-    mouvements = MouvementStrategique.objects.select_related("agent", "agent__organisme", "organisme")
-    alertes = AlerteReleve.objects.select_related("titulaire", "titulaire__organisme", "organisme")
+    lignes = agents_visibles(LigneAvancement.objects.select_related("agent", "agent__organisme"), request.user, "agent__matricule")
+    mouvements = agents_visibles(MouvementStrategique.objects.select_related("agent", "agent__organisme", "organisme"), request.user, "agent__matricule")
+    alertes = agents_visibles(AlerteReleve.objects.select_related("titulaire", "titulaire__organisme", "organisme"), request.user, "titulaire__matricule")
     return Response(
         {
             **snap.carriere,
@@ -1097,11 +1195,12 @@ def carrieres(_request):
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
-def carrieres_registres(_request):
-    agents = Agent.objects.select_related("organisme").prefetch_related("actes")
-    absences = Absence.objects.select_related("agent", "agent__organisme")
-    actes = Acte.objects.filter(domaine__in=[Acte.Domaine.CARRIERE, Acte.Domaine.CONGE]).select_related(
-        "agent", "agent__organisme"
+def carrieres_registres(request):
+    agents = agents_visibles(Agent.objects.select_related("organisme").prefetch_related("actes"), request.user)
+    absences = agents_visibles(Absence.objects.select_related("agent", "agent__organisme"), request.user, "agent__matricule")
+    actes = agents_visibles(
+        Acte.objects.filter(domaine__in=[Acte.Domaine.CARRIERE, Acte.Domaine.CONGE]).select_related("agent", "agent__organisme"),
+        request.user, "agent__matricule",
     )
     return Response(
         {
@@ -1179,9 +1278,7 @@ CATALOGUE_FONCTIONS = {
         "Plan et sessions",
         "Inscriptions",
         "Besoins de formation",
-        "Pilotage du plan",
         "Candidatures",
-        "Catalogue des cycles",
         "Prestataires",
         "Passeport de formation",
         "Évaluations",

@@ -6,6 +6,7 @@ import type { SessionUser } from "../api/types";
 import { useSlideNavigate } from "../ui/Motion";
 import { useFeedback } from "../ui/Feedback";
 import { Icone } from "../ui/Icone";
+import { LogoMinistere } from "../ui/Logo";
 
 const SUPPORT_PHONE = (import.meta.env.VITE_SUPPORT_PHONE ?? "").trim();
 const CHAMP = "h-11 court:h-10 tres-court:h-9 w-full rounded-lg border border-outline-variant/50 bg-surface-container-lowest/90 px-3 font-body-md text-body-md text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:ring-2 focus:ring-primary";
@@ -133,7 +134,7 @@ export function LoginScreen() {
 
       <section ref={carteRef} className="login-carte motion-overlay-card relative z-10 w-full max-w-lg rounded-2xl border border-white/40 bg-white/20 px-6 py-8 court:py-5 tres-court:py-4 shadow-[0_20px_60px_color-mix(in_oklab,var(--color-primary)_32%,transparent)] backdrop-blur-2xl sm:px-8">
         <header className="mb-8 court:mb-5 tres-court:mb-3 text-center">
-          <img alt="Armoiries de la République de Côte d'Ivoire" className="mx-auto h-16 w-16 court:h-12 court:w-12 tres-court:h-10 tres-court:w-10 object-contain" src={`${import.meta.env.BASE_URL}logo.png`} />
+          <LogoMinistere alt="Armoiries de la République de Côte d'Ivoire" className="mx-auto h-16 w-16 court:h-12 court:w-12 tres-court:h-10 tres-court:w-10 object-contain" />
           <p className="mt-4 court:mt-2 tres-court:hidden font-label-lg text-label-lg font-bold tracking-widest text-primary uppercase">
             République de Côte d'Ivoire
           </p>

@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { Fragment, useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { api, logout, mediaUrl } from "../api/client";
 import type { SessionUser } from "../api/types";
@@ -15,6 +15,7 @@ import { CommunicationBouton } from "./CommunicationBouton";
 import { MessagerieBouton } from "./Messagerie";
 import { NotificationBell } from "./NotificationBell";
 import { Icone } from "../ui/Icone";
+import { LogoMinistere } from "../ui/Logo";
 import { lienActif, libellePage, menuAutorise, menuCourant, pageHorsHabilitation, repliHabilitation, sousMenus, type LienNav } from "./navigation";
 
 // Même palier que lg: de Tailwind (64rem) : il suit la taille de police du navigateur, et le zoom
@@ -59,8 +60,9 @@ function BandeauSondage() {
   );
 }
 
-/** `sansSidebar` : page qui occupe toute la largeur, sans menu latéral (le profil agent). */
-export function AppChrome({ children, sansSidebar = false }: { children: ReactNode; sansSidebar?: boolean }) {
+/** `sansSidebar` : page qui occupe toute la largeur, sans menu latéral (le profil agent).
+ *  `actions` : boutons affichés dans le bandeau de titre, à droite. */
+export function AppChrome({ children, sansSidebar = false, actions }: { children: ReactNode; sansSidebar?: boolean; actions?: ReactNode }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [pointe, setPointe] = useState(false);
   const [focusDedans, setFocusDedans] = useState(false);
@@ -81,9 +83,14 @@ export function AppChrome({ children, sansSidebar = false }: { children: ReactNo
   useHauteurFixe(enteteRef, "--haut-entete");
   useHauteurFixe(piedRef, "--haut-pied");
   const courant = menuCourant(pathname, hash);
-  const enfants = courant ? sousMenus(courant) : [];
+  const tousLesEnfants = courant ? sousMenus(courant) : [];
+  // Menu à rubriques groupées (GRH) : le sidebar ne montre que le groupe de la page courante ;
+  // sur l'accueil du menu, ce sont les cartes qui servent de navigation.
+  const aGroupes = tousLesEnfants.some((enfant) => enfant.groupe);
+  const groupeCourant = tousLesEnfants.find((enfant) => lienActif(enfant.to, enfant.end, pathname, hash))?.groupe;
+  const enfants = aGroupes ? tousLesEnfants.filter((enfant) => !enfant.groupe || enfant.groupe === groupeCourant) : tousLesEnfants;
   const repli = repliHabilitation(pathname, hash, me.data?.acces);
-  const avecSidebar = enfants.length > 0 && !sansSidebar;
+  const avecSidebar = enfants.length > 0 && !sansSidebar && !(aGroupes && !groupeCourant);
   const deplie = pointe || focusDedans;
   const reduit = avecSidebar && large && !deplie;
 
@@ -148,9 +155,9 @@ export function AppChrome({ children, sansSidebar = false }: { children: ReactNo
               </button>
             ) : null}
             <Link to="/app" title="Menu" aria-label="Menu principal" className="flex max-[22rem]:hidden items-center gap-3 min-w-0 rounded">
-              <span className="relative flex items-center justify-center p-1 bg-surface-container-low rounded shrink-0">
-                <img alt="Armoiries de la République de Côte d'Ivoire" className="h-8 w-8 sm:h-10 sm:w-10 object-contain" src={`${import.meta.env.BASE_URL}logo.png`} />
-                <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-secondary-container border border-surface-container-lowest" aria-hidden="true" />
+              <span className="relative flex items-center justify-center shrink-0">
+                <LogoMinistere alt="Armoiries de la République de Côte d'Ivoire" className="h-8 w-8 sm:h-10 sm:w-10 object-contain" />
+                <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-secondary-container border border-white/40" aria-hidden="true" />
               </span>
               <span className="hidden sm:flex flex-col min-w-0">
                 <span className="font-label-md text-label-md font-bold truncate flex items-center gap-0.5">
@@ -162,15 +169,6 @@ export function AppChrome({ children, sansSidebar = false }: { children: ReactNo
             </Link>
           </div>
           <div className="outils flex items-center gap-0.5 sm:gap-3 shrink-0">
-            <Link
-              to="/app"
-              aria-label="Menu"
-              aria-current={pathname === "/app" ? "page" : undefined}
-              title="Menu"
-              className={`hidden sm:inline-flex items-center justify-center p-2 rounded hover:bg-surface-container-high ${pathname === "/app" ? "bg-surface-container-high text-on-surface" : "text-on-surface-variant hover:text-on-surface"}`}
-            >
-              <Icone nom="home" className="text-xl" />
-            </Link>
             {menuAutorise(me.data?.acces, { module: "Statistiques & RBAC", fonction: "Communication" }) ? <CommunicationBouton /> : null}
             <MessagerieBouton />
             <NotificationBell />
@@ -208,16 +206,17 @@ export function AppChrome({ children, sansSidebar = false }: { children: ReactNo
           <nav className={`flex-1 space-y-1 font-body-sm text-body-sm ${reduit ? "px-2" : "px-3"}`} aria-label={courant.libelle}>
             <Link
               to="/app"
-              title={reduit ? "Retour au menu" : undefined}
+              title={reduit ? "Accueil" : undefined}
               className={`mb-2 flex items-center rounded text-primary-fixed hover:bg-primary-container hover:text-on-primary ${reduit ? "justify-center px-2 py-2" : "gap-3 px-3 py-2"}`}
             >
-              <Icone nom="arrow_back" className="text-lg shrink-0" />
-              <span className={reduit ? "sr-only" : "font-label-md text-label-md font-semibold"}>Retour au menu</span>
+              <Icone nom="home" className="text-lg shrink-0" />
+              <span className={reduit ? "sr-only" : "font-label-md text-label-md font-semibold"}>Accueil</span>
             </Link>
             <p className={reduit ? "sr-only" : "px-3 pt-2 pb-2 font-label-sm text-label-sm text-primary-fixed uppercase tracking-wider font-bold"}>
               {courant.libelle}
             </p>
-            {enfants.map((enfant) => {
+            {enfants.map((enfant, rang) => {
+              const intertitre = enfant.groupe && enfant.groupe !== enfants[rang - 1]?.groupe ? enfant.groupe : null;
               const autorise = menuAutorise(me.data?.acces, enfant.acces);
               const actif = autorise && lienActif(enfant.to, enfant.end, pathname, hash);
               const classe = `relative flex items-center rounded transition-colors ${reduit ? "justify-center px-2 py-2" : "gap-3 px-3 py-2"} ${!autorise ? "text-on-primary/35 cursor-not-allowed" : actif ? "bg-primary-fixed text-on-primary-fixed font-semibold shadow-sm" : "text-on-primary/80 hover:bg-primary-container hover:text-on-primary"}`;
@@ -233,17 +232,28 @@ export function AppChrome({ children, sansSidebar = false }: { children: ReactNo
                   <span className={reduit ? "sr-only" : "leading-snug"}>{enfant.libelle}</span>
                 </>
               );
+              const titre = intertitre ? (
+                reduit
+                  ? <hr key={`groupe-${enfant.to}`} className="my-2 border-white/15" aria-hidden="true" />
+                  : <p key={`groupe-${enfant.to}`} className="px-3 pt-4 pb-1 font-label-sm text-label-sm text-primary-fixed/80 uppercase tracking-wider font-bold">{intertitre}</p>
+              ) : null;
               if (!autorise) {
                 return (
-                  <span key={enfant.to} title="Hors de votre habilitation" aria-disabled="true" className={classe}>
-                    {contenu}
-                  </span>
+                  <Fragment key={enfant.to}>
+                    {titre}
+                    <span title="Hors de votre habilitation" aria-disabled="true" className={classe}>
+                      {contenu}
+                    </span>
+                  </Fragment>
                 );
               }
               return (
-                <Link key={enfant.to} to={enfant.to} title={reduit ? enfant.libelle : undefined} aria-current={actif ? "page" : undefined} className={classe}>
-                  {contenu}
-                </Link>
+                <Fragment key={enfant.to}>
+                  {titre}
+                  <Link to={enfant.to} title={reduit ? enfant.libelle : undefined} aria-current={actif ? "page" : undefined} className={classe}>
+                    {contenu}
+                  </Link>
+                </Fragment>
               );
             })}
           </nav>
@@ -254,7 +264,18 @@ export function AppChrome({ children, sansSidebar = false }: { children: ReactNo
         <main className={`zone-app relative pt-[calc(var(--haut-entete)+0.25rem)] pb-[calc(var(--haut-pied)+4.5rem)] min-h-dvh flex flex-col justify-between ${pathname === "/app" ? "bg-transparent" : "bg-white/20 backdrop-blur-sm"}`}>
           <PageMotion className="flex-1 flex flex-col w-full max-w-[120rem] mx-auto" reveal={true}>
             <BandeauSondage />
-            {pathname !== "/app" ? <HeroBanniere courant={courant} user={me.data} pathname={pathname} /> : null}
+            {pathname !== "/app" ? (
+              <div className="px-4 sm:px-6 lg:px-8 mt-4">
+                <Link
+                  to="/app"
+                  className="inline-flex items-center gap-2 rounded-lg bg-surface-container-lowest border border-hairline px-3 py-2 font-label-md text-label-md text-primary hover:bg-surface-container-low"
+                >
+                  <Icone nom="home" className="text-lg" />
+                  Accueil
+                </Link>
+              </div>
+            ) : null}
+            {pathname !== "/app" ? <HeroBanniere courant={courant} user={me.data} pathname={pathname} actions={actions} /> : null}
             {me.isPending ? null : repli ? <Navigate to={repli} replace /> : children}
           </PageMotion>
         </main>
@@ -264,7 +285,7 @@ export function AppChrome({ children, sansSidebar = false }: { children: ReactNo
         <div className="motion-gradient-sweep absolute top-0 left-0 right-0 h-0.5" aria-hidden="true" />
         <div className="flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-3 text-center sm:text-left">
           <div className="flex items-center gap-2.5">
-            <img alt="" className="h-7 w-7 object-contain opacity-50 shrink-0" src={`${import.meta.env.BASE_URL}logo.png`} aria-hidden="true" />
+            <LogoMinistere alt="" className="h-7 w-7 object-contain opacity-50 shrink-0"  aria-hidden="true" />
             <div className="flex flex-col text-left">
               <span className="font-label-md text-label-md font-bold flex items-center gap-0.5">
                 <span className="text-primary">SIGRH</span>
@@ -298,17 +319,17 @@ const PAGES_FIXES: Record<string, { libelle: string; icone: string; resume: stri
   "/app/sondage": { libelle: "Sondage", icone: "poll", resume: "Donnez votre avis sur les sujets ouverts à l'ensemble des agents." },
 };
 
-function HeroBanniere({ courant, user, pathname }: { courant: LienNav | null; user: SessionUser | undefined; pathname: string }) {
+function HeroBanniere({ courant, user, pathname, actions }: { courant: LienNav | null; user: SessionUser | undefined; pathname: string; actions?: ReactNode }) {
   const fixe = PAGES_FIXES[pathname];
   const libelle = courant?.libelle ?? fixe?.libelle;
   const icone = courant?.icone ?? fixe?.icone ?? "apps";
   const resume = courant?.resume ?? fixe?.resume;
   if (!libelle) return null;
   return (
-    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary to-primary-container mx-4 sm:mx-6 lg:mx-8 mt-4 court:mt-2 mb-2">
+    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary to-primary-container mx-4 sm:mx-6 lg:mx-8 mt-2 court:mt-1 mb-2">
       <div className="motion-float-1 absolute -right-10 -top-10 w-40 h-40 rounded-full bg-secondary-container/20 blur-3xl pointer-events-none" aria-hidden="true" />
       <div className="motion-float-2 absolute left-1/3 bottom-0 w-32 h-32 rounded-full bg-secondary/15 blur-2xl pointer-events-none" aria-hidden="true" />
-      <div className="relative z-10 px-5 sm:px-8 py-5 court:py-3 flex items-center justify-between gap-4">
+      <div className="relative z-10 px-5 sm:px-8 py-5 court:py-3 flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-4 min-w-0">
           <span className="w-12 h-12 court:w-10 court:h-10 rounded-xl flex items-center justify-center text-2xl court:text-xl bg-white/15 border border-white/20 text-on-primary shrink-0" aria-hidden="true">
             <Icone nom={icone} />
@@ -331,12 +352,7 @@ function HeroBanniere({ courant, user, pathname }: { courant: LienNav | null; us
             ) : null}
           </div>
         </div>
-        <img
-          alt=""
-          aria-hidden="true"
-          className="hidden sm:block h-16 w-16 object-contain opacity-15 shrink-0"
-          src={`${import.meta.env.BASE_URL}logo.png`}
-        />
+        {actions ? <div className="flex flex-wrap items-center gap-2 shrink-0">{actions}</div> : null}
       </div>
       <div className="absolute bottom-0 left-0 right-0 h-px bg-secondary-container/40" aria-hidden="true" />
     </div>
@@ -471,16 +487,7 @@ function ProfileMenu({ user }: { user: SessionUser | undefined }) {
               Compte administrateur
             </button>
           ) : null}
-          {/* Sur téléphone, Menu et Aide quittent la barre du haut et se retrouvent ici. */}
-          <Link
-            role="menuitem"
-            to="/app"
-            className="sm:hidden w-full flex items-center gap-2 px-3 py-2 rounded text-left font-label-lg text-label-lg text-on-surface hover:bg-surface-container-high"
-            onClick={() => setOpen(false)}
-          >
-            <Icone nom="home" className="text-lg" />
-            Menu principal
-          </Link>
+          {/* Sur téléphone, Aide quitte la barre du haut et se retrouve ici. L'accueil est sur la page. */}
           <Link
             role="menuitem"
             to="/app/aide"

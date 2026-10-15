@@ -8,6 +8,7 @@ import { reducedMotion, useSlideNavigate } from "../ui/Motion";
 import { PublicHeaderNav } from "./PublicHeaderNav";
 import { useHauteurFixe } from "../ui/HauteurFixe";
 import { Icone } from "../ui/Icone";
+import { LogoMinistere, useLogo } from "../ui/Logo";
 
 /** Extrait l'entier de tête d'une chaîne (ex : "1 247 agents" → 1247) et anime le comptage.
  *  Si la valeur ne commence pas par un chiffre, elle s'affiche directement sans animation. */
@@ -85,6 +86,7 @@ function ChiffreAnime({ chiffre, ton }: { chiffre: { valeur: string; libelle: st
 const TONS_CHIFFRE = ["text-secondary", "text-primary", "text-tertiary"];
 
 export function HomeScreen() {
+  const logo = useLogo();
   const enteteRef = useRef<HTMLElement>(null);
   useHauteurFixe(enteteRef, "--haut-entete");
   const slideTo = useSlideNavigate();
@@ -130,7 +132,7 @@ export function HomeScreen() {
       </div>
       <div className={"h-16 mx-auto px-margin-desktop flex items-center justify-between gap-space-md"}>
         <div className={"flex items-center gap-space-md"}>
-          <img alt="Armoiries de la République de Côte d'Ivoire" className="h-12 w-12 object-contain" src={`${import.meta.env.BASE_URL}logo.png`} />
+          <LogoMinistere alt="Armoiries de la République de Côte d'Ivoire" className="h-12 w-12 object-contain" />
           <div className={"flex flex-col"}>
             <span className={"font-label-lg text-label-lg text-primary uppercase tracking-tight"}>
               SIGRH-PORTFEUILLE
@@ -224,7 +226,7 @@ export function HomeScreen() {
                   <img
                     alt={nomMinistre ? `Portrait de ${nomMinistre}` : portrait ? "Portrait de la ministre" : "Armoiries de la République de Côte d'Ivoire"}
                     className={"absolute inset-0 h-full w-full object-cover"}
-                    src={portrait || `${import.meta.env.BASE_URL}logo.png`}
+                    src={portrait || logo.src}
                   />
                 </div>
                 <div className={"text-center"}>

@@ -11,6 +11,7 @@ from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from .visibilite import agent_visible, agents_visibles, refus_hors_perimetre
 from .models import Agent, BlocEcran, EnveloppeSociale, Notification, PieceJointe, PrestationSociale
 from .present import agent_brief
 
@@ -19,7 +20,7 @@ NATURES = [
     "Secours décès & obsèques",
     "Évacuation sanitaire",
     "Allocation de rentrée scolaire",
-    "Avance à 0 % sur solde",
+    "Aide à l'équipement du domicile",
     "Dotation de matériel inclusif",
     "Secours sinistre exceptionnel",
 ]
@@ -51,9 +52,12 @@ def tableau(request):
         return _deposer(request)
     aujourd_hui = timezone.localdate()
     enveloppe = EnveloppeSociale.objects.filter(organisme__code="dgpe").order_by("-exercice").first()
-    requetes = list(PrestationSociale.objects.exclude(etat="").select_related("agent", "agent__organisme").order_by("-urgent", "-date_demande"))
+    requetes = list(
+        agents_visibles(PrestationSociale.objects.exclude(etat=""), request.user, "agent__matricule")
+        .select_related("agent", "agent__organisme").order_by("-urgent", "-date_demande")
+    )
     exercice = enveloppe.exercice if enveloppe else aujourd_hui.year
-    instruites = PrestationSociale.objects.filter(date_demande__year=exercice)
+    instruites = agents_visibles(PrestationSociale.objects.filter(date_demande__year=exercice), request.user, "agent__matricule")
     blocs = {bloc.cle: bloc.contenu for bloc in BlocEcran.objects.filter(ecran="action-sociale")}
     return Response(
         {
@@ -72,9 +76,9 @@ def tableau(request):
             "etats": [{"code": code, "libelle": libelle} for code, libelle in ETAT.choices],
             "agents": [
                 {"matricule": agent.matricule, "nom_complet": agent.nom_complet, "organisme_sigle": agent.organisme.sigle}
-                for agent in Agent.objects.select_related("organisme").order_by("nom", "prenoms")
+                for agent in agents_visibles(Agent.objects.select_related("organisme"), request.user).order_by("nom", "prenoms")
             ],
-            **{cle: blocs.get(cle) for cle in ("entete", "guichets", "partenaires", "medecine", "handicap", "retraites", "activites", "ecoute")},
+            **{cle: blocs.get(cle) for cle in ("entete", "guichets", "retraites", "activites")},
         }
     )
 
@@ -83,8 +87,8 @@ def _deposer(request):
     """Nouvelle requête de secours : elle entre au registre en attente de l'avis de la commission."""
     donnees = request.data
     agent = Agent.objects.filter(matricule__iexact=(donnees.get("matricule") or "").strip()).first()
-    if agent is None:
-        return Response({"detail": "Choisissez l'agent bénéficiaire."}, status=400)
+    if agent is None or not agent_visible(request.user, agent):
+        return Response({"detail": "Choisissez un agent bénéficiaire de votre périmètre."}, status=400)
     nature = (donnees.get("nature") or "").strip()
     if nature not in NATURES:
         return Response({"detail": "Choisissez la nature du secours."}, status=400)
@@ -121,7 +125,9 @@ def _deposer(request):
 def mandater(request, pk: int):
     """Mandater une requête conforme : le montant est engagé sur l'enveloppe de l'exercice."""
     with transaction.atomic():
-        item = get_object_or_404(PrestationSociale.objects.select_for_update().exclude(etat=""), pk=pk)
+        item = get_object_or_404(PrestationSociale.objects.select_for_update().select_related("agent").exclude(etat=""), pk=pk)
+        if not agent_visible(request.user, item.agent):
+            return refus_hors_perimetre()
         if item.etat != ETAT.CONFORME:
             return Response({"detail": "Seule une requête conforme se mandate."}, status=409)
         enveloppe = EnveloppeSociale.objects.select_for_update().filter(organisme__code="dgpe").order_by("-exercice").first()
@@ -141,6 +147,8 @@ def mandater(request, pk: int):
 def relancer(request, pk: int):
     """Relancer l'agent pour les pièces manquantes : la relance est consignée."""
     item = get_object_or_404(PrestationSociale.objects.select_related("agent").exclude(etat=""), pk=pk)
+    if not agent_visible(request.user, item.agent):
+        return refus_hors_perimetre()
     if item.etat != ETAT.RESERVE:
         return Response({"detail": "Aucune pièce n'est attendue pour cette requête."}, status=409)
     Notification.objects.create(

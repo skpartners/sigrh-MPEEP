@@ -32,7 +32,8 @@ def _est_drh(user) -> bool:
     profil = _profil(user)
     if profil is None:
         return False
-    if profil.role == "DRH":
+    # Le compte administrateur tient tous les droits : il lance et arrête la campagne comme le DRH.
+    if profil.administrateur or profil.role == "DRH":
         return True
     return profil.role == "Directeur" and getattr(profil.structure, "code", "") == "drh"
 

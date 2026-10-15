@@ -1,34 +1,32 @@
 import { useQuery } from "@tanstack/react-query";
-import { useState, type ReactNode } from "react";
 import { useSearchParams } from "react-router-dom";
 import { api, telecharger } from "../../api/client";
 import { useFeedback } from "../../ui/Feedback";
-import { fcfa, nombre, pluriel } from "../../ui/format";
 import { Skeleton } from "../../ui/Motion";
 import { AppChrome } from "../AppChrome";
 import { Besoins } from "./Besoins";
 import { Candidatures } from "./Candidatures";
-import { Catalogue } from "./Catalogue";
 import { Passeport } from "./Passeport";
 import { Prestataires } from "./Prestataires";
 import { Sessions } from "./Sessions";
 import { CLE_FORMATION, type TableauFormation } from "./types";
-import { BOUTON_PRIMAIRE, BOUTON_SECONDAIRE, CARTE, EnTeteSection, Modale, Nombre, Vide, messageErreur, useEnregistrement } from "./ui";
+import { BOUTON_PRIMAIRE, BOUTON_SECONDAIRE, CARTE } from "./ui";
 import { Icone } from "../../ui/Icone";
 
-type Vue = "pilotage" | "modules" | "candidatures" | "besoins" | "catalogue" | "prestataires" | "passeport";
+type Vue = "besoins" | "modules" | "candidatures" | "prestataires" | "passeport";
+const VUES: Vue[] = ["besoins", "modules", "candidatures", "prestataires", "passeport"];
 
 /** Accueil de la sous-direction de la formation continue : tout est calculé depuis la base. */
 export function FormationScreen() {
   const [params, setParams] = useSearchParams();
-  const vue = (params.get("vue") as Vue | null) ?? "pilotage";
-  const [plan, setPlan] = useState(false);
+  const demandee = params.get("vue") as Vue | null;
+  const vue = demandee && VUES.includes(demandee) ? demandee : "modules";
   const feedback = useFeedback();
   const tableau = useQuery({ queryKey: CLE_FORMATION, queryFn: () => api<TableauFormation>("/api/v1/formation/") });
   const data = tableau.data;
 
   function choisir(id: Vue) {
-    setParams(id === "pilotage" ? {} : { vue: id }, { replace: true });
+    setParams(id === "modules" ? {} : { vue: id }, { replace: true });
   }
 
   async function exporter() {
@@ -39,39 +37,29 @@ export function FormationScreen() {
   }
 
   const onglets: { id: Vue; libelle: string; icone: string; compteur?: number }[] = [
-    { id: "pilotage", libelle: "Pilotage", icone: "monitoring" },
+    { id: "besoins", libelle: "Besoins", icone: "analytics", compteur: data?.besoins.length },
     { id: "modules", libelle: "Modules", icone: "event_available", compteur: data?.indicateurs.sessions },
     { id: "candidatures", libelle: "Candidatures", icone: "fact_check", compteur: data?.indicateurs.candidatures_a_traiter },
-    { id: "besoins", libelle: "Besoins", icone: "analytics", compteur: data?.besoins.length },
-    { id: "catalogue", libelle: "Catalogue", icone: "menu_book", compteur: data?.types.length },
     { id: "prestataires", libelle: "Prestataires", icone: "assured_workload", compteur: data?.indicateurs.prestataires_actifs },
-    { id: "passeport", libelle: "Passeport", icone: "workspace_premium" },
+    { id: "passeport", libelle: "Dossier de formation", icone: "workspace_premium" },
   ];
 
   return (
     <AppChrome>
       <div className="w-full min-w-0 px-4 sm:px-6 lg:px-8 py-6 mx-auto flex-1 space-y-6">
         <div className={`${CARTE} p-6 motion-rise`}>
-          <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-5">
+          <div className="space-y-4">
             <div>
-              <h1 className="font-headline-lg text-headline-lg text-on-surface tracking-tight">Formation continue</h1>
+              <h1 className="font-headline-lg text-headline-lg text-on-surface tracking-tight">Élaboration du plan de formation</h1>
               <p className="font-body-md text-body-md text-on-surface-variant mt-1 max-w-3xl">
-                Plan de formation, planification des modules, arbitrage des candidatures et suivi des acquis des agents du portefeuille de l'État.
+                Formations organisées par le ministère pour ses agents : collecte des besoins, montage des modules, inscriptions et suivi des dossiers.
               </p>
               <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">Exercice {data?.exercice ?? ""}</p>
             </div>
-            <div className="flex flex-wrap gap-2">
-              <button type="button" className={BOUTON_SECONDAIRE} onClick={() => setPlan(true)} disabled={!data}>
-                <Icone nom="tune" className="text-lg" />
-                Paramètres du plan
-              </button>
-              <button type="button" className={BOUTON_SECONDAIRE} onClick={exporter} disabled={!data}>
+            <div className="flex flex-nowrap items-center gap-2 overflow-x-auto">
+              <button type="button" className={`${BOUTON_SECONDAIRE} shrink-0`} onClick={exporter} disabled={!data}>
                 <Icone nom="download" className="text-lg" />
                 Exporter le plan (XLSX)
-              </button>
-              <button type="button" className={BOUTON_PRIMAIRE} onClick={() => choisir("modules")}>
-                <Icone nom="event_available" className="text-lg" />
-                Gérer les modules
               </button>
             </div>
           </div>
@@ -83,8 +71,6 @@ export function FormationScreen() {
             <button type="button" className={`${BOUTON_PRIMAIRE} mt-3`} onClick={() => tableau.refetch()}>Réessayer</button>
           </div>
         ) : null}
-
-        <Indicateurs data={data} onCandidatures={() => choisir("candidatures")} />
 
         <div className={CARTE}>
           <div role="tablist" aria-label="Rubriques de la formation continue" className="flex flex-wrap gap-1 p-1">
@@ -118,185 +104,13 @@ export function FormationScreen() {
             <Candidatures data={data} />
           ) : vue === "besoins" ? (
             <Besoins data={data} />
-          ) : vue === "catalogue" ? (
-            <Catalogue data={data} />
           ) : vue === "prestataires" ? (
             <Prestataires data={data} />
-          ) : vue === "passeport" ? (
-            <Passeport />
           ) : (
-            <Pilotage data={data} onVue={choisir} />
+            <Passeport />
           )}
         </div>
       </div>
-      {plan && data ? <ParametresPlan data={data} onClose={() => setPlan(false)} /> : null}
     </AppChrome>
-  );
-}
-
-function Indicateurs({ data, onCandidatures }: { data: TableauFormation | undefined; onCandidatures: () => void }) {
-  if (!data) return <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">{[0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-36 rounded-xl" />)}</div>;
-  const { indicateurs: k, plan } = data;
-  const execution = plan.objectif_agents ? Math.round((100 * k.formes) / plan.objectif_agents) : 0;
-  const consommation = plan.dotation ? Math.round((100 * k.engage) / plan.dotation) : 0;
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
-      <Indicateur icone="trending_up" libelle="Exécution du plan" valeur={plan.objectif_agents ? `${execution} %` : "—"} jauge={execution}>
-        {plan.objectif_agents ? `${pluriel(k.formes, "agent formé", "agents formés")} sur un objectif de ${nombre(plan.objectif_agents)}` : "Fixez l'objectif dans les paramètres du plan"}
-      </Indicateur>
-      <Indicateur icone="account_balance_wallet" libelle="Budget engagé" valeur={fcfa(k.engage)} jauge={consommation} alerte={consommation > 100}>
-        {plan.dotation ? `${consommation} % d'une dotation de ${fcfa(plan.dotation)}` : "Dotation non renseignée"}
-      </Indicateur>
-      <Indicateur icone="pending_actions" libelle="Candidatures à contrôler" valeur={nombre(k.candidatures_a_traiter)} action={k.candidatures_a_traiter ? { libelle: "Traiter", onClick: onCandidatures } : undefined}>
-        {k.candidatures_a_traiter ? "En attente du contrôle de la sous-direction" : "Aucune candidature en attente"}
-      </Indicateur>
-      <Indicateur icone="sentiment_satisfied" libelle="Satisfaction des participants" valeur={k.satisfaction ? `${nombre(k.satisfaction, 1)} / 5` : "—"} jauge={k.satisfaction ? (k.satisfaction / 5) * 100 : undefined}>
-        {k.evaluations ? `Moyenne de ${pluriel(k.evaluations, "évaluation")} à chaud` : "Pas encore d'évaluation"}
-      </Indicateur>
-    </div>
-  );
-}
-
-function Indicateur({ icone, libelle, valeur, jauge, alerte, action, children }: { icone: string; libelle: string; valeur: string; jauge?: number; alerte?: boolean; action?: { libelle: string; onClick: () => void }; children: ReactNode }) {
-  return (
-    <div className={`${CARTE} motion-content p-5 flex flex-col gap-3`}>
-      <div className="flex items-center justify-between gap-2">
-        <span className="font-label-md text-label-md text-on-surface-variant">{libelle}</span>
-        <span className="p-2 rounded bg-surface-container text-primary"><Icone nom={icone} className="text-xl" /></span>
-      </div>
-      <p className="font-headline-lg text-headline-lg text-on-surface font-bold">{valeur}</p>
-      <p className="font-body-sm text-body-sm text-on-surface-variant">{children}</p>
-      {jauge !== undefined ? (
-        <div className="h-1.5 rounded-full bg-surface-container-high overflow-hidden mt-auto" aria-hidden="true">
-          <div className={`motion-fill h-full rounded-full ${alerte ? "bg-error" : "bg-primary"}`} style={{ width: `${Math.min(100, jauge)}%` }}></div>
-        </div>
-      ) : null}
-      {action ? (
-        <button type="button" className="mt-auto self-start inline-flex items-center gap-1 font-label-md text-label-md text-primary hover:underline rounded" onClick={action.onClick}>
-          {action.libelle}
-          <Icone nom="arrow_forward" className="text-base" />
-        </button>
-      ) : null}
-    </div>
-  );
-}
-
-function Pilotage({ data, onVue }: { data: TableauFormation; onVue: (v: Vue) => void }) {
-  const totalBudget = data.budget_par_type.reduce((s, t) => s + t.montant, 0);
-  const evaluees = data.sessions.filter((s) => s.satisfaction !== null);
-  const prochains = data.sessions.filter((s) => s.etat === "inscriptions_ouvertes" || s.etat === "en_cours").slice(0, 4);
-  return (
-    <div className="grid grid-cols-1 xl:grid-cols-12 gap-5">
-      <section className={`${CARTE} p-5 xl:col-span-7`} aria-labelledby="titre-recensement">
-        <EnTeteSection icone="analytics" titre="Couverture des besoins par cycle" sousTitre="Besoins exprimés par les structures et part déjà couverte par un module" />
-        {data.recensement.length === 0 ? (
-          <Vide icone="analytics" titre="Aucun besoin recensé" texte="Enregistrez les besoins des structures pour mesurer leur couverture." action={<button type="button" className={BOUTON_PRIMAIRE} onClick={() => onVue("besoins")}>Recenser</button>} />
-        ) : (
-          <ul className="space-y-4">
-            {data.recensement.map((r) => {
-              const taux = r.besoins ? Math.round((100 * r.couverts) / r.besoins) : 0;
-              return (
-                <li key={r.type}>
-                  <div className="flex flex-wrap items-baseline justify-between gap-2">
-                    <span className="font-label-lg text-label-lg text-on-surface">{r.libelle}</span>
-                    <span className="font-label-sm text-label-sm text-on-surface-variant">{r.couverts} / {r.besoins} besoins couverts · {pluriel(r.structures, "structure")} · {pluriel(r.effectif, "agent")}</span>
-                  </div>
-                  <div className="mt-1.5 h-2 rounded-full bg-surface-container-high overflow-hidden" aria-hidden="true">
-                    <div className="motion-fill h-full rounded-full bg-primary" style={{ width: `${taux}%` }}></div>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </section>
-
-      <section className={`${CARTE} p-5 xl:col-span-5`} aria-labelledby="titre-budget">
-        <EnTeteSection icone="payments" titre="Budget engagé par cycle" sousTitre={`${fcfa(totalBudget)} engagés sur les places attribuées`} />
-        {data.budget_par_type.length === 0 ? (
-          <p className="font-body-sm text-body-sm text-on-surface-variant">Aucune place attribuée pour l'instant.</p>
-        ) : (
-          <ul className="space-y-3">
-            {data.budget_par_type.map((t) => {
-              const part = totalBudget ? (100 * t.montant) / totalBudget : 0;
-              return (
-                <li key={t.type}>
-                  <div className="flex items-baseline justify-between gap-2 font-body-sm text-body-sm">
-                    <span className="text-on-surface">{t.libelle}</span>
-                    <span className="font-code-num text-code-num text-on-surface whitespace-nowrap">{fcfa(t.montant)}</span>
-                  </div>
-                  <div className="mt-1 h-2 rounded-full bg-surface-container-high overflow-hidden" aria-hidden="true">
-                    <div className="motion-fill h-full rounded-full bg-secondary-container" style={{ width: `${part}%` }}></div>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </section>
-
-      <section className={`${CARTE} p-5 xl:col-span-7`} aria-labelledby="titre-evaluations">
-        <EnTeteSection icone="rate_review" titre="Évaluations des modules" sousTitre="Satisfaction moyenne des participants, notée à l'émargement" />
-        {evaluees.length === 0 ? (
-          <p className="font-body-sm text-body-sm text-on-surface-variant">Aucun module évalué pour l'instant : la satisfaction se saisit dans la liste des participants.</p>
-        ) : (
-          <ul className="space-y-3">
-            {evaluees.map((s) => (
-              <li key={s.code}>
-                <div className="flex items-baseline justify-between gap-2 font-body-sm text-body-sm">
-                  <span className="text-on-surface">{s.libelle}</span>
-                  <span className="font-label-md text-label-md text-on-surface whitespace-nowrap">{nombre(s.satisfaction ?? 0, 1)} / 5</span>
-                </div>
-                <div className="mt-1 h-2 rounded-full bg-surface-container-high overflow-hidden" aria-hidden="true">
-                  <div className="motion-fill h-full rounded-full bg-primary" style={{ width: `${((s.satisfaction ?? 0) / 5) * 100}%` }}></div>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-
-      <section className={`${CARTE} p-5 xl:col-span-5`} aria-labelledby="titre-prochains">
-        <EnTeteSection icone="event_upcoming" titre="Modules en cours et ouverts" />
-        {prochains.length === 0 ? (
-          <p className="font-body-sm text-body-sm text-on-surface-variant">Aucun module en cours ni ouvert aux inscriptions.</p>
-        ) : (
-          <ul className="divide-y divide-surface-container-high">
-            {prochains.map((s) => (
-              <li key={s.code} className="py-2.5">
-                <p className="font-label-lg text-label-lg text-on-surface">{s.libelle}</p>
-                <p className="font-body-sm text-body-sm text-on-surface-variant">{s.etat_libelle} · {s.occupees} / {s.places} places{s.a_traiter ? ` · ${pluriel(s.a_traiter, "candidature")} à contrôler` : ""}</p>
-              </li>
-            ))}
-          </ul>
-        )}
-        <button type="button" className="mt-3 inline-flex items-center gap-1 font-label-md text-label-md text-primary hover:underline rounded" onClick={() => onVue("modules")}>
-          Tous les modules
-          <Icone nom="arrow_forward" className="text-base" />
-        </button>
-      </section>
-    </div>
-  );
-}
-
-function ParametresPlan({ data, onClose }: { data: TableauFormation; onClose: () => void }) {
-  const [dotation, setDotation] = useState(String(data.plan.dotation || ""));
-  const [objectif, setObjectif] = useState(String(data.plan.objectif_agents || ""));
-  const enregistrer = useEnregistrement(onClose, "Plan de formation mis à jour");
-  return (
-    <Modale
-      titre={`Plan de formation ${data.exercice}`}
-      sousTitre="La dotation et l'objectif servent au calcul des indicateurs d'exécution."
-      onClose={onClose}
-      onSubmit={() => enregistrer.mutate({ route: "/api/v1/formation/plan/", methode: "PUT", corps: { dotation, objectif_agents: objectif } })}
-      enCours={enregistrer.isPending}
-      erreur={messageErreur(enregistrer.error)}
-      largeur="max-w-lg"
-    >
-      <div className="grid grid-cols-1 gap-4">
-        <Nombre libelle="Dotation budgétaire" obligatoire valeur={dotation} onChange={setDotation} unite="FCFA" />
-        <Nombre libelle="Objectif d'agents à former" obligatoire valeur={objectif} onChange={setObjectif} unite="agents" />
-      </div>
-    </Modale>
   );
 }

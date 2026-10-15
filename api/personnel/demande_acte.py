@@ -175,7 +175,6 @@ def _inscrire_absence(demande: Demande, aujourd_hui: date, motif: str) -> None:
     type_autorisation = TYPE_AUTORISATION.get(demande.type_acte)
     if type_autorisation is None or demande.debut is None or demande.fin is None:
         return
-    speciale = demande.type_acte == "autorisation-speciale"
     Absence.objects.create(
         agent=demande.agent,
         nature=demande.nature,
@@ -188,8 +187,6 @@ def _inscrire_absence(demande: Demande, aujourd_hui: date, motif: str) -> None:
         decision=Absence.Decision.VALIDEE,
         motif_decision=(motif or demande.motif)[:1000],
         decide_le=aujourd_hui,
-        impact_solde="Décomptée des autorisations spéciales" if speciale else "Sans retenue",
-        impact_detail=f"Accordée par l'acte {demande.reference}",
     )
 
 

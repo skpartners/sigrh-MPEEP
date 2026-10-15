@@ -22,7 +22,7 @@ MARGE_HAUT = 12 * mm
 MARGE_BAS = 14.5 * mm
 COLONNE = LARGEUR - 2 * MARGE_X
 _COLONNE_ACTIVE: ContextVar[float] = ContextVar("colonne_pdf", default=COLONNE)
-_LOGO_PAGE: bytes | None = None
+_LOGO_PAGE: tuple[tuple[str, int], bytes] | None = None
 
 GABARITS = {
     "lettre": {"pagesize": A4, "marge_x": 16 * mm, "marge_haut": 12 * mm, "marge_bas": 14.5 * mm},
@@ -179,13 +179,28 @@ def relacher_colonne(jeton) -> None:
     _COLONNE_ACTIVE.reset(jeton)
 
 
+def _logo_source() -> Path:
+    """Le logo téléversé dans les paramètres, sinon les armoiries par défaut."""
+    from ..models import ParametresMinistere
+
+    objet = ParametresMinistere.objects.filter(pk=1).first()
+    if objet is not None and objet.logo:
+        try:
+            chemin = Path(objet.logo.path)
+            if chemin.exists():
+                return chemin
+        except (ValueError, NotImplementedError):
+            pass
+    return LOGO
+
+
 def armoiries(cote: float = 16 * mm, align: str = "LEFT") -> Image:
     """Armoiries de la République, le logo servi par l'application."""
     from io import BytesIO
 
     from PIL import Image as ImagePIL
 
-    source = ImagePIL.open(LOGO).convert("RGBA")
+    source = ImagePIL.open(_logo_source()).convert("RGBA")
     source.thumbnail((360, 360), ImagePIL.Resampling.LANCZOS)
     tampon = BytesIO()
     source.save(tampon, format="PNG")
@@ -200,14 +215,16 @@ def _logo_page(canvas, x: float, y: float, cote: float) -> None:
     from reportlab.lib.utils import ImageReader
 
     global _LOGO_PAGE
-    if _LOGO_PAGE is None:
-        source = ImagePIL.open(LOGO).convert("RGBA")
+    chemin = _logo_source()
+    cle = (str(chemin), chemin.stat().st_mtime_ns)
+    if _LOGO_PAGE is None or _LOGO_PAGE[0] != cle:
+        source = ImagePIL.open(chemin).convert("RGBA")
         source.thumbnail((240, 240), ImagePIL.Resampling.LANCZOS)
         tampon = BytesIO()
         source.save(tampon, format="PNG")
-        _LOGO_PAGE = tampon.getvalue()
+        _LOGO_PAGE = (cle, tampon.getvalue())
     canvas.drawImage(
-        ImageReader(BytesIO(_LOGO_PAGE)), x, y, cote, cote,
+        ImageReader(BytesIO(_LOGO_PAGE[1])), x, y, cote, cote,
         mask="auto", preserveAspectRatio=True, anchor="c",
     )
 

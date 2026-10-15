@@ -14,6 +14,7 @@ type Instruction = "pret_signature" | "approbation_auto" | "remplacement" | "con
 type DemandeConge = {
   id: number;
   agent: AgentBrief & { fonction: string };
+  structure: string;
   nature: string;
   debut: string;
   fin: string;
@@ -28,12 +29,12 @@ type Ton = "neutre" | "attention" | "sobre";
 type Registre = {
   exercice: number;
   volume: { effectifs: number; acquis: number; consommes: number; reliquats: number; alertes_reliquat: number };
-  campagne: { reference?: string; seuil?: number };
-  presence: { taux?: number; seuil?: number };
+  campagne: { exercice: number; statut: string; statut_libelle: string; delai: string } | null;
+  presence: { taux: number | null; seuil: number };
   trimestres: { titre: string; departs: number; texte: string; etat: string; ton: Ton }[];
   mensuel: number[];
-  quorums: { entite: string; presence: number; detail: string }[];
-  reliquats: { echeance?: string; circulaire?: string; options?: { titre: string; texte: string; jours: number; part: number; ton: Ton }[] };
+  quorums_non_rattaches: number;
+  quorums: { code: string; quorum_propre: number | null; peut_modifier: boolean; entite: string; nom: string; effectif: number; absents: number; presence: number; seuil: number; detail: string }[];
   en_attente: number;
   instructions: { code: Instruction; libelle: string }[];
   demandes: DemandeConge[];
@@ -72,6 +73,7 @@ export function CongesScreen() {
   const feedback = useFeedback();
   const registre = useQuery({ queryKey: ["carrieres-conges"], queryFn: () => api<Registre>("/api/v1/carrieres/conges/") });
   const [entite, setEntite] = useState("");
+  const [quorumDe, setQuorumDe] = useState<Registre["quorums"][number] | null>(null);
   const [nature, setNature] = useState("");
   const [instruction, setInstruction] = useState("");
   const [action, setAction] = useState<{ demande: DemandeConge; action: Action } | null>(null);
@@ -80,16 +82,19 @@ export function CongesScreen() {
   const filtrees = useMemo(
     () =>
       demandes.filter(
-        (item) => (!entite || item.agent.organisme_sigle === entite) && (!nature || item.nature === nature) && (!instruction || item.instruction === instruction),
+        (item) => (!entite || item.structure === entite) && (!nature || item.nature === nature) && (!instruction || item.instruction === instruction),
       ),
     [demandes, entite, nature, instruction],
   );
   const pageDemandes = usePagination(filtrees, `${entite}|${nature}|${instruction}`);
-  const entites = [...new Set(demandes.map((item) => item.agent.organisme_sigle))].sort();
+  const entites = [...new Set(demandes.map((item) => item.structure))].sort();
   const natures = [...new Set(demandes.map((item) => item.nature))].sort();
   const volume = donnees?.volume;
   const partConsommee = volume && volume.acquis ? Math.round((volume.consommes / volume.acquis) * 1000) / 10 : 0;
-  const seuil = donnees?.presence.seuil ?? donnees?.campagne.seuil ?? 65;
+  const seuil = donnees?.presence.seuil;
+  // Un seul seuil commun à toutes les structures : il est dit une fois, sous le titre.
+  const seuils = new Set((donnees?.quorums ?? []).map((quorum) => quorum.seuil));
+  const seuilsCommuns = seuils.size === 1 ? [...seuils][0] : null;
   const presence = donnees?.presence.taux;
   const exercice = donnees?.exercice ?? "";
 
@@ -106,7 +111,7 @@ export function CongesScreen() {
       <div className="flex flex-col w-full">
         <div className="px-6 py-6 md:px-8 w-full mx-auto space-y-6">
           {/* Fil d'Ariane & titre */}
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <section className="bg-surface-container-lowest p-6 rounded-xl relative overflow-hidden flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div className="space-y-1.5">
               <nav className="flex items-center gap-2 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">
                 <span>SD GESTION DES CARRIÈRES</span>
@@ -122,7 +127,7 @@ export function CongesScreen() {
                 </span>
               </div>
               <p className="font-body-md text-body-md text-on-surface-variant max-w-4xl">
-                Consolidation des plans de congés, arbitrage des départs, suivi des reliquats et maintien du quorum de continuité du service public (seuil minimal de {seuil} %).
+                Consolidation des plans de congés, arbitrage des départs, suivi des reliquats et maintien du quorum de continuité du service public {seuil != null ? `(seuil minimal de ${seuil} %).` : "."}
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-2.5 shrink-0">
@@ -131,7 +136,7 @@ export function CongesScreen() {
                 <span>Exporter l'état des congés</span>
               </button>
             </div>
-          </div>
+          </section>
 
           <PlanificationConges />
 
@@ -139,8 +144,10 @@ export function CongesScreen() {
           <div className="p-3 bg-surface-container-lowest rounded-lg shadow-sm flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-4 flex-wrap">
               <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-primary animate-pulse" />
-                <span className="font-label-sm text-label-sm text-on-surface font-semibold uppercase tracking-wide">Campagne {exercice} active</span>
+                <span className={`w-2.5 h-2.5 rounded-full ${donnees?.campagne && donnees.campagne.statut !== "publiee" ? "bg-primary animate-pulse" : "bg-outline-variant"}`} />
+                <span className="font-label-sm text-label-sm text-on-surface font-semibold uppercase tracking-wide">
+                  {donnees?.campagne ? `Campagne ${donnees.campagne.exercice} · ${donnees.campagne.statut_libelle}` : "Aucune campagne de planification ouverte"}
+                </span>
               </div>
               {presence != null ? (
                 <>
@@ -154,9 +161,9 @@ export function CongesScreen() {
                 </>
               ) : null}
             </div>
-            {donnees?.campagne.reference ? (
+            {donnees?.campagne && donnees.campagne.statut !== "publiee" ? (
               <div className="flex items-center gap-2 text-on-surface-variant font-code-num text-code-num bg-surface-container-low px-2 py-1 rounded">
-                <span>RÉF : {donnees.campagne.reference}</span>
+                <span>Délai : {jour(donnees.campagne.delai)}</span>
               </div>
             ) : null}
           </div>
@@ -186,14 +193,13 @@ export function CongesScreen() {
                 {volume ? nombre(volume.reliquats) : "—"} <span className="font-label-md text-label-md text-on-surface-variant">jours</span>
               </div>
               <div className="font-body-sm text-body-sm text-secondary mt-1 font-medium">
-                {donnees?.reliquats.echeance ? `À apurer avant le ${donnees.reliquats.echeance} • ` : ""}
                 {volume ? `${volume.alertes_reliquat} agent${volume.alertes_reliquat > 1 ? "s" : ""} concerné${volume.alertes_reliquat > 1 ? "s" : ""}` : ""}
               </div>
             </Carte>
             <Carte titre="Taux de présence de service" icone="groups" teinte="text-primary">
               <div className="font-headline-lg text-headline-lg text-primary tracking-tight">{presence != null ? `${presence.toFixed(1)} %` : "—"}</div>
               <div className="font-body-sm text-body-sm text-on-surface-variant mt-1">
-                Seuil légal (<strong>≥ {seuil.toFixed(1)} %</strong>) sur l'ensemble du portefeuille
+                Quorum minimal : <strong>{seuil != null ? `≥ ${seuil} %` : "—"}</strong> (paramètre du ministère)
               </div>
               <Barre part={presence ?? 0} couleur="bg-primary" />
             </Carte>
@@ -201,22 +207,22 @@ export function CongesScreen() {
 
           {/* Radar annuel et quorums */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            <div className="lg:col-span-8 p-5 bg-surface-container-lowest rounded-lg shadow-sm space-y-4">
+            <div className="lg:col-span-12 p-5 bg-surface-container-lowest rounded-lg shadow-sm space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pb-2">
                 <div>
                   <h2 className="font-headline-sm text-headline-sm text-on-surface">Radar annuel des départs & périodes critiques</h2>
-                  <p className="font-body-sm text-body-sm text-on-surface-variant">Modélisation prévisionnelle des départs simultanés pour l'exercice {exercice}</p>
+                  <p className="font-body-sm text-body-sm text-on-surface-variant">Départs simultanés calculés sur les congés, absences et plans de la campagne de l'exercice {exercice}</p>
                 </div>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 {registre.isPending
-                  ? [0, 1, 2].map((index) => <Skeleton key={index} className="h-28 w-full" />)
+                  ? [0, 1, 2, 3].map((index) => <Skeleton key={index} className="h-28 w-full" />)
                   : (donnees?.trimestres ?? []).map((trimestre) => (
                       <div key={trimestre.titre} className="p-3 rounded bg-surface-container-low flex flex-col justify-between space-y-2">
                         <div className="flex items-center justify-between gap-2">
                           <span className={`font-label-md text-label-md font-bold ${trimestre.ton === "attention" ? "text-secondary" : "text-on-surface"}`}>{trimestre.titre}</span>
                           <span className={`px-2 py-0.5 rounded font-code-num text-code-num font-semibold whitespace-nowrap ${trimestre.ton === "attention" ? "bg-secondary-fixed text-on-secondary-fixed" : "bg-primary-fixed text-on-primary-fixed"}`}>
-                            {trimestre.departs} % départs
+                            {trimestre.departs} agent{trimestre.departs > 1 ? "s" : ""}
                           </span>
                         </div>
                         <p className="font-body-sm text-body-sm text-on-surface-variant">{trimestre.texte}</p>
@@ -229,7 +235,7 @@ export function CongesScreen() {
               </div>
               <div className="p-4 rounded bg-surface-container-lowest shadow-sm space-y-3">
                 <div className="flex flex-wrap items-center justify-between gap-2 text-on-surface">
-                  <span className="font-label-md text-label-md font-semibold">Taux de présence mensuel projeté (%)</span>
+                  <span className="font-label-md text-label-md font-semibold">Taux de présence mensuel (%)</span>
                   <div className="flex items-center gap-4 font-label-sm text-label-sm">
                     <span className="flex items-center gap-1.5">
                       <span className="w-3 h-1.5 bg-primary rounded-full" />
@@ -237,13 +243,13 @@ export function CongesScreen() {
                     </span>
                     <span className="flex items-center gap-1.5">
                       <span className="w-3 h-1.5 bg-secondary rounded-full" />
-                      Proche du seuil ({seuil} %)
+                      Proche du seuil{seuil != null ? ` (${seuil} %)` : ""}
                     </span>
                   </div>
                 </div>
                 <div className="w-full h-36 flex items-end gap-1 sm:gap-2 pt-4 px-1 sm:px-2">
                   {(donnees?.mensuel ?? []).map((taux, index) => {
-                    const critique = taux < seuil + 5;
+                    const critique = seuil != null && taux < seuil + 5;
                     const courant = index === new Date().getMonth();
                     return (
                       <div key={MOIS_COURTS[index]} className="flex-1 min-w-0 flex flex-col items-center gap-1 h-full justify-end">
@@ -260,32 +266,68 @@ export function CongesScreen() {
                 </div>
               </div>
             </div>
-            <div className="lg:col-span-4 p-5 bg-surface-container-lowest rounded-lg shadow-sm space-y-4 flex flex-col">
+            <div className="lg:col-span-12 p-5 bg-surface-container-lowest rounded-lg shadow-sm space-y-3 flex flex-col">
               <div>
-                <div className="flex items-center justify-between pb-2">
-                  <h2 className="font-headline-sm text-headline-sm text-on-surface">Quorums par société</h2>
-                  <span className="font-label-sm text-label-sm text-on-surface-variant font-medium">Seuil : {seuil} %</span>
-                </div>
-                <p className="font-body-sm text-body-sm text-on-surface-variant pb-3">Contrôle de la permanence des services publics sous tutelle.</p>
-                <div className="space-y-3">
+                <h2 className="font-headline-sm text-headline-sm text-on-surface">Quorums par structure</h2>
+                <p className="font-body-sm text-body-sm text-on-surface-variant">
+                  Présence du jour · {seuilsCommuns ? `seuil de ${seuilsCommuns} %` : "seuil propre à chaque structure"}
+                </p>
+              </div>
+              <table className="w-full text-left font-body-sm text-body-sm">
+                <thead>
+                  <tr className="text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wide border-b border-hairline">
+                    <th className="py-2 pr-2 font-semibold">Structure</th>
+                    <th className="py-2 px-2 font-semibold w-32">Présence</th>
+                    <th className="py-2 pl-2 font-semibold text-right">Statut</th>
+                    <th className="py-2 pl-2 w-10"><span className="sr-only">Actions</span></th>
+                  </tr>
+                </thead>
+                <tbody>
                   {(donnees?.quorums ?? []).map((quorum) => {
-                    const attention = quorum.presence < seuil + 5;
+                    const sous = quorum.presence < quorum.seuil;
+                    const attention = quorum.presence < quorum.seuil + 5;
                     return (
-                      <div key={quorum.entite} className="p-2.5 rounded bg-surface-container-low flex items-center justify-between gap-2">
-                        <div className="min-w-0">
-                          <p className={`font-label-md text-label-md font-bold truncate ${attention ? "text-secondary" : "text-on-surface"}`}>{quorum.entite}</p>
-                          <p className="font-body-sm text-body-sm text-on-surface-variant">
-                            {quorum.presence} % présence • {quorum.detail}
-                          </p>
-                        </div>
-                        <span className={`px-2 py-0.5 rounded font-label-sm text-label-sm font-semibold ${attention ? "bg-secondary-fixed text-on-secondary-fixed" : "bg-primary-fixed text-on-primary-fixed"}`}>
-                          {attention ? "Attention" : "Conforme"}
-                        </span>
-                      </div>
+                      <tr key={quorum.entite} className="border-b border-hairline last:border-0" title={`${quorum.nom} · ${quorum.detail} · seuil ${quorum.seuil} %`}>
+                        <td className={`py-2 pr-2 font-semibold leading-snug ${sous ? "text-error" : "text-on-surface"}`}>{quorum.entite}</td>
+                        <td className="py-2 px-2">
+                          <span className="flex items-center gap-2">
+                            <span className="h-1.5 flex-1 rounded-full bg-surface-container-high overflow-hidden" aria-hidden="true">
+                              <span className={`block h-full rounded-full ${sous ? "bg-error" : attention ? "bg-secondary" : "bg-primary"}`} style={{ width: `${quorum.presence}%` }} />
+                            </span>
+                            <span className="font-code-num text-on-surface w-10 text-right">{quorum.presence} %</span>
+                          </span>
+                        </td>
+                        <td className="py-2 pl-2 text-right">
+                          <span className={`inline-block px-2 py-0.5 rounded font-label-sm text-label-sm font-semibold whitespace-nowrap ${sous ? "bg-error text-on-error" : attention ? "bg-secondary-fixed text-on-secondary-fixed" : "bg-primary-fixed text-on-primary-fixed"}`}>
+                            {sous ? "Sous le seuil" : attention ? "Attention" : "Conforme"}
+                          </span>
+                        </td>
+                        <td className="py-2 pl-2 text-right">
+                          {quorum.peut_modifier ? (
+                            <button
+                              type="button"
+                              title="Modifier le quorum de cette structure"
+                              aria-label={`Modifier le quorum de ${quorum.entite}`}
+                              className="p-1.5 rounded text-on-surface-variant hover:text-primary hover:bg-surface-container"
+                              onClick={() => setQuorumDe(quorum)}
+                            >
+                              <Icone nom="edit" className="text-lg" />
+                            </button>
+                          ) : null}
+                        </td>
+                      </tr>
                     );
                   })}
-                </div>
-              </div>
+                </tbody>
+              </table>
+              {(donnees?.quorums.length ?? 0) === 0 ? (
+                <p className="font-body-sm text-body-sm text-on-surface-variant">Aucun agent n'est rattaché à une structure des paramètres.</p>
+              ) : null}
+              {donnees?.quorums_non_rattaches ? (
+                <p className="font-label-sm text-label-sm text-on-surface-variant">
+                  {donnees.quorums_non_rattaches} agent{donnees.quorums_non_rattaches > 1 ? "s" : ""} non compté{donnees.quorums_non_rattaches > 1 ? "s" : ""} : leur structure ne figure pas dans les paramètres.
+                </p>
+              ) : null}
             </div>
           </div>
 
@@ -302,9 +344,9 @@ export function CongesScreen() {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3 bg-surface-container-low rounded">
               <label className="block">
-                <span className="block font-label-sm text-label-sm text-on-surface font-semibold mb-1">Société d'État</span>
+                <span className="block font-label-sm text-label-sm text-on-surface font-semibold mb-1">Structure</span>
                 <select className={FILTRE} value={entite} onChange={(event) => setEntite(event.target.value)}>
-                  <option value="">Toutes les entités</option>
+                  <option value="">Toutes les structures</option>
                   {entites.map((sigle) => (
                     <option key={sigle} value={sigle}>{sigle}</option>
                   ))}
@@ -333,7 +375,7 @@ export function CongesScreen() {
               <table className="w-full text-left font-body-sm text-body-sm">
                 <thead>
                   <tr className="bg-surface-container-low text-on-surface-variant font-label-md text-label-md">
-                    <th className="py-3 px-4">Agent & entreprise</th>
+                    <th className="py-3 px-4">Agent & structure</th>
                     <th className="py-3 px-3">Type & période</th>
                     <th className="py-3 px-3">Durée</th>
                     <th className="py-3 px-3">Continuité / intérim</th>
@@ -365,43 +407,9 @@ export function CongesScreen() {
             <Pagination page={pageDemandes.page} pages={pageDemandes.pages} total={pageDemandes.total} aller={pageDemandes.aller} libelle="demande" />
           </div>
 
-          {/* Dispositif d'apurement des reliquats */}
-          {donnees?.reliquats.options?.length ? (
-            <div className="p-5 bg-surface-container-lowest rounded-lg shadow-sm space-y-4">
-              <div className="flex flex-wrap items-center justify-between gap-2 pb-1">
-                <div className="flex items-center gap-2.5">
-                  <Icone nom="gavel" className="text-secondary text-xl" />
-                  <h2 className="font-headline-sm text-headline-sm text-on-surface">Dispositif réglementaire d'apurement des reliquats N-1</h2>
-                </div>
-                {donnees.reliquats.echeance ? (
-                  <span className="font-label-sm text-label-sm px-2.5 py-0.5 rounded bg-secondary-fixed text-on-secondary-fixed font-bold">
-                    Échéance : {donnees.reliquats.echeance} {exercice}
-                  </span>
-                ) : null}
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {donnees.reliquats.options.map((option) => (
-                  <div key={option.titre} className="p-3.5 rounded bg-surface-container-low flex flex-col justify-between space-y-2">
-                    <div>
-                      <div className={`font-label-md text-label-md font-bold ${option.ton === "attention" ? "text-secondary" : "text-on-surface"}`}>{option.titre}</div>
-                      <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">{option.texte}</p>
-                    </div>
-                    <div className={`font-code-num text-code-num font-bold ${option.ton === "attention" ? "text-secondary" : option.ton === "neutre" ? "text-primary" : "text-on-surface"}`}>
-                      {nombre(option.jours)} jours ({option.part} %)
-                    </div>
-                  </div>
-                ))}
-              </div>
-              {donnees.reliquats.circulaire ? (
-                <p className="pt-2 flex items-center gap-2 text-on-surface-variant font-label-sm text-label-sm">
-                  <Icone nom="security" className="text-base text-primary" />
-                  Référence : {donnees.reliquats.circulaire}
-                </p>
-              ) : null}
-            </div>
-          ) : null}
         </div>
       </div>
+      {quorumDe ? <ModaleQuorum quorum={quorumDe} defaut={seuil} onClose={() => setQuorumDe(null)} /> : null}
       {action ? <ModaleArbitrage demande={action.demande} action={action.action} onClose={() => setAction(null)} /> : null}
     </AppChrome>
   );
@@ -442,7 +450,7 @@ function LigneConge({ demande, onAction }: { demande: DemandeConge; onAction: (a
           <div>
             <div className="font-label-md text-label-md font-bold text-on-surface">{demande.agent.nom_complet}</div>
             <div className="font-body-sm text-body-sm text-on-surface-variant">
-              {demande.agent.fonction || demande.agent.corps} • <strong className="text-on-surface">{demande.agent.organisme_sigle}</strong>
+              {demande.agent.fonction || demande.agent.corps} • <strong className="text-on-surface">{demande.structure}</strong>
             </div>
           </div>
         </div>
@@ -560,6 +568,57 @@ function ModaleArbitrage({ demande, action, onClose }: { demande: DemandeConge; 
           />
         </label>
       )}
+    </Modale>
+  );
+}
+
+/** Règle le quorum d'une structure. Vide : elle reprend celui de la structure qui la contient, puis le quorum par défaut. */
+function ModaleQuorum({ quorum, defaut, onClose }: { quorum: Registre["quorums"][number]; defaut?: number; onClose: () => void }) {
+  const client = useQueryClient();
+  const feedback = useFeedback();
+  const [valeur, setValeur] = useState(quorum.quorum_propre != null ? String(quorum.quorum_propre) : "");
+  const envoi = useMutation({
+    mutationFn: () => api(`/api/v1/structures/${encodeURIComponent(quorum.code)}/quorum/`, {
+      method: "PATCH",
+      body: JSON.stringify({ quorum_presence_pourcent: valeur.trim() === "" ? null : Number(valeur) }),
+    }),
+    onSuccess: async () => {
+      await Promise.all([
+        client.invalidateQueries({ queryKey: ["carrieres-conges"] }),
+        client.invalidateQueries({ queryKey: ["structures"] }),
+      ]);
+      feedback.toast("Quorum mis à jour", quorum.nom);
+      onClose();
+    },
+  });
+  return (
+    <Modale
+      titre="Quorum de présence"
+      sousTitre={quorum.nom}
+      icone="groups"
+      taille="sm"
+      onClose={onClose}
+      onSubmit={() => envoi.mutate()}
+      enCours={envoi.isPending}
+      erreur={envoi.error instanceof ApiError ? envoi.error.message : envoi.isError ? "Le quorum n'a pas été enregistré." : undefined}
+    >
+      <label className="block space-y-1">
+        <span className="block font-label-md text-label-md text-on-surface font-semibold">Présence minimale (%)</span>
+        <input
+          className="w-full h-10 px-3 rounded border border-outline-variant bg-surface-container-lowest text-on-surface font-body-sm text-body-sm focus:outline-none focus:ring-2 focus:ring-primary"
+          type="number"
+          min={1}
+          max={100}
+          step={1}
+          inputMode="numeric"
+          placeholder={defaut != null ? `Hérité (${quorum.seuil} %)` : "Hérité"}
+          value={valeur}
+          onChange={(event) => setValeur(event.target.value)}
+        />
+        <span className="block font-label-sm text-label-sm text-on-surface-variant">
+          Aujourd'hui : {quorum.presence} % de présence ({quorum.detail}). Laissez vide pour reprendre le quorum de la structure qui la contient, puis le quorum par défaut.
+        </span>
+      </label>
     </Modale>
   );
 }

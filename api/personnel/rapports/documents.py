@@ -747,9 +747,6 @@ def _fiche_sociale(feuille, agent) -> list:
     return [
         fiche(feuille, [
             ("N° CMU", situation.numero_cmu),
-            ("Solde net", _fcfa(situation.solde_nette)),
-            ("Quotité cessible", _fcfa(situation.quotite)),
-            ("Marge", _fcfa(situation.marge)),
         ]),
         Spacer(1, 2 * mm),
     ]
@@ -1066,30 +1063,30 @@ def _tableau_passerelles(feuille, passerelles):
 
 def _corps_besoins(feuille, annee, fiches) -> list:
     volume = sum(item.volume for item in fiches)
-    favorables = sum(1 for item in fiches if item.statut == "favorable")
     return [
         metriques(feuille, [
             ("Exercice", str(annee)),
             ("Fiches", str(len(fiches))),
-            ("Postes demandés", str(volume)),
-            ("Avis favorables", str(favorables)),
+            ("Fonctionnaires", str(sum(item.fonctionnaires for item in fiches))),
+            ("Contractuels", str(sum(item.contractuels for item in fiches))),
+            ("Agents demandés", str(volume)),
         ]),
         Spacer(1, 4 * mm),
         *section(feuille, "Fiches de besoin"),
         tableau(
             feuille,
-            ["Référence", "Entité", "Profil", "Volume", "Avis"],
+            ["Référence", "Structure", "Profil", "Fonct.", "Contr."],
             [
                 [
                     item.reference,
                     item.entite.nom,
                     f"{item.profil}\n{item.motif}" if item.motif else item.profil,
-                    str(item.volume),
-                    item.get_statut_display(),
+                    str(item.fonctionnaires),
+                    str(item.contractuels),
                 ]
                 for item in fiches
             ],
-            [1.2, 1.6, 2.4, 0.7, 1.5],
+            [1.2, 1.9, 2.6, 0.8, 0.8],
             compact=True,
         ),
     ]

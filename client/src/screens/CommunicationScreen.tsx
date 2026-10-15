@@ -182,7 +182,7 @@ export function CommunicationScreen() {
       <div className="w-full px-4 sm:px-6 lg:px-8 py-6 mx-auto flex-1 space-y-6">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 bg-surface-container-lowest p-6 rounded-lg border border-hairline motion-rise">
           <div className="space-y-1.5 min-w-0">
-            <p className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Pilotage central · Communication</p>
+            <p className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Pilotage central · Documents publics & communication</p>
             <h1 className="font-headline-lg text-headline-lg text-on-surface">Espace communication et publications officielles</h1>
             <p className="font-body-md text-body-md text-on-surface-variant max-w-4xl">
               Notes de service, circulaires, communiqués et alertes destinés aux agents du portefeuille.

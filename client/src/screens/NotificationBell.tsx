@@ -53,6 +53,7 @@ export function NotificationBell() {
     refetchInterval: intervalle,
   });
   const nonLues = requete.data?.non_lues ?? 0;
+  const urgente = (requete.data?.notifications ?? []).some((item) => item.urgente && !item.lue);
 
   // Le badge rebondit quand le nombre de non-lues augmente (nouvelle notification), pas au chargement.
   const precedent = useRef<number | null>(null);
@@ -125,7 +126,7 @@ export function NotificationBell() {
         aria-label={nonLues ? `Notifications, ${nonLues} non lue${nonLues > 1 ? "s" : ""}` : "Notifications, aucune non lue"}
         className={`relative p-2 rounded hover:bg-surface-container-high ${ouvert ? "bg-surface-container-high text-on-surface" : "text-on-surface-variant hover:text-on-surface"}`}
       >
-        <Icone nom={nonLues ? "notifications_active" : "notifications"} className="text-xl" />
+        <Icone nom={nonLues ? "notifications_active" : "notifications"} className={`text-xl ${urgente ? "motion-pulse-dot" : ""}`} />
         {nonLues ? (
           <span
             key={rebond}

@@ -28,7 +28,7 @@ const ENTREES_MENU: { groupe: string; titre: string; module: string; fonction: s
   { groupe: "GPEC", titre: "GPEC", module: "GPEC", fonction: "GPEC" },
   { groupe: "GPEC", titre: "Expression des besoins", module: "GPEC", fonction: "Expression des besoins" },
   { groupe: "GPEC", titre: "Recrutement", module: "GPEC", fonction: "Recrutement" },
-  { groupe: "Métier", titre: "Communication", module: "Statistiques & RBAC", fonction: "Communication" },
+  { groupe: "Métier", titre: "Documents publics & communication", module: "Statistiques & RBAC", fonction: "Communication" },
   { groupe: "Gouvernance", titre: "Statistiques", module: "Statistiques & RBAC", fonction: "Statistiques" },
   { groupe: "Paramètres", titre: "Accueil", module: "Statistiques & RBAC", fonction: "Paramètres" },
   { groupe: "Paramètres", titre: "Circuits de validation", module: "Statistiques & RBAC", fonction: "Circuits et habilitations" },

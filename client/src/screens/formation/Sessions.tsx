@@ -7,7 +7,7 @@ import { dateCourte, fcfa, nombre, pluriel } from "../../ui/format";
 import { Pagination, usePagination } from "../../ui/Pagination";
 import { useAction } from "../../ui/useAction";
 import { RefusCandidature } from "./Candidatures";
-import type { Candidature, EtatSession, Session, TableauFormation } from "./types";
+import type { Besoin, Candidature, EtatSession, Session, TableauFormation } from "./types";
 import { Icone } from "../../ui/Icone";
 import {
   BOUTON_ICONE,
@@ -48,6 +48,10 @@ export function Sessions({ data }: { data: TableauFormation }) {
   const [edition, setEdition] = useState<Session | "nouvelle" | null>(null);
   const [gestion, setGestion] = useState<string | null>(null);
   const [annulation, setAnnulation] = useState<Session | null>(null);
+  const [ouverture, setOuverture] = useState<Session | null>(null);
+  const [selection, setSelection] = useState<Set<number>>(new Set());
+  const [fusion, setFusion] = useState(false);
+  const [formuler, setFormuler] = useState<Besoin | null>(null);
   const { agir } = useAction();
 
   const q = recherche.trim().toLowerCase();
@@ -63,6 +67,10 @@ export function Sessions({ data }: { data: TableauFormation }) {
   const geree = gestion ? data.sessions.find((s) => s.code === gestion) ?? null : null;
 
   function action(session: Session, verbe: "ouvrir" | "fermer" | "cloturer") {
+    if (verbe === "ouvrir") {
+      setOuverture(session);
+      return;
+    }
     const textes = {
       ouvrir: { q: `Ouvrir les inscriptions à « ${session.libelle} » ? Les agents pourront candidater depuis leur dossier.`, b: "Ouvrir", a: "Ouverture des inscriptions…", s: "Inscriptions ouvertes" },
       fermer: { q: `Fermer les inscriptions à « ${session.libelle} » ? Les candidatures déjà déposées continuent leur circuit.`, b: "Fermer", a: "Fermeture des inscriptions…", s: "Inscriptions fermées" },
@@ -87,18 +95,38 @@ export function Sessions({ data }: { data: TableauFormation }) {
     });
   }
 
+  const carte = (s: Session) => (
+    <CarteSession
+      key={s.code}
+      session={s}
+      onGerer={() => setGestion(s.code)}
+      onModifier={() => setEdition(s)}
+      onAction={(verbe) => action(s, verbe)}
+      onAnnuler={() => setAnnulation(s)}
+      onSupprimer={() => supprimer(s)}
+    />
+  );
+
   return (
     <section aria-labelledby="titre-sessions">
       <EnTeteSection
         icone="event_available"
         titre="Modules et sessions"
-        sousTitre={`${pluriel(data.indicateurs.sessions, "module")} au plan ${data.exercice} · ${data.indicateurs.sessions_ouvertes} ouvert(s) aux inscriptions · ${data.indicateurs.sessions_en_cours} en cours`}
+        sousTitre="Formulez et fusionnez les besoins collectés, puis montez les modules. L'ouverture des inscriptions notifie chaque agent."
         action={
           <button type="button" className={BOUTON_PRIMAIRE} onClick={() => setEdition("nouvelle")}>
             <Icone nom="add_circle" className="text-lg" />
             Planifier un module
           </button>
         }
+      />
+      <BesoinsAFormuler
+        besoins={data.besoins.filter((b) => b.statut !== "couvert")}
+        selection={selection}
+        onSelection={setSelection}
+        onFormuler={setFormuler}
+        onFusion={() => setFusion(true)}
+        onMonter={() => setEdition("nouvelle")}
       />
       <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 mb-5">
         <label className="sm:col-span-6 relative">
@@ -129,23 +157,16 @@ export function Sessions({ data }: { data: TableauFormation }) {
         />
       ) : (
         <ul className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-5">
-          {sessions.map((s) => (
-            <CarteSession
-              key={s.code}
-              session={s}
-              onGerer={() => setGestion(s.code)}
-              onModifier={() => setEdition(s)}
-              onAction={(verbe) => action(s, verbe)}
-              onAnnuler={() => setAnnulation(s)}
-              onSupprimer={() => supprimer(s)}
-            />
-          ))}
+          {sessions.map(carte)}
         </ul>
       )}
 
-      {edition ? <FormulaireSession data={data} session={edition === "nouvelle" ? null : edition} onClose={() => setEdition(null)} /> : null}
+      {edition ? <FormulaireSession data={data} session={edition === "nouvelle" ? null : edition} preselection={[...selection]} onClose={() => setEdition(null)} /> : null}
       {geree ? <GestionParticipants data={data} session={geree} onClose={() => setGestion(null)} /> : null}
       {annulation ? <Annulation session={annulation} onClose={() => setAnnulation(null)} /> : null}
+      {ouverture ? <OuvertureInscriptions session={ouverture} onClose={() => setOuverture(null)} /> : null}
+      {formuler ? <FormulerBesoin besoin={formuler} onClose={() => setFormuler(null)} /> : null}
+      {fusion ? <FusionnerBesoins besoins={data.besoins.filter((b) => selection.has(b.id))} onClose={() => { setFusion(false); setSelection(new Set()); }} /> : null}
     </section>
   );
 }
@@ -263,10 +284,10 @@ function Info({ icone, libelle, children }: { icone: string; libelle: string; ch
 
 // --- Planification ---------------------------------------------------------------
 
-function FormulaireSession({ data, session, onClose }: { data: TableauFormation; session: Session | null; onClose: () => void }) {
+function FormulaireSession({ data, session, preselection = [], onClose }: { data: TableauFormation; session: Session | null; preselection?: number[]; onClose: () => void }) {
   const [f, setF] = useState({
     type: session?.type ?? data.types[0]?.code ?? "",
-    libelle: session?.libelle ?? "",
+    libelle: session?.libelle ?? (preselection.length ? data.besoins.find((b) => b.id === preselection[0])?.intitule ?? "" : ""),
     objectif: session?.objectif ?? "",
     cadre_budgetaire: session?.cadre_budgetaire ?? `Dotation ministérielle, exercice ${data.exercice}`,
     prestataire: session?.prestataire ? String(session.prestataire.id) : "",
@@ -278,7 +299,10 @@ function FormulaireSession({ data, session, onClose }: { data: TableauFormation;
     places: String(session?.places ?? 20),
     cout_participant: String(session?.cout_participant ?? ""),
   });
-  const deja = new Set(data.besoins.filter((b) => b.session?.code === session?.code && session).map((b) => b.id));
+  const deja = new Set([
+    ...data.besoins.filter((b) => b.session?.code === session?.code && session).map((b) => b.id),
+    ...preselection,
+  ]);
   const [besoins, setBesoins] = useState<Set<number>>(deja);
   const enregistrer = useEnregistrement<Session>(onClose, session ? "Module mis à jour" : "Module planifié");
   const maj = (cle: keyof typeof f) => (valeur: string) => setF((actuel) => ({ ...actuel, [cle]: valeur }));
@@ -331,7 +355,7 @@ function FormulaireSession({ data, session, onClose }: { data: TableauFormation;
             {couvrables.map((b) => (
               <Case
                 key={b.id}
-                libelle={`${b.intitule} · ${b.organisme.nom}`}
+                libelle={`${b.intitule} · ${b.structure.nom}`}
                 aide={`${pluriel(b.effectif, "agent")} · priorité ${b.priorite_libelle.toLowerCase()}`}
                 coche={besoins.has(b.id)}
                 onChange={(coche) => setBesoins((s) => {
@@ -580,6 +604,108 @@ function AjoutAgents({ session, dejaInscrits, onClose }: { session: Session; dej
           </li>
         ))}
       </ul>
+    </Modale>
+  );
+}
+
+function BesoinsAFormuler({
+  besoins, selection, onSelection, onFormuler, onFusion, onMonter,
+}: {
+  besoins: Besoin[];
+  selection: Set<number>;
+  onSelection: (s: Set<number>) => void;
+  onFormuler: (b: Besoin) => void;
+  onFusion: () => void;
+  onMonter: () => void;
+}) {
+  if (!besoins.length) return null;
+  function basculer(id: number, coche: boolean) {
+    const suivant = new Set(selection);
+    if (coche) suivant.add(id); else suivant.delete(id);
+    onSelection(suivant);
+  }
+  return (
+    <div className={`${CARTE} p-4 mb-5`}>
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+        <div>
+          <h3 className="font-label-lg text-label-lg text-on-surface font-bold">Besoins à formuler</h3>
+          <p className="font-body-sm text-body-sm text-on-surface-variant">Triez, fusionnez et reformulez, puis montez un module.</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <button type="button" className={BOUTON_SECONDAIRE} disabled={selection.size < 2} onClick={onFusion}>Fusionner</button>
+          <button type="button" className={BOUTON_PRIMAIRE} disabled={selection.size === 0} onClick={onMonter}>Monter un module</button>
+        </div>
+      </div>
+      <ul className="divide-y divide-hairline">
+        {besoins.map((b) => (
+          <li key={b.id} className="py-2.5 flex flex-wrap items-center gap-3">
+            <Case
+              libelle={b.intitule}
+              aide={`${b.agent?.nom_complet ?? b.structure.nom} · ${pluriel(b.effectif, "agent")} · ${b.statut_libelle}`}
+              coche={selection.has(b.id)}
+              onChange={(coche) => basculer(b.id, coche)}
+            />
+            <button type="button" className="ml-auto font-label-md text-label-md text-primary hover:underline" onClick={() => onFormuler(b)}>Formuler</button>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function FormulerBesoin({ besoin, onClose }: { besoin: Besoin; onClose: () => void }) {
+  const [intitule, setIntitule] = useState(besoin.intitule);
+  const enregistrer = useEnregistrement(onClose, "Besoin formulé");
+  return (
+    <Modale
+      titre="Formuler le besoin"
+      sousTitre="L'intitulé retenu servira au module."
+      onClose={onClose}
+      onSubmit={() => enregistrer.mutate({ route: `/api/v1/formation/besoins/${besoin.id}/`, methode: "PATCH", corps: { intitule } })}
+      enCours={enregistrer.isPending}
+      erreur={messageErreur(enregistrer.error)}
+      libelleValider="Retenir cet intitulé"
+    >
+      <Texte libelle="Intitulé formulé" obligatoire max={200} valeur={intitule} onChange={setIntitule} />
+    </Modale>
+  );
+}
+
+function FusionnerBesoins({ besoins, onClose }: { besoins: Besoin[]; onClose: () => void }) {
+  const [intitule, setIntitule] = useState(besoins[0]?.intitule ?? "");
+  const enregistrer = useEnregistrement(onClose, "Besoins fusionnés");
+  return (
+    <Modale
+      titre="Fusionner les besoins"
+      sousTitre={`${besoins.length} besoins seront regroupés sous un seul intitulé.`}
+      onClose={onClose}
+      onSubmit={() => enregistrer.mutate({ route: "/api/v1/formation/besoins/fusionner/", methode: "POST", corps: { ids: besoins.map((b) => b.id), intitule } })}
+      enCours={enregistrer.isPending}
+      erreur={messageErreur(enregistrer.error)}
+      libelleValider="Fusionner"
+    >
+      <ul className="mb-4 font-body-sm text-body-sm text-on-surface-variant list-disc pl-5">
+        {besoins.map((b) => <li key={b.id}>{b.intitule}{b.agent ? ` · ${b.agent.nom_complet}` : ""}</li>)}
+      </ul>
+      <Texte libelle="Intitulé commun" obligatoire max={200} valeur={intitule} onChange={setIntitule} />
+    </Modale>
+  );
+}
+
+function OuvertureInscriptions({ session, onClose }: { session: Session; onClose: () => void }) {
+  const [jusquAu, setJusquAu] = useState(session.inscriptions_fin ?? "");
+  const enregistrer = useEnregistrement(onClose, "Inscriptions ouvertes : les agents sont notifiés");
+  return (
+    <Modale
+      titre="Ouvrir les inscriptions"
+      sousTitre={`${session.libelle} · chaque agent reçoit une notification sur son profil.`}
+      onClose={onClose}
+      onSubmit={() => enregistrer.mutate({ route: `/api/v1/formation/sessions/${session.code}/ouvrir/`, methode: "POST", corps: { inscriptions_fin: jusquAu } })}
+      enCours={enregistrer.isPending}
+      erreur={messageErreur(enregistrer.error)}
+      libelleValider="Ouvrir et notifier"
+    >
+      <DateChamp libelle="Inscriptions jusqu'au" valeur={jusquAu} onChange={setJusquAu} aide="Laissez vide pour ne pas borner la période." />
     </Modale>
   );
 }

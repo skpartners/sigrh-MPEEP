@@ -572,3 +572,55 @@ def importer_structures(request):
         if exc.erreurs:
             corps["erreurs"] = exc.erreurs
         return Response(corps, status=400)
+
+
+# --- Emplois et grades reconnus par la Fonction publique : le référentiel de base du système -------------------
+
+
+def modele_emplois() -> bytes:
+    familles = [["Code", "Libellé"]]
+    for code, libelle in FAMILLES:
+        familles.append([code, libelle])
+    return habiller([
+        {"nom": "Grades", "titre": "SIGRH  ·  Grades reconnus par la Fonction publique", "sous_titre": "Référentiel indiciaire.", "notice": "La catégorie est A, B, C ou D. En vigueur : oui ou non. Facultative si le grade existe déjà.", "lignes": [["Code", "Catégorie", "Définition", "En vigueur"]], "saisies": 16, "onglet": "FF0A5E3A"},
+        {"nom": "Emplois", "titre": "SIGRH  ·  Emplois reconnus par la Fonction publique", "sous_titre": "Emplois classés par famille et par grade.", "notice": "La famille se saisit par son code ou son libellé (feuille Familles). Le grade est son code, par exemple A4, créé sur la feuille Grades si besoin.", "lignes": [["Nom", "Famille", "Grade"]], "saisies": 40, "onglet": "FF0A5E3A"},
+        {"nom": "Consignes", "titre": "Mode d'emploi", "sous_titre": "Deux feuilles sont lues : Grades et Emplois.", "notice": "Une ligne crée un emploi ou met à jour un emploi déjà nommé. Les emplois chargés deviennent la référence du système : dossiers des agents, besoins, dotation. Si une ligne est incorrecte, aucune modification n'est enregistrée.", "lignes": [["Feuille", "Colonne", "Exemple"], ["Grades", "Code", "A4"], ["Grades", "Catégorie", "A"], ["Grades", "Définition", "Administrateur civil"], ["Emplois", "Nom", "Administrateur des ressources humaines"], ["Emplois", "Famille", "Administratif et juridique"], ["Emplois", "Grade", "A4"]], "onglet": "FF0B1C30"},
+        {"nom": "Familles", "titre": "Familles d'emplois", "sous_titre": "Aide à la saisie. Cette feuille n'est pas importée.", "notice": "Recopiez le code ou le libellé dans la colonne Famille.", "lignes": familles, "onglet": "FF9E4300"},
+    ])
+
+
+def importer_emplois(contenu: bytes) -> dict:
+    """Charge les grades et les emplois reconnus par la Fonction publique ; tout ou rien."""
+    if len(contenu) > TAILLE_MAX:
+        raise ImportInvalide("Le classeur dépasse 5 Mo.")
+    try:
+        grades = _feuille(contenu, "Grades", GRADES)
+        emplois = _feuille(contenu, "Emplois", EMPLOIS)
+    except (zipfile.BadZipFile, ElementTree.ParseError, KeyError, ValueError) as exc:
+        raise ImportInvalide("Ce fichier n'est pas un classeur Excel .xlsx lisible.") from exc
+    if len(grades) + len(emplois) > LIGNES_MAX * 5:
+        raise ImportInvalide(f"Le classeur dépasse {LIGNES_MAX * 5} lignes. Découpez l'import.")
+    if not grades and not emplois:
+        raise ImportInvalide("Le classeur ne contient aucun emploi ni grade. Renseignez les feuilles Grades et Emplois du modèle.")
+
+    grades_connus = list(GradeReferentiel.objects.all())
+    emplois_connus = list(EmploiReferentiel.objects.select_related("grade"))
+    mouvements_grades, erreurs = _grades(grades, grades_connus, [])
+    mouvements_emplois, erreurs = _emplois(emplois, emplois_connus, grades_connus, mouvements_grades, erreurs)
+    if erreurs:
+        raise ImportInvalide(_resume(len(erreurs)), erreurs)
+    if not mouvements_grades and not mouvements_emplois:
+        return {"detail": "Ces emplois et ces grades sont déjà enregistrés.", "crees": 0, "mis_a_jour": 0}
+    with transaction.atomic():
+        _appliquer([], [], mouvements_grades, mouvements_emplois)
+        # Un emploi chargé ici est reconnu par la Fonction publique, y compris s'il existait déjà.
+        libelles = [m["libelle"] for m in mouvements_emplois if m["action"] == "creer"] + [m["item"].libelle for m in mouvements_emplois if m["action"] == "modifier"]
+        for emploi in EmploiReferentiel.objects.all():
+            if _norm(emploi.libelle) in {_norm(l) for l in libelles} and emploi.source != "fonction_publique":
+                emploi.source = "fonction_publique"
+                emploi.save(update_fields=["source"])
+    return {
+        "detail": _bilan([], [], mouvements_grades, mouvements_emplois),
+        "crees": _crees([], [], mouvements_grades, mouvements_emplois),
+        "mis_a_jour": _maj([], mouvements_grades, mouvements_emplois),
+    }

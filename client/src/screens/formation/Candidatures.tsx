@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { dateCourte, pluriel } from "../../ui/format";
 import { useFlip } from "../../ui/Motion";
-import { useAction } from "../../ui/useAction";
 import type { Candidature, EtatCandidature, TableauFormation } from "./types";
 import { BadgeCandidature, CARTE, CHAMP, EnTeteSection, Modale, Vide, Zone, messageErreur, useEnregistrement } from "./ui";
 import { Icone } from "../../ui/Icone";
@@ -29,7 +28,7 @@ export function Candidatures({ data }: { data: TableauFormation }) {
   const [recherche, setRecherche] = useState("");
   const [page, setPage] = useState(0);
   const [refus, setRefus] = useState<Candidature | null>(null);
-  const { agir } = useAction();
+  const [accord, setAccord] = useState<Candidature | null>(null);
 
   const compte = (etat: string) => data.inscriptions.filter((i) => !etat || i.etat === etat).length;
   const q = recherche.trim().toLowerCase();
@@ -46,14 +45,13 @@ export function Candidatures({ data }: { data: TableauFormation }) {
   const sessionsFigees = new Set(data.sessions.filter((s) => s.etat === "annulee" || s.etat === "terminee").map((s) => s.code));
 
   function valider(c: Candidature) {
-    const v = VALIDER[c.etat];
-    if (!v) return;
-    void agir({ confirmation: `${v.q} ? (${c.agent.nom_complet})`, confirmLabel: v.libelle, attente: "Enregistrement…", route: `/api/v1/demandes/${c.reference}/valider/`, succes: v.s, detail: `${c.agent.nom_complet} · ${c.session.libelle}` });
+    if (!VALIDER[c.etat]) return;
+    setAccord(c);
   }
 
   return (
     <section aria-labelledby="titre-candidatures">
-      <EnTeteSection icone="fact_check" titre="Candidatures" sousTitre="Circuit : agent → chef de service → SD Formation Continue → visa DRH → notification" />
+      <EnTeteSection icone="fact_check" titre="Candidatures" sousTitre="Validez ou invalidez avec un motif. Le circuit (chef de service → SD Formation → DRH) notifie l'agent." />
       <div className="flex flex-wrap gap-1 p-1 mb-4 rounded-lg bg-surface-container-low w-fit" role="group" aria-label="Étape du circuit">
         {FILTRES.map((f) => (
           <button
@@ -147,6 +145,7 @@ export function Candidatures({ data }: { data: TableauFormation }) {
         </div>
       )}
       {refus ? <RefusCandidature candidature={refus} onClose={() => setRefus(null)} /> : null}
+      {accord ? <AccordCandidature candidature={accord} onClose={() => setAccord(null)} /> : null}
     </section>
   );
 }
@@ -166,6 +165,26 @@ export function RefusCandidature({ candidature, onClose }: { candidature: Candid
       largeur="max-w-lg"
     >
       <Zone libelle="Motif du refus" obligatoire max={240} valeur={motif} onChange={setMotif} aide="L'agent est notifié de ce motif." />
+    </Modale>
+  );
+}
+
+function AccordCandidature({ candidature, onClose }: { candidature: Candidature; onClose: () => void }) {
+  const [motif, setMotif] = useState("");
+  const etape = VALIDER[candidature.etat];
+  const enregistrer = useEnregistrement<Candidature>(onClose, etape?.s ?? "Candidature validée");
+  return (
+    <Modale
+      titre={etape?.libelle ?? "Valider"}
+      sousTitre={`${candidature.agent.nom_complet} · ${candidature.session.libelle}`}
+      onClose={onClose}
+      onSubmit={() => enregistrer.mutate({ route: `/api/v1/demandes/${candidature.reference}/valider/`, methode: "POST", corps: { motif } })}
+      enCours={enregistrer.isPending}
+      erreur={messageErreur(enregistrer.error)}
+      libelleValider={etape?.libelle ?? "Valider"}
+      largeur="max-w-lg"
+    >
+      <Zone libelle="Motif" obligatoire max={240} valeur={motif} onChange={setMotif} aide="Ce motif est versé au circuit et communiqué à l'agent." />
     </Modale>
   );
 }

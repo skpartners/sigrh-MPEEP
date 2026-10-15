@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState, type CSSProperties, type FormEvent } from "react";
+import { useMemo, useState, type CSSProperties } from "react";
 import { ApiError, api, telecharger } from "../../api/client";
 import type { AgentBrief } from "../../api/types";
 import { useFeedback } from "../../ui/Feedback";
@@ -11,6 +11,8 @@ import { Icone } from "../../ui/Icone";
 type Sens = "valider" | "invalider";
 type TypeAutorisation = "autorisation" | "autorisation-speciale" | "permission-speciale";
 type Autorisation = {
+  structure: string;
+  demande: string;
   id: number;
   agent: AgentBrief & { fonction: string };
   type: TypeAutorisation;
@@ -21,8 +23,6 @@ type Autorisation = {
   jours: number;
   decision: "en_attente" | "validee" | "invalidee";
   motif_decision: string;
-  impact_solde: string;
-  impact_detail: string;
 };
 type Registre = {
   exercice: number;
@@ -30,8 +30,8 @@ type Registre = {
   indicateurs: { total: number; en_attente: number; validee: number; invalidee: number };
   ventilation: { code: TypeAutorisation; libelle: string; nombre: number; part: number }[];
   types: { code: TypeAutorisation; libelle: string }[];
+  jours: { validee: number; en_attente: number; invalidee: number };
   autorisations: Autorisation[];
-  agents: { matricule: string; nom_complet: string; organisme_sigle: string; structure: string }[];
 };
 
 const ROUTE = "/api/v1/carrieres/absences/";
@@ -40,11 +40,6 @@ const COULEUR_TYPE: Record<TypeAutorisation, string> = {
   autorisation: "bg-primary-container",
   "autorisation-speciale": "bg-surface-tint",
   "permission-speciale": "bg-secondary-container",
-};
-const ICONE_TYPE: Record<TypeAutorisation, string> = {
-  autorisation: "description",
-  "autorisation-speciale": "local_hospital",
-  "permission-speciale": "diversity_1",
 };
 const MOIS = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."];
 
@@ -71,18 +66,20 @@ export function AbsencesScreen() {
   const feedback = useFeedback();
   const registre = useQuery({ queryKey: ["carrieres-absences"], queryFn: () => api<Registre>(ROUTE) });
   const [cible, setCible] = useState<{ autorisation: Autorisation; sens: Sens } | null>(null);
+  const [detail, setDetail] = useState<Autorisation | null>(null);
   const [entite, setEntite] = useState("");
   const [type, setType] = useState("");
   const [page, setPage] = useState(1);
   const donnees = registre.data;
   const filtrees = useMemo(
-    () => (donnees?.autorisations ?? []).filter((item) => (!entite || item.agent.organisme_sigle === entite) && (!type || item.type === type)),
+    () => (donnees?.autorisations ?? []).filter((item) => (!entite || item.structure === entite) && (!type || item.type === type)),
     [donnees, entite, type],
   );
   const pages = Math.max(1, Math.ceil(filtrees.length / PAR_PAGE));
   const pageCourante = Math.min(page, pages);
   const visibles = filtrees.slice((pageCourante - 1) * PAR_PAGE, pageCourante * PAR_PAGE);
-  const entites = [...new Set((donnees?.autorisations ?? []).map((item) => item.agent.organisme_sigle))].sort();
+  const entites = [...new Set((donnees?.autorisations ?? []).map((item) => item.structure))].sort();
+  const agentsConcernes = new Set((donnees?.autorisations ?? []).map((item) => item.agent.matricule)).size;
   const total = donnees?.indicateurs.total ?? 0;
   const presence = donnees?.presenteisme;
 
@@ -115,13 +112,13 @@ export function AbsencesScreen() {
                   {" "}
                   <Icone nom="chevron_right" className="text-xs" />
                   {" "}
-                  <span className="text-primary font-bold">Validation des autorisations</span>
+                  <span className="text-primary font-bold">Gestion des autorisations</span>
                 </div>
                 <h1 className="font-headline-lg text-headline-lg text-on-surface tracking-tight">
-                  Validation des autorisations d'absence
+                  Gestion des autorisations d'absences
                 </h1>
                 <p className="font-body-md text-body-md text-on-surface-variant max-w-3xl">
-                  Page du gestionnaire. Chaque demande d'autorisation se valide ou s'invalide, avec un motif à l'appui.
+                  Les demandes déposées par les agents depuis leur profil arrivent ici. Chacune se valide ou s'invalide, avec un motif à l'appui.
                 </p>
               </div>
               {/* Actions rapides de haut de page */}
@@ -155,7 +152,7 @@ export function AbsencesScreen() {
                 ) : null}
               </div>
               <div className="mt-3 flex items-center justify-between font-label-sm text-label-sm text-on-surface-variant">
-                <span>Objectif ministériel</span>
+                <span>Quorum minimal (paramètre)</span>
                 <span className="font-bold text-primary">{presence?.objectif != null ? `≥ ${presence.objectif.toFixed(1)}%` : "—"}</span>
               </div>
               <div className="w-full bg-surface-container-high h-1.5 rounded-full mt-2 overflow-hidden">
@@ -168,7 +165,7 @@ export function AbsencesScreen() {
               icone="assignment_turned_in"
               valeur={donnees?.indicateurs.validee}
               unite="dossiers justifiés"
-              detail="Autorisations d'absence, autorisations spéciales et permissions spéciales"
+              detail={`${donnees?.jours.validee ?? 0} jour${(donnees?.jours.validee ?? 0) > 1 ? "s" : ""} accordé${(donnees?.jours.validee ?? 0) > 1 ? "s" : ""}`}
               part={part(donnees?.indicateurs.validee ?? 0, total)}
               ton="neutre"
             />
@@ -178,30 +175,30 @@ export function AbsencesScreen() {
               icone="alarm"
               valeur={donnees?.indicateurs.en_attente}
               unite="à statuer"
-              detail="Justificatif à examiner sous 48 h"
+              detail={`${donnees?.jours.en_attente ?? 0} jour${(donnees?.jours.en_attente ?? 0) > 1 ? "s" : ""} demandé${(donnees?.jours.en_attente ?? 0) > 1 ? "s" : ""}`}
               part={part(donnees?.indicateurs.en_attente ?? 0, total)}
               ton="attention"
             />
             <Indicateur
               index={2}
-              titre="Retenues sur solde (tantièmes)"
+              titre="Autorisations invalidées"
               icone="gavel"
               valeur={donnees?.indicateurs.invalidee}
-              unite="autorisations invalidées"
-              detail="Retenue au 1/30e par jour d'absence"
+              unite="dossiers refusés"
+              detail={`${donnees?.jours.invalidee ?? 0} jour${(donnees?.jours.invalidee ?? 0) > 1 ? "s" : ""} refusé${(donnees?.jours.invalidee ?? 0) > 1 ? "s" : ""}`}
               part={part(donnees?.indicateurs.invalidee ?? 0, total)}
               ton="erreur"
             />
           </div>
-          {/* Section analytique: Grille Bento (Ventilation + Cadre Juridique Art. 38) */}
+          {/* Ventilation des autorisations de l'exercice */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             {/* Ventilation des Motifs de l'Exercice */}
-            <div className="lg:col-span-8 bg-surface-container-lowest p-6 rounded-xl shadow-sm space-y-5">
+            <div className="lg:col-span-12 bg-surface-container-lowest p-6 rounded-xl shadow-sm space-y-5">
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <h2 className="font-headline-sm text-headline-sm text-on-surface">Ventilation Statutaire des Motifs d'Absence</h2>
                   <p className="font-label-sm text-label-sm text-on-surface-variant">
-                    Exercice {donnees?.exercice ?? ""} - Ensemble des entités sous tutelle
+                    Exercice {donnees?.exercice ?? ""} · {agentsConcernes} agent{agentsConcernes > 1 ? "s" : ""} concerné{agentsConcernes > 1 ? "s" : ""}
                   </p>
                 </div>
                 <span className="px-2.5 py-1 rounded bg-surface-container text-on-surface font-code-num text-code-num font-bold whitespace-nowrap">
@@ -228,53 +225,6 @@ export function AbsencesScreen() {
                       </div>
                     ))}
               </div>
-              <div className="pt-4 flex items-center justify-between text-on-surface-variant font-label-sm text-label-sm bg-surface-container-low p-3 rounded-lg">
-                <span className="flex items-center gap-1.5">
-                  <Icone nom="verified" className="text-base text-primary" />
-                  {" "}Toutes les autorisations de plus de 72h requièrent le visa du Directeur des Ressources Humaines.
-                </span>
-                {" "}
-                <button type="button" className="text-primary font-bold hover:underline">Exporter le registre exhaustif</button>
-              </div>
-            </div>
-            {/* Bloc Alerte & Règle du Service Fait (Article 38) */}
-            <div className="lg:col-span-4 bg-surface-container-low p-6 rounded-xl shadow-sm flex flex-col justify-between">
-              <div className="space-y-3">
-                <div className="flex items-center gap-2 text-secondary">
-                  <Icone nom="policy" className="text-2xl" />
-                  {" "}
-                  <span className="font-headline-sm text-headline-sm text-on-surface font-bold">Règle du Service Fait</span>
-                </div>
-                <span className="inline-block px-2.5 py-0.5 rounded bg-secondary-fixed text-on-secondary-fixed font-code-num text-code-num font-bold">
-                  {"Art. 38 - Statut Général & Dir. Paie"}
-                </span>
-                <p className="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
-                  « Toute absence non légalement autorisée ou non justifiée dans un délai impératif de quarante-huit (48) heures entraîne de plein droit une retenue sur traitement calculée au trentième indivisible (1/30ème) par jour d'interruption de service. »
-                </p>
-                <div className="bg-surface-container-lowest p-3 rounded-lg space-y-2">
-                  <div className="flex items-center justify-between text-on-surface font-label-sm text-label-sm">
-                    <span>Constat d'abandon de poste :</span>
-                    {" "}
-                    <span className="font-bold text-error">À compter de J+15</span>
-                  </div>
-                  <div className="flex items-center justify-between text-on-surface font-label-sm text-label-sm">
-                    <span>Délai légal de transmission solde :</span>
-                    {" "}
-                    <span className="font-bold text-primary">Le 20 du mois M</span>
-                  </div>
-                  <div className="flex items-center justify-between text-on-surface font-label-sm text-label-sm">
-                    <span>Organe compétent :</span>
-                    {" "}
-                    <span className="font-bold text-on-surface">Direction du Contrôle Financier</span>
-                  </div>
-                </div>
-              </div>
-              <div className="pt-4">
-                <button className="w-full py-2 px-3 rounded bg-secondary-container text-on-secondary-container font-label-md text-label-md font-bold flex items-center justify-center gap-2 hover:opacity-90 transition-opacity" type="button">
-                  <Icone nom="warning" className="text-base" />
-                  {" "}Émettre un Avis d'Avertissement Solde
-                </button>
-              </div>
             </div>
           </div>
           {/* Registre Général d'Instruction des Déclarations d'Absence */}
@@ -289,7 +239,7 @@ export function AbsencesScreen() {
               {/* Filtres rapides */}
               <div className="flex flex-wrap items-center gap-2">
                 <select
-                  aria-label="Filtrer par entité"
+                  aria-label="Filtrer par structure"
                   className="px-3 py-1.5 rounded bg-surface-container-low text-on-surface font-label-sm text-label-sm focus:outline-none focus:ring-1 focus:ring-primary"
                   value={entite}
                   onChange={(event) => {
@@ -297,7 +247,7 @@ export function AbsencesScreen() {
                     setPage(1);
                   }}
                 >
-                  <option value="">Toutes les entités</option>
+                  <option value="">Toutes les structures</option>
                   {entites.map((sigle) => (
                     <option key={sigle} value={sigle}>{sigle}</option>
                   ))}
@@ -324,30 +274,28 @@ export function AbsencesScreen() {
                 <thead>
                   <tr className="bg-surface-container-low text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wider">
                     <th className="py-3 px-4 rounded-l">{"Agent Public & Matricule"}</th>
-                    <th className="py-3 px-4">{"Motif & Justificatif Règlementaire"}</th>
                     <th className="py-3 px-4">{"Période & Durée"}</th>
                     <th className="py-3 px-4" data-min="">État de Conformité</th>
-                    <th className="py-3 px-4">Impact Solde</th>
-                    <th className="py-3 px-4 text-right rounded-r">Décision</th>
+                    <th className="py-3 px-4 text-right rounded-r">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-surface-container">
                   {registre.isPending ? (
                     <tr>
-                      <td colSpan={6} className="py-4 px-4">
+                      <td colSpan={4} className="py-4 px-4">
                         <Skeleton className="h-10 w-full" />
                       </td>
                     </tr>
                   ) : registre.isError ? (
                     <tr>
-                      <td colSpan={6} className="py-6 px-4 text-error">Le registre des autorisations n'a pas pu être chargé.</td>
+                      <td colSpan={4} className="py-6 px-4 text-error">Le registre des autorisations n'a pas pu être chargé.</td>
                     </tr>
                   ) : visibles.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="py-6 px-4 text-on-surface-variant">Aucune autorisation ne correspond à ces filtres.</td>
+                      <td colSpan={4} className="py-6 px-4 text-on-surface-variant">Aucune autorisation ne correspond à ces filtres.</td>
                     </tr>
                   ) : (
-                    visibles.map((item) => <LigneAutorisation key={item.id} autorisation={item} onChoisir={(sens) => setCible({ autorisation: item, sens })} />)
+                    visibles.map((item) => <LigneAutorisation key={item.id} autorisation={item} onChoisir={(sens) => setCible({ autorisation: item, sens })} onDetail={() => setDetail(item)} />)
                   )}
                 </tbody>
               </table>
@@ -380,52 +328,9 @@ export function AbsencesScreen() {
               </div>
             </div>
           </div>
-          {/* Section Bi-partite: Saisie Directe de Régularisation & Journal d'Audit Biométrique */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            {/* Formulaire d'Enregistrement Rapide / Régularisation de Justificatif */}
-            <div className="lg:col-span-7 bg-surface-container-lowest p-6 rounded-xl shadow-sm space-y-4">
-              <div className="flex items-center justify-between pb-2">
-                <div className="flex items-center gap-2">
-                  <span className="w-8 h-8 rounded bg-primary text-on-primary flex items-center justify-center">
-                    <Icone nom="cloud_upload" className="text-base" />
-                  </span>
-                  <div>
-                    <h3 className="font-headline-sm text-headline-sm text-on-surface">
-                      {"Régularisation & Téléversement de Pièce Certifiée"}
-                    </h3>
-                    <p className="font-body-sm text-body-sm text-on-surface-variant">
-                      Instruction directe du certificat ou de l'ordre de mission officiel
-                    </p>
-                  </div>
-                </div>
-                <span className="text-xs font-semibold px-2 py-1 rounded bg-surface-container text-on-surface">Transmission</span>
-              </div>
-              <FormulaireRegularisation agents={donnees?.agents ?? []} types={donnees?.types ?? []} />
-            </div>
-            {/* Contrôle biométrique reporté à une version ultérieure */}
-            <div className="lg:col-span-5 bg-surface-container-lowest p-6 rounded-xl shadow-sm flex flex-col gap-4">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-center gap-2 min-w-0">
-                  <span className="w-8 h-8 rounded bg-surface-container-high text-on-surface flex items-center justify-center shrink-0">
-                    <Icone nom="history" className="text-base" />
-                  </span>
-                  <div className="min-w-0">
-                    <h3 className="font-headline-sm text-headline-sm text-on-surface">{"Contrôle Biométrique & Écarts"}</h3>
-                    <p className="font-body-sm text-body-sm text-on-surface-variant">{"Liaison bornes physiques & pointage SIGRH"}</p>
-                  </div>
-                </div>
-                <span className="inline-flex items-center gap-1 px-2 py-1 rounded bg-secondary-fixed text-on-secondary-fixed font-label-sm text-label-sm font-semibold whitespace-nowrap shrink-0">
-                  <Icone nom="schedule" className="text-[0.875rem]" />
-                  {" "}Version ultérieure
-                </span>
-              </div>
-              <p className="font-body-sm text-body-sm text-on-surface-variant">
-                Le recoupement des bornes biométriques et du pointage sera livré dans une version ultérieure.
-              </p>
-            </div>
-          </div>
         </div>
       </div>
+      {detail ? <ModaleDetail autorisation={detail} onClose={() => setDetail(null)} /> : null}
       {cible ? <ModaleDecision autorisation={cible.autorisation} sens={cible.sens} onClose={() => setCible(null)} /> : null}
     </AppChrome>
   );
@@ -457,7 +362,7 @@ function Indicateur({ titre, icone, valeur, unite, detail, part, ton, index = 0 
   );
 }
 
-function LigneAutorisation({ autorisation, onChoisir }: { autorisation: Autorisation; onChoisir: (sens: Sens) => void }) {
+function LigneAutorisation({ autorisation, onChoisir, onDetail }: { autorisation: Autorisation; onChoisir: (sens: Sens) => void; onDetail: () => void }) {
   const { agent } = autorisation;
   return (
     <tr className="hover:bg-surface-container-low/50 transition-colors">
@@ -469,18 +374,9 @@ function LigneAutorisation({ autorisation, onChoisir }: { autorisation: Autorisa
             <div className="font-code-num text-code-num text-on-surface-variant flex flex-wrap items-center gap-2">
               <span>Mat. {agent.matricule}</span>
               <span aria-hidden="true">•</span>
-              <span>Grade {agent.grade}</span>
-              <span aria-hidden="true">•</span>
-              <span className="px-1.5 py-0.2 rounded bg-surface-container text-on-surface text-[0.6875rem] font-semibold">{agent.organisme_sigle}</span>
+              <span className="px-1.5 py-0.2 rounded bg-surface-container text-on-surface text-[0.6875rem] font-semibold">{autorisation.structure}</span>
             </div>
           </div>
-        </div>
-      </td>
-      <td className="py-4 px-4">
-        <div className="font-semibold text-on-surface">{autorisation.type_libelle}</div>
-        <div className="text-xs text-on-surface-variant flex items-center gap-1 mt-0.5">
-          <Icone nom={ICONE_TYPE[autorisation.type]} className="text-xs text-primary" />
-          {autorisation.justificatif}
         </div>
       </td>
       <td className="py-4 px-4">
@@ -492,12 +388,8 @@ function LigneAutorisation({ autorisation, onChoisir }: { autorisation: Autorisa
       <td className="py-4 px-4">
         <EtatDecision decision={autorisation.decision} />
       </td>
-      <td className="py-4 px-4">
-        <div className={`font-semibold ${autorisation.decision === "invalidee" ? "text-error" : "text-primary"}`}>{autorisation.impact_solde}</div>
-        <div className="text-xs text-on-surface-variant">{autorisation.impact_detail}</div>
-      </td>
       <td className="py-4 px-4 text-right">
-        <ActionsDecision autorisation={autorisation} onChoisir={onChoisir} />
+        <ActionsDecision autorisation={autorisation} onChoisir={onChoisir} onDetail={onDetail} />
       </td>
     </tr>
   );
@@ -528,22 +420,29 @@ function EtatDecision({ decision }: { decision: Autorisation["decision"] }) {
   );
 }
 
-function ActionsDecision({ autorisation, onChoisir }: { autorisation: Autorisation; onChoisir: (sens: Sens) => void }) {
+const BOUTON_DETAIL = "px-2.5 py-1 rounded bg-surface-container text-primary text-xs font-semibold hover:bg-surface-container-high inline-flex items-center gap-1";
+
+function ActionsDecision({ autorisation, onChoisir, onDetail }: { autorisation: Autorisation; onChoisir: (sens: Sens) => void; onDetail: () => void }) {
   if (autorisation.decision !== "en_attente") {
     const valide = autorisation.decision === "validee";
     return (
-      <div className="text-right">
+      <div className="flex items-center justify-end gap-2">
         <span className={`inline-flex items-center gap-1 font-label-sm text-label-sm font-semibold ${valide ? "text-primary" : "text-error"}`}>
           <Icone nom={valide ? "check_circle" : "cancel"} className="text-base" />
           {valide ? "Validée" : "Invalidée"}
         </span>
-        <p className="text-xs text-on-surface-variant mt-1 max-w-[13.75rem] ml-auto">Motif : {autorisation.motif_decision}</p>
+        <button className={BOUTON_DETAIL} type="button" aria-label={`Détail : ${autorisation.agent.nom_complet}`} onClick={onDetail}>
+          <Icone nom="visibility" className="text-sm" />Détail
+        </button>
       </div>
     );
   }
   const nom = autorisation.agent.nom_complet;
   return (
     <div className="flex items-center justify-end gap-1.5">
+      <button className={BOUTON_DETAIL} type="button" aria-label={`Détail : ${nom}`} onClick={onDetail}>
+        <Icone nom="visibility" className="text-sm" />Détail
+      </button>
       <button className="px-2.5 py-1 rounded bg-primary text-on-primary text-xs font-semibold hover:bg-primary-container" type="button" aria-label={`Valider : ${nom}`} onClick={() => onChoisir("valider")}>
         Valider
       </button>
@@ -565,6 +464,7 @@ function ModaleDecision({ autorisation, sens, onClose }: { autorisation: Autoris
     mutationFn: () => api<Autorisation>(`/api/v1/absences/${autorisation.id}/decision/`, { method: "POST", body: JSON.stringify({ sens, motif: motif.trim() }) }),
     onSuccess: async () => {
       await client.invalidateQueries({ queryKey: ["carrieres-absences"] });
+      await client.invalidateQueries({ queryKey: ["agent", autorisation.agent.matricule] });
       feedback.toast(valider ? "Autorisation validée" : "Autorisation invalidée", `${autorisation.agent.nom_complet} · ${autorisation.type_libelle}`);
       onClose();
     },
@@ -610,113 +510,42 @@ function ModaleDecision({ autorisation, sens, onClose }: { autorisation: Autoris
   );
 }
 
-const CHAMP = "w-full h-10 px-3 rounded bg-surface-container-low text-on-surface text-body-sm focus:outline-none focus:ring-1 focus:ring-primary";
-const LIBELLE = "block font-label-md text-label-md text-on-surface font-semibold";
+const ETAT_LIBELLE: Record<Autorisation["decision"], string> = {
+  en_attente: "En attente de décision",
+  validee: "Validée",
+  invalidee: "Invalidée",
+};
 
-/** Le gestionnaire verse une autorisation avec sa pièce : elle entre au registre, en attente de décision. */
-function FormulaireRegularisation({ agents, types }: { agents: Registre["agents"]; types: Registre["types"] }) {
-  const client = useQueryClient();
-  const feedback = useFeedback();
-  const vide = { matricule: "", type: "", debut: "", fin: "", notifier: true };
-  const [saisie, setSaisie] = useState(vide);
-  const [fichier, setFichier] = useState<File | null>(null);
-  const [cle, setCle] = useState(0);
-  const agent = agents.find((item) => item.matricule.toLowerCase() === saisie.matricule.trim().toLowerCase());
-  const envoi = useMutation({
-    mutationFn: () => {
-      const corps = new FormData();
-      corps.set("matricule", saisie.matricule.trim());
-      corps.set("type", saisie.type);
-      corps.set("debut", saisie.debut);
-      corps.set("fin", saisie.fin);
-      corps.set("notifier", saisie.notifier ? "1" : "0");
-      if (fichier) corps.set("fichier", fichier);
-      return api<Autorisation>(ROUTE, { method: "POST", body: corps });
-    },
-    onSuccess: async (item) => {
-      await client.invalidateQueries({ queryKey: ["carrieres-absences"] });
-      feedback.toast("Autorisation versée au registre", `${item.agent.nom_complet} · en attente de décision.`);
-      setSaisie(vide);
-      setFichier(null);
-      setCle((valeur) => valeur + 1);
-    },
-  });
-
-  function soumettre(event: FormEvent) {
-    event.preventDefault();
-    envoi.mutate();
-  }
-
+/** Tout ce qui accompagne l'autorisation : nature, justificatif, décision et demande de l'agent. */
+function ModaleDetail({ autorisation, onClose }: { autorisation: Autorisation; onClose: () => void }) {
+  const { agent } = autorisation;
+  const lignes: [string, string][] = [
+    ["Agent", `${agent.nom_complet} · matricule ${agent.matricule}`],
+    ["Structure", autorisation.structure],
+    ["Nature", autorisation.type_libelle],
+    ["Période", `${periode(autorisation.debut, autorisation.fin)} · ${autorisation.jours} jour${autorisation.jours > 1 ? "s" : ""} ouvré${autorisation.jours > 1 ? "s" : ""}`],
+    ["Justificatif", autorisation.justificatif || "Aucun"],
+    ["État", ETAT_LIBELLE[autorisation.decision]],
+    ...(autorisation.motif_decision ? [["Motif de la décision", autorisation.motif_decision] as [string, string]] : []),
+    ...(autorisation.demande ? [["Demande de l'agent", autorisation.demande] as [string, string]] : []),
+  ];
   return (
-    <form className="space-y-4" onSubmit={soumettre}>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <label className="space-y-1 block">
-          <span className={LIBELLE}>
-            Matricule de l'agent <span className="text-error">*</span>
-          </span>
-          <input className={CHAMP} list="agents-absences" placeholder="Ex : 394812H" required type="text" value={saisie.matricule} onChange={(event) => setSaisie({ ...saisie, matricule: event.target.value })} />
-          <datalist id="agents-absences">
-            {agents.map((item) => (
-              <option key={item.matricule} value={item.matricule}>{item.nom_complet}</option>
-            ))}
-          </datalist>
-        </label>
-        <label className="space-y-1 block">
-          <span className={LIBELLE}>
-            Type d'autorisation réglementaire <span className="text-error">*</span>
-          </span>
-          <select className={CHAMP} required value={saisie.type} onChange={(event) => setSaisie({ ...saisie, type: event.target.value })}>
-            <option value="">Sélectionner un type d'absence…</option>
-            {types.map((item) => (
-              <option key={item.code} value={item.code}>{item.libelle}</option>
-            ))}
-          </select>
-        </label>
-      </div>
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <label className="space-y-1 block">
-          <span className={LIBELLE}>
-            Date de début <span className="text-error">*</span>
-          </span>
-          <input className={CHAMP} required type="date" value={saisie.debut} onChange={(event) => setSaisie({ ...saisie, debut: event.target.value })} />
-        </label>
-        <label className="space-y-1 block">
-          <span className={LIBELLE}>
-            Date de fin (incluse) <span className="text-error">*</span>
-          </span>
-          <input className={CHAMP} required type="date" min={saisie.debut || undefined} value={saisie.fin} onChange={(event) => setSaisie({ ...saisie, fin: event.target.value })} />
-        </label>
-        <label className="space-y-1 block">
-          <span className={LIBELLE}>Entité d'affectation</span>
-          <input className={CHAMP} readOnly type="text" value={agent ? `${agent.organisme_sigle} · ${agent.structure}` : ""} placeholder="Selon le matricule" />
-        </label>
-      </div>
-      {agent ? <p className="font-label-md text-label-md text-primary font-semibold">{agent.nom_complet}</p> : null}
-      {/* Pièce justificative */}
-      <label className="block p-4 rounded-xl bg-surface-container-low text-center space-y-2 cursor-pointer hover:bg-surface-container transition-colors">
-        <Icone nom="note_add" className="text-3xl text-primary" />
-        <span className="block font-label-lg text-label-lg font-semibold text-on-surface">{fichier ? fichier.name : "Déposez le document probant"}</span>
-        <span className="block font-body-sm text-body-sm text-on-surface-variant">PDF ou image : certificat médical, ordre de mission ou acte d'état civil</span>
-        <input key={cle} className="sr-only" type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,application/pdf,image/png,image/jpeg,image/webp" onChange={(event) => setFichier(event.target.files?.[0] ?? null)} />
-        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-surface-container text-primary font-label-sm text-label-sm font-semibold">
-          <Icone nom="attach_file" className="text-base" />
-          Parcourir les fichiers
-        </span>
-      </label>
-      {envoi.isError ? (
-        <p className="font-body-sm text-body-sm text-error" role="alert">
-          {envoi.error instanceof ApiError ? envoi.error.message : "L'autorisation n'a pas été versée."}
-        </p>
-      ) : null}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
-        <label className="flex items-center gap-2 cursor-pointer font-body-sm text-body-sm text-on-surface">
-          <input checked={saisie.notifier} className="rounded text-primary focus:ring-primary" type="checkbox" onChange={(event) => setSaisie({ ...saisie, notifier: event.target.checked })} />
-          Notifier le gestionnaire chargé de statuer
-        </label>
-        <button className="px-3 py-1.5 rounded bg-primary text-on-primary font-label-md text-label-md font-bold hover:bg-primary-container transition-colors disabled:opacity-60" type="submit" disabled={envoi.isPending}>
-          {envoi.isPending ? "Versement…" : "Soumettre la régularisation"}
-        </button>
-      </div>
-    </form>
+    <Modale
+      titre="Détail de l'autorisation"
+      sousTitre={`${agent.nom_complet} · ${autorisation.type_libelle}`}
+      icone="description"
+      taille="md"
+      onClose={onClose}
+      pied={<button type="button" className={BOUTON_SECONDAIRE} onClick={onClose}>Fermer</button>}
+    >
+      <dl className="space-y-3">
+        {lignes.map(([libelle, valeur]) => (
+          <div key={libelle} className="grid grid-cols-1 sm:grid-cols-[10rem_1fr] gap-1 sm:gap-3">
+            <dt className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wide">{libelle}</dt>
+            <dd className="font-body-sm text-body-sm text-on-surface">{valeur}</dd>
+          </div>
+        ))}
+      </dl>
+    </Modale>
   );
 }

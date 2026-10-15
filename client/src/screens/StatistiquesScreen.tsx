@@ -3,13 +3,17 @@ import { useEffect, useState } from "react";
 import { ApiError, api } from "../api/client";
 import { useFeedback } from "../ui/Feedback";
 import { Icone } from "../ui/Icone";
-import { BOUTON_PRIMAIRE, BOUTON_SECONDAIRE } from "../ui/Modale";
+import { BOUTON_PRIMAIRE } from "../ui/Modale";
 import { AppChrome } from "./AppChrome";
 import { exporterClasseurTcd } from "./statistiques/exportTcd";
 import { champsUtilises, configComplete, configVide, nomPropose, sourceEffective, type Catalogue, type ConfigTcd } from "./statistiques/moteur";
 import { chargerCube, cleCube, TableauCroise, type FeuilleTcd } from "./statistiques/TableauCroise";
 
 const PAGE = "w-full px-4 sm:px-6 lg:px-8 py-6 mx-auto flex-1 space-y-5";
+const BOUTON_HERO_PRIMAIRE =
+  "inline-flex items-center justify-center gap-2 h-8 px-3 rounded bg-surface-container-lowest text-primary font-label-md text-label-md hover:bg-primary-fixed disabled:opacity-60";
+const BOUTON_HERO_SECONDAIRE =
+  "inline-flex items-center justify-center gap-2 h-8 px-3 rounded border border-white/35 bg-white/10 text-on-primary font-label-md text-label-md hover:bg-white/20 disabled:opacity-60";
 const CLE_ONGLET = "sigrh_statistiques_onglet";
 const CLE_LISTE = ["compositions-statistiques"] as const;
 
@@ -179,17 +183,23 @@ export function StatistiquesScreen() {
   }
 
   return (
-    <AppChrome>
+    <AppChrome
+      actions={
+        <>
+          <button type="button" className={BOUTON_HERO_SECONDAIRE} disabled={!feuilles.length} onClick={() => void exporterTout()}>
+            <Icone nom="download" className="text-lg" />
+            Exporter le classeur
+          </button>
+          <button type="button" className={BOUTON_HERO_PRIMAIRE} onClick={nouveau}>
+            <Icone nom="add" className="text-lg" />
+            Nouveau tableau
+          </button>
+        </>
+      }
+    >
       <div className={PAGE}>
-        <header className="flex flex-col gap-1">
-          <h1 className="font-headline-md text-headline-md text-on-surface">Statistiques</h1>
-          <p className="font-body-md text-body-md text-on-surface-variant">
-            Composez vos tableaux croisés dynamiques comme dans Excel, tracez-les en graphique, puis exportez le classeur.
-          </p>
-        </header>
-
-        <nav className="flex flex-col gap-3 border-b border-hairline sm:flex-row sm:items-end" aria-label="Feuilles de statistiques">
-          <div role="tablist" aria-label="Feuilles" className="-mb-px flex min-w-0 flex-1 items-end gap-1 overflow-x-auto">
+        <nav className="border-b border-hairline" aria-label="Feuilles de statistiques">
+          <div role="tablist" aria-label="Feuilles" className="-mb-px flex min-w-0 items-end gap-1 overflow-x-auto">
             {feuilles.map((feuille) => (
               <Onglet
                 key={feuille.cle}
@@ -201,16 +211,6 @@ export function StatistiquesScreen() {
                 onClick={() => ouvrir(feuille.cle)}
               />
             ))}
-          </div>
-          <div className="flex shrink-0 items-center gap-2 pb-2">
-            <button type="button" className={BOUTON_SECONDAIRE} disabled={!feuilles.length} onClick={() => void exporterTout()}>
-              <Icone nom="download" className="text-lg" />
-              Exporter le classeur
-            </button>
-            <button type="button" className={BOUTON_PRIMAIRE} onClick={nouveau}>
-              <Icone nom="add" className="text-lg" />
-              Nouveau tableau
-            </button>
           </div>
         </nav>
 

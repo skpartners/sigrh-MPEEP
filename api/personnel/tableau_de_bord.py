@@ -18,6 +18,7 @@ from .models import (
     SessionFormation,
     VisaEnAttente,
 )
+from .effectifs import _appliquer_plafonds
 from .statistiques_dynamiques import _tranche
 from .utilisateurs import perimetre_matricules
 
@@ -187,7 +188,7 @@ def _effectifs(agents) -> dict:
 
 
 def _dotations() -> dict:
-    branches = list(BranchePlafond.objects.order_by("ordre", "id"))
+    branches = _appliquer_plafonds(list(BranchePlafond.objects.order_by("ordre", "id")))
     effectif = sum(item.effectif for item in branches)
     plafond = sum(item.plafond for item in branches)
     demandes = DemandeDotation.objects.order_by()

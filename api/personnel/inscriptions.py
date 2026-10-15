@@ -38,7 +38,9 @@ def inscrire(agent, code: str, fichier=None) -> str | None:
         .first()
     )
     if session is None:
-        return "Ce module n'est pas ouvert par la direction de la formation continue."
+        return "Ce module n'est pas ouvert aux inscriptions."
+    if session.inscriptions_fin and timezone.localdate() > session.inscriptions_fin:
+        return "La période d'inscription à ce module est close."
     erreur = _piece(session, fichier)
     if erreur:
         return erreur
@@ -81,7 +83,7 @@ def _piece(session: SessionFormation, fichier) -> str | None:
     return None
 
 
-def valider_etape(demande: Demande, acteur) -> tuple[str, bool]:
+def valider_etape(demande: Demande, acteur, motif: str = "") -> tuple[str, bool]:
     """Valide l'étape en attente. La dernière étape notifie l'agent de sa prise en compte."""
     if demande.categorie != "formation":
         return "Cette validation concerne une inscription à une formation.", False
@@ -93,12 +95,15 @@ def valider_etape(demande: Demande, acteur) -> tuple[str, bool]:
     aujourd_hui = timezone.localdate()
     nom = acteur.get_full_name() or acteur.username
     fonction = getattr(getattr(acteur, "profil", None), "fonction", "") or nom
+    commentaire = (motif or "").strip() or "Étape validée."
+    if len(commentaire) > 240:
+        return "Le motif dépasse 240 caractères.", False
     with transaction.atomic():
         if visa.ordre >= 4:
-            _cloturer(demande, nom, fonction, aujourd_hui, acteur)
+            _cloturer(demande, nom, fonction, aujourd_hui, acteur, commentaire)
             return "", True
         visa.avis = "Favorable"
-        visa.commentaire = "Étape validée."
+        visa.commentaire = commentaire
         visa.date = aujourd_hui
         visa.titulaire = nom
         visa.fonction = fonction
@@ -118,11 +123,11 @@ def cloturer_formation(demande: Demande, acteur) -> None:
     _cloturer(demande, nom, fonction, aujourd_hui, acteur)
 
 
-def _cloturer(demande, nom: str, fonction: str, aujourd_hui, acteur) -> None:
+def _cloturer(demande, nom: str, fonction: str, aujourd_hui, acteur, motif: str = "") -> None:
     VisaDemande.objects.filter(demande=demande, ordre=4).update(
         signature=copie_signature(acteur),
         avis="Favorable",
-        commentaire="Visa du directeur des ressources humaines. L'agent est pris en compte pour cette formation.",
+        commentaire=motif or "Visa du directeur des ressources humaines. L'agent est pris en compte pour cette formation.",
         date=aujourd_hui,
         titulaire=nom,
         fonction=fonction,

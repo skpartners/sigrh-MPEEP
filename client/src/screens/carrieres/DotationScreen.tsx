@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { ApiError, api, telecharger } from "../../api/client";
-import type { AlertePoste, DemandeDotation, Dotation, Passerelle } from "../../api/types";
+import type { DemandeDotation, Dotation, Passerelle } from "../../api/types";
 import { dateCourte, nombre } from "../../ui/format";
 import { useFeedback } from "../../ui/Feedback";
 import { Modale } from "../../ui/Modale";
@@ -15,17 +15,18 @@ const CARTE = "rounded-xl bg-surface-container-lowest border border-hairline";
 const CHAMP = "w-full h-10 px-3 rounded border border-outline-variant bg-surface-container-lowest font-body-md text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-primary";
 const PRIMAIRE = "inline-flex items-center gap-2 px-3 py-1.5 rounded bg-primary text-on-primary hover:bg-primary-container font-label-md text-label-md disabled:opacity-50";
 const SECOND = "inline-flex items-center gap-2 px-3 py-1.5 rounded bg-surface-container-low text-primary hover:bg-surface-container font-label-md text-label-md disabled:opacity-50";
+const ACTION = "p-1.5 rounded text-on-surface-variant hover:text-primary hover:bg-surface-container transition-colors";
+const ACTION_DANGER = "p-1.5 rounded text-on-surface-variant hover:text-error hover:bg-surface-container transition-colors";
 const TAILLE = 4;
 
 const ONGLETS = [
-  { id: "affectation", libelle: "Affectation (Nouveau fonctionnaire)", saisie: "Renseigner une affectation", icone: "person_add" },
-  { id: "disposition", libelle: "Mise à disposition", saisie: "Renseigner une mise à disposition", icone: "handshake" },
+  { id: "affectation", libelle: "Suivi des affectations", saisie: "Renseigner une affectation", icone: "person_add" },
+  { id: "reaffectation", libelle: "Suivi des réaffectations", saisie: "Renseigner une réaffectation", icone: "school" },
+  { id: "disposition", libelle: "Suivi des mises à disposition", saisie: "Renseigner une mise à disposition", icone: "handshake" },
   { id: "redeploiement", libelle: "Redéploiement", saisie: "Renseigner un redéploiement", icone: "swap_horiz" },
-  { id: "reaffectation", libelle: "Réaffectation après concours professionnel", saisie: "Renseigner une réaffectation", icone: "school" },
 ] as const;
 
 const PLAN_VIDE = { entite: "", direction: "", poste: "", nature: "affectation", impact: "1", detail: "" };
-const ALERTE_VIDE = { entite: "", intitule: "", detail: "", postes: "1", jours: "0", piste: "" };
 
 function postesPour(tous: Dotation["postes"], code: string, actuel = "") {
   const lies = code ? tous.filter((item) => item.structures.includes(code)) : [];
@@ -53,7 +54,7 @@ function message(error: unknown): string {
   return error instanceof ApiError ? error.message : "L'enregistrement n'a pas abouti.";
 }
 
-export function DotationScreen() {
+export function DotationScreen({ ongletInitial = "affectation" }: { ongletInitial?: (typeof ONGLETS)[number]["id"] }) {
   const client = useQueryClient();
   const feedback = useFeedback();
   const { agir } = useAction();
@@ -61,15 +62,12 @@ export function DotationScreen() {
   const [filtre, setFiltre] = useState("");
   const [entite, setEntite] = useState("");
   const [statut, setStatut] = useState("");
-  const [onglet, setOnglet] = useState<(typeof ONGLETS)[number]["id"]>("affectation");
+  const [onglet, setOnglet] = useState<(typeof ONGLETS)[number]["id"]>(ongletInitial);
   const [page, setPage] = useState(1);
   const [panneau, setPanneau] = useState<string | null>(null);
   const [demande, setDemande] = useState<DemandeDotation | null>(null);
-  const [alerte, setAlerte] = useState<AlertePoste | null>(null);
   const [passerelle, setPasserelle] = useState<Passerelle | null>(null);
   const [plan, setPlan] = useState(PLAN_VIDE);
-  const [ficheAlerte, setFicheAlerte] = useState(ALERTE_VIDE);
-  const [quota, setQuota] = useState({ code: "", plafond: "", motif: "" });
   const [instruction, setInstruction] = useState({ statut: "acte", visa: "", motif: "" });
   const [pont, setPont] = useState({ cedant: "", recepteur: "", profil: "", effectif: "1", note: "" });
   const [decisionPont, setDecisionPont] = useState({ id: "", statut: "actee", note: "" });
@@ -85,7 +83,6 @@ export function DotationScreen() {
   const pages = Math.max(1, Math.ceil(visibles.length / TAILLE));
   const courante = Math.min(page, pages);
   const lignes = visibles.slice((courante - 1) * TAILLE, courante * TAILLE);
-  const alertesOuvertes = (data?.alertes ?? []).filter((item) => !item.traitee);
   const ongletActif = ONGLETS.find((item) => item.id === onglet) ?? ONGLETS[0];
 
   function ouvrirSaisie(item?: DemandeDotation) {
@@ -105,25 +102,6 @@ export function DotationScreen() {
     setDemande(null);
     setPlan({ ...PLAN_VIDE, nature: onglet });
     setPanneau("plan");
-  }
-
-  function ouvrirAlerte(item?: AlertePoste) {
-    if (item) {
-      setAlerte(item);
-      setFicheAlerte({
-        entite: item.entite_code,
-        intitule: item.intitule,
-        detail: item.detail,
-        postes: String(item.postes),
-        jours: String(item.jours),
-        piste: item.piste,
-      });
-      setPanneau("modifier-alerte");
-      return;
-    }
-    setAlerte(null);
-    setFicheAlerte(ALERTE_VIDE);
-    setPanneau("creer-alerte");
   }
 
   function fermer() {
@@ -148,14 +126,6 @@ export function DotationScreen() {
     onSuccess: async () => {
       await rafraichir();
       feedback.toast("Demande mise à jour");
-      fermer();
-    },
-  });
-  const ajuster = useMutation({
-    mutationFn: () => api(`/api/v1/dotation/branches/${quota.code}/plafond/`, { method: "POST", body: JSON.stringify({ plafond: Number(quota.plafond), motif: quota.motif }) }),
-    onSuccess: async () => {
-      await rafraichir();
-      feedback.toast("Plafond ajusté");
       fermer();
     },
   });
@@ -186,27 +156,6 @@ export function DotationScreen() {
     onSuccess: async () => {
       await rafraichir();
       feedback.toast("Arbitrage enregistré");
-      fermer();
-    },
-  });
-  const corpsAlerte = () => JSON.stringify({
-    ...ficheAlerte,
-    postes: Number(ficheAlerte.postes),
-    jours: Number(ficheAlerte.jours),
-  });
-  const creerAlerte = useMutation({
-    mutationFn: () => api("/api/v1/dotation/alertes/", { method: "POST", body: corpsAlerte() }),
-    onSuccess: async () => {
-      await rafraichir();
-      feedback.toast("Poste critique enregistré");
-      fermer();
-    },
-  });
-  const modifierAlerte = useMutation({
-    mutationFn: () => api(`/api/v1/dotation/alertes/${alerte?.id}/modifier/`, { method: "POST", body: corpsAlerte() }),
-    onSuccess: async () => {
-      await rafraichir();
-      feedback.toast("Poste critique mis à jour");
       fermer();
     },
   });
@@ -265,34 +214,34 @@ export function DotationScreen() {
           </div>
         </section>
 
-        <section className="grid gap-4 md:grid-cols-3">
-          <Indicateur libelle="Effectif en poste" valeur={nombre(data.effectif)} detail={`sur ${nombre(data.plafond)} au plafond · ${nombre(data.taux_occupation, 1)} % · ${nombre(data.vacants)} postes vacants`} />
-          <Indicateur libelle="Plafond d'emplois" valeur={nombre(data.plafond)} detail={data.fondement} />
-          <Indicateur libelle="Campagnes ouvertes" valeur={nombre(data.campagnes_ouvertes)} detail={data.repartition.map((item) => `${item.total} ${item.libelle.toLowerCase()}`).join(" · ") || "Aucune campagne en instruction"} />
-        </section>
-
         <section className={`${CARTE} overflow-hidden`}>
-          <div role="tablist" aria-label="Onglets de la dotation en personnel" className="flex flex-wrap gap-1 border-b border-hairline p-2">
+          <div
+            role="tablist"
+            aria-label="Types de mouvement de personnel"
+            className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-1 p-1.5 bg-surface-container-low border-b border-hairline"
+          >
             {ONGLETS.map((item) => {
               const actif = item.id === onglet;
               const compte = (data.demandes ?? []).filter((demande) => demande.nature === item.id).length;
               return (
                 <button
                   key={item.id}
+                  id={`onglet-dotation-${item.id}`}
                   type="button"
                   role="tab"
                   aria-selected={actif}
-                  className={`flex items-center gap-2 rounded px-3 py-2 font-label-md text-label-md ${actif ? "bg-primary font-semibold text-on-primary" : "text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface"}`}
+                  aria-controls="panneau-dotation"
+                  className={`flex items-center justify-center gap-2 rounded-lg px-3 py-3 font-label-md text-label-md cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${actif ? "bg-primary font-semibold text-on-primary shadow-sm" : "text-on-surface hover:bg-surface-container-lowest"}`}
                   onClick={() => { setOnglet(item.id); setPage(1); }}
                 >
-                  <Icone nom={item.icone} className="text-base" />
-                  {item.libelle}
-                  <span className={`rounded px-1.5 font-code-num text-label-sm ${actif ? "bg-on-primary/20" : "bg-surface-container-high text-on-surface"}`}>{compte}</span>
+                  <Icone nom={item.icone} className="text-lg" />
+                  <span>{item.libelle}</span>
+                  <span className={`rounded px-1.5 font-code-num text-label-sm ${actif ? "bg-on-primary/20 text-on-primary" : "bg-surface-container-highest text-on-surface"}`}>{compte}</span>
                 </button>
               );
             })}
           </div>
-          <div className="flex flex-col gap-4 p-6 lg:flex-row lg:items-end lg:justify-between" role="tabpanel">
+          <div id="panneau-dotation" className="flex flex-col gap-4 p-6 lg:flex-row lg:items-end lg:justify-between" role="tabpanel" aria-labelledby={`onglet-dotation-${onglet}`}>
             <div>
               <h2 className="font-headline-sm text-headline-sm text-on-surface">{ONGLETS.find((item) => item.id === onglet)?.libelle}</h2>
               <p className="font-body-sm text-body-sm text-on-surface-variant">{nombre(visibles.length)} demande{visibles.length > 1 ? "s" : ""} dans cet onglet.</p>
@@ -350,29 +299,39 @@ export function DotationScreen() {
                       <p className="mt-1 font-body-sm text-body-sm text-on-surface-variant">{item.visa}</p>
                     </td>
                     <td className="px-4 py-3">
-                      <div className="flex flex-wrap justify-end gap-2">
+                      <div className="flex items-center justify-end gap-1">
                         {(item.statut === "arbitrage" || item.statut === "visa_cf") && (
-                          <button type="button" className="rounded bg-primary px-2.5 py-1.5 font-label-sm text-label-sm text-on-primary" onClick={() => { setDemande(item); setInstruction({ statut: item.statut, visa: item.visa, motif: "" }); setPanneau("instruire"); }}>Instruire</button>
+                          <button type="button" className={ACTION} title="Instruire" aria-label={`Instruire ${item.reference}`} onClick={() => { setDemande(item); setInstruction({ statut: item.statut, visa: item.visa, motif: "" }); setPanneau("instruire"); }}>
+                            <Icone nom="gavel" className="text-lg" />
+                          </button>
                         )}
                         {item.statut === "acte" && !item.notifiee && (
-                          <button type="button" className="rounded bg-primary px-2.5 py-1.5 font-label-sm text-label-sm text-on-primary" onClick={() => agir({
+                          <button type="button" className={ACTION} title="Notifier" aria-label={`Notifier ${item.reference}`} onClick={() => agir({
                             confirmation: `Notifier ${item.reference} à l'entité concernée ?`,
                             confirmLabel: "Notifier",
                             attente: "Notification…",
                             route: `/api/v1/dotation/demandes/${item.reference}/notifier/`,
                             succes: "Demande notifiée",
-                          })}>Notifier</button>
+                          })}>
+                            <Icone nom="send" className="text-lg" />
+                          </button>
                         )}
-                        {item.notifiee ? <span className="self-center font-label-sm text-label-sm text-primary">Notifiée</span> : null}
-                        <button type="button" className="rounded bg-surface-container-low px-2.5 py-1.5 font-label-sm text-label-sm text-primary" onClick={() => ouvrirSaisie(item)}>Modifier</button>
-                        <button type="button" className="rounded bg-surface-container-low px-2.5 py-1.5 font-label-sm text-label-sm text-error" onClick={() => agir({
+                        {item.notifiee ? <span className="self-center font-label-sm text-label-sm text-primary" title="Notifiée">Notifiée</span> : null}
+                        <button type="button" className={ACTION} title="Modifier" aria-label={`Modifier ${item.reference}`} onClick={() => ouvrirSaisie(item)}>
+                          <Icone nom="edit" className="text-lg" />
+                        </button>
+                        <button type="button" className={ACTION_DANGER} title="Supprimer" aria-label={`Supprimer ${item.reference}`} onClick={() => agir({
                           confirmation: `Retirer ${item.reference} de cet onglet ?`,
                           confirmLabel: "Supprimer",
                           attente: "Suppression…",
                           route: `/api/v1/dotation/demandes/${item.reference}/supprimer/`,
                           succes: "Demande retirée",
-                        })}>Supprimer</button>
-                        <button type="button" className="rounded bg-surface-container-low px-2.5 py-1.5 font-label-sm text-label-sm text-primary" onClick={() => { setDemande(item); setPanneau("consulter"); }}>Consulter</button>
+                        })}>
+                          <Icone nom="delete" className="text-lg" />
+                        </button>
+                        <button type="button" className={ACTION} title="Consulter" aria-label={`Consulter ${item.reference}`} onClick={() => { setDemande(item); setPanneau("consulter"); }}>
+                          <Icone nom="visibility" className="text-lg" />
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -392,15 +351,9 @@ export function DotationScreen() {
         </section>
 
         <section className={`${CARTE} p-6`}>
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <h2 className="font-headline-sm text-headline-sm text-on-surface">Plafonds par branche</h2>
-              <p className="font-body-sm text-body-sm text-on-surface-variant">Effectif en poste rapporté au plafond de la branche.</p>
-            </div>
-            <button type="button" className={SECOND} onClick={() => { setQuota({ code: data.branches[0]?.code ?? "", plafond: String(data.branches[0]?.plafond ?? ""), motif: "" }); setPanneau("quota"); }}>
-              <Icone nom="tune" className="text-lg" />
-              Ajuster un plafond
-            </button>
+          <div>
+            <h2 className="font-headline-sm text-headline-sm text-on-surface">Plafonds par branche</h2>
+            <p className="font-body-sm text-body-sm text-on-surface-variant">Le plafond suit les besoins exprimés par les structures : effectif en poste plus volume demandé.</p>
           </div>
           <div className="mt-4 space-y-4">
             {data.branches.map((branche) => (
@@ -412,7 +365,7 @@ export function DotationScreen() {
                   </p>
                   <p className="font-code-num text-code-num text-on-surface">{nombre(branche.effectif)} / {nombre(branche.plafond)} · {nombre(branche.taux, 1)} %</p>
                 </div>
-                <p className="font-body-sm text-body-sm text-on-surface-variant">{branche.entites} · {nombre(branche.vacants)} postes disponibles · {branche.note}</p>
+                <p className="font-body-sm text-body-sm text-on-surface-variant">{branche.entites} · {nombre(branche.besoins)} poste{branche.besoins > 1 ? "s" : ""} exprimé{branche.besoins > 1 ? "s" : ""} · {branche.note}</p>
                 <div className="mt-1 h-2 overflow-hidden rounded bg-surface-container">
                   <div className={`h-full ${branche.taux >= 97 ? "bg-secondary" : "bg-primary"}`} style={{ width: `${Math.min(100, branche.taux)}%` }} />
                 </div>
@@ -422,56 +375,6 @@ export function DotationScreen() {
           <p className="mt-4 font-body-sm text-body-sm text-on-surface-variant">
             Taux de vacance du portefeuille : {nombre(data.plafond ? (100 * data.vacants) / data.plafond : 0, 2)} %.
           </p>
-        </section>
-
-        <section className={`${CARTE} p-6`}>
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <h2 className="font-headline-sm text-headline-sm text-on-surface">Postes critiques non pourvus</h2>
-            <div className="flex flex-wrap gap-2">
-              <button type="button" className={SECOND} onClick={() => ouvrirAlerte()}>
-                <Icone nom="add_circle" className="text-lg" />
-                Signaler un poste
-              </button>
-              <button
-                type="button"
-                className={PRIMAIRE}
-                disabled={alertesOuvertes.length === 0}
-                onClick={() => agir<{ total: number }>({
-                  confirmation: "Ouvrir un plan de recrutement pour chaque alerte encore ouverte ?",
-                  confirmLabel: "Lancer l'appel",
-                  attente: "Ouverture des plans…",
-                  route: "/api/v1/dotation/appels/",
-                  succes: "Appel à candidatures ouvert",
-                  detail: (reponse) => `${reponse.total} plan${reponse.total > 1 ? "s" : ""} créé${reponse.total > 1 ? "s" : ""}.`,
-                })}
-              >
-                <Icone nom="campaign" className="text-lg" />
-                Lancer un appel à candidatures
-              </button>
-            </div>
-          </div>
-          <div className="mt-4 grid gap-3 lg:grid-cols-3">
-            {data.alertes.length === 0 ? <p className="font-body-sm text-body-sm text-on-surface-variant">Aucun poste critique signalé.</p> : null}
-            {data.alertes.map((item) => (
-              <article key={item.id} className="rounded-lg bg-surface-container-low p-4">
-                <p className="font-label-md text-label-md text-primary">{item.entite}</p>
-                <h3 className="mt-1 font-label-lg text-label-lg text-on-surface">{item.intitule}</h3>
-                <p className="mt-1 font-body-sm text-body-sm text-on-surface-variant">{item.detail}</p>
-                <p className="mt-2 font-label-sm text-label-sm text-on-surface">{nombre(item.postes)} postes · {nombre(item.jours)} jours · {item.piste}</p>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <button type="button" className={SECOND} onClick={() => { setAlerte(item); setPanneau("alerte"); }}>Consulter</button>
-                  <button type="button" className={SECOND} onClick={() => ouvrirAlerte(item)}>Modifier</button>
-                  <button type="button" className="inline-flex items-center gap-2 px-3 py-1.5 rounded bg-surface-container-low text-error hover:bg-surface-container font-label-md text-label-md" onClick={() => agir({
-                    confirmation: `Retirer l'alerte « ${item.intitule} » ?`,
-                    confirmLabel: "Supprimer",
-                    attente: "Suppression…",
-                    route: `/api/v1/dotation/alertes/${item.id}/supprimer/`,
-                    succes: "Poste critique retiré",
-                  })}>Supprimer</button>
-                </div>
-              </article>
-            ))}
-          </div>
         </section>
 
         {onglet === "redeploiement" ? <section className={`${CARTE} p-6`}>
@@ -540,32 +443,6 @@ export function DotationScreen() {
         </Modale>
       ) : null}
 
-      {panneau === "quota" ? (
-        <Modale titre="Ajuster un plafond" onClose={fermer}>
-          <form className="space-y-3" onSubmit={(event) => { event.preventDefault(); ajuster.mutate(); }}>
-            <label className="block">Branche
-              <select className={`${CHAMP} mt-1`} value={quota.code} onChange={(event) => {
-                const branche = data.branches.find((item) => item.code === event.target.value);
-                setQuota({ code: event.target.value, plafond: String(branche?.plafond ?? ""), motif: quota.motif });
-              }}>
-                {data.branches.map((item) => <option key={item.code} value={item.code}>{item.libelle}</option>)}
-              </select>
-            </label>
-            <label className="block">Nouveau plafond
-              <input className={`${CHAMP} mt-1`} required type="number" min={0} value={quota.plafond} onChange={(event) => setQuota({ ...quota, plafond: event.target.value })} />
-            </label>
-            <label className="block">Motif
-              <textarea className={`${CHAMP} mt-1 h-24 py-2`} required value={quota.motif} onChange={(event) => setQuota({ ...quota, motif: event.target.value })} />
-            </label>
-            {ajuster.isError ? <p className="text-error">{message(ajuster.error)}</p> : null}
-            <div className="flex justify-end gap-2">
-              <button type="button" className={SECOND} onClick={fermer}>Annuler</button>
-              <button type="submit" className={PRIMAIRE} disabled={ajuster.isPending}>Enregistrer</button>
-            </div>
-          </form>
-        </Modale>
-      ) : null}
-
       {panneau === "instruire" && demande ? (
         <Modale titre={`Instruire ${demande.reference}`} onClose={fermer}>
           <form className="space-y-3" onSubmit={(event) => { event.preventDefault(); instruire.mutate(); }}>
@@ -604,76 +481,6 @@ export function DotationScreen() {
           <div className="mt-4 flex justify-end gap-2">
             <button type="button" className={SECOND} onClick={fermer}>Fermer</button>
             <button type="button" className={PRIMAIRE} onClick={() => { setInstruction({ statut: demande.statut, visa: demande.visa, motif: demande.detail }); setPanneau("instruire"); }}>Reprendre l'instruction</button>
-          </div>
-        </Modale>
-      ) : null}
-
-      {panneau === "creer-alerte" || panneau === "modifier-alerte" ? (
-        <Modale titre={panneau === "modifier-alerte" ? "Modifier le poste critique" : "Signaler un poste critique"} onClose={fermer}>
-          <form className="grid gap-3 sm:grid-cols-2" onSubmit={(event) => { event.preventDefault(); (panneau === "modifier-alerte" ? modifierAlerte : creerAlerte).mutate(); }}>
-            <label className="block sm:col-span-2">Entité
-              <select className={`${CHAMP} mt-1`} required value={ficheAlerte.entite} onChange={(event) => {
-                const code = event.target.value;
-                setFicheAlerte({ ...ficheAlerte, entite: code, intitule: posteAuto(data.postes, code, ficheAlerte.intitule) });
-              }}>
-                <option value="">Choisir</option>
-                {optionsEntites(data.entites)}
-              </select>
-            </label>
-            <label className="block sm:col-span-2">Poste
-              <select className={`${CHAMP} mt-1`} required value={ficheAlerte.intitule} onChange={(event) => setFicheAlerte({ ...ficheAlerte, intitule: event.target.value })}>
-                <option value="">Choisir</option>
-                {postesPour(data.postes, ficheAlerte.entite, ficheAlerte.intitule).map((item) => (
-                  <option key={item.libelle} value={item.libelle}>{item.libelle}</option>
-                ))}
-              </select>
-            </label>
-            <label className="block">Postes vacants
-              <input className={`${CHAMP} mt-1`} required type="number" min={1} value={ficheAlerte.postes} onChange={(event) => setFicheAlerte({ ...ficheAlerte, postes: event.target.value })} />
-            </label>
-            <label className="block">Ancienneté de la vacance (jours)
-              <input className={`${CHAMP} mt-1`} required type="number" min={0} value={ficheAlerte.jours} onChange={(event) => setFicheAlerte({ ...ficheAlerte, jours: event.target.value })} />
-            </label>
-            <label className="block sm:col-span-2">Situation
-              <textarea className={`${CHAMP} mt-1 h-24 py-2`} required value={ficheAlerte.detail} onChange={(event) => setFicheAlerte({ ...ficheAlerte, detail: event.target.value })} />
-            </label>
-            <label className="block sm:col-span-2">Piste
-              <input className={`${CHAMP} mt-1`} required value={ficheAlerte.piste} onChange={(event) => setFicheAlerte({ ...ficheAlerte, piste: event.target.value })} />
-            </label>
-            {(panneau === "modifier-alerte" ? modifierAlerte : creerAlerte).isError ? <p className="sm:col-span-2 text-error">{message((panneau === "modifier-alerte" ? modifierAlerte : creerAlerte).error)}</p> : null}
-            <div className="sm:col-span-2 flex justify-end gap-2">
-              <button type="button" className={SECOND} onClick={fermer}>Annuler</button>
-              <button type="submit" className={PRIMAIRE} disabled={creerAlerte.isPending || modifierAlerte.isPending}>Enregistrer</button>
-            </div>
-          </form>
-        </Modale>
-      ) : null}
-
-      {panneau === "alerte" && alerte ? (
-        <Modale titre={alerte.intitule} onClose={fermer}>
-          <dl className="space-y-2 font-body-md text-body-md">
-            <Ligne k="Entité" v={alerte.entite} />
-            <Ligne k="Postes" v={nombre(alerte.postes)} />
-            <Ligne k="Ancienneté de la vacance" v={`${nombre(alerte.jours)} jours`} />
-            <Ligne k="Situation" v={alerte.detail} />
-            <Ligne k="Piste" v={alerte.piste} />
-            <Ligne k="Suite" v={alerte.traitee ? "Un plan a été ouvert" : "Alerte ouverte"} />
-          </dl>
-          <div className="mt-4 flex flex-wrap justify-end gap-2">
-            <button type="button" className="inline-flex items-center gap-2 px-3 py-1.5 rounded bg-surface-container-low text-error hover:bg-surface-container font-label-md text-label-md" onClick={() => {
-              void agir({
-                confirmation: `Retirer l'alerte « ${alerte.intitule} » ?`,
-                confirmLabel: "Supprimer",
-                attente: "Suppression…",
-                route: `/api/v1/dotation/alertes/${alerte.id}/supprimer/`,
-                succes: "Poste critique retiré",
-              }).then((reponse) => { if (reponse) fermer(); });
-            }}>Supprimer</button>
-            <button type="button" className={SECOND} onClick={() => ouvrirAlerte(alerte)}>Modifier</button>
-            <button type="button" className={PRIMAIRE} onClick={() => {
-              setPlan({ entite: alerte.entite_code, direction: alerte.entite, poste: posteAuto(data.postes, alerte.entite_code, alerte.intitule), nature: onglet, impact: String(alerte.postes), detail: alerte.piste });
-              setPanneau("plan");
-            }}>Ouvrir un plan</button>
           </div>
         </Modale>
       ) : null}
@@ -761,16 +568,6 @@ export function DotationScreen() {
         </Modale>
       ) : null}
     </AppChrome>
-  );
-}
-
-function Indicateur({ libelle, valeur, detail }: { libelle: string; valeur: string; detail: string }) {
-  return (
-    <article className={`${CARTE} p-5`}>
-      <p className="font-label-sm text-label-sm uppercase tracking-wide text-on-surface-variant">{libelle}</p>
-      <p className="mt-1 font-headline-md text-headline-md text-on-surface">{valeur}</p>
-      <p className="mt-1 font-body-sm text-body-sm text-on-surface-variant">{detail}</p>
-    </article>
   );
 }
 

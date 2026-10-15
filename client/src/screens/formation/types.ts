@@ -18,11 +18,16 @@ export type Session = {
   libelle: string;
   objectif: string;
   cadre_budgetaire: string;
+  cadre: string;
+  cadre_libelle: string;
+  zone: "hors_ci" | "ci" | "";
+  zone_libelle: string;
   type: string;
   type_libelle: string;
   etat: EtatSession;
   etat_libelle: string;
   ouverte: boolean;
+  inscriptions_fin: string | null;
   prestataire: { id: number; nom: string } | null;
   lieu: string;
   formateur: string;
@@ -84,10 +89,26 @@ export type Besoin = {
   statut: "exprime" | "retenu" | "couvert";
   statut_libelle: string;
   exprime_le: string;
-  organisme: { code: string; nom: string };
+  structure: { id: number; nom: string };
+  agent: { matricule: string; nom_complet: string } | null;
   type: string;
   type_libelle: string;
   session: { code: string; libelle: string } | null;
+};
+
+export type CollecteFormation = {
+  id: number;
+  annee: number;
+  ouverte: boolean;
+  date_limite: string;
+  communique: string;
+  lancee_le: string;
+  cloturee_le: string | null;
+  destinataires: number;
+  repondu: number;
+  ras: number;
+  en_attente: number;
+  reponses: { matricule: string; nom_complet: string; ras: boolean; repondu_le: string }[];
 };
 
 export type TableauFormation = {
@@ -111,7 +132,9 @@ export type TableauFormation = {
   inscriptions: Candidature[];
   prestataires: Prestataire[];
   besoins: Besoin[];
-  organismes: { code: string; nom: string }[];
+  collecte: CollecteFormation | null;
+  structures: { id: number; nom: string }[];
+  cadres: { code: string; libelle: string; zone: "hors_ci" | "ci"; zone_libelle: string }[];
 };
 
 export const CLE_FORMATION = ["formation"];

@@ -14,6 +14,8 @@ from rest_framework.response import Response
 
 from .models import Agent, BlocEcran, Notification, PieceJointe, ProcedureDisciplinaire, SanctionDisciplinaire, SessionParitaire
 from .rapports.convocation import Signataire, rendre_convocation
+from .parcours import peut_gerer_carriere, refus_carriere
+from .visibilite import agent_visible, agents_visibles, refus_hors_perimetre
 from .present import agent_brief
 
 # Repli si le bloc « regles » n'est pas encore versé : les valeurs servies viennent de la base.
@@ -60,6 +62,13 @@ def procedure_row(item: ProcedureDisciplinaire, aujourd_hui: date, delai: int) -
         "stade_detail": item.stade_detail,
         "avis": item.avis,
         "avis_libelle": item.get_avis_display(),
+        "phase": item.phase,
+        "phase_libelle": item.get_phase_display(),
+        "decision": item.decision,
+        "sanction_nature": item.sanction_nature,
+        "sanction_libelle": dict(SanctionDisciplinaire.Nature.choices).get(item.sanction_nature, ""),
+        "date_decision": item.date_decision.isoformat() if item.date_decision else "",
+        "executee_le": item.executee_le.isoformat() if item.executee_le else "",
     }
 
 
@@ -74,9 +83,9 @@ def procedures(request):
     delai = int(regles["delai_jours"])
     ans = int(regles["effacement_ans"])
     horizon = int(regles["horizon_jours"])
-    lignes = list(ProcedureDisciplinaire.objects.select_related("agent", "agent__organisme"))
+    lignes = list(agents_visibles(ProcedureDisciplinaire.objects.select_related("agent", "agent__organisme"), request.user, "agent__matricule"))
     actives = [item for item in lignes if item.avis not in {ProcedureDisciplinaire.Avis.SANCTION, ProcedureDisciplinaire.Avis.CLASSEE}]
-    sanctions = list(SanctionDisciplinaire.objects.select_related("agent"))
+    sanctions = list(agents_visibles(SanctionDisciplinaire.objects.select_related("agent"), request.user, "agent__matricule"))
     exercice = [item for item in sanctions if item.prononcee_le.year == aujourd_hui.year]
     premier = [item for item in exercice if item.degre == 1]
     sessions = list(SessionParitaire.objects.filter(date__date__gte=aujourd_hui))
@@ -107,9 +116,16 @@ def procedures(request):
                 "sessions": len(sessions),
                 "second_degre": sum(1 for item in actives if item.degre >= 2),
             },
-            "regularite": blocs.get("regularite") or {},
+            "regularite": _regularite(actives, delai, aujourd_hui),
             "procedures": [procedure_row(item, aujourd_hui, delai) for item in lignes],
             "etats_session": [{"code": code, "libelle": libelle} for code, libelle in SessionParitaire.Etat.choices],
+            "phases": [{"code": code, "libelle": libelle} for code, libelle in ProcedureDisciplinaire.Phase.choices],
+            "avis_possibles": [
+                {"code": code, "libelle": libelle}
+                for code, libelle in ProcedureDisciplinaire.Avis.choices
+                if code not in {ProcedureDisciplinaire.Avis.SANCTION, ProcedureDisciplinaire.Avis.CLASSEE}
+            ],
+            "natures_sanction": [{"code": code, "libelle": libelle} for code, libelle in SanctionDisciplinaire.Nature.choices],
             "sessions": [_session_row(item) for item in sessions],
             "effacements": [
                 {
@@ -122,10 +138,21 @@ def procedures(request):
             ],
             "agents": [
                 {"matricule": agent.matricule, "nom_complet": agent.nom_complet, "organisme_sigle": agent.organisme.sigle}
-                for agent in Agent.objects.select_related("organisme").order_by("nom", "prenoms")
+                for agent in agents_visibles(Agent.objects.select_related("organisme"), request.user).order_by("nom", "prenoms")
             ],
         }
     )
+
+
+def _regularite(actives: list, delai: int, aujourd_hui: date) -> dict:
+    """Part des procédures en cours encore dans leur délai d'instruction."""
+    if not actives:
+        return {"taux": None, "detail": "Aucune procédure en cours"}
+    dans_les_delais = sum(1 for item in actives if item.saisine + timedelta(days=delai) >= aujourd_hui)
+    return {
+        "taux": round(100 * dans_les_delais / len(actives)),
+        "detail": f"{dans_les_delais} procédure{'s' if dans_les_delais > 1 else ''} sur {len(actives)} dans le délai de {delai} jours",
+    }
 
 
 def _session_row(item: SessionParitaire) -> dict:
@@ -148,6 +175,8 @@ def _saisir(request):
     agent = Agent.objects.select_related("organisme").filter(matricule__iexact=(donnees.get("matricule") or "").strip()).first()
     if agent is None:
         return Response({"detail": "Aucun agent ne porte ce matricule."}, status=400)
+    if not peut_gerer_carriere(request.user, agent):
+        return refus_carriere()
     grief = (donnees.get("grief") or "").strip()
     description = (donnees.get("description") or "").strip()
     rapporteur = Agent.objects.filter(matricule__iexact=(donnees.get("rapporteur") or "").strip()).first()
@@ -176,6 +205,7 @@ def _saisir(request):
             reference=reference, agent=agent, saisine=aujourd_hui, grief=grief[:160], description=description,
             degre=degre, rapporteur=rapporteur.nom_complet[:120],
             stade=str(regles["stade_ouverture"])[:120], stade_detail=str(regles["detail_ouverture"])[:160],
+            phase=ProcedureDisciplinaire.Phase.DEMANDE_EXPLICATION,
         )
         _notifier_convocation(item, blocs)
     return Response(procedure_row(item, aujourd_hui, delai), status=201)
@@ -305,9 +335,11 @@ def _seance_liee(reference: str) -> SessionParitaire | None:
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
-def convocation(_request, pk: int):
+def convocation(request, pk: int):
     """Convocation formelle établie à partir du dossier d'instruction."""
     item = get_object_or_404(ProcedureDisciplinaire.objects.select_related("agent", "agent__organisme"), pk=pk)
+    if not agent_visible(request.user, item.agent):
+        return refus_hors_perimetre()
     contenu = _contenu(item)
     reponse = HttpResponse(contenu, content_type="application/pdf")
     reponse["Content-Disposition"] = f'attachment; filename="convocation-{item.reference}.pdf"'
@@ -356,3 +388,105 @@ def fixer_session(request):
             description=description, composition=composition, lieu=lieu,
         )
     return Response(_session_row(item), status=201)
+
+
+def _jour(valeur, libelle: str):
+    """(date | None, erreur)."""
+    if not valeur:
+        return None, None
+    if isinstance(valeur, date):
+        return valeur, None
+    try:
+        jour = date.fromisoformat(str(valeur))
+    except ValueError:
+        return None, f"{libelle} n'est pas valide."
+    return jour, None
+
+
+@api_view(["PATCH", "DELETE"])
+@permission_classes([IsAuthenticated])
+def procedure(request, pk: int):
+    """Met à jour la procédure (phase, décision, exécution) ou la supprime. L'agent la suit depuis son profil."""
+    item = get_object_or_404(ProcedureDisciplinaire.objects.select_related("agent", "agent__organisme"), pk=pk)
+    if not peut_gerer_carriere(request.user, item.agent):
+        return refus_carriere()
+    if request.method == "DELETE":
+        item.delete()
+        return Response(status=204)
+
+    donnees = request.data
+    aujourd_hui = timezone.localdate()
+    blocs = _blocs()
+    delai = int(_regles(blocs)["delai_jours"])
+
+    grief = (donnees.get("grief", item.grief) or "").strip()
+    description = (donnees.get("description", item.description) or "").strip()
+    if not grief or not description:
+        return Response({"detail": "Le grief et les faits reprochés sont obligatoires."}, status=400)
+    try:
+        degre = int(donnees.get("degre", item.degre))
+    except (TypeError, ValueError):
+        degre = 0
+    connus = {int(d["degre"]) for d in (blocs.get("echelle") or {}).get("degres") or [] if str(d.get("degre", "")).isdigit()}
+    if degre not in (connus or {1, 2, 3}):
+        return Response({"detail": "Ce degré ne figure pas sur l'échelle des sanctions."}, status=400)
+
+    rapporteur = item.rapporteur
+    if donnees.get("rapporteur"):
+        choisi = Agent.objects.filter(matricule__iexact=str(donnees["rapporteur"]).strip()).first()
+        if choisi is None:
+            return Response({"detail": "Aucun agent ne porte le matricule du rapporteur."}, status=400)
+        if choisi.pk == item.agent_id:
+            return Response({"detail": "Le rapporteur ne peut pas être l'agent mis en cause."}, status=400)
+        rapporteur = choisi.nom_complet[:120]
+
+    phase = donnees.get("phase", item.phase)
+    if phase not in {code for code, _libelle in ProcedureDisciplinaire.Phase.choices}:
+        return Response({"detail": "Choisissez la phase de la procédure."}, status=400)
+    decision = (donnees.get("decision", item.decision) or "").strip()[:240]
+    nature = donnees.get("sanction_nature", item.sanction_nature) or ""
+    if nature and nature not in {code for code, _libelle in SanctionDisciplinaire.Nature.choices}:
+        return Response({"detail": "La nature de la sanction n'est pas valide."}, status=400)
+    date_decision, erreur = _jour(donnees.get("date_decision", item.date_decision), "La date de la décision")
+    if erreur:
+        return Response({"detail": erreur}, status=400)
+    executee_le, erreur = _jour(donnees.get("executee_le", item.executee_le), "La date d'exécution")
+    if erreur:
+        return Response({"detail": erreur}, status=400)
+
+    if phase == ProcedureDisciplinaire.Phase.DECISION_EXECUTION:
+        if not decision or date_decision is None:
+            return Response({"detail": "Une décision exige son contenu et sa date."}, status=400)
+        if date_decision > aujourd_hui:
+            return Response({"detail": "La décision ne peut pas être datée dans le futur."}, status=400)
+        if date_decision < item.saisine:
+            return Response({"detail": "La décision ne peut pas précéder la saisine."}, status=400)
+        if executee_le is not None and executee_le < date_decision:
+            return Response({"detail": "L'exécution ne peut pas précéder la décision."}, status=400)
+        avis = ProcedureDisciplinaire.Avis.SANCTION if nature else ProcedureDisciplinaire.Avis.CLASSEE
+    else:
+        nature, decision, date_decision, executee_le = "", "", None, None
+        avis = donnees.get("avis") or (
+            ProcedureDisciplinaire.Avis.DELIBERE if phase == ProcedureDisciplinaire.Phase.INSTRUCTION_CONSEIL
+            else ProcedureDisciplinaire.Avis.ATTENTE_REPONSE
+        )
+        if avis not in {code for code, _libelle in ProcedureDisciplinaire.Avis.choices} or avis in {
+            ProcedureDisciplinaire.Avis.SANCTION, ProcedureDisciplinaire.Avis.CLASSEE,
+        }:
+            return Response({"detail": "Cet avis ne convient pas à une procédure en cours."}, status=400)
+
+    with transaction.atomic():
+        item.grief, item.description, item.degre, item.rapporteur = grief[:160], description, degre, rapporteur
+        item.phase, item.avis = phase, avis
+        item.stade = item.get_phase_display()
+        item.stade_detail = str(donnees.get("stade_detail", item.stade_detail) or "").strip()[:160]
+        item.decision, item.sanction_nature, item.date_decision, item.executee_le = decision, nature, date_decision, executee_le
+        item.save()
+        # La sanction du registre suit la décision : créée, mise à jour, ou retirée avec elle.
+        if nature and date_decision:
+            SanctionDisciplinaire.objects.update_or_create(
+                procedure=item, defaults={"agent": item.agent, "nature": nature, "degre": degre, "prononcee_le": date_decision},
+            )
+        else:
+            item.sanctions.all().delete()
+    return Response(procedure_row(item, aujourd_hui, delai))

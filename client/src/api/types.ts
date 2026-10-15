@@ -41,6 +41,10 @@ export type AgentBrief = {
   situation: string;
   categorie: string;
   photo_url: string;
+  /** Fin de la position en cours (détachement, disponibilité…), quand un terme est fixé. */
+  echeance?: string;
+  echeance_jours?: number;
+  echeance_proche?: boolean;
 };
 
 export type Acte = {
@@ -175,6 +179,36 @@ export type Dashboard = {
   }[];
 };
 
+export type EtapeParcours = {
+  id: number;
+  type: string;
+  type_libelle: string;
+  intitule: string;
+  date_effet: string;
+  reference_acte: string;
+  detail: string;
+  /** « position » : période de détachement, disponibilité… tenue depuis la situation administrative. */
+  origine: "parcours" | "position";
+  /** Acte joint (positions) : vide pour les événements saisis sans document. */
+  document_url: string;
+};
+
+export type SuiviDisciplinaire = {
+  reference: string;
+  saisine: string;
+  grief: string;
+  description: string;
+  degre: number;
+  phase: string;
+  phase_libelle: string;
+  avis_libelle: string;
+  decision: string;
+  sanction: string;
+  sanction_libelle: string;
+  date_decision: string;
+  executee_le: string;
+};
+
 export type Dossier = AgentBrief & {
   /** Droit de modifier le dossier ; absent quand le serveur ne le précise pas (le serveur reste juge). */
   modifiable?: boolean;
@@ -186,9 +220,11 @@ export type Dossier = AgentBrief & {
     prenoms: string;
     nom_jeune_fille: string;
     sexe: string;
+    sexe_code: string;
     date_naissance: string;
     lieu_naissance: string;
     statut_matrimonial: string;
+    statut_matrimonial_code: string;
     date_mariage: string;
     type_piece_identite: string;
     type_piece_identite_libelle: string;
@@ -209,9 +245,12 @@ export type Dossier = AgentBrief & {
   };
   parcours_academique: {
     niveau_etude: string;
+    niveau_etude_code: string;
     libelle_diplome: string;
     domaine_formation: string;
   };
+  parcours: EtapeParcours[];
+  discipline: SuiviDisciplinaire[];
   situation_saisie: {
     organisme: string;
     direction: string;
@@ -245,6 +284,14 @@ export type Dossier = AgentBrief & {
   types_absences: { code: string; libelle: string }[];
   types_formations: { code: string; libelle: string; publics: string[]; piece_requise: boolean; piece_libelle: string }[];
   sessions_formations: { code: string; libelle: string; type: string; cadre: string; objectif: string }[];
+  collecte_formation: {
+    ouverte: boolean;
+    date_limite: string;
+    communique: string;
+    repondu: boolean;
+    ras: boolean;
+    besoins: { id: number; intitule: string; priorite: string }[];
+  } | null;
   types_actes: { code: string; libelle: string }[];
   presence: {
     mois: string;
@@ -295,15 +342,6 @@ export type Dossier = AgentBrief & {
   }[];
   social: {
     cmu: string;
-    traitement_brut: number;
-    cotisations: number;
-    solde_nette: number;
-    engagements: number;
-    taux_quotite: number;
-    quotite: number;
-    marge: number;
-    part_engagements: number;
-    part_quotite: number;
     ayants_droit: { initiales: string; nom: string; lien: string; detail: string; statut: string }[];
     enveloppe: {
       exercice: number;
@@ -541,6 +579,10 @@ export type EntiteTutelle = {
   niveau_libelle?: string;
   parent?: string;
   parent_nom?: string;
+  /** Quorum propre à la structure ; null : hérité de la structure qui la contient, puis du quorum par défaut. */
+  quorum_presence_pourcent?: number | null;
+  quorum_effectif?: number;
+  quorum_herite?: boolean;
 };
 
 export type BranchePlafond = {
@@ -550,6 +592,7 @@ export type BranchePlafond = {
   icone: string;
   effectif: number;
   plafond: number;
+  besoins: number;
   vacants: number;
   taux: number;
   note: string;
@@ -615,59 +658,6 @@ export type Dotation = {
   journal: JournalEffectif[];
   entites: EntiteTutelle[];
   postes: { libelle: string; structures: string[] }[];
-  natures: OptionCode[];
-  statuts: OptionCode[];
-};
-
-export type FiliereBesoin = {
-  code: string;
-  libelle: string;
-  icone: string;
-  requis: number;
-  couverts: number;
-  taux: number;
-};
-
-export type FicheBesoin = {
-  reference: string;
-  entite: string;
-  entite_code: string;
-  direction: string;
-  profil: string;
-  grade: string;
-  specialite: string;
-  volume: number;
-  motif: string;
-  nature: string;
-  nature_libelle: string;
-  statut: string;
-  statut_libelle: string;
-  arbitrage: string;
-  visa: string;
-  detail: string;
-  critique: boolean;
-  postes_accordes: number;
-  depose_le: string;
-  heure: string;
-};
-
-export type Besoins = {
-  exercice: number;
-  ouverte: boolean;
-  cadrage: string;
-  pea_max: number;
-  volume: number;
-  entites: number;
-  variation: number | null;
-  favorables: number;
-  postes_favorables: number;
-  taux_favorable: number;
-  critiques: number;
-  alerte_retraites: number;
-  agents_repositionnes: number;
-  filieres: FiliereBesoin[];
-  fiches: FicheBesoin[];
-  entites_liste: EntiteTutelle[];
   natures: OptionCode[];
   statuts: OptionCode[];
 };

@@ -20,7 +20,7 @@ const PRIMAIRE = "inline-flex items-center gap-2 px-3 py-1.5 rounded bg-primary 
 type Pole = { code: string; nom: string; libelle: string };
 type Annuaire = { structures: EntiteTutelle[]; poles: Pole[] };
 
-const VIDE = { nom: "", pole: "", niveau: "direction-centrale", parent: "" };
+const VIDE = { nom: "", pole: "", niveau: "direction-centrale", parent: "", quorum: "" };
 
 const TEINTE_NIVEAU: Record<string, { pastille: string; puce: string }> = {
   ministere: { pastille: "bg-on-surface text-surface", puce: "bg-on-surface" },
@@ -66,6 +66,7 @@ export function StructuresScreen() {
         pole: formulaire.pole,
         niveau: formulaire.niveau,
         parent: formulaire.niveau === "ministere" ? "" : formulaire.parent,
+        quorum_presence_pourcent: formulaire.quorum.trim() === "" ? null : Number(formulaire.quorum),
       });
       if (edition) {
         return api<EntiteTutelle>(`/api/v1/structures/${encodeURIComponent(edition)}/`, { method: "PATCH", body: corps });
@@ -121,7 +122,7 @@ export function StructuresScreen() {
 
   function ouvrirEdition(item: EntiteTutelle) {
     setEdition(item.code);
-    setFormulaire({ nom: item.nom, pole: item.pole, niveau: item.niveau || "direction-centrale", parent: item.parent || "" });
+    setFormulaire({ nom: item.nom, pole: item.pole, niveau: item.niveau || "direction-centrale", parent: item.parent || "", quorum: item.quorum_presence_pourcent != null ? String(item.quorum_presence_pourcent) : "" });
     enregistrer.reset();
   }
 
@@ -234,6 +235,7 @@ export function StructuresScreen() {
               <thead className="bg-surface-container-low font-label-sm text-label-sm uppercase tracking-wide text-on-surface-variant">
                 <tr>
                   <th className="px-4 py-3">Pôle</th>
+                  <th className="px-4 py-3">Quorum</th>
                   <th className="px-4 py-3 text-right">Actions</th>
                 </tr>
               </thead>
@@ -278,7 +280,7 @@ export function StructuresScreen() {
               <tbody>
                 {visibles.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-4 py-8 text-center font-body-sm text-body-sm text-on-surface-variant">Aucune structure ne correspond à ce pôle.</td>
+                    <td colSpan={6} className="px-4 py-8 text-center font-body-sm text-body-sm text-on-surface-variant">Aucune structure ne correspond à ce pôle.</td>
                   </tr>
                 ) : pageStructures.visibles.map(({ item, profondeur }) => {
                   const teinte = teinteNiveau(item.niveau);
@@ -295,6 +297,13 @@ export function StructuresScreen() {
                     </td>
                     <td className="px-4 py-3 font-body-sm text-body-sm text-on-surface-variant">{item.parent_nom || "—"}</td>
                     <td className="px-4 py-3 font-body-sm text-body-sm text-on-surface-variant">{item.pole_libelle}</td>
+                    <td className="px-4 py-3 font-body-sm text-body-sm">
+                      {item.quorum_effectif != null ? (
+                        <span className={item.quorum_herite ? "text-on-surface-variant" : "font-semibold text-on-surface"} title={item.quorum_herite ? "Hérité de la structure qui la contient ou du quorum par défaut" : "Défini pour cette structure"}>
+                          {item.quorum_effectif} %{item.quorum_herite ? " (hérité)" : ""}
+                        </span>
+                      ) : "—"}
+                    </td>
                     <td className="px-4 py-3 text-right">
                       <button type="button" className="font-label-md text-label-md text-primary hover:underline" onClick={() => ouvrirEdition(item)}>Modifier</button>
                       <button type="button" className="ml-3 font-label-md text-label-md text-error hover:underline" onClick={() => supprimer(item)}>Supprimer</button>
@@ -356,6 +365,23 @@ export function StructuresScreen() {
                 <option value="sous-direction">Sous-direction</option>
                 <option value="service">Service</option>
               </select>
+            </label>
+            <label className="block space-y-1">
+              <span className="font-label-sm text-label-sm text-on-surface-variant">Quorum de présence (%)</span>
+              <input
+                className={CHAMP}
+                type="number"
+                min={1}
+                max={100}
+                step={1}
+                inputMode="numeric"
+                placeholder="Hérité de la structure qui la contient"
+                value={formulaire.quorum}
+                onChange={(event) => setFormulaire({ ...formulaire, quorum: event.target.value })}
+              />
+              <span className="block font-label-sm text-label-sm text-on-surface-variant">
+                Présence minimale des agents de cette structure pour accorder un congé. Laissez vide pour reprendre celui de la structure qui la contient, puis le quorum par défaut des Paramètres.
+              </span>
             </label>
             {formulaire.niveau !== "ministere" ? (
               <label className="block space-y-1">

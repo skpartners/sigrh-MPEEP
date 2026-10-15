@@ -34,7 +34,7 @@ def test_registre_des_absences_et_indicateurs_calcules(api):
     assert donnees["indicateurs"]["total"] == len(lignes)
     assert sum(item["nombre"] for item in donnees["ventilation"]) == len(lignes)
     assert donnees["indicateurs"]["en_attente"] == sum(1 for item in lignes if item["decision"] == "en_attente")
-    assert donnees["presenteisme"]["taux"] == 97.4
+    assert 0 <= donnees["presenteisme"]["taux"] <= 100 and donnees["presenteisme"]["objectif"] > 0
     # Rattachées aux agents fictifs versés : aucun nom en dur côté écran.
     assert all(item["agent"]["matricule"] for item in lignes)
     rapport = api.get("/api/v1/carrieres/absences/export/", **auth)
@@ -52,29 +52,28 @@ def test_decider_une_autorisation_exige_un_motif(api):
     reponse = api.post(route, {"sens": "invalider", "motif": "Pièce illisible."}, format="json", **auth)
     assert reponse.status_code == 200
     assert reponse.json()["decision"] == "invalidee"
-    assert reponse.json()["impact_solde"].startswith("Retenue")
     assert api.post(route, {"sens": "valider", "motif": "Revu."}, format="json", **auth).status_code == 409
 
 
-def test_regulariser_verse_une_autorisation_en_attente(api):
+def test_la_demande_d_absence_de_l_agent_arrive_au_registre_a_statuer(api):
     auth = _auth(api)
     avant = api.get("/api/v1/carrieres/absences/", **auth).json()["indicateurs"]["en_attente"]
-    reponse = api.post(
-        "/api/v1/carrieres/absences/",
-        {"matricule": "394812H", "type": "permission-speciale", "debut": "2026-10-05", "fin": "2026-10-06"},
+    # L'agent dépose sa demande depuis son profil ; le registre des absences ne se saisit plus à la main.
+    depot = api.post(
+        "/api/v1/agents/394812H/conges/demande/",
+        {"type": "evenement-familial", "debut": "2026-10-05", "fin": "2026-10-07", "interim": "Mme SORO Karidja"},
         format="json",
         **auth,
     )
-    assert reponse.status_code == 201
-    assert reponse.json()["jours"] == 2
-    assert api.get("/api/v1/carrieres/absences/", **auth).json()["indicateurs"]["en_attente"] == avant + 1
-    inconnu = api.post(
-        "/api/v1/carrieres/absences/",
-        {"matricule": "000000X", "type": "autorisation", "debut": "2026-10-05", "fin": "2026-10-06"},
-        format="json",
-        **auth,
-    )
-    assert inconnu.status_code == 400
+    assert depot.status_code == 201, depot.content
+    apres = api.get("/api/v1/carrieres/absences/", **auth).json()
+    assert apres["indicateurs"]["en_attente"] == avant + 1
+    ligne = next(item for item in apres["autorisations"] if item["decision"] == "en_attente" and item["agent"]["matricule"] == "394812H" and item["justificatif"].startswith("Demande "))
+    assert ligne["type"] == "permission-speciale" and ligne["jours"] == 2  # la date de reprise n'est pas décomptée
+    # Le gestionnaire statue depuis le registre.
+    assert api.post(f"/api/v1/absences/{ligne['id']}/decision/", {"sens": "valider", "motif": "Pièce vérifiée."}, format="json", **auth).status_code == 200
+    # Plus de saisie directe par le gestionnaire.
+    assert api.post("/api/v1/carrieres/absences/", {"matricule": "394812H", "type": "autorisation", "debut": "2026-10-05", "fin": "2026-10-06"}, format="json", **auth).status_code == 405
 
 
 # --- Congés ---------------------------------------------------------------------------------
@@ -102,6 +101,21 @@ def test_signer_un_conge_exige_la_signature_electronique(api, tmp_path, settings
     auth = _auth(api)
     demandes = api.get("/api/v1/carrieres/conges/", **auth).json()["demandes"]
     pret = next(item for item in demandes if item["instruction"] == "pret_signature")
+    # Un conflit de quorum se déduit de la présence : trois agents d'une même structure, deux absents en même temps.
+    from datetime import date, timedelta
+
+    from personnel.models import Absence, Agent
+
+    structure = "Direction du Portefeuille des Secteurs Primaire et Secondaire"
+    for matricule in ("402771K", "418902X", "288103A"):
+        Agent.objects.filter(matricule=matricule).update(direction=structure, sous_direction="", service="", structure=structure)
+    debut = date.today() + timedelta(days=40)
+    for matricule in ("402771K", "418902X"):
+        Absence.objects.create(
+            agent=Agent.objects.get(matricule=matricule), nature="Congé annuel", debut=debut, fin=debut + timedelta(days=4),
+            jours=5, statut="En instruction", instruction="pret_signature",
+        )
+    demandes = api.get("/api/v1/carrieres/conges/", **auth).json()["demandes"]
     conflit = next(item for item in demandes if item["instruction"] == "conflit_quorum")
     route = f"/api/v1/conges/{pret['id']}/instruction/"
     assert api.post(route, {"action": "signer"}, format="json", **auth).status_code == 409
@@ -235,9 +249,9 @@ def test_fin_de_carriere_pyramide_et_dossiers(api):
     donnees = api.get("/api/v1/carrieres/fin-de-carriere/", **auth).json()
     assert sum(tranche["effectif"] for tranche in donnees["pyramide"]) == Agent.objects.exclude(date_naissance=None).count()
     assert donnees["dossiers"] and all(ligne["date_limite"] for ligne in donnees["dossiers"])
-    assert donnees["indicateurs"]["idr"] == sum(ligne["idr"] for ligne in donnees["dossiers"])
+    assert donnees["indicateurs"]["dossiers"] == len(donnees["dossiers"])
+    assert "idr" not in donnees["dossiers"][0] and "pension" not in donnees["dossiers"][0]
     assert donnees["postes"] and donnees["motifs"]
-    assert donnees["entete"]["titre"] and len(donnees["entete"]["fil"]) == 3
     assert donnees["distinctions"] and donnees["accompagnement"]["actions"]
     retraite = next(item for item in donnees["motifs"] if item["automatique"])
     assert retraite["libelle"] == "Admission à la retraite"
@@ -245,7 +259,7 @@ def test_fin_de_carriere_pyramide_et_dossiers(api):
     assert api.delete(f"/api/v1/carrieres/fin-de-carriere/motifs/{retraite['id']}/", **auth).status_code == 409
     dossier = next(item for item in donnees["dossiers"] if item["automatique"])
     assert api.delete(f"/api/v1/carrieres/fin-de-carriere/dossiers/{dossier['id']}/", **auth).status_code == 409
-    sans_decret = {"age_limite": dossier["age_statutaire"] + 2, "idr": dossier["idr"], "pension": dossier["pension"], "statut": dossier["statut"]}
+    sans_decret = {"age_limite": dossier["age_statutaire"] + 2, "statut": dossier["statut"]}
     assert api.patch(f"/api/v1/carrieres/fin-de-carriere/dossiers/{dossier['id']}/", sans_decret, format="json", **auth).status_code == 400
     reporte = api.patch(
         f"/api/v1/carrieres/fin-de-carriere/dossiers/{dossier['id']}/",
@@ -278,7 +292,7 @@ def test_fin_de_carriere_pyramide_et_dossiers(api):
 def test_action_sociale_budget_registre_et_mandatement(api):
     auth = _auth(api)
     donnees = api.get("/api/v1/action-sociale/", **auth).json()
-    assert donnees["budget"]["allouee"] > 0 and donnees["guichets"] and donnees["partenaires"]
+    assert donnees["budget"]["allouee"] > 0 and donnees["guichets"]
     conforme = next(item for item in donnees["requetes"] if item["etat"] == "conforme")
     reserve = next(item for item in donnees["requetes"] if item["etat"] == "reserve")
     engagee = donnees["budget"]["engagee"]

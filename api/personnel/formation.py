@@ -1,7 +1,7 @@
-"""Sous-direction de la formation continue : catalogue, planification des sessions, candidatures,
-émargement, clôture, prestataires, besoins et plan annuel.
+"""Formations organisées par le ministère pour ses agents : collecte des besoins, modules,
+candidatures, prestataires et dossier de formation.
 
-Les candidatures des agents restent des demandes qui suivent le circuit de validation
+Les candidatures suivent le circuit de validation
 (chef de service → SD Formation Continue → DRH → notification, voir inscriptions.py).
 """
 
@@ -23,9 +23,12 @@ from .classeur import habiller
 from .models import (
     Agent,
     BesoinFormation,
+    CollecteBesoinFormation,
+    CollecteReponseFormation,
     Formation,
     InscriptionFormation,
     Notification,
+    EntiteTutelle,
     Organisme,
     PlanFormation,
     Prestataire,
@@ -57,6 +60,21 @@ def _texte(data, cle: str, libelle: str, longueur: int, obligatoire: bool = Fals
     if len(valeur) > longueur:
         raise Invalide(f"Le champ « {libelle} » dépasse {longueur} caractères.")
     return valeur
+
+
+def _structure_agent(agent) -> str:
+    """La structure des paramètres de l'agent, sinon son rattachement saisi."""
+    from .rattachement import structure_de, structures_par_nom
+
+    entite = structure_de(agent, structures_par_nom())
+    return entite.nom if entite else (agent.service or agent.sous_direction or agent.direction or agent.structure or "")
+
+
+def _identifiant(valeur) -> int:
+    try:
+        return int(valeur)
+    except (TypeError, ValueError):
+        return 0
 
 
 def _entier(data, cle: str, libelle: str, minimum: int = 0, maximum: int = 10**12) -> int:
@@ -109,7 +127,7 @@ def etat_session(session: SessionFormation, aujourd_hui: date | None = None) -> 
         return "terminee"
     if session.date_debut and session.date_debut <= aujourd_hui and (session.date_fin is None or aujourd_hui <= session.date_fin):
         return "en_cours"
-    if session.ouverte:
+    if session.ouverte and (session.inscriptions_fin is None or aujourd_hui <= session.inscriptions_fin):
         return "inscriptions_ouvertes"
     return "planifiee" if session.date_debut else "a_planifier"
 
@@ -210,7 +228,7 @@ def _inscription_row(item: InscriptionFormation) -> dict:
             "nom_complet": agent.nom_complet,
             "initiales": agent.initiales,
             "fonction": getattr(agent, "fonction", "") or agent.corps,
-            "organisme": agent.organisme.sigle or agent.organisme.nom,
+            "organisme": _structure_agent(agent),
         },
     }
 
@@ -228,11 +246,16 @@ def _session_row(item: SessionFormation, aujourd_hui: date) -> dict:
         "libelle": item.libelle,
         "objectif": item.objectif,
         "cadre_budgetaire": item.cadre_budgetaire,
+        "cadre": item.cadre,
+        "cadre_libelle": item.get_cadre_display(),
+        "zone": SessionFormation.zone_du_cadre(item.cadre),
+        "zone_libelle": item.zone_libelle,
         "type": item.type_formation.code,
         "type_libelle": item.type_formation.libelle,
         "etat": etat,
         "etat_libelle": ETAT_SESSION[etat],
         "ouverte": item.ouverte,
+        "inscriptions_fin": item.inscriptions_fin.isoformat() if item.inscriptions_fin else None,
         "prestataire": {"id": item.prestataire.id, "nom": item.prestataire.nom} if item.prestataire else None,
         "lieu": item.lieu,
         "formateur": item.formateur,
@@ -271,7 +294,7 @@ def tableau(request):
         _inscription_row(i)
         for i in InscriptionFormation.objects.select_related("demande__agent__organisme", "session").order_by("-demande__depose_le", "-id")
     ]
-    besoins = BesoinFormation.objects.filter(annee=EXERCICE).select_related("organisme", "type_formation", "session")
+    besoins = BesoinFormation.objects.filter(annee=EXERCICE).select_related("structure", "type_formation", "session", "agent")
     types = TypeFormation.objects.prefetch_related("publics", "sessions")
 
     engage = sum(s["engage"] for s in sessions)
@@ -291,7 +314,7 @@ def tableau(request):
                 "type": t.code,
                 "libelle": t.libelle,
                 "besoins": len(lignes),
-                "structures": len({b.organisme_id for b in lignes}),
+                "structures": len({b.structure_id for b in lignes}),
                 "effectif": sum(b.effectif for b in lignes),
                 "couverts": sum(1 for b in lignes if b.statut == BesoinFormation.Statut.COUVERT),
             }
@@ -320,24 +343,13 @@ def tableau(request):
             "sessions": sessions,
             "inscriptions": inscriptions,
             "prestataires": [_prestataire_row(p) for p in Prestataire.objects.prefetch_related("sessions")],
-            "besoins": [
-                {
-                    "id": b.id,
-                    "intitule": b.intitule,
-                    "effectif": b.effectif,
-                    "priorite": b.priorite,
-                    "priorite_libelle": b.get_priorite_display(),
-                    "statut": b.statut,
-                    "statut_libelle": b.get_statut_display(),
-                    "exprime_le": b.exprime_le.isoformat(),
-                    "organisme": {"code": b.organisme.code, "nom": b.organisme.sigle or b.organisme.nom},
-                    "type": b.type_formation.code,
-                    "type_libelle": b.type_formation.libelle,
-                    "session": {"code": b.session.code, "libelle": b.session.libelle} if b.session else None,
-                }
-                for b in besoins
+            "besoins": [_besoin_row(b) for b in besoins],
+            "collecte": _collecte_row(),
+            "cadres": [
+                {"code": code, "libelle": libelle, "zone": SessionFormation.zone_du_cadre(code), "zone_libelle": SessionFormation.ZONES[SessionFormation.zone_du_cadre(code)]}
+                for code, libelle in SessionFormation.CADRES
             ],
-            "organismes": [{"code": o.code, "nom": o.sigle or o.nom} for o in Organisme.objects.all()],
+            "structures": [{"id": e.id, "nom": e.nom} for e in EntiteTutelle.objects.exclude(niveau="ministere").order_by("ordre", "nom")],
         }
     )
 
@@ -479,6 +491,7 @@ def _lire_session(data) -> dict:
         "libelle": _texte(data, "libelle", "intitulé du module", 160, obligatoire=True),
         "objectif": _texte(data, "objectif", "objectif", 240),
         "cadre_budgetaire": _texte(data, "cadre_budgetaire", "cadre budgétaire", 160),
+        "cadre": _cadre(data),
         "prestataire": prestataire,
         "lieu": _texte(data, "lieu", "lieu", 160),
         "formateur": _texte(data, "formateur", "formateur", 160),
@@ -488,6 +501,11 @@ def _lire_session(data) -> dict:
         "places": _entier(data, "places", "nombre de places", 1, 1000),
         "cout_participant": _entier(data, "cout_participant", "coût par participant", 0, 10**10),
     }
+
+
+def _cadre(_data) -> str:
+    """Un module du plan est toujours une formation dispensée par le ministère, en Côte d'Ivoire."""
+    return "ci_ministere"
 
 
 @api_view(["POST"])
@@ -551,8 +569,17 @@ def action_session(request, code: str, action: str):
     if action == "ouvrir":
         if not item.date_debut:
             return _erreur("Planifiez les dates du module avant d'ouvrir les inscriptions.", 409)
-        item.ouverte, item.ouverte_le = True, item.ouverte_le or aujourd_hui
-        item.save(update_fields=["ouverte", "ouverte_le"])
+        try:
+            jusqu_au = _date(request.data, "inscriptions_fin", "fin des inscriptions")
+        except Invalide as exc:
+            return _erreur(exc.message)
+        item.ouverte, item.ouverte_le, item.inscriptions_fin = True, item.ouverte_le or aujourd_hui, jusqu_au
+        item.save(update_fields=["ouverte", "ouverte_le", "inscriptions_fin"])
+        _notifier_agents(
+            "Inscriptions ouvertes à un module",
+            f"Vous pouvez vous inscrire à « {item.libelle} » depuis votre profil.",
+            urgente=True,
+        )
     elif action == "fermer":
         item.ouverte = False
         item.save(update_fields=["ouverte"])
@@ -745,12 +772,220 @@ def prestataire(request, pk: int):
     return Response(_prestataire_row(item))
 
 
+# --- Collecte des besoins auprès des agents --------------------------------------
+
+
+TITRE_COLLECTE = "Exprimez vos besoins de formation"
+
+
+def _besoin_row(b: BesoinFormation) -> dict:
+    return {
+        "id": b.id,
+        "intitule": b.intitule,
+        "effectif": b.effectif,
+        "priorite": b.priorite,
+        "priorite_libelle": b.get_priorite_display(),
+        "statut": b.statut,
+        "statut_libelle": b.get_statut_display(),
+        "exprime_le": b.exprime_le.isoformat(),
+        "structure": {"id": b.structure_id, "nom": b.structure.nom},
+        "agent": {"matricule": b.agent.matricule, "nom_complet": b.agent.nom_complet} if b.agent_id else None,
+        "type": b.type_formation.code,
+        "type_libelle": b.type_formation.libelle,
+        "session": {"code": b.session.code, "libelle": b.session.libelle} if b.session else None,
+    }
+
+
+def _collecte_ouverte() -> CollecteBesoinFormation | None:
+    return CollecteBesoinFormation.objects.filter(annee=EXERCICE, cloturee_le=None).order_by("-lancee_le").first()
+
+
+def _collecte_row() -> dict | None:
+    collecte = CollecteBesoinFormation.objects.filter(annee=EXERCICE).order_by("-lancee_le").first()
+    if collecte is None:
+        return None
+    reponses = list(collecte.reponses.select_related("agent"))
+    comptes = _comptes_agents().count()
+    return {
+        "id": collecte.id,
+        "annee": collecte.annee,
+        "ouverte": collecte.ouverte,
+        "date_limite": collecte.date_limite.isoformat(),
+        "communique": collecte.communique,
+        "lancee_le": collecte.lancee_le.isoformat(),
+        "cloturee_le": collecte.cloturee_le.isoformat() if collecte.cloturee_le else None,
+        "destinataires": comptes,
+        "repondu": len(reponses),
+        "ras": sum(1 for r in reponses if r.ras),
+        "en_attente": max(0, comptes - len(reponses)),
+        "reponses": [
+            {
+                "matricule": r.agent.matricule,
+                "nom_complet": r.agent.nom_complet,
+                "ras": r.ras,
+                "repondu_le": r.repondu_le.isoformat(),
+            }
+            for r in reponses
+        ],
+    }
+
+
+def _comptes_agents():
+    matricules = Agent.objects.values_list("matricule", flat=True)
+    return User.objects.filter(username__in=matricules)
+
+
+def _notifier_agents(titre: str, message: str, urgente: bool = False, lien: str = "") -> int:
+    maintenant = timezone.now()
+    envois = []
+    for compte in _comptes_agents():
+        envois.append(
+            Notification(
+                destinataire=compte,
+                categorie=Notification.Categorie.DOSSIER,
+                titre=titre,
+                message=message[:280],
+                lien=lien or f"/app/agents/{compte.username}?onglet=formation",
+                urgente=urgente,
+                creee_le=maintenant,
+            )
+        )
+    Notification.objects.bulk_create(envois)
+    return len(envois)
+
+
+def _marquer_collecte_lue(user) -> None:
+    Notification.objects.filter(destinataire=user, titre=TITRE_COLLECTE, lue=False).update(lue=True)
+
+
+def _structure_de_l_agent(agent: Agent):
+    from .rattachement import structure_de, structures_par_nom
+
+    return structure_de(agent, structures_par_nom()) or EntiteTutelle.objects.exclude(niveau="ministere").order_by("ordre", "nom").first()
+
+
+def _type_par_defaut():
+    return TypeFormation.objects.order_by("ordre", "libelle").first()
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def lancer_collecte(request):
+    if _collecte_ouverte() is not None:
+        return _erreur("Une collecte est déjà ouverte pour cet exercice.", 409)
+    try:
+        date_limite = _date(request.data, "date_limite", "date limite", obligatoire=True)
+        communique = _texte(request.data, "communique", "message aux agents", 280)
+    except Invalide as exc:
+        return _erreur(exc.message)
+    with transaction.atomic():
+        CollecteBesoinFormation.objects.create(
+            annee=EXERCICE,
+            date_limite=date_limite,
+            communique=communique,
+            lancee_le=timezone.now(),
+            lancee_par=request.user,
+        )
+        _notifier_agents(
+            TITRE_COLLECTE,
+            communique or "Le ministère recueille vos besoins de formation. Renseignez-les ou indiquez RAS.",
+            urgente=True,
+        )
+    return Response(_collecte_row(), status=201)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def cloturer_collecte(request):
+    collecte = _collecte_ouverte()
+    if collecte is None:
+        return _erreur("Aucune collecte n'est ouverte.", 409)
+    collecte.cloturee_le = timezone.now()
+    collecte.save(update_fields=["cloturee_le"])
+    Notification.objects.filter(titre=TITRE_COLLECTE, lue=False).update(lue=True)
+    return Response(_collecte_row())
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def repondre_collecte(request):
+    collecte = _collecte_ouverte()
+    if collecte is None:
+        return _erreur("Aucune collecte n'est ouverte.", 409)
+    agent = Agent.objects.filter(matricule=request.user.username).first()
+    if agent is None:
+        return _erreur("Seul un agent peut répondre à la collecte.", 403)
+    if CollecteReponseFormation.objects.filter(collecte=collecte, agent=agent).exists():
+        return _erreur("Vous avez déjà répondu à cette collecte.", 409)
+    ras = bool(request.data.get("ras"))
+    lignes = request.data.get("besoins") or []
+    if not ras and not isinstance(lignes, list):
+        return _erreur("Indiquez vos besoins, ou répondez RAS.")
+    if not ras and not lignes:
+        return _erreur("Saisissez au moins un besoin, ou indiquez RAS.")
+    structure = _structure_de_l_agent(agent)
+    type_formation = _type_par_defaut()
+    if structure is None or type_formation is None:
+        return _erreur("La collecte n'est pas encore prête : structure ou cycle manquant.")
+    maintenant = timezone.now()
+    with transaction.atomic():
+        CollecteReponseFormation.objects.create(collecte=collecte, agent=agent, ras=ras, repondu_le=maintenant)
+        if not ras:
+            for ligne in lignes:
+                try:
+                    intitule = _texte(ligne if isinstance(ligne, dict) else {"intitule": ligne}, "intitule", "besoin", 200, obligatoire=True)
+                    priorite = str((ligne or {}).get("priorite") if isinstance(ligne, dict) else "") or BesoinFormation.Priorite.MOYENNE
+                    if priorite not in BesoinFormation.Priorite.values:
+                        priorite = BesoinFormation.Priorite.MOYENNE
+                except Invalide as exc:
+                    return _erreur(exc.message)
+                BesoinFormation.objects.create(
+                    annee=EXERCICE,
+                    structure=structure,
+                    agent=agent,
+                    collecte=collecte,
+                    type_formation=type_formation,
+                    intitule=intitule,
+                    effectif=1,
+                    priorite=priorite,
+                    exprime_le=maintenant.date(),
+                )
+        _marquer_collecte_lue(request.user)
+    return Response({"ok": True, "ras": ras})
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def fusionner_besoins(request):
+    identifiants = request.data.get("ids") or []
+    if not isinstance(identifiants, list) or len(identifiants) < 2:
+        return _erreur("Sélectionnez au moins deux besoins à fusionner.")
+    try:
+        intitule = _texte(request.data, "intitule", "intitulé formulé", 200, obligatoire=True)
+    except Invalide as exc:
+        return _erreur(exc.message)
+    lignes = list(BesoinFormation.objects.filter(pk__in=identifiants).select_related("structure", "type_formation", "session", "agent"))
+    if len(lignes) < 2:
+        return _erreur("Ces besoins n'ont pas été trouvés.")
+    if any(b.statut == BesoinFormation.Statut.COUVERT for b in lignes):
+        return _erreur("Un besoin déjà couvert par un module ne se fusionne plus.", 409)
+    premier, *autres = lignes
+    with transaction.atomic():
+        premier.intitule = intitule
+        premier.effectif = sum(b.effectif for b in lignes)
+        premier.statut = BesoinFormation.Statut.RETENU
+        premier.save(update_fields=["intitule", "effectif", "statut"])
+        BesoinFormation.objects.filter(pk__in=[b.pk for b in autres]).delete()
+    premier.refresh_from_db()
+    return Response(_besoin_row(premier))
+
+
 # --- Besoins recensés ------------------------------------------------------------
 
 
 def _lire_besoin(data) -> dict:
-    organisme = Organisme.objects.filter(code=str(data.get("organisme") or "")).first()
-    if organisme is None:
+    structure = EntiteTutelle.objects.exclude(niveau="ministere").filter(pk=_identifiant(data.get("structure"))).first()
+    if structure is None:
         raise Invalide("Choisissez la structure qui exprime le besoin.")
     type_formation = TypeFormation.objects.filter(code=str(data.get("type") or "")).first()
     if type_formation is None:
@@ -762,7 +997,7 @@ def _lire_besoin(data) -> dict:
     if statut not in BesoinFormation.Statut.values:
         raise Invalide("Le statut est inconnu.")
     return {
-        "organisme": organisme,
+        "structure": structure,
         "type_formation": type_formation,
         "intitule": _texte(data, "intitule", "besoin", 200, obligatoire=True),
         "effectif": _entier(data, "effectif", "nombre d'agents", 1, 5000),
@@ -789,6 +1024,15 @@ def besoin(request, pk: int):
     if request.method == "DELETE":
         item.delete()
         return Response(status=204)
+    if request.data.get("intitule") and not request.data.get("structure"):
+        try:
+            item.intitule = _texte(request.data, "intitule", "intitulé formulé", 200, obligatoire=True)
+        except Invalide as exc:
+            return _erreur(exc.message)
+        if item.statut == BesoinFormation.Statut.EXPRIME:
+            item.statut = BesoinFormation.Statut.RETENU
+        item.save(update_fields=["intitule", "statut"])
+        return Response(_besoin_row(item))
     try:
         valeurs = _lire_besoin(request.data)
     except Invalide as exc:
@@ -798,4 +1042,4 @@ def besoin(request, pk: int):
     for champ, valeur in valeurs.items():
         setattr(item, champ, valeur)
     item.save()
-    return Response({"id": item.id})
+    return Response(_besoin_row(item))

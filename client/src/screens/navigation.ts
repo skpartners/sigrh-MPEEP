@@ -1,7 +1,7 @@
 import type { SessionUser } from "../api/types";
 
 export type AccesMenu = { module: string; fonction?: string };
-export type EnfantNav = { to: string; libelle: string; end?: boolean; icone: string; acces: AccesMenu };
+export type EnfantNav = { to: string; libelle: string; end?: boolean; icone: string; acces: AccesMenu; groupe?: string };
 export type LienNav = {
   to: string;
   end?: boolean;
@@ -10,6 +10,8 @@ export type LienNav = {
   resume: string;
   acces: AccesMenu;
   enfants?: EnfantNav[];
+  /** Visible au menu mais non ouvrant : le module n'est pas encore livré. */
+  bientot?: boolean;
 };
 export type SectionNav = { groupe: string; liens: LienNav[] };
 
@@ -45,51 +47,45 @@ export const NAV: SectionNav[] = [
     groupe: "Métier",
     liens: [
       {
-        to: "/app/carrieres",
-        icone: "assignment",
-        libelle: "Carrières & actes",
-        resume: "L'avancement et les mouvements qui suivent la vie administrative de l'agent.",
+        to: "/app/grh",
+        end: true,
+        icone: "hub",
+        libelle: "GRH",
+        resume: "Gestion des ressources humaines : carrières, action sociale, formation continue et programmation des effectifs.",
         acces: { module: "Carrières & Actes", fonction: "Accueil" },
         enfants: [
-          { to: "/app/carrieres", end: true, icone: "dashboard", libelle: "Accueil", acces: { module: "Carrières & Actes", fonction: "Accueil" } },
-          { to: "/app/carrieres/situation-administrative", icone: "badge", libelle: "Situation administrative", acces: { module: "Carrières & Actes", fonction: "Situation administrative" } },
-          { to: "/app/carrieres/absences", icone: "event_busy", libelle: "Absences", acces: { module: "Carrières & Actes", fonction: "Absences" } },
-          { to: "/app/carrieres/conges", icone: "beach_access", libelle: "Congés", acces: { module: "Carrières & Actes", fonction: "Congés" } },
-          { to: "/app/carrieres/procedures-disciplinaires", icone: "gavel", libelle: "Procédures disciplinaires", acces: { module: "Carrières & Actes", fonction: "Procédures disciplinaires" } },
-          { to: "/app/carrieres/fin-de-carriere", icone: "military_tech", libelle: "Fin de carrière", acces: { module: "Carrières & Actes", fonction: "Fin de carrière" } },
-        ],
-      },
-      {
-        to: "/app/action-sociale",
-        icone: "volunteer_activism",
-        libelle: "Action sociale",
-        resume: "Les aides, prêts et secours, et la quotité cessible de l'agent.",
-        acces: { module: "Social & Santé", fonction: "Action sociale" },
-      },
-      {
-        to: "/app/formation",
-        icone: "school",
-        libelle: "Formation continue",
-        resume: "Le plan, le catalogue, les sessions, les candidatures et le passeport de compétences.",
-        acces: { module: "Formations", fonction: "Formation continue" },
-      },
-      {
-        to: "/app/gpec",
-        icone: "groups",
-        libelle: "GPEC",
-        resume: "Ce que les structures demandent, et la façon dont les postes sont pourvus dans les plafonds.",
-        acces: { module: "GPEC", fonction: "GPEC" },
-        enfants: [
-          { to: "/app/gpec/expression-des-besoins", icone: "post_add", libelle: "Expression des besoins", acces: { module: "GPEC", fonction: "Expression des besoins" } },
-          { to: "/app/gpec/recrutement", icone: "person_add", libelle: "Recrutement", acces: { module: "GPEC", fonction: "Recrutement" } },
+          { to: "/app/grh", end: true, icone: "hub", libelle: "Accueil GRH", acces: { module: "Carrières & Actes", fonction: "Accueil" } },
+          { to: "/app/carrieres/situation-administrative", icone: "badge", libelle: "Situation administrative", acces: { module: "Carrières & Actes", fonction: "Situation administrative" }, groupe: "I. Gestion des carrières" },
+          { to: "/app/carrieres/procedures-disciplinaires", icone: "gavel", libelle: "Procédures disciplinaires", acces: { module: "Carrières & Actes", fonction: "Procédures disciplinaires" }, groupe: "I. Gestion des carrières" },
+          { to: "/app/carrieres/conges", icone: "beach_access", libelle: "Suivi des congés", acces: { module: "Carrières & Actes", fonction: "Congés" }, groupe: "I. Gestion des carrières" },
+          { to: "/app/carrieres/absences", icone: "event_busy", libelle: "Suivi des absences", acces: { module: "Carrières & Actes", fonction: "Absences" }, groupe: "I. Gestion des carrières" },
+          { to: "/app/grh/bilan-carriere", icone: "analytics", libelle: "Bilan de la gestion de carrière", acces: { module: "Carrières & Actes", fonction: "Bilan de carrière" }, groupe: "I. Gestion des carrières" },
+          { to: "/app/carrieres/fin-de-carriere", icone: "military_tech", libelle: "Gestion des fins de carrière", acces: { module: "Carrières & Actes", fonction: "Fin de carrière" }, groupe: "II. Action sociale" },
+          { to: "/app/grh/distinctions", icone: "workspace_premium", libelle: "Distinctions", acces: { module: "Carrières & Actes", fonction: "Distinctions" }, groupe: "II. Action sociale" },
+          { to: "/app/formation", icone: "edit_calendar", libelle: "Élaboration du plan de formation", acces: { module: "Formations", fonction: "Formation continue" }, groupe: "III. Formation continue" },
+          { to: "/app/grh/formation/suivi", icone: "fact_check", libelle: "Suivi du plan de formation", acces: { module: "Formations", fonction: "Suivi du plan" }, groupe: "III. Formation continue" },
+          { to: "/app/grh/formation/bilan", icone: "analytics", libelle: "Bilan de la formation", acces: { module: "Formations", fonction: "Bilan de la formation" }, groupe: "III. Formation continue" },
+          { to: "/app/gpec/expression-des-besoins", icone: "post_add", libelle: "Besoins exprimés", acces: { module: "GPEC", fonction: "Expression des besoins" }, groupe: "IV. Programmation des effectifs" },
+          { to: "/app/grh/programmation/conference", icone: "how_to_vote", libelle: "Besoins validés en Conférence de programmation", acces: { module: "GPEC", fonction: "Conférence de programmation" }, groupe: "IV. Programmation des effectifs" },
+          { to: "/app/grh/programmation/catalogue", icone: "menu_book", libelle: "Catalogue des mesures nouvelles", acces: { module: "GPEC", fonction: "Catalogue des mesures nouvelles" }, groupe: "IV. Programmation des effectifs" },
+          { to: "/app/gpec/recrutement", icone: "domain_add", libelle: "Dotation", acces: { module: "GPEC", fonction: "Recrutement" }, groupe: "IV. Programmation des effectifs" },
+          { to: "/app/grh/programmation/bilan", icone: "balance", libelle: "Bilan de satisfaction des besoins", acces: { module: "GPEC", fonction: "Bilan de satisfaction" }, groupe: "IV. Programmation des effectifs" },
         ],
       },
       {
         to: "/app/communication",
         icone: "campaign",
-        libelle: "Communication",
+        libelle: "Documents publics & communication",
         resume: "Les notes, circulaires et annonces, du brouillon jusqu'à la publication.",
         acces: { module: "Statistiques & RBAC", fonction: "Communication" },
+      },
+      {
+        to: "/app/projets-etudes-rh",
+        icone: "assignment",
+        libelle: "Projets et études RH",
+        resume: "Les projets et les études menés en ressources humaines.",
+        acces: { module: "Projets et études RH" },
+        bientot: true,
       },
     ],
   },
@@ -215,4 +211,23 @@ export function menuCourant(pathname: string, hash: string): LienNav | null {
     }
   }
   return choisi;
+}
+
+/**
+ * Les rubriques d'un menu groupé (GRH) regroupées par domaine : chaque domaine devient une carte
+ * de l'accueil du menu, ouverte sur sa première rubrique.
+ */
+export function domainesDuMenu(lien: LienNav, resumes: Record<string, { icone: string; resume: string }>): LienNav[] {
+  const domaines: LienNav[] = [];
+  for (const enfant of lien.enfants ?? []) {
+    if (!enfant.groupe) continue;
+    let domaine = domaines.find((item) => item.libelle === enfant.groupe);
+    if (!domaine) {
+      const infos = resumes[enfant.groupe] ?? { icone: enfant.icone, resume: "" };
+      domaine = { to: enfant.to, icone: infos.icone, libelle: enfant.groupe, resume: infos.resume, acces: enfant.acces, enfants: [] };
+      domaines.push(domaine);
+    }
+    domaine.enfants = [...(domaine.enfants ?? []), enfant];
+  }
+  return domaines;
 }

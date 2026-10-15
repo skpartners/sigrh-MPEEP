@@ -5,7 +5,7 @@ import pytest
 from django.core.management import call_command
 from rest_framework.test import APIClient
 
-from personnel.models import Formation, InscriptionFormation, SessionFormation
+from personnel.models import EntiteTutelle, Formation, InscriptionFormation, SessionFormation
 
 pytestmark = pytest.mark.django_db
 
@@ -98,11 +98,39 @@ def test_crud_catalogue_prestataires_besoins_et_plan(api):
     p = api.post("/api/v1/formation/prestataires/", {"nom": "Atelier Test", "categorie": "cabinet"}, format="json").json()
     assert api.delete(f"/api/v1/formation/prestataires/{p['id']}/").status_code == 204
 
-    b = api.post("/api/v1/formation/besoins/", {"organisme": "dgpe", "type": "PERF", "intitule": "Excel avancé", "effectif": 7, "priorite": "basse"}, format="json")
+    b = api.post("/api/v1/formation/besoins/", {"structure": EntiteTutelle.objects.exclude(niveau="ministere").first().id, "type": "PERF", "intitule": "Excel avancé", "effectif": 7, "priorite": "basse"}, format="json")
     assert b.status_code == 201
     assert api.delete(f"/api/v1/formation/besoins/{b.json()['id']}/").status_code == 204
 
     assert api.put("/api/v1/formation/plan/", {"dotation": "150 000 000", "objectif_agents": 80}, format="json").json()["dotation"] == 150_000_000
+
+
+def test_collecte_des_besoins_puis_fusion(api):
+    from personnel.models import Notification
+
+    assert api.get("/api/v1/formation/").json()["collecte"] is None
+    lancee = api.post("/api/v1/formation/collecte/", {"date_limite": "2026-12-31", "communique": "Exprimez vos besoins."}, format="json")
+    assert lancee.status_code == 201 and lancee.json()["ouverte"] is True
+    assert api.post("/api/v1/formation/collecte/", {"date_limite": "2026-12-31"}, format="json").status_code == 409
+
+    agent = APIClient()
+    jeton = agent.post("/api/v1/auth/login/", {"matricule": "340188P", "password": "Sigrh-Dev-2026"}, format="json").json()["token"]
+    agent.credentials(HTTP_AUTHORIZATION=f"Token {jeton}")
+    assert Notification.objects.filter(destinataire__username="340188P", titre="Exprimez vos besoins de formation", lue=False).exists()
+    dossier = agent.get("/api/v1/agents/340188P/").json()
+    assert dossier["collecte_formation"]["ouverte"] is True and dossier["collecte_formation"]["repondu"] is False
+    ok = agent.post("/api/v1/formation/collecte/repondre/", {"ras": False, "besoins": [{"intitule": "Excel avancé"}, {"intitule": "Tableaux de bord"}]}, format="json")
+    assert ok.status_code == 200
+    assert not Notification.objects.filter(destinataire__username="340188P", titre="Exprimez vos besoins de formation", lue=False).exists()
+    ras = APIClient()
+    jeton_ras = ras.post("/api/v1/auth/login/", {"matricule": "394812H", "password": "Sigrh-Dev-2026"}, format="json").json()["token"]
+    ras.credentials(HTTP_AUTHORIZATION=f"Token {jeton_ras}")
+    assert ras.post("/api/v1/formation/collecte/repondre/", {"ras": True}, format="json").status_code == 200
+
+    besoins = [b for b in api.get("/api/v1/formation/").json()["besoins"] if b["intitule"] in {"Excel avancé", "Tableaux de bord"}]
+    assert len(besoins) == 2
+    fusion = api.post("/api/v1/formation/besoins/fusionner/", {"ids": [b["id"] for b in besoins], "intitule": "Outils bureautiques"}, format="json")
+    assert fusion.status_code == 200 and fusion.json()["effectif"] == 2 and fusion.json()["intitule"] == "Outils bureautiques"
 
 
 def test_inscription_par_la_sd_et_export(api):

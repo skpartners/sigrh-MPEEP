@@ -46,13 +46,13 @@ export function BadgeCandidature({ etat, libelle }: { etat: EtatCandidature; lib
 
 export function EnTeteSection({ icone, titre, sousTitre, action }: { icone: string; titre: string; sousTitre?: string; action?: ReactNode }) {
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+    <div className={`${CARTE} p-4 sm:p-5 mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3`}>
       <div>
         <h2 className="font-headline-sm text-headline-sm text-on-surface font-bold flex items-center gap-2">
           <Icone nom={icone} className="text-primary text-xl" />
           {titre}
         </h2>
-        {sousTitre ? <p className="font-body-sm text-body-sm text-on-surface-variant mt-0.5">{sousTitre}</p> : null}
+        {sousTitre ? <p className="font-body-sm text-body-sm text-on-surface mt-0.5">{sousTitre}</p> : null}
       </div>
       {action}
     </div>

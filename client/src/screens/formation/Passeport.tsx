@@ -8,7 +8,7 @@ import { Skeleton } from "../../ui/Motion";
 import { BOUTON_PRIMAIRE, CARTE, CHAMP, EnTeteSection, Modale, Vide } from "./ui";
 import { Icone } from "../../ui/Icone";
 
-/** Passeport de formation : formations suivies par un agent, heures cumulées, attestation imprimable. */
+/** Dossier de formation : formations suivies par un agent, heures cumulées, attestation imprimable. */
 export function Passeport() {
   const [recherche, setRecherche] = useState("");
   const [matricule, setMatricule] = useState<string | null>(null);
@@ -21,7 +21,7 @@ export function Passeport() {
 
   return (
     <section aria-labelledby="titre-passeport">
-      <EnTeteSection icone="workspace_premium" titre="Passeport de formation" sousTitre="Formations suivies par un agent, versées à son dossier à la clôture de chaque module." />
+      <EnTeteSection icone="workspace_premium" titre="Dossier de formation" sousTitre="Historique du parcours de formation d'un agent : modules suivis, heures et attestations." />
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-5">
         <div className={`${CARTE} p-4 xl:col-span-4 self-start`}>
           <label className="block">
@@ -50,7 +50,7 @@ export function Passeport() {
           </ul>
         </div>
         <div className="xl:col-span-8">
-          {matricule ? <Fiche matricule={matricule} /> : <Vide icone="badge" titre="Choisissez un agent" texte="Son passeport de formation s'affiche ici : modules suivis, organismes, heures et attestations." />}
+          {matricule ? <Fiche matricule={matricule} /> : <Vide icone="badge" titre="Choisissez un agent" texte="Son dossier de formation s'affiche ici : modules suivis, organismes, heures et attestations." />}
         </div>
       </div>
     </section>
@@ -61,7 +61,7 @@ function Fiche({ matricule }: { matricule: string }) {
   const [attestation, setAttestation] = useState<Dossier["formations"][number] | null>(null);
   const dossier = useQuery({ queryKey: ["agent", matricule], queryFn: () => api<Dossier>(`/api/v1/agents/${encodeURIComponent(matricule)}/`) });
   if (dossier.isPending) return <Skeleton className="h-72 w-full rounded-xl" />;
-  if (dossier.isError) return <Vide icone="error" titre="Passeport indisponible" texte="Le dossier de l'agent n'a pas pu être chargé." />;
+  if (dossier.isError) return <Vide icone="error" titre="Dossier indisponible" texte="Le dossier de l'agent n'a pas pu être chargé." />;
   const agent = dossier.data;
   const suivies = agent.formations.filter((f) => f.statut === "Terminée");
   const autres = agent.formations.filter((f) => f.statut !== "Terminée");
