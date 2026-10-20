@@ -18,6 +18,7 @@ import { AppChrome } from "./AppChrome";
 import { CarteEffectif } from "./EffectifCarte";
 import { CarteEmplois, CarteLogo } from "./ParametresReferentiel";
 import { Icone } from "../ui/Icone";
+import { Select } from "../ui/Select";
 
 type Parametres = {
   photo_url: string;
@@ -229,9 +230,6 @@ export function ParametresScreen() {
         <div className="motion-rise bg-surface-container-lowest p-6 rounded-lg border border-hairline space-y-1.5">
           <p className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Gouvernance · Paramètres</p>
           <h1 className="font-headline-lg text-headline-lg text-on-surface">Paramètres du ministère</h1>
-          <p className="font-body-md text-body-md text-on-surface-variant max-w-3xl">
-            La ministre — civilité, nom et portrait — s'affiche sur le portail public. Les délais regroupent l'inactivité de session, le visa des actes et la validation par la hiérarchie. Les couleurs habillent tout le SIGRH.
-          </p>
         </div>
 
         {page.isError ? (
@@ -242,9 +240,6 @@ export function ParametresScreen() {
 
         <section className="motion-rise rounded-xl border border-hairline bg-surface-container-lowest p-6" style={{ "--delay": "80ms" } as CSSProperties} aria-labelledby="titre-ministre">
           <h2 id="titre-ministre" className="font-headline-sm text-headline-sm text-on-surface">La ministre</h2>
-          <p className="mt-1 font-body-sm text-body-sm text-on-surface-variant">
-            La civilité, le nom et le portrait s'affichent sur le portail public, à côté des armoiries. Image PNG, JPG ou WEBP, au plus 5 Mo.
-          </p>
 
           <div className="mt-6 flex flex-col sm:flex-row sm:items-start gap-6">
             <div className="h-40 w-40 shrink-0 overflow-hidden rounded-full border border-hairline bg-surface-container">
@@ -279,7 +274,7 @@ export function ParametresScreen() {
                   >
                     <label className="block space-y-1.5">
                       <span className="font-label-sm text-label-sm text-on-surface-variant">Civilité</span>
-                      <select
+                      <Select
                         className={CHAMP}
                         value={civilite}
                         disabled={enCours || !data}
@@ -289,7 +284,7 @@ export function ParametresScreen() {
                         {CIVILITES.map((option) => (
                           <option key={option} value={option}>{option}</option>
                         ))}
-                      </select>
+                      </Select>
                     </label>
                     <label className="block space-y-1.5">
                       <span className="font-label-sm text-label-sm text-on-surface-variant">Nom</span>
@@ -353,9 +348,6 @@ export function ParametresScreen() {
 
         <section className="motion-rise rounded-xl border border-hairline bg-surface-container-lowest p-6" style={{ "--delay": "160ms" } as CSSProperties} aria-labelledby="titre-delais">
           <h2 id="titre-delais" className="font-headline-sm text-headline-sm text-on-surface">Délais</h2>
-          <p className="mt-1 font-body-sm text-body-sm text-on-surface-variant">
-            L'inactivité ferme la session. Le visa d'un acte et la validation hiérarchique s'affichent sur la file et à chaque palier. Les dossiers déjà ouverts gardent l'échéance indiquée à leur transmission.
-          </p>
           {data && !data.peut_modifier ? (
             <p className="mt-6 font-body-md text-body-md text-on-surface">
               Inactivité : {data.inactivite_minutes} minute{data.inactivite_minutes > 1 ? "s" : ""}.
@@ -506,9 +498,6 @@ function SectionCouleurs({ peutModifier, pret }: { peutModifier: boolean; pret: 
   return (
     <section className="motion-rise rounded-xl border border-hairline bg-surface-container-lowest p-6" style={{ "--delay": "240ms" } as CSSProperties} aria-labelledby="titre-couleurs">
       <h2 id="titre-couleurs" className="font-headline-sm text-headline-sm text-on-surface">Couleurs de l'application</h2>
-      <p className="mt-1 font-body-sm text-body-sm text-on-surface-variant">
-        Deux couleurs suffisent : les nuances, les textes lisibles et les graphiques en découlent. L'écran les essaie en direct ; elles ne s'appliquent à tous qu'une fois enregistrées.
-      </p>
 
       <form
         className="mt-6 space-y-6"

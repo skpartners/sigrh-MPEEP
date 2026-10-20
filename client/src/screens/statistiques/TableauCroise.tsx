@@ -34,6 +34,7 @@ import {
   type SourceCatalogue,
 } from "./moteur";
 import { VoletChamps, type ActionsVolet } from "./VoletChamps";
+import { Select } from "../../ui/Select";
 
 export const MAX_CHAMPS = 8;
 export const MAX_VALEURS = 6;
@@ -530,13 +531,13 @@ function BarreOutils({ feuille, catalogue, enCours, enregistrement, onNom, onNom
             )}
           </p>
         </div>
-        <label className="flex flex-col gap-1 font-label-sm text-label-sm text-on-surface-variant lg:w-60">
-          Source de données
-          <select className={CHAMP} value={config.source} onChange={(event) => onSource(event.target.value)}>
-            {(catalogue?.sources ?? []).map((item) => <option key={item.code} value={item.code}>{item.libelle}</option>)}
-          </select>
-        </label>
       </div>
+      <label className="flex flex-col gap-1 font-label-sm text-label-sm text-on-surface-variant sm:max-w-sm">
+        Source de données
+        <Select className={CHAMP} value={config.source} onChange={(event) => onSource(event.target.value)}>
+          {(catalogue?.sources ?? []).map((item) => <option key={item.code} value={item.code}>{item.libelle}</option>)}
+        </Select>
+      </label>
       <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
         <span className="font-label-sm text-label-sm text-on-surface-variant">Croiser avec</span>
         {config.croisements.map((code) => (
@@ -556,7 +557,7 @@ function BarreOutils({ feuille, catalogue, enCours, enregistrement, onNom, onNom
             </button>
           </span>
         ))}
-        <select
+        <Select
           className={`${CHAMP} sm:w-64`}
           value=""
           aria-label="Croiser avec une autre source"
@@ -566,7 +567,7 @@ function BarreOutils({ feuille, catalogue, enCours, enregistrement, onNom, onNom
           {(source?.croisements ?? []).filter((item) => !config.croisements.includes(item.code)).map((item) => (
             <option key={item.code} value={item.code}>{item.possible ? item.libelle : `${item.libelle} — impossible`}</option>
           ))}
-        </select>
+        </Select>
       </div>
       {refus && (
         <div role="alert" className="flex items-start gap-3 rounded-lg border border-error/40 bg-error/5 px-3 py-2 font-body-sm text-body-sm text-on-surface">
@@ -857,17 +858,17 @@ function DialoguePeriode({ libelle, annees, initiale, onClose, onValider }: {
         <div className="grid grid-cols-2 gap-3">
           <label className="flex flex-col gap-1 font-label-md text-label-md text-on-surface">
             De
-            <select className={CHAMP} value={de ?? ""} onChange={(event) => setDe(lire(event.target.value))}>
+            <Select className={CHAMP} value={de ?? ""} onChange={(event) => setDe(lire(event.target.value))}>
               <option value="">Le début</option>
               {[...annees].sort((x, y) => x - y).map((annee) => <option key={annee} value={annee}>{annee}</option>)}
-            </select>
+            </Select>
           </label>
           <label className="flex flex-col gap-1 font-label-md text-label-md text-on-surface">
             À
-            <select className={CHAMP} value={a ?? ""} onChange={(event) => setA(lire(event.target.value))}>
+            <Select className={CHAMP} value={a ?? ""} onChange={(event) => setA(lire(event.target.value))}>
               <option value="">Aujourd'hui</option>
               {annees.map((annee) => <option key={annee} value={annee}>{annee}</option>)}
-            </select>
+            </Select>
           </label>
         </div>
       )}
@@ -904,23 +905,23 @@ function DialogueValeur({ indice, config, source, onClose, onValider }: {
       <div className="space-y-4">
         <label className="flex flex-col gap-1 font-label-md text-label-md text-on-surface">
           Mesure
-          <select className={CHAMP} value={mesure} onChange={(event) => setMesure(event.target.value)}>
+          <Select className={CHAMP} value={mesure} onChange={(event) => setMesure(event.target.value)}>
             {(source?.mesures ?? []).map((item) => <option key={item.code} value={item.code}>{item.code === "nombre" ? "Nombre d'enregistrements" : item.libelle}</option>)}
-          </select>
+          </Select>
         </label>
         <label className="flex flex-col gap-1 font-label-md text-label-md text-on-surface">
           Synthèse par
-          <select className={CHAMP} value={calcul} disabled={!numerique} onChange={(event) => setAgregat(event.target.value as Agregat)}>
+          <Select className={CHAMP} value={calcul} disabled={!numerique} onChange={(event) => setAgregat(event.target.value as Agregat)}>
             {AGREGATS_ORDONNES.filter((item) => numerique || item === "nombre").map((item) => (
               <option key={item} value={item}>{item === "nombre" && numerique ? "Nombre de valeurs renseignées" : LIBELLES_AGREGAT[item]}</option>
             ))}
-          </select>
+          </Select>
         </label>
         <label className="flex flex-col gap-1 font-label-md text-label-md text-on-surface">
           Afficher les valeurs
-          <select className={CHAMP} value={affichage} onChange={(event) => setAffichage(event.target.value as Affichage)}>
+          <Select className={CHAMP} value={affichage} onChange={(event) => setAffichage(event.target.value as Affichage)}>
             {AFFICHAGES_ORDONNES.map((item) => <option key={item} value={item}>{LIBELLES_AFFICHAGE[item]}</option>)}
-          </select>
+          </Select>
         </label>
       </div>
     </Modale>

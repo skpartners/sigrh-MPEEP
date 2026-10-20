@@ -42,8 +42,11 @@ def surveiller_retours() -> int:
     for plan in PlanConge.objects.filter(palier=PlanConge.Palier.PUBLIE, fin__gte=hier, fin__lte=aujourd_hui).select_related("agent"):
         nom = plan.agent.get_full_name() or plan.agent.username
         envois += _annoncer("congé", plan.agent.username, nom, "Congé annuel", plan.fin + timedelta(days=1), aujourd_hui, comptes, vus)
+    for plan in PlanConge.objects.filter(palier=PlanConge.Palier.PUBLIE, fin2__gte=hier, fin2__lte=aujourd_hui).select_related("agent"):
+        nom = plan.agent.get_full_name() or plan.agent.username
+        envois += _annoncer("congé", plan.agent.username, nom, "Congé annuel", plan.fin2 + timedelta(days=1), aujourd_hui, comptes, vus)
     for demande in Demande.objects.filter(categorie="conge").select_related("agent"):
-        if not _close(demande.etape):
+        if not _close(demande.etape) or "refus" in demande.etape.lower():
             continue
         reprise = _reprise(demande)
         if reprise is None or not hier < reprise <= aujourd_hui + timedelta(days=1):

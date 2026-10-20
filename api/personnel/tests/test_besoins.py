@@ -113,3 +113,69 @@ def test_les_besoins_sont_exprimes_par_emploi_de_la_nomenclature(monde):
     emplois = monde["drh"].get("/api/v1/besoins/").json()["emplois"]
     ligne = next(e for e in emplois if e["code"] == _emploi(0))
     assert ligne["fonctionnaires"] >= 2 and ligne["contractuels"] >= 5 and ligne["structures"] >= 2
+
+
+def test_l_administrateur_a_l_onglet_et_exprime_pour_n_importe_quelle_structure(monde):
+    organisme = Organisme.objects.first()
+    admin = User.objects.create_user(username="ADMIN-test", password="Sigrh-Dev-2026")
+    Profil.objects.create(user=admin, fonction="Administrateur", role="Administrateur", organisme=organisme, administrateur=True)
+    compte = _client("ADMIN-test")
+
+    assert monde["drh"].post("/api/v1/besoins/campagne/", {"exercice": 2027, "cadrage": "Besoins 2027"}, format="json").status_code == 201
+    vue = compte.get("/api/v1/besoins/mes-fiches/").json()
+    assert vue["responsable"] is True
+    assert {s["id"] for s in vue["structures"]} >= {s.id for s in monde["structures"].values()}
+    cible = monde["structures"]["service"]
+    depot = compte.post("/api/v1/besoins/fiches/", _fiche(structure=cible.id), format="json")
+    assert depot.status_code == 201
+    assert len(compte.get("/api/v1/besoins/mes-fiches/").json()["fiches"]) == 1
+    # Les structures imbriquées ne sont pas dupliquées à la racine de l'arbre.
+    arbre = compte.get("/api/v1/besoins/mes-fiches/").json()["arbre"]
+    ids = [n["id"] for n in arbre]
+    assert len(ids) == len(set(ids)) and cible.id not in ids
+
+
+def test_le_drh_est_un_responsable_de_sa_direction_seulement(monde):
+    # Dans cet espace le DRH est un responsable comme les autres : sa direction, et elle seule.
+    vue = monde["drh"].get("/api/v1/besoins/mes-fiches/").json()
+    assert vue["responsable"] is True
+    assert [s["nom"] for s in vue["structures"]] == ["Direction des Ressources Humaines"]
+    autre = monde["structures"]["service"]
+    assert monde["drh"].post("/api/v1/besoins/campagne/", {"exercice": 2027, "cadrage": "Besoins 2027"}, format="json").status_code == 201
+    assert monde["drh"].post("/api/v1/besoins/fiches/", _fiche(structure=autre.id), format="json").status_code == 400
+
+
+def test_exercices_passes_consultables_en_lecture_seule(monde):
+    assert monde["drh"].post("/api/v1/besoins/campagne/", {"exercice": 2026, "cadrage": "Besoins 2026"}, format="json").status_code == 201
+    assert monde["service"].post("/api/v1/besoins/fiches/", _fiche(), format="json").status_code == 201
+    assert monde["drh"].post("/api/v1/besoins/campagne/", {"exercice": 2027, "cadrage": "Besoins 2027"}, format="json").status_code == 201
+
+    courant = monde["service"].get("/api/v1/besoins/mes-fiches/").json()
+    assert courant["exercices"] == [2027, 2026]
+    assert courant["campagne"]["exercice"] == 2027 and courant["fiches"] == []
+
+    passe = monde["service"].get("/api/v1/besoins/mes-fiches/?exercice=2026").json()
+    assert passe["campagne"]["exercice"] == 2026 and passe["campagne"]["ouverte"] is False
+    assert len(passe["fiches"]) == 1
+    # Un exercice inconnu retombe sur le plus récent.
+    assert monde["service"].get("/api/v1/besoins/mes-fiches/?exercice=1999").json()["campagne"]["exercice"] == 2027
+
+
+def test_lancer_l_appel_alerte_les_responsables_meme_sans_date_limite(monde):
+    lancement = monde["drh"].post("/api/v1/besoins/campagne/", {"exercice": 2027, "cadrage": "Besoins 2027"}, format="json")
+    assert lancement.status_code == 201
+    assert lancement.json()["prevenus"] >= 3 and lancement.json()["alerte"] == ""
+    notifications = Notification.objects.filter(titre="Expression des besoins 2027")
+    assert notifications.count() == lancement.json()["prevenus"]
+    assert all(n.urgente for n in notifications)  # alerte systématique, avec ou sans date limite
+
+
+def test_lancer_l_appel_sans_responsable_le_signale(monde):
+    admin = User.objects.create_user(username="ADMIN-test", password="Sigrh-Dev-2026")
+    Profil.objects.create(user=admin, fonction="Administrateur", role="Administrateur", organisme=Organisme.objects.first(), administrateur=True)
+    compte = _client("ADMIN-test")
+    Profil.objects.exclude(administrateur=True).update(role="Agent")  # plus aucun responsable de structure
+    lancement = compte.post("/api/v1/besoins/campagne/", {"exercice": 2028}, format="json")
+    assert lancement.status_code == 201
+    corps = lancement.json()
+    assert corps["prevenus"] == 0 and "Aucun responsable" in corps["alerte"]

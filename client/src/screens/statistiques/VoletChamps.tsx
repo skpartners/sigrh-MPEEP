@@ -65,7 +65,6 @@ export function VoletChamps({ config, source, actions, onFermer }: {
       <div className="flex items-start justify-between gap-2">
         <div>
           <h2 className="font-label-md text-label-md font-semibold text-on-surface">Champs du tableau croisé</h2>
-          <p className="font-body-sm text-body-sm text-on-surface-variant">Cochez un champ ou faites-le glisser vers une zone.</p>
         </div>
         {onFermer && (
           <button type="button" className="xl:hidden inline-flex size-8 items-center justify-center rounded hover:bg-surface-container-low" aria-label="Fermer le volet des champs" onClick={onFermer}>

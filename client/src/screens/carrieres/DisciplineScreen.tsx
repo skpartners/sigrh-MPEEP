@@ -7,6 +7,7 @@ import { BOUTON_PRIMAIRE, BOUTON_SECONDAIRE, Modale } from "../../ui/Modale";
 import { Skeleton } from "../../ui/Motion";
 import { AppChrome } from "../AppChrome";
 import { Icone } from "../../ui/Icone";
+import { Select } from "../../ui/Select";
 
 type Avis = "instruction" | "recevable" | "attente_reponse" | "visa_rapporteur" | "delibere" | "sanction" | "classee";
 type Procedure = {
@@ -55,12 +56,6 @@ type Registre = {
   sessions: { code: string; intitule: string; date: string; etat: "convoquee" | "a_confirmer" | "tenue"; etat_libelle: string; ordre_du_jour: string; description: string; composition: string[]; lieu: string }[];
   effacements: { agent: AgentBrief; nature: string; annee: number; le: string }[];
   agents: { matricule: string; nom_complet: string; organisme_sigle: string }[];
-};
-
-const TEINTE: Record<Teinte, { rang: string; autorite: string; pied: string }> = {
-  primary: { rang: "text-primary", autorite: "bg-surface-container text-on-surface-variant font-medium", pied: "text-primary" },
-  secondary: { rang: "text-secondary", autorite: "bg-secondary-fixed text-on-secondary-fixed-variant font-semibold", pied: "text-secondary" },
-  error: { rang: "text-error", autorite: "bg-error-container text-on-error-container font-semibold", pied: "text-error" },
 };
 
 const ROUTE = "/api/v1/carrieres/discipline/";
@@ -134,9 +129,6 @@ export function DisciplineScreen() {
                   </span>
                 ) : null}
               </div>
-              {donnees?.entete.chapeau ? (
-                <p className="font-body-md text-body-md text-on-surface-variant max-w-4xl">{donnees.entete.chapeau}</p>
-              ) : null}
             </div>
             <div className="flex flex-wrap items-center gap-3 shrink-0">
               <button className="inline-flex items-center gap-2 px-3 py-1.5 rounded bg-primary text-on-primary font-label-md text-label-md font-semibold hover:bg-primary-container transition-colors" type="button" onClick={() => setSaisie(true)}>
@@ -152,48 +144,6 @@ export function DisciplineScreen() {
             <Indicateur index={2} titre="Sessions paritaires à venir" icone="groups" liseret="bg-secondary" teinte="text-secondary" valeur={deuxChiffres(indicateurs?.sessions)} />
             <Indicateur index={3} titre="Procédures dans les délais" icone="fact_check" liseret="bg-primary-container" teinte="text-primary" valeur={donnees?.regularite.taux != null ? `${donnees.regularite.taux}%` : "—"} valeurCouleur="text-primary" />
           </div>
-          {donnees?.echelle.titre ? (
-            <div className="bg-surface-container-lowest rounded-xl shadow-sm p-6 space-y-4">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded bg-surface-container-low text-primary flex items-center justify-center font-bold">
-                    <Icone nom="balance" className="text-xl" />
-                  </div>
-                  <div>
-                    <h2 className="font-headline-sm text-headline-sm text-on-surface font-bold">{donnees.echelle.titre}</h2>
-                    {donnees.echelle.reference ? <p className="font-label-sm text-label-sm text-on-surface-variant">{donnees.echelle.reference}</p> : null}
-                  </div>
-                </div>
-                {donnees.echelle.principe ? (
-                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-surface-container text-on-surface rounded font-label-sm text-label-sm font-semibold">
-                    <Icone nom="info" className="text-sm text-secondary" />
-                    {donnees.echelle.principe}
-                  </div>
-                ) : null}
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {degres.map((degre) => {
-                  const teinte = TEINTE[degre.teinte] ?? TEINTE.primary;
-                  return (
-                    <div key={degre.degre} className="p-4 bg-surface-container-low/70 rounded flex flex-col justify-between space-y-3">
-                      <div className="space-y-1">
-                        <div className="flex items-center justify-between gap-2">
-                          <span className={`font-label-sm text-label-sm font-bold uppercase tracking-wider ${teinte.rang}`}>{degre.rang}</span>
-                          <span className={`px-2 py-0.5 rounded font-label-sm text-label-sm ${teinte.autorite}`}>{degre.autorite}</span>
-                        </div>
-                        <h3 className="font-label-lg text-label-lg text-on-surface font-bold">{degre.intitule}</h3>
-                        <p className="font-body-sm text-body-sm text-on-surface-variant leading-snug">{degre.description}</p>
-                      </div>
-                      <div className="pt-2 flex items-center justify-between font-label-sm text-label-sm text-on-surface-variant">
-                        <span>{degre.pied}</span>
-                        <span className={`font-code-num font-semibold ${teinte.pied}`}>{degre.pied_valeur}</span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          ) : null}
           {/* Registre des procédures */}
           <div className="bg-surface-container-lowest rounded-xl shadow-sm flex flex-col overflow-hidden">
             <div className="p-6 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
@@ -207,18 +157,18 @@ export function DisciplineScreen() {
               <div className="flex flex-wrap items-center gap-2.5">
                 <div className="relative">
                   <Icone nom="filter_list" className="absolute left-3 top-2.5 text-on-surface-variant text-base pointer-events-none" />
-                  <select aria-label="Filtrer par entité" className="pl-9 pr-8 py-2 bg-surface-container-low text-on-surface font-body-sm text-body-sm rounded focus:outline-none focus:bg-surface-container" value={entite} onChange={(event) => { setEntite(event.target.value); setPage(1); }}>
+                  <Select aria-label="Filtrer par entité" className="pl-9 pr-8 py-2 bg-surface-container-low text-on-surface font-body-sm text-body-sm rounded focus:outline-none focus:bg-surface-container" value={entite} onChange={(event) => { setEntite(event.target.value); setPage(1); }}>
                     <option value="">Toutes les entités</option>
                     {entites.map((sigle) => (
                       <option key={sigle} value={sigle}>{sigle}</option>
                     ))}
-                  </select>
+                  </Select>
                 </div>
-                <select aria-label="Filtrer par degré de sanction" className="px-3 py-2 bg-surface-container-low text-on-surface font-body-sm text-body-sm rounded focus:outline-none" value={degre} onChange={(event) => { setDegre(event.target.value); setPage(1); }}>
+                <Select aria-label="Filtrer par degré de sanction" className="px-3 py-2 bg-surface-container-low text-on-surface font-body-sm text-body-sm rounded focus:outline-none" value={degre} onChange={(event) => { setDegre(event.target.value); setPage(1); }}>
                   <option value="">Tous degrés confondus</option>
                   <option value="1">1er degré</option>
                   <option value="2">2nd degré et plus (conseil convoqué)</option>
-                </select>
+                </Select>
               </div>
             </div>
             <div className="overflow-x-auto">
@@ -365,7 +315,7 @@ function DossierInstruction({ procedure, onClose }: { procedure: Procedure; onCl
     ["Entité", `${agent.organisme_sigle}${agent.fonction ? ` · ${agent.fonction}` : ""}`],
     ["Grief", procedure.grief],
     ["Degré", `${procedure.degre}${procedure.degre === 1 ? "er" : "e"} degré`],
-    ["Rapporteur", procedure.rapporteur],
+    ["Rapporteur", procedure.rapporteur || "Non désigné"],
     ["Saisine", dateCourte(procedure.saisine)],
     ["Échéance", dateCourte(procedure.echeance)],
     ["Phase", procedure.stade_detail ? `${procedure.phase_libelle} — ${procedure.stade_detail}` : procedure.phase_libelle],
@@ -449,20 +399,20 @@ function SaisineCommission({ agents, degres, onClose }: { agents: Registre["agen
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <label className="block">
             <span className={LIBELLE}>Agent mis en cause <span className="text-error">*</span></span>
-            <select className={CHAMP} required value={saisie.matricule} onChange={champ("matricule")}>
+            <Select className={CHAMP} required value={saisie.matricule} onChange={champ("matricule")}>
               <option value="">Choisir un agent…</option>
               {agents.map((agent) => (
                 <option key={agent.matricule} value={agent.matricule}>{agent.nom_complet} · {agent.organisme_sigle}</option>
               ))}
-            </select>
+            </Select>
           </label>
           <label className="block">
             <span className={LIBELLE}>Degré de sanction encouru <span className="text-error">*</span></span>
-            <select className={CHAMP} value={saisie.degre} onChange={champ("degre")}>
+            <Select className={CHAMP} value={saisie.degre} onChange={champ("degre")}>
               {degres.map((degre) => (
                 <option key={degre.degre} value={degre.degre}>{degre.option}</option>
               ))}
-            </select>
+            </Select>
           </label>
         </div>
         <label className="block">
@@ -474,13 +424,13 @@ function SaisineCommission({ agents, degres, onClose }: { agents: Registre["agen
           <textarea className={`${CHAMP} h-auto py-2`} required rows={3} value={saisie.description} onChange={champ("description")} />
         </label>
         <label className="block">
-          <span className={LIBELLE}>Rapporteur désigné <span className="text-error">*</span></span>
-          <select className={CHAMP} required value={saisie.rapporteur} onChange={champ("rapporteur")}>
-            <option value="">Choisir un rapporteur…</option>
+          <span className={LIBELLE}>Rapporteur désigné <span className="font-normal text-on-surface-variant">— facultatif</span></span>
+          <Select className={CHAMP} value={saisie.rapporteur} onChange={champ("rapporteur")}>
+            <option value="">Aucun rapporteur désigné pour l'instant</option>
             {rapporteurs.map((agent) => (
               <option key={agent.matricule} value={agent.matricule}>{agent.nom_complet} · {agent.organisme_sigle}</option>
             ))}
-          </select>
+          </Select>
         </label>
       </div>
     </Modale>
@@ -532,18 +482,18 @@ function ModifierProcedure({ procedure, registre, onClose }: { procedure: Proced
       <div className="space-y-4">
         <label className="block">
           <span className={LIBELLE}>Phase de la procédure</span>
-          <select className={CHAMP} value={saisie.phase} onChange={champ("phase")}>
+          <Select className={CHAMP} value={saisie.phase} onChange={champ("phase")}>
             {registre.phases.map((phase) => <option key={phase.code} value={phase.code}>{phase.libelle}</option>)}
-          </select>
+          </Select>
         </label>
         {decision ? (
           <div className="space-y-4 rounded-lg bg-surface-container-low p-4">
             <label className="block">
               <span className={LIBELLE}>Sanction prononcée</span>
-              <select className={CHAMP} value={saisie.sanction_nature} onChange={champ("sanction_nature")}>
+              <Select className={CHAMP} value={saisie.sanction_nature} onChange={champ("sanction_nature")}>
                 <option value="">Aucune (classement sans suite)</option>
                 {registre.natures_sanction.map((nature) => <option key={nature.code} value={nature.code}>{nature.libelle}</option>)}
-              </select>
+              </Select>
             </label>
             <label className="block">
               <span className={LIBELLE}>Décision <span className="text-error">*</span></span>
@@ -563,10 +513,10 @@ function ModifierProcedure({ procedure, registre, onClose }: { procedure: Proced
         ) : (
           <label className="block">
             <span className={LIBELLE}>Avis</span>
-            <select className={CHAMP} value={saisie.avis} onChange={champ("avis")}>
+            <Select className={CHAMP} value={saisie.avis} onChange={champ("avis")}>
               <option value="">Selon la phase</option>
               {registre.avis_possibles.map((avis) => <option key={avis.code} value={avis.code}>{avis.libelle}</option>)}
-            </select>
+            </Select>
           </label>
         )}
         <label className="block">
@@ -576,18 +526,18 @@ function ModifierProcedure({ procedure, registre, onClose }: { procedure: Proced
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <label className="block">
             <span className={LIBELLE}>Degré de sanction encouru</span>
-            <select className={CHAMP} value={saisie.degre} onChange={champ("degre")}>
+            <Select className={CHAMP} value={saisie.degre} onChange={champ("degre")}>
               {degres.map((degre) => <option key={degre.degre} value={degre.degre}>{degre.option}</option>)}
-            </select>
+            </Select>
           </label>
           <label className="block">
-            <span className={LIBELLE}>Rapporteur (actuel : {procedure.rapporteur})</span>
-            <select className={CHAMP} value={saisie.rapporteur} onChange={champ("rapporteur")}>
+            <span className={LIBELLE}>Rapporteur (actuel : {procedure.rapporteur || "non désigné"})</span>
+            <Select className={CHAMP} value={saisie.rapporteur} onChange={champ("rapporteur")}>
               <option value="">Conserver</option>
               {registre.agents.filter((agent) => agent.matricule !== procedure.agent.matricule).map((agent) => (
                 <option key={agent.matricule} value={agent.matricule}>{agent.nom_complet} · {agent.organisme_sigle}</option>
               ))}
-            </select>
+            </Select>
           </label>
         </div>
         <label className="block">

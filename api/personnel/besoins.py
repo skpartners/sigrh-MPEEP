@@ -29,6 +29,9 @@ PLAFOND_AGENTS = 500
 def _structures_du_responsable(user) -> list[EntiteTutelle]:
     """Les structures dont le compte est responsable (titulaire ou intérimaire)."""
     profil = getattr(user, "profil", None)
+    if profil is not None and profil.administrateur:
+        # Le compte administrateur tient toutes les structures : il peut exprimer un besoin pour n'importe laquelle.
+        return list(EntiteTutelle.objects.exclude(niveau=EntiteTutelle.Niveau.MINISTERE).order_by("ordre", "nom"))
     if profil is None or profil.role == "Agent":
         return []
     retenues: dict[int, EntiteTutelle] = {}
@@ -263,11 +266,15 @@ def lancer_campagne(request):
                 destinataire=user, categorie=Notification.Categorie.SYSTEME,
                 titre=f"Expression des besoins {exercice}",
                 message=f"Indiquez les fonctionnaires et contractuels dont votre structure a besoin.{mention}"[:280],
-                lien=f"/app/agents/{user.username}?onglet=besoins", urgente=bool(limite), creee_le=maintenant,
+                lien=f"/app/agents/{user.username}?onglet=besoins", urgente=True, creee_le=maintenant,
             )
             for user in destinataires.values()
         ])
-    return Response({"campagne": _ligne_campagne(campagne), "prevenus": len(destinataires)}, status=201)
+    return Response({
+        "campagne": _ligne_campagne(campagne),
+        "prevenus": len(destinataires),
+        "alerte": "" if destinataires else "Aucun responsable de structure n'est désigné : personne n'a reçu l'appel. Nommez-les dans Utilisateurs.",
+    }, status=201)
 
 
 @api_view(["POST"])
@@ -293,16 +300,24 @@ def mes_fiches(request):
     structures = _structures_du_responsable(request.user)
     if not structures:
         return Response({"responsable": False})
+    # Par défaut la campagne la plus récente ; ?exercice=AAAA consulte un exercice passé (lecture seule : la campagne est close).
+    exercices = list(CampagneBesoin.objects.order_by("-exercice").values_list("exercice", flat=True))
     campagne = _campagne()
+    demande = str(request.query_params.get("exercice") or "")
+    if demande.isdigit() and int(demande) in exercices:
+        campagne = CampagneBesoin.objects.get(exercice=int(demande))
     ids = {s.id for s in structures}
     from .rattachement import structures_sous
 
     perimetre = structures_sous(structures)
     fiches = list(FicheBesoin.objects.filter(campagne=campagne, entite_id__in=perimetre).select_related("entite", "auteur", "emploi")) if campagne else []
-    arbre, par_id = _arbre(perimetre, fiches, _responsables(), racines_forcees=[s.id for s in structures])
+    # Racines de l'arbre : les structures dont le parent n'est pas lui-même dans la liste (évite les doublons).
+    racines = [s.id for s in structures if s.parent_id not in ids]
+    arbre, par_id = _arbre(perimetre, fiches, _responsables(), racines_forcees=racines)
     propres = [f for f in fiches if f.entite_id in ids]
     return Response({
         "responsable": True,
+        "exercices": exercices,
         "structures": [{"id": s.id, "nom": s.nom, "niveau_libelle": s.get_niveau_display()} for s in structures],
         "campagne": _ligne_campagne(campagne),
         "fiches": [_ligne_fiche(f, par_id) for f in propres],

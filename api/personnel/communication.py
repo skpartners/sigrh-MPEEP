@@ -25,10 +25,15 @@ PERIMETRES = {item.value: item.label for item in Publication.Perimetre}
 
 
 def semer():
+    """Remet à jour l'étape de visa des anciennes publications. Ne crée aucune donnée : en production, rien n'est inventé."""
     Publication.objects.filter(
         statut=Publication.Statut.VISA,
         etape_visa__in=["", "Attente visa du contrôle financier", "Attente signature DGPE", "Transmis au circuit de visa"],
     ).update(etape_visa=ETAPE_DRH)
+
+
+def semer_demo():
+    """Publications et sondage d'exemple, pour la démonstration et les tests seulement (commande seed_demo)."""
     if Publication.objects.exists():
         return
     auteur = User.objects.filter(username="DRH-2018-044").first()
@@ -384,7 +389,6 @@ def _non_lues(user):
 
 def _tableau() -> dict:
     semer()
-    _completer_exemples()
     publications = list(Publication.objects.all())
     destinataires = _destinataires()
     lectures = _lectures()

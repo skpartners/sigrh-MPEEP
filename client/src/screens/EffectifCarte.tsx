@@ -62,9 +62,6 @@ export function CarteEffectif({ reglages }: { reglages: Reglages | undefined }) 
   return (
     <section className={CARTE} style={{ "--delay": "100ms" } as CSSProperties} aria-labelledby="titre-effectif">
       <h2 id="titre-effectif" className="font-headline-sm text-headline-sm text-on-surface">Effectif du ministère</h2>
-      <p className="mt-1 font-body-sm text-body-sm text-on-surface-variant">
-        Chargez les agents en un bloc, à la place de la saisie dossier par dossier. Chaque agent est rattaché à sa structure et reçoit un compte : son matricule est l'identifiant, <strong>matricule@2026</strong> le mot de passe initial, et un message l'invite à le modifier.
-      </p>
       <ol className="mt-4 list-decimal pl-5 space-y-1 font-body-sm text-body-sm text-on-surface">
         <li>Téléchargez le classeur modèle : il décrit chaque colonne et liste les structures, grades et emplois à utiliser.</li>
         <li>Renseignez la feuille « Agents » avec les informations dont vous disposez.</li>

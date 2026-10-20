@@ -335,6 +335,12 @@ def radar_presence(annee: int, seuil: int, aujourd_hui, visibles: set[str] | Non
         .values_list("agent__username", "debut", "fin")
         if plan[0] in agents
     ]
+    bornes += [  # seconde période des congés pris en deux temps
+        (agents[plan[0]], plan[1], plan[2])
+        for plan in PlanConge.objects.filter(campagne__exercice=annee, debut2__isnull=False, debut2__lte=dernier, fin2__gte=premier)
+        .values_list("agent__username", "debut2", "fin2")
+        if plan[0] in agents
+    ]
     for identifiant, debut, fin in bornes:
         if identifiant in absences:
             absences[identifiant].update(_jours_ouvres(max(debut, premier), min(fin, dernier)))

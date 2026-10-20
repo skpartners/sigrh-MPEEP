@@ -5,6 +5,7 @@ import type { Dossier, Organisme } from "../api/types";
 import { BOUTON_PRIMAIRE, BOUTON_SECONDAIRE, Modale } from "../ui/Modale";
 import { SelectEmploi, SelectGrade, useNomenclature } from "../ui/Nomenclature";
 import { Icone } from "../ui/Icone";
+import { Select } from "../ui/Select";
 
 const CHAMP = "w-full h-10 px-3 rounded border border-outline-variant bg-surface-container-lowest font-body-md text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-primary";
 
@@ -62,11 +63,11 @@ export function SituationModal({ agent, onClose }: { agent: Dossier; onClose: ()
           </label>
           <label className="block">
             <span className="block font-label-sm text-label-sm text-on-surface-variant mb-1">Structure</span>
-            <select className={CHAMP} value={formulaire.organisme} onChange={(event) => champ("organisme", event.target.value)} disabled={organismes.isPending}>
+            <Select className={CHAMP} value={formulaire.organisme} onChange={(event) => champ("organisme", event.target.value)} disabled={organismes.isPending}>
               {(organismes.data ?? [{ code: formulaire.organisme, nom: agent.organisme, sigle: agent.organisme_sigle }]).map((item) => (
                 <option key={item.code} value={item.code}>{item.nom}</option>
               ))}
-            </select>
+            </Select>
           </label>
           <Saisie libelle="Direction" valeur={formulaire.direction} onChange={(valeur) => champ("direction", valeur)} />
           <Saisie libelle="Sous-Direction" valeur={formulaire.sous_direction} onChange={(valeur) => champ("sous_direction", valeur)} />
@@ -93,12 +94,12 @@ export function SituationModal({ agent, onClose }: { agent: Dossier; onClose: ()
           <Saisie libelle="Mode Recrutement" valeur={formulaire.mode_recrutement} onChange={(valeur) => champ("mode_recrutement", valeur)} />
           <label className="block">
             <span className="block font-label-sm text-label-sm text-on-surface-variant mb-1">Catégorie</span>
-            <select className={CHAMP} value={formulaire.categorie} onChange={(event) => champ("categorie", event.target.value)}>
+            <Select className={CHAMP} value={formulaire.categorie} onChange={(event) => champ("categorie", event.target.value)}>
               {formulaire.categorie && !["A", "B", "C", "D"].includes(formulaire.categorie) ? <option value={formulaire.categorie}>{formulaire.categorie}</option> : null}
               {["A", "B", "C", "D"].map((lettre) => (
                 <option key={lettre} value={lettre}>Catégorie {lettre}</option>
               ))}
-            </select>
+            </Select>
           </label>
           <label className="block">
             <span className="block font-label-sm text-label-sm text-on-surface-variant mb-1">Grade</span>

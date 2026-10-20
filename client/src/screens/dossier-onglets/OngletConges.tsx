@@ -1,5 +1,5 @@
-import { useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 import { api } from "../../api/client";
 import type { Dossier } from "../../api/types";
 import { useFeedback } from "../../ui/Feedback";
@@ -7,9 +7,10 @@ import { BOUTON_PRIMAIRE, BOUTON_SECONDAIRE, Modale } from "../../ui/Modale";
 import { Pagination, usePagination } from "../../ui/Pagination";
 import { CircuitDemande, absenceEnCours, demandeClose, jour, periode, pluriel, useDocumentAgent, type Absence } from "./commun";
 import { Icone } from "../../ui/Icone";
+import { Select } from "../../ui/Select";
 
 function valeurs(agent: Dossier) {
-  const { acquis, consommes, reliquat, report, autorisations, autorisations_restantes } = agent.conges;
+  const { acquis, consommes, reliquat, report } = agent.conges;
   const part = acquis > 0 ? Math.round((consommes / acquis) * 100) : 0;
   const dernier = agent.absences[0];
   const presence = agent.presence;
@@ -24,8 +25,6 @@ function valeurs(agent: Dossier) {
     part,
     partBornee: Math.min(part, 100),
     reportTexte: report > 1 ? `+${report} jours` : `+${report} jour`,
-    autorisations,
-    resteTexte: pluriel(autorisations_restantes, "jour"),
     dernierePeriode: dernier ? periode(dernier.debut, dernier.fin) : "Aucune absence enregistrée",
     mois: presence.mois,
     service: presence.service,
@@ -71,9 +70,6 @@ export function OngletConges({ agent }: { agent: Dossier }) {
             <h1 className="font-headline-lg text-headline-lg text-on-surface tracking-tight">
               {"Gestion des Congés, Absences & Présences"}
             </h1>
-            <p className="font-body-sm text-body-sm text-on-surface-variant">
-              Direction des Ressources Humaines • Direction Générale du Portefeuille de l'État (DGPE)
-            </p>
           </div>
           <div className="flex items-center gap-3 flex-wrap">
             <button className="px-3 py-2 rounded bg-surface-container-high text-on-surface font-label-md text-label-md flex items-center gap-2 hover:bg-surface-variant transition-colors shadow-sm" type="button" onClick={() => telecharger("releve")}>
@@ -89,13 +85,13 @@ export function OngletConges({ agent }: { agent: Dossier }) {
           </div>
         </div>
         {/* Section 1: Compteurs Statutaires de Droits */}
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
           {/* Card 1: Solde Disponible Principal */}
           <div className="bg-surface-container-lowest rounded-xl p-5 shadow-sm relative overflow-hidden flex flex-col justify-between">
             <div className="flex items-start justify-between">
               <div className="space-y-1">
                 <span className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider font-bold">
-                  Solde Disponible Immédiat
+                  Solde de congé annuel
                 </span>
                 <div className="flex items-baseline gap-2">
                   <span className="font-headline-xl text-headline-xl text-primary font-bold">{v.reliquat}</span>
@@ -162,29 +158,6 @@ export function OngletConges({ agent }: { agent: Dossier }) {
               <span className="text-on-surface-variant">Dernier congé pris</span>
               {" "}
               <span className="font-code-num text-on-surface font-semibold">{v.dernierePeriode}</span>
-            </div>
-          </div>
-          {/* Card 4: Autorisations Spéciales d'Absence */}
-          <div className="bg-surface-container-lowest rounded-xl p-5 shadow-sm flex flex-col justify-between">
-            <div className="flex items-start justify-between">
-              <div className="space-y-1">
-                <span className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider font-bold">
-                  Autorisations Spéciales
-                </span>
-                <div className="flex items-baseline gap-2">
-                  <span className="font-headline-xl text-headline-xl text-tertiary font-bold">{v.autorisations}</span>
-                  {" "}
-                  <span className="font-label-lg text-label-lg text-on-surface-variant font-medium">jours maxi / an</span>
-                </div>
-              </div>
-              <div className="p-2.5 rounded bg-tertiary-fixed text-tertiary flex items-center justify-center">
-                <Icone nom="favorite" className="text-2xl" />
-              </div>
-            </div>
-            <div className="mt-4 pt-3 flex items-center justify-between font-label-sm text-label-sm bg-surface-container-low/60 -mx-5 -mb-5 px-5 py-3">
-              <span className="text-on-surface-variant">Événements familiaux restants</span>
-              {" "}
-              <span className="font-code-num text-primary font-bold">{v.resteTexte}</span>
             </div>
           </div>
         </div>
@@ -281,12 +254,12 @@ export function OngletConges({ agent }: { agent: Dossier }) {
             </div>
             <div className="flex items-center gap-2">
               <div className="relative">
-                <select aria-label="Exercice" className="h-9 px-3 pr-8 bg-surface-container-low text-on-surface font-label-sm text-label-sm rounded focus:outline-none appearance-none cursor-pointer" value={exercice} onChange={(event) => setExercice(event.target.value)}>
+                <Select aria-label="Exercice" className="h-9 px-3 pr-8 bg-surface-container-low text-on-surface font-label-sm text-label-sm rounded focus:outline-none appearance-none cursor-pointer" value={exercice} onChange={(event) => setExercice(event.target.value)}>
                   <option value="">Tous les exercices ({v.plage})</option>
                   {v.exercices.map((annee) => (
                     <option key={annee} value={annee}>Exercice {annee}</option>
                   ))}
-                </select>
+                </Select>
                 {" "}
                 <Icone nom="expand_more" className="absolute right-2 top-2 pointer-events-none text-on-surface-variant text-sm" />
               </div>
@@ -472,15 +445,26 @@ function ecrireBrouillon(matricule: string, saisie: Saisie | null) {
   }
 }
 
-/** Jours ouvrables entre le départ (inclus) et la reprise (exclue). */
-function joursOuvrables(debut: string, fin: string): number {
+/** Le lendemain d'un jour « AAAA-MM-JJ » : le jour de reprise après un dernier jour de congé. */
+function lendemain(iso: string): string {
+  const jour = new Date(`${iso}T00:00:00`);
+  jour.setDate(jour.getDate() + 1);
+  return `${jour.getFullYear()}-${String(jour.getMonth() + 1).padStart(2, "0")}-${String(jour.getDate()).padStart(2, "0")}`;
+}
+
+/** `fin` est le jour de reprise ; `dernier`, le dernier jour de congé. */
+type PeriodeArretee = { debut: string; fin: string; dernier: string };
+type PlanArrete = { moi: boolean; palier: string; debut: string; fin: string; debut2: string | null; fin2: string | null };
+
+/** Jours entre le départ (inclus) et la reprise (exclue) : tous les jours pour le congé annuel, sinon les jours ouvrables. */
+function joursDecomptes(debut: string, fin: string, annuel: boolean): number {
   const depart = new Date(`${debut}T00:00:00`);
   const retour = new Date(`${fin}T00:00:00`);
   if (Number.isNaN(depart.getTime()) || Number.isNaN(retour.getTime()) || retour <= depart) return 0;
   let compte = 0;
   for (const date = new Date(depart); date < retour; date.setDate(date.getDate() + 1)) {
     const semaine = date.getDay();
-    if (semaine !== 0 && semaine !== 6) compte += 1;
+    if (annuel || (semaine !== 0 && semaine !== 6)) compte += 1;
   }
   return compte;
 }
@@ -490,15 +474,32 @@ export function FormulaireConge({ agent, onClose }: { agent: Dossier; onClose: (
   const client = useQueryClient();
   const collegues = agent.presence.membres.filter((item) => !item.vous);
   const premierType = agent.types_conges[0] ? (agent.types_conges[0].enfants[0]?.code ?? agent.types_conges[0].code) : "";
-  const initiale: Saisie = { type: premierType, debut: "", fin: "", interim: collegues[0]?.nom ?? "", observations: "" };
+  const initiale: Saisie = { type: premierType, debut: "", fin: "", interim: "", observations: "" };
   const [saisie, setSaisie] = useState<Saisie>(() => {
     const brouillon = lireBrouillon(agent.matricule);
     if (!brouillon) return initiale;
-    return { ...brouillon, interim: collegues.some((item) => item.nom === brouillon.interim) ? brouillon.interim : initiale.interim };
+    return { ...brouillon, interim: collegues.some((item) => item.nom === brouillon.interim) ? brouillon.interim : "" };
   });
   const [enCours, setEnCours] = useState(false);
-  const jours = joursOuvrables(saisie.debut, saisie.fin);
-  const solde = saisie.type === "conge-annuel" ? Math.max(agent.conges.reliquat - jours, 0) : agent.conges.reliquat;
+  // Les dates du congé annuel sont celles que la campagne de planification a arrêtées : l'agent active une période.
+  const planification = useQuery({ queryKey: ["planification-conges"], queryFn: () => api<{ plans: PlanArrete[] }>("/api/v1/conges/planification/") });
+  const annuel = saisie.type === "conge-annuel" || agent.types_conges.some((type) => type.enfants.some((enfant) => enfant.code === saisie.type && /annuel/i.test(enfant.libelle)));
+  const monPlan = planification.data?.plans.find((plan) => plan.moi && plan.palier === "publie");
+  const arretees: PeriodeArretee[] = monPlan
+    ? [{ debut: monPlan.debut, fin: lendemain(monPlan.fin), dernier: monPlan.fin }, ...(monPlan.debut2 && monPlan.fin2 ? [{ debut: monPlan.debut2, fin: lendemain(monPlan.fin2), dernier: monPlan.fin2 }] : [])]
+    : [];
+  const dejaDemandee = (periodeChoisie: PeriodeArretee) =>
+    agent.demandes.some((demande) => demande.categorie === "conge" && demande.debut === periodeChoisie.debut && demande.fin === periodeChoisie.fin && !/refus/i.test(demande.etape));
+  const verrouille = annuel && arretees.length > 0;
+  const disponibles = arretees.filter((item) => !dejaDemandee(item));
+  // Verrouillé : la période choisie est l'une des périodes encore à demander, la première par défaut.
+  useEffect(() => {
+    if (!verrouille) return;
+    const valide = disponibles.some((item) => item.debut === saisie.debut && item.fin === saisie.fin);
+    if (!valide) setSaisie((actuelle) => ({ ...actuelle, debut: disponibles[0]?.debut ?? "", fin: disponibles[0]?.fin ?? "" }));
+  }, [verrouille, saisie.debut, saisie.fin, disponibles.map((item) => item.debut).join(",")]); // eslint-disable-line react-hooks/exhaustive-deps
+  const jours = joursDecomptes(saisie.debut, saisie.fin, annuel);
+  const solde = Math.max(agent.conges.reliquat - jours, 0);
   const champ = (cle: keyof Saisie) => (event: { target: { value: string } }) => setSaisie((actuelle) => ({ ...actuelle, [cle]: event.target.value }));
 
   function brouillon() {
@@ -522,11 +523,7 @@ export function FormulaireConge({ agent, onClose }: { agent: Dossier; onClose: (
       return;
     }
     if (jours <= 0) {
-      feedback.toast("Période invalide", "La reprise doit suivre le début et compter au moins un jour ouvrable.", "info");
-      return;
-    }
-    if (!saisie.interim.trim()) {
-      feedback.toast("Remplaçant manquant", "Désignez la personne qui assure la continuité du service.", "info");
+      feedback.toast("Période invalide", "La reprise doit suivre le début et compter au moins un jour décompté.", "info");
       return;
     }
     setEnCours(true);
@@ -584,7 +581,7 @@ export function FormulaireConge({ agent, onClose }: { agent: Dossier; onClose: (
               Nature de la demande statutaire <span className="text-error">*</span>
             </span>
           </span>
-          <select className={`${CHAMP} cursor-pointer`} value={saisie.type} onChange={champ("type")} required>
+          <Select className={`${CHAMP} cursor-pointer`} value={saisie.type} onChange={champ("type")} required>
             {agent.types_conges.map((type) =>
               type.enfants.length ? (
                 <optgroup key={type.code} label={type.libelle}>
@@ -603,8 +600,50 @@ export function FormulaireConge({ agent, onClose }: { agent: Dossier; onClose: (
                 ))}
               </optgroup>
             ) : null}
-          </select>
+          </Select>
         </label>
+        {verrouille ? (
+          <fieldset className="space-y-2">
+            <legend className={LIBELLE}>Période de congé arrêtée par la campagne</legend>
+            <p className="font-body-sm text-body-sm text-on-surface-variant">
+              Vos dates sont déjà arrêtées : il suffit d'activer la période et de la soumettre à votre hiérarchie.
+            </p>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2" role="radiogroup" aria-label="Période de congé">
+              {arretees.map((item, rang) => {
+                const deja = dejaDemandee(item);
+                const choisie = saisie.debut === item.debut && saisie.fin === item.fin;
+                const nombre = joursDecomptes(item.debut, item.fin, true);
+                return (
+                  <button
+                    key={item.debut}
+                    type="button"
+                    role="radio"
+                    aria-checked={choisie}
+                    disabled={deja}
+                    onClick={() => setSaisie((actuelle) => ({ ...actuelle, debut: item.debut, fin: item.fin }))}
+                    className={`flex items-center gap-3 rounded-xl border p-4 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${choisie ? "border-primary bg-primary-fixed/50" : "border-hairline bg-surface-container-low hover:bg-surface-container"}`}
+                  >
+                    <Icone nom={deja ? "check_circle" : choisie ? "radio_button_checked" : "radio_button_unchecked"} className={`text-2xl ${choisie ? "text-primary" : "text-on-surface-variant"}`} />
+                    <span className="min-w-0">
+                      <span className="block font-label-md text-label-md font-bold text-on-surface">{arretees.length > 1 ? `Période ${rang + 1}` : "Votre période"}</span>
+                      <span className="block font-body-sm text-body-sm text-on-surface-variant">
+                        {periode(item.debut, item.dernier)} · {pluriel(nombre, "jour")}
+                      </span>
+                      {deja ? <span className="mt-1 inline-block rounded-full bg-primary/10 px-2 font-label-sm text-label-sm font-bold text-primary">Déjà demandée</span> : null}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+            {disponibles.length === 0 ? <p className="font-body-sm text-body-sm text-on-surface-variant">Toutes vos périodes de congé annuel ont déjà été demandées.</p> : null}
+          </fieldset>
+        ) : (
+          <>
+            {annuel ? (
+              <p className="rounded-lg bg-surface-container-low p-3 font-body-sm text-body-sm text-on-surface-variant">
+                Aucune période n'est encore arrêtée pour vous par la campagne de planification : indiquez vos dates.
+              </p>
+            ) : null}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <label className="block space-y-1.5">
             <span className={LIBELLE}>
@@ -619,32 +658,31 @@ export function FormulaireConge({ agent, onClose }: { agent: Dossier; onClose: (
             <input className={CHAMP} type="date" value={saisie.fin} min={saisie.debut || undefined} onChange={champ("fin")} required />
           </label>
         </div>
+          </>
+        )}
         <div className="p-3.5 rounded bg-surface-container flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <Icone nom="calculate" className="text-primary text-xl" />
             <div>
-              <p className="font-label-md text-label-md text-on-surface font-semibold">Décompte des jours ouvrables légaux</p>
-              <p className="font-body-sm text-body-sm text-on-surface-variant">Exclut samedis et dimanches</p>
+              <p className="font-label-md text-label-md text-on-surface font-semibold">{annuel ? "Décompte des jours de congé annuel" : "Décompte des jours ouvrables légaux"}</p>
+              <p className="font-body-sm text-body-sm text-on-surface-variant">{annuel ? "Samedis et dimanches compris" : "Exclut samedis et dimanches"}</p>
             </div>
           </div>
           <div className="text-right" aria-live="polite">
             <span className="font-headline-sm text-headline-sm text-primary font-bold">{pluriel(jours, "jour")}</span>
-            <span className="block font-label-sm text-label-sm text-on-surface-variant">Nouveau solde prévu : {String(solde).padStart(2, "0")}j</span>
+            {annuel ? <span className="block font-label-sm text-label-sm text-on-surface-variant">Nouveau solde prévu : {String(solde).padStart(2, "0")}j</span> : null}
           </div>
         </div>
         <label className="block space-y-1.5">
           <span className={LIBELLE}>
-            Remplaçant désigné (Continuité du Service Public) <span className="text-error">*</span>
+            Remplaçant désigné (Continuité du Service Public) <span className="font-normal text-on-surface-variant">— facultatif</span>
           </span>
-          <select className={`${CHAMP} cursor-pointer`} value={saisie.interim} onChange={champ("interim")} required>
-            {collegues.length ? (
-              collegues.map((item) => (
-                <option key={item.nom} value={item.nom}>{item.nom}</option>
-              ))
-            ) : (
-              <option value="">Aucun collègue n'est versé dans ce service.</option>
-            )}
-          </select>
+          <Select className={`${CHAMP} cursor-pointer`} value={saisie.interim} onChange={champ("interim")}>
+            <option value="">{collegues.length ? "Aucun remplaçant désigné" : "Aucun collègue n'est versé dans ce service."}</option>
+            {collegues.map((item) => (
+              <option key={item.nom} value={item.nom}>{item.nom}</option>
+            ))}
+          </Select>
         </label>
         <label className="block space-y-1.5">
           <span className={LIBELLE}>Observations ou adresse de séjour durant le congé</span>

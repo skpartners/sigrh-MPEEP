@@ -5,6 +5,7 @@ import { useFeedback } from "../../ui/Feedback";
 import { Icone } from "../../ui/Icone";
 import { Modale } from "../../ui/Modale";
 import { CHAMP, LIBELLE, PRIMAIRE, PageGrh, Section } from "./ui";
+import { Select } from "../../ui/Select";
 
 type Famille = "prix_excellence" | "ordre_merite" | "autre";
 type Distinction = { id: number; rang: string; titre: string; detail: string; etat: string; famille: Famille };
@@ -104,9 +105,9 @@ function FormulaireDistinction({ distinction, famille, onClose }: { distinction?
       <div className="space-y-4">
         <label className="block">
           <span className={LIBELLE}>Type de distinction</span>
-          <select className={CHAMP} value={saisie.famille} onChange={champ("famille")}>
+          <Select className={CHAMP} value={saisie.famille} onChange={champ("famille")}>
             {FAMILLES.map((item) => <option key={item.code} value={item.code}>{item.titre}</option>)}
-          </select>
+          </Select>
         </label>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <label className="block"><span className={LIBELLE}>Rang <span className="text-error">*</span></span><input className={CHAMP} required maxLength={12} value={saisie.rang} onChange={champ("rang")} placeholder="Ex. : OR" /></label>

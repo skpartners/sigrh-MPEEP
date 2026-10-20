@@ -4,6 +4,7 @@ import { ApiError, api } from "../api/client";
 import type { SessionUser } from "../api/types";
 import { useFeedback } from "./Feedback";
 import { Modale } from "./Modale";
+import { Select } from "./Select";
 
 type ParametresConnexion = {
   peut_modifier: boolean;
@@ -127,11 +128,11 @@ export function EditeurConnexion({ user, onClose }: { user: SessionUser | undefi
           </label>
           <label className="block space-y-1.5 sm:col-span-2">
             <span className="font-label-sm text-label-sm text-on-surface-variant">Organisme</span>
-            <select className={CHAMP} value={organisme} disabled={bloque} onChange={(event) => setOrganisme(event.target.value)}>
+            <Select className={CHAMP} value={organisme} disabled={bloque} onChange={(event) => setOrganisme(event.target.value)}>
               {(organismes.data ?? []).map((item) => (
                 <option key={item.code} value={item.code}>{item.sigle ? `${item.nom} (${item.sigle})` : item.nom}</option>
               ))}
-            </select>
+            </Select>
           </label>
           <label className="block space-y-1.5">
             <span className="font-label-sm text-label-sm text-on-surface-variant">Nouveau mot de passe</span>

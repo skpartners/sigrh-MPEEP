@@ -1,4 +1,6 @@
+import re
 from django.contrib.auth import authenticate
+from django.db import transaction
 from django.utils import timezone
 from django.contrib.auth.models import User
 from django.http import HttpResponse
@@ -366,6 +368,11 @@ CHAMPS_PROFIL_TEXTE = {
     "conjoint_nom": 120, "conjoint_prenoms": 160, "conjoint_telephone": 40,
 }
 CHAMPS_PROFIL_COURRIEL = {"courriel", "conjoint_courriel"}
+CHAMPS_PROFIL_TELEPHONE = {"telephone", "telephone_secondaire", "contact_urgence_telephone", "conjoint_telephone"}
+CHAMPS_PROFIL_NOM = {"nom", "prenoms", "nom_jeune_fille", "contact_urgence_nom", "conjoint_nom", "conjoint_prenoms"}
+# Numéro ivoirien à 10 chiffres (01, 05, 07 mobiles ; 20 à 27 fixes), indicatif +225 ou 00225 en option.
+TELEPHONE_CI = re.compile(r"^(?:\+225|00225)?(?:0[157]|2[0-7])\d{8}$")
+NOM_PROPRE = re.compile(r"^[^\W\d_][^\W\d_\s'’.-]*(?:[\s'’.-]+[^\W\d_]+)*[.]?$")
 CHAMPS_PROFIL_DATE = {"date_naissance", "date_mariage"}
 
 
@@ -388,6 +395,10 @@ def modifier_profil(request, matricule: str):
             valeur = str(donnees.get(champ) or "").strip()
             if len(valeur) > longueur:
                 return Response({"detail": f"« {champ} » dépasse {longueur} caractères."}, status=400)
+            if valeur and champ in CHAMPS_PROFIL_TELEPHONE and not TELEPHONE_CI.match(re.sub(r"[\s.()-]", "", valeur)):
+                return Response({"detail": "Un numéro de téléphone n'est pas valide : 10 chiffres ivoiriens attendus, avec ou sans +225."}, status=400)
+            if valeur and champ in CHAMPS_PROFIL_NOM and not NOM_PROPRE.match(valeur):
+                return Response({"detail": "Un nom ou prénom ne doit contenir que des lettres, espaces, apostrophes et traits d'union."}, status=400)
             modifies[champ] = valeur
     for champ in CHAMPS_PROFIL_COURRIEL:
         if champ in donnees:
@@ -453,6 +464,8 @@ def ajouter_enfant(request, matricule: str):
     prenoms = (donnees.get("prenoms") or "").strip()[:160]
     if not nom or not prenoms:
         return Response({"detail": "Renseignez le nom et les prénoms de l'enfant."}, status=400)
+    if not NOM_PROPRE.match(nom) or not NOM_PROPRE.match(prenoms):
+        return Response({"detail": "Un nom ou prénom ne doit contenir que des lettres, espaces, apostrophes et traits d'union."}, status=400)
     sexe = donnees.get("sexe")
     if sexe not in {"H", "F"}:
         return Response({"detail": "Précisez le sexe de l'enfant."}, status=400)
@@ -473,6 +486,100 @@ def ajouter_enfant(request, matricule: str):
         lieu_naissance=(donnees.get("lieu_naissance") or "").strip()[:160],
     )
     return Response(_detail(agent, request.user), status=201)
+
+
+def _aligner_diplome_principal(agent: Agent) -> None:
+    """Les trois champs du dossier (états, exports) reprennent le diplôme le plus élevé déclaré."""
+    from .models import Diplome
+
+    ordre = [code for code, _libelle in Diplome.NIVEAUX]
+    plus_haut = max(agent.diplomes.all(), key=lambda d: ordre.index(d.niveau_etude), default=None)
+    agent.niveau_etude = plus_haut.niveau_etude if plus_haut else ""
+    agent.libelle_diplome = plus_haut.libelle if plus_haut else ""
+    agent.domaine_formation = plus_haut.domaine_formation if plus_haut else ""
+    agent.save(update_fields=["niveau_etude", "libelle_diplome", "domaine_formation"])
+
+
+def _justificatif_diplome(request, agent: Agent, libelle: str):
+    """Pièce à rattacher à un diplôme : fichier téléversé ou pièce déjà au coffre. Retourne (pièce, erreur)."""
+    from .pieces import RUBRIQUE_DIPLOMES, verser_justificatif_diplome
+
+    if request.FILES.get("fichier") is not None:
+        return verser_justificatif_diplome(agent, request.FILES["fichier"], libelle[:80])
+    identifiant = request.data.get("piece_id")
+    if identifiant in (None, ""):
+        return None, None
+    piece = agent.pieces.filter(pk=identifiant if str(identifiant).isdigit() else 0, categorie=RUBRIQUE_DIPLOMES).first()
+    if piece is None:
+        return None, "Cette pièce n'est pas dans la rubrique des diplômes de l'agent."
+    return piece, None
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+@parser_classes([JSONParser, MultiPartParser, FormParser])
+def ajouter_diplome(request, matricule: str):
+    """Ajoute une ligne au parcours académique de l'agent."""
+    from .models import Diplome
+
+    agent = get_object_or_404(Agent, matricule=matricule)
+    if not _peut_gerer_dossier(request.user, agent):
+        return _refus_dossier()
+    donnees = request.data
+    niveau = donnees.get("niveau_etude")
+    if niveau not in {code for code, _libelle in Diplome.NIVEAUX}:
+        return Response({"detail": "Précisez le niveau d'étude."}, status=400)
+    libelle = (donnees.get("libelle") or "").strip()[:240]
+    with transaction.atomic():
+        piece, erreur = _justificatif_diplome(request, agent, libelle or dict(Diplome.NIVEAUX)[niveau])
+        if erreur:
+            return Response({"detail": erreur}, status=400)
+        Diplome.objects.create(
+            agent=agent,
+            niveau_etude=niveau,
+            libelle=libelle,
+            domaine_formation=(donnees.get("domaine_formation") or "").strip()[:160],
+            piece=piece,
+        )
+        _aligner_diplome_principal(agent)
+    return Response(_detail(agent, request.user), status=201)
+
+
+@api_view(["POST", "DELETE"])
+@permission_classes([IsAuthenticated])
+@parser_classes([JSONParser, MultiPartParser, FormParser])
+def justificatif_diplome(request, matricule: str, pk: int):
+    """Rattache (POST) ou détache (DELETE) le justificatif d'une ligne du parcours académique."""
+    from .models import Diplome
+
+    agent = get_object_or_404(Agent, matricule=matricule)
+    if not _peut_gerer_dossier(request.user, agent):
+        return _refus_dossier()
+    diplome = get_object_or_404(Diplome, pk=pk, agent=agent)
+    if request.method == "DELETE":
+        diplome.piece = None
+    else:
+        with transaction.atomic():
+            piece, erreur = _justificatif_diplome(request, agent, diplome.libelle or diplome.get_niveau_etude_display())
+            if erreur or piece is None:
+                return Response({"detail": erreur or "Joignez un fichier ou choisissez une pièce déjà versée."}, status=400)
+            diplome.piece = piece
+    diplome.save(update_fields=["piece"])
+    return Response(_detail(agent, request.user))
+
+
+@api_view(["DELETE"])
+@permission_classes([IsAuthenticated])
+def retirer_diplome(request, matricule: str, pk: int):
+    """Retire une ligne du parcours académique."""
+    from .models import Diplome
+
+    agent = get_object_or_404(Agent, matricule=matricule)
+    if not _peut_gerer_dossier(request.user, agent):
+        return _refus_dossier()
+    get_object_or_404(Diplome, pk=pk, agent=agent).delete()
+    _aligner_diplome_principal(agent)
+    return Response(_detail(agent, request.user))
 
 
 @api_view(["DELETE"])
@@ -505,6 +612,9 @@ def exporter_dossier(_request, matricule: str):
             "demandes",
             "visas_dossier",
             "ayants_droit",
+            "enfants",
+            "diplomes",
+            "parcours",
         ),
         matricule=matricule,
     )
@@ -940,11 +1050,14 @@ def agent_detail_view(request, matricule: str):
 
     synchroniser_situation(agent)
     if request.method == "PATCH":
+        from .informer import informer_situation, instantane_situation
         from .saisie import enregistrer_situation
 
+        avant = instantane_situation(agent)
         erreur = enregistrer_situation(agent, request.data)
         if erreur:
             return Response({"detail": erreur}, status=400)
+        informer_situation(agent, request.user, avant)
     return Response(_detail(agent, request.user))
 
 
@@ -955,6 +1068,8 @@ def inscrire_formation(request, matricule: str):
     from .inscriptions import inscrire
 
     agent = get_object_or_404(Agent.objects.select_related("organisme"), matricule=matricule)
+    if not _peut_gerer_dossier(request.user, agent):
+        return Response({"detail": "Seul l'agent, ou un responsable de son périmètre, peut déposer cette candidature."}, status=403)
     erreur = inscrire(agent, str(request.data.get("code") or ""), request.FILES.get("fichier"))
     if erreur:
         return Response({"detail": erreur}, status=400)
@@ -1043,7 +1158,8 @@ def _demande_acte_row(demande) -> dict:
         "nature": demande.nature,
         "type_acte": demande.type_acte,
         "agent": {"matricule": demande.agent.matricule, "nom_complet": demande.agent.nom_complet},
-        "motif": demande.motif,
+        "categorie": demande.categorie,
+        "motif": demande.motif or (demande.visas.order_by("ordre").values_list("commentaire", flat=True).first() or ""),
         "debut": demande.debut.isoformat() if demande.debut else "",
         "fin": demande.fin.isoformat() if demande.fin else "",
         "destinataire": demande.destinataire,
@@ -1059,7 +1175,7 @@ def demandes_actes(request):
     """Actes demandables et demandes qui attendent le visa de l'utilisateur."""
     from .demande_acte import CATEGORIE, peut_decider, types
 
-    en_cours = Demande.objects.filter(categorie=CATEGORIE).select_related("agent").order_by("depose_le", "id")
+    en_cours = Demande.objects.filter(categorie__in=[CATEGORIE, "conge", "mutation"]).select_related("agent").order_by("depose_le", "id")
     a_traiter = [_demande_acte_row(item) for item in en_cours if peut_decider(request.user, item)]
     return Response({"types": types(), "a_traiter": a_traiter})
 
@@ -1087,7 +1203,7 @@ def decider_demande_acte(request, reference: str):
     """Vise ou refuse une demande d'acte à l'étape qui revient à l'utilisateur."""
     from .demande_acte import CATEGORIE, decider, peut_decider
 
-    demande = get_object_or_404(Demande.objects.select_related("agent__organisme"), reference=reference, categorie=CATEGORIE)
+    demande = get_object_or_404(Demande.objects.select_related("agent__organisme"), reference=reference, categorie__in=[CATEGORIE, "conge", "mutation"])
     if not peut_decider(request.user, demande):
         return Response({"detail": "Cette demande n'attend pas votre visa."}, status=403)
     erreur = decider(demande, request.user, str(request.data.get("sens") or ""), str(request.data.get("motif") or ""))

@@ -5,6 +5,7 @@ from datetime import date
 from pathlib import Path
 
 from django.db import transaction
+from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework.decorators import api_view, parser_classes, permission_classes
@@ -14,6 +15,7 @@ from rest_framework.response import Response
 
 from .visibilite import dans_le_perimetre
 from .models import Agent, PositionAdministrative
+from .informer import informer_position
 from .parcours import peut_gerer_carriere, refus_carriere
 
 SITUATION_NORMALE = "En activité"
@@ -43,18 +45,32 @@ def position_row(item: PositionAdministrative, aujourd_hui: date | None = None) 
     }
 
 
+SITUATION_FORMATION = "En formation"
+
+
+def _en_formation(agent: Agent, aujourd_hui: date) -> bool:
+    """Retenu pour un module dont la session a débuté et n'est pas terminée, sans abandon ni report."""
+    from .formation import etat_inscription, etat_session
+    from .models import InscriptionFormation
+
+    inscriptions = InscriptionFormation.objects.filter(demande__agent=agent, issue="").select_related("demande", "session")
+    return any(
+        etat_inscription(i) == "retenue" and etat_session(i.session, aujourd_hui) == "en_cours" for i in inscriptions
+    )
+
+
 def synchroniser_situation(agent: Agent, aujourd_hui: date | None = None) -> None:
-    """La situation de l'agent suit sa période en cours ; sans période en cours, il redevient « En activité »."""
+    """La situation de l'agent suit sa période en cours, puis sa formation en cours ; sans l'une ni l'autre, il redevient « En activité »."""
     aujourd_hui = aujourd_hui or timezone.localdate()
-    positions = list(agent.positions.all())
-    if not positions:
-        return
     courante = next(
-        (p for p in positions if p.date_debut <= aujourd_hui and (p.date_fin is None or p.date_fin >= aujourd_hui)), None,
+        (p for p in agent.positions.all() if p.date_debut <= aujourd_hui and (p.date_fin is None or p.date_fin >= aujourd_hui)),
+        None,
     )
     if courante is not None:
         voulue = PositionAdministrative.SITUATIONS[courante.type]
-    elif agent.situation in PositionAdministrative.SITUATIONS.values():
+    elif agent.situation in {SITUATION_NORMALE, SITUATION_FORMATION} and _en_formation(agent, aujourd_hui):
+        voulue = SITUATION_FORMATION
+    elif agent.situation in {*PositionAdministrative.SITUATIONS.values(), SITUATION_FORMATION}:
         voulue = SITUATION_NORMALE
     else:
         return  # Une situation hors position (retraite, décès…) n'est pas touchée.
@@ -82,7 +98,8 @@ def echeances_en_cours(aujourd_hui: date | None = None) -> dict[str, dict]:
 
 
 def synchroniser_tous() -> None:
-    for agent in Agent.objects.filter(positions__isnull=False).distinct():
+    concernes = Q(positions__isnull=False) | Q(situation=SITUATION_FORMATION) | Q(demandes__inscription_formation__isnull=False)
+    for agent in Agent.objects.filter(concernes).distinct():
         synchroniser_situation(agent)
 
 
@@ -165,6 +182,7 @@ def positions(request, matricule: str):
     with transaction.atomic():
         item = PositionAdministrative.objects.create(agent=agent, document=fichier, **valeurs)
         synchroniser_situation(agent)
+        informer_position(agent, request.user, item, "ajoutée")
     return Response(position_row(item), status=201)
 
 
@@ -179,9 +197,11 @@ def position(request, matricule: str, pk: int):
     item = get_object_or_404(PositionAdministrative, pk=pk, agent=agent)
     with transaction.atomic():
         if request.method == "DELETE":
+            retiree = PositionAdministrative(type=item.type, date_debut=item.date_debut, date_fin=item.date_fin)
             if item.document:
                 item.document.delete(save=False)
             item.delete()
+            informer_position(agent, request.user, retiree, "supprimée")
             # Sans autre période, la situation redevient normale si elle venait de celle-ci.
             if not agent.positions.exists() and agent.situation in PositionAdministrative.SITUATIONS.values():
                 agent.situation = SITUATION_NORMALE
@@ -201,4 +221,5 @@ def position(request, matricule: str, pk: int):
             item.document = fichier
         item.save()
         synchroniser_situation(agent)
+        informer_position(agent, request.user, item, "modifiée")
     return Response(position_row(item))

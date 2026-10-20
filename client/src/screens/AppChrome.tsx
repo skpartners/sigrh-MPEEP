@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Fragment, useEffect, useRef, useState, type ReactNode } from "react";
+import { Fragment, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { api, logout, mediaUrl } from "../api/client";
 import type { SessionUser } from "../api/types";
@@ -16,7 +16,7 @@ import { MessagerieBouton } from "./Messagerie";
 import { NotificationBell } from "./NotificationBell";
 import { Icone } from "../ui/Icone";
 import { LogoMinistere } from "../ui/Logo";
-import { lienActif, libellePage, menuAutorise, menuCourant, pageHorsHabilitation, repliHabilitation, sousMenus, type LienNav } from "./navigation";
+import { destinationModule, lienActif, libellePage, menuAutorise, menuCourant, moduleAutorise, NAV, pageHorsHabilitation, repliHabilitation, sousMenus, type LienNav } from "./navigation";
 
 // Même palier que lg: de Tailwind (64rem) : il suit la taille de police du navigateur, et le zoom
 // réduit déjà la largeur utile en px CSS.
@@ -139,7 +139,8 @@ export function AppChrome({ children, sansSidebar = false, actions }: { children
         className="pointer-events-none fixed inset-0 -z-10 h-dvh w-full object-cover object-center"
       />
       <div className="pointer-events-none fixed inset-0 -z-10 bg-gradient-to-b from-primary/15 via-transparent to-primary/10" aria-hidden="true" />
-      <header ref={enteteRef} className="fixed top-0 left-0 right-0 z-50 bg-white/20 backdrop-blur-2xl border-b border-white/10 shadow-[0_1px_20px_color-mix(in_oklab,var(--color-primary)_10%,transparent)] pt-[env(safe-area-inset-top)]">
+      <a href="#contenu" className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[60] focus:rounded-lg focus:bg-primary focus:px-4 focus:py-2 focus:font-label-md focus:text-on-primary">Aller au contenu</a>
+      <header ref={enteteRef} className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-2xl border-b border-hairline/60 shadow-[0_1px_20px_color-mix(in_oklab,var(--color-primary)_10%,transparent)] pt-[env(safe-area-inset-top)]">
         <div className="barre-app h-14 sm:h-16 court:h-14 px-2 sm:px-6 flex items-center justify-between gap-1 sm:gap-3">
           <div className="flex items-center gap-1 sm:gap-3 min-w-0">
             {avecSidebar && !large ? (
@@ -154,7 +155,7 @@ export function AppChrome({ children, sansSidebar = false, actions }: { children
                 <Icone nom={menuOpen ? "menu_open" : "menu"} className="text-2xl" />
               </button>
             ) : null}
-            <Link to="/app" title="Menu" aria-label="Menu principal" className="flex max-[22rem]:hidden items-center gap-3 min-w-0 rounded">
+            <Link to="/app" title="Menu principal" aria-label="Menu principal" className="flex max-[22rem]:hidden items-center gap-3 min-w-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2">
               <span className="relative flex items-center justify-center shrink-0">
                 <LogoMinistere alt="Armoiries de la République de Côte d'Ivoire" className="h-8 w-8 sm:h-10 sm:w-10 object-contain" />
                 <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-secondary-container border border-white/40" aria-hidden="true" />
@@ -168,7 +169,7 @@ export function AppChrome({ children, sansSidebar = false, actions }: { children
               </span>
             </Link>
           </div>
-          <div className="outils flex items-center gap-0.5 sm:gap-3 shrink-0">
+          <div className="outils flex items-center gap-0.5 sm:gap-2 shrink-0" role="toolbar" aria-label="Outils de l'application">
             {menuAutorise(me.data?.acces, { module: "Statistiques & RBAC", fonction: "Communication" }) ? <CommunicationBouton /> : null}
             <MessagerieBouton />
             <NotificationBell />
@@ -177,10 +178,11 @@ export function AppChrome({ children, sansSidebar = false, actions }: { children
               aria-label="Aide"
               aria-current={pathname === "/app/aide" ? "page" : undefined}
               title="Aide"
-              className={`hidden sm:inline-flex items-center justify-center p-2 rounded hover:bg-surface-container-high ${pathname === "/app/aide" ? "bg-surface-container-high text-on-surface" : "text-on-surface-variant hover:text-on-surface"}`}
+              className={`hidden sm:inline-flex items-center justify-center p-2 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary hover:bg-surface-container-high ${pathname === "/app/aide" ? "bg-surface-container-high text-on-surface" : "text-on-surface-variant hover:text-on-surface"}`}
             >
               <Icone nom="help" className="text-xl" />
             </Link>
+            <span className="mx-1 hidden h-6 w-px bg-hairline sm:block" aria-hidden="true" />
             <ProfileMenu user={me.data} />
           </div>
         </div>
@@ -260,46 +262,41 @@ export function AppChrome({ children, sansSidebar = false, actions }: { children
         </aside>
       ) : null}
 
-      <div className={avecSidebar ? "lg:pl-16" : ""}>
-        <main className={`zone-app relative pt-[calc(var(--haut-entete)+0.25rem)] pb-[calc(var(--haut-pied)+4.5rem)] min-h-dvh flex flex-col justify-between ${pathname === "/app" ? "bg-transparent" : "bg-white/20 backdrop-blur-sm"}`}>
+      <div className={`zone-defilement ${avecSidebar ? "lg:pl-16" : ""}`}>
+        <main id="contenu" tabIndex={-1} className={`outline-none zone-app relative pt-[calc(var(--haut-entete)+0.25rem)] ${pathname === "/app" ? "pb-[calc(var(--haut-pied)+0.75rem)]" : "pb-[calc(var(--haut-pied)+4.5rem)]"} min-h-dvh flex flex-col justify-between ${pathname === "/app" ? "bg-transparent" : "bg-white/20 backdrop-blur-sm"}`}>
           <PageMotion className="flex-1 flex flex-col w-full max-w-[120rem] mx-auto" reveal={true}>
             <BandeauSondage />
             {pathname !== "/app" ? (
-              <div className="px-4 sm:px-6 lg:px-8 mt-4">
-                <Link
-                  to="/app"
-                  className="inline-flex items-center gap-2 rounded-lg bg-surface-container-lowest border border-hairline px-3 py-2 font-label-md text-label-md text-primary hover:bg-surface-container-low"
-                >
-                  <Icone nom="home" className="text-lg" />
-                  Accueil
-                </Link>
-              </div>
+              <OngletsModules courant={courant} acces={me.data?.acces} />
             ) : null}
             {pathname !== "/app" ? <HeroBanniere courant={courant} user={me.data} pathname={pathname} actions={actions} /> : null}
             {me.isPending ? null : repli ? <Navigate to={repli} replace /> : children}
           </PageMotion>
         </main>
       </div>
-      <footer ref={piedRef} className="app-pied fixed tres-court:static bottom-0 inset-x-0 z-50 bg-white/15 backdrop-blur-2xl border-t border-white/10 shadow-[0_-1px_16px_color-mix(in_oklab,var(--color-primary)_8%,transparent)] py-3 sm:py-4 court:py-2 px-4 sm:px-8">
+      <footer ref={piedRef} className="app-pied fixed tres-court:static bottom-0 inset-x-0 z-50 bg-white/80 backdrop-blur-2xl border-t border-hairline/60 shadow-[0_-1px_16px_color-mix(in_oklab,var(--color-primary)_8%,transparent)] py-3 sm:py-4 court:py-2 px-4 sm:px-8">
         {/* Ligne accent animée — Jitter gradient sweep (footer) */}
         <div className="motion-gradient-sweep absolute top-0 left-0 right-0 h-0.5" aria-hidden="true" />
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-4">
+        <div className="mx-auto flex max-w-[120rem] flex-col items-center justify-between gap-1 sm:flex-row sm:gap-4">
           <p className="font-label-sm text-label-sm text-on-surface-variant text-center sm:text-left">
-            © {new Date().getFullYear()} République de Côte d'Ivoire
+            <span className="font-semibold text-on-surface">République de Côte d'Ivoire</span>
+            <span className="hidden md:inline"> · Ministère du Portefeuille de l'État et des Entreprises Publiques</span>
+            <span aria-hidden="true"> · </span>© {new Date().getFullYear()}
           </p>
-          <nav className="flex flex-wrap items-center justify-center sm:justify-end gap-x-4 gap-y-1" aria-label="Informations légales et assistance">
-            <Link to="/app/aide" className={LIEN_PIED}>
-              Aide
-            </Link>
-            <Link to="/conditions-generales" className={LIEN_PIED}>
-              CGU
-            </Link>
-            <Link to="/confidentialite" className={LIEN_PIED}>
-              Confidentialité
-            </Link>
-            <Link to="/protection-des-donnees" className={LIEN_PIED}>
-              Protection des données
-            </Link>
+          <nav className="flex flex-wrap items-center justify-center sm:justify-end" aria-label="Informations légales et assistance">
+            <ul className="flex flex-wrap items-center justify-center gap-x-1 sm:justify-end">
+              {[
+                ["/app/aide", "Aide"],
+                ["/conditions-generales", "Conditions d'utilisation"],
+                ["/confidentialite", "Confidentialité"],
+                ["/protection-des-donnees", "Protection des données"],
+              ].map(([vers, libelle], rang) => (
+                <li key={vers} className="flex items-center">
+                  {rang > 0 ? <span className="text-hairline" aria-hidden="true">|</span> : null}
+                  <Link to={vers} className={LIEN_PIED}>{libelle}</Link>
+                </li>
+              ))}
+            </ul>
           </nav>
         </div>
       </footer>
@@ -307,7 +304,63 @@ export function AppChrome({ children, sansSidebar = false, actions }: { children
   );
 }
 
-const LIEN_PIED = "font-label-sm text-label-sm font-semibold text-on-surface-variant hover:text-primary transition-colors";
+/** Barre d'onglets au-dessus de l'entête de page : passer d'un module à l'autre sans repasser par l'accueil. */
+function OngletsModules({ courant, acces }: { courant: LienNav | null; acces: SessionUser["acces"] }) {
+  const modules = NAV.flatMap((section) => section.liens).filter((lien) => !lien.horsAccueil && !lien.bientot && moduleAutorise(acces, lien));
+  const piste = useRef<HTMLDivElement>(null);
+  const [repere, setRepere] = useState<{ x: number; l: number } | null>(null);
+  const cle = courant?.to ?? "";
+
+  // La pastille glisse sous l'onglet actif ; mesurée sur la piste, donc juste même défilée.
+  useLayoutEffect(() => {
+    const mesurer = () => {
+      const actif = piste.current?.querySelector<HTMLElement>('[aria-current="page"]');
+      if (!actif) return setRepere(null);
+      setRepere({ x: actif.offsetLeft, l: actif.offsetWidth });
+      actif.scrollIntoView({ block: "nearest", inline: "center" });
+    };
+    mesurer();
+    window.addEventListener("resize", mesurer);
+    return () => window.removeEventListener("resize", mesurer);
+  }, [cle, modules.length]);
+
+  const onglet = "relative z-10 inline-flex items-center gap-2 whitespace-nowrap rounded-xl px-3.5 py-2 font-label-md text-label-md transition-colors duration-300";
+  return (
+    <nav aria-label="Modules" className="sticky top-[calc(var(--haut-entete)+0.5rem)] z-30 px-4 sm:px-6 lg:px-8 mt-4">
+      <div className="rounded-2xl border border-white/60 bg-white/70 p-1 shadow-[0_4px_20px_color-mix(in_oklab,var(--color-primary)_10%,transparent)] backdrop-blur-xl">
+        <div ref={piste} className="relative flex gap-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {repere ? (
+            <span
+              aria-hidden="true"
+              className="absolute inset-y-0 left-0 rounded-xl bg-gradient-to-br from-primary to-primary-container shadow-md transition-[transform,width] duration-700 ease-[linear(0,0.027,0.096,0.192,0.303,0.42,0.535,0.643,0.74,0.825,0.895,0.952,0.997,1.029,1.052,1.065,1.072,1.073,1.071,1.065,1.058,1.049,1.041,1.032,1.025,1.018,1.012,1.007,1.003,1,0.997,0.996,0.995,0.995,0.995,0.995,1)] motion-reduce:transition-none"
+              style={{ width: repere.l, transform: `translateX(${repere.x}px)` }}
+            />
+          ) : null}
+          <Link to="/app" className={`${onglet} text-primary hover:bg-primary/10`}>
+            <Icone nom="home" className="text-lg" />
+            Accueil
+          </Link>
+          {modules.map((lien) => {
+            const actif = courant?.to === lien.to;
+            return (
+              <Link
+                key={lien.to}
+                to={destinationModule(acces, lien)}
+                aria-current={actif ? "page" : undefined}
+                className={`${onglet} ${actif ? "font-semibold text-on-primary" : "text-on-surface-variant hover:bg-primary/10 hover:text-on-surface"}`}
+              >
+                <Icone nom={lien.icone} className="text-lg" />
+                {lien.libelle}
+              </Link>
+            );
+          })}
+        </div>
+      </div>
+    </nav>
+  );
+}
+
+const LIEN_PIED = "rounded px-2 py-1 font-label-sm text-label-sm font-semibold text-on-surface-variant transition-colors hover:text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary";
 
 const PAGES_FIXES: Record<string, { libelle: string; icone: string; resume: string }> = {
   "/app/aide": { libelle: "Aide & documentation", icone: "help", resume: "Guides d'utilisation et explications détaillées des modules du SIGRH." },
@@ -318,7 +371,6 @@ function HeroBanniere({ courant, user, pathname, actions }: { courant: LienNav |
   const fixe = PAGES_FIXES[pathname];
   const libelle = courant?.libelle ?? fixe?.libelle;
   const icone = courant?.icone ?? fixe?.icone ?? "apps";
-  const resume = courant?.resume ?? fixe?.resume;
   if (!libelle) return null;
   return (
     <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary to-primary-container mx-4 sm:mx-6 lg:mx-8 mt-2 court:mt-1 mb-2">
@@ -340,11 +392,6 @@ function HeroBanniere({ courant, user, pathname, actions }: { courant: LienNav |
             <h1 className="font-headline-md text-headline-md sm:font-headline-lg sm:text-headline-lg text-on-primary font-bold tracking-tight leading-tight">
               {libelle}
             </h1>
-            {resume ? (
-              <p className="font-body-sm text-body-sm text-on-primary/60 mt-0.5 hidden sm:block court:hidden truncate max-w-xl">
-                {resume}
-              </p>
-            ) : null}
           </div>
         </div>
         {actions ? <div className="flex flex-wrap items-center gap-2 shrink-0">{actions}</div> : null}
@@ -468,6 +515,17 @@ function ProfileMenu({ user }: { user: SessionUser | undefined }) {
             Ma connexion
             <span className="ml-auto font-body-sm text-body-sm text-on-surface-variant">Mot de passe</span>
           </button>
+          {user?.administrateur ? (
+            <Link
+              role="menuitem"
+              to="/app/parametres"
+              className="w-full flex items-center gap-2 px-3 py-2 rounded text-left font-label-lg text-label-lg text-on-surface hover:bg-surface-container-high border-b border-hairline mb-1"
+              onClick={() => setOpen(false)}
+            >
+              <Icone nom="tune" className="text-lg leading-none text-primary shrink-0" />
+              Paramètres
+            </Link>
+          ) : null}
           {user?.administrateur ? (
             <button
               role="menuitem"

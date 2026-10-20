@@ -9,6 +9,7 @@ import { Pagination, usePagination } from "../../ui/Pagination";
 import { AppChrome } from "../AppChrome";
 import { PlanificationConges } from "./PlanificationConges";
 import { Icone } from "../../ui/Icone";
+import { Select } from "../../ui/Select";
 
 type Instruction = "pret_signature" | "approbation_auto" | "remplacement" | "conflit_quorum" | "signe" | "rejete" | "decale";
 type DemandeConge = {
@@ -73,7 +74,6 @@ export function CongesScreen() {
   const feedback = useFeedback();
   const registre = useQuery({ queryKey: ["carrieres-conges"], queryFn: () => api<Registre>("/api/v1/carrieres/conges/") });
   const [entite, setEntite] = useState("");
-  const [quorumDe, setQuorumDe] = useState<Registre["quorums"][number] | null>(null);
   const [nature, setNature] = useState("");
   const [instruction, setInstruction] = useState("");
   const [action, setAction] = useState<{ demande: DemandeConge; action: Action } | null>(null);
@@ -92,9 +92,6 @@ export function CongesScreen() {
   const volume = donnees?.volume;
   const partConsommee = volume && volume.acquis ? Math.round((volume.consommes / volume.acquis) * 1000) / 10 : 0;
   const seuil = donnees?.presence.seuil;
-  // Un seul seuil commun à toutes les structures : il est dit une fois, sous le titre.
-  const seuils = new Set((donnees?.quorums ?? []).map((quorum) => quorum.seuil));
-  const seuilsCommuns = seuils.size === 1 ? [...seuils][0] : null;
   const presence = donnees?.presence.taux;
   const exercice = donnees?.exercice ?? "";
 
@@ -126,9 +123,6 @@ export function CongesScreen() {
                   Exercice {exercice} actif
                 </span>
               </div>
-              <p className="font-body-md text-body-md text-on-surface-variant max-w-4xl">
-                Consolidation des plans de congés, arbitrage des départs, suivi des reliquats et maintien du quorum de continuité du service public {seuil != null ? `(seuil minimal de ${seuil} %).` : "."}
-              </p>
             </div>
             <div className="flex flex-wrap items-center gap-2.5 shrink-0">
               <button className="flex items-center gap-2 px-3 py-1.5 rounded bg-surface-container-high hover:bg-surface-container text-on-surface font-label-md text-label-md transition-colors" type="button" onClick={() => void exporterEtat()}>
@@ -205,13 +199,12 @@ export function CongesScreen() {
             </Carte>
           </div>
 
-          {/* Radar annuel et quorums */}
+          {/* Radar annuel des congés */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             <div className="lg:col-span-12 p-5 bg-surface-container-lowest rounded-lg shadow-sm space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pb-2">
                 <div>
-                  <h2 className="font-headline-sm text-headline-sm text-on-surface">Radar annuel des départs & périodes critiques</h2>
-                  <p className="font-body-sm text-body-sm text-on-surface-variant">Départs simultanés calculés sur les congés, absences et plans de la campagne de l'exercice {exercice}</p>
+                  <h2 className="font-headline-sm text-headline-sm text-on-surface">Radar annuel des congés & périodes critiques</h2>
                 </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -236,98 +229,46 @@ export function CongesScreen() {
               <div className="p-4 rounded bg-surface-container-lowest shadow-sm space-y-3">
                 <div className="flex flex-wrap items-center justify-between gap-2 text-on-surface">
                   <span className="font-label-md text-label-md font-semibold">Taux de présence mensuel (%)</span>
-                  <div className="flex items-center gap-4 font-label-sm text-label-sm">
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 font-label-sm text-label-sm">
                     <span className="flex items-center gap-1.5">
-                      <span className="w-3 h-1.5 bg-primary rounded-full" />
-                      Présence prévue
+                      <span className="h-3 w-3 rounded-sm bg-primary/70" aria-hidden="true" />
+                      Conforme
                     </span>
                     <span className="flex items-center gap-1.5">
-                      <span className="w-3 h-1.5 bg-secondary rounded-full" />
-                      Proche du seuil{seuil != null ? ` (${seuil} %)` : ""}
+                      <span className="h-3 w-3 rounded-sm bg-attention" aria-hidden="true" />
+                      Proche du seuil{seuil != null ? ` (${seuil} % à ${seuil + 5} %)` : ""}
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      <span className="h-3 w-3 rounded-sm bg-error" aria-hidden="true" />
+                      Sous le seuil{seuil != null ? ` (< ${seuil} %)` : ""}
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      <span className="h-3 w-3 rounded-sm bg-primary ring-2 ring-primary ring-offset-1" aria-hidden="true" />
+                      Mois en cours
                     </span>
                   </div>
                 </div>
                 <div className="w-full h-36 flex items-end gap-1 sm:gap-2 pt-4 px-1 sm:px-2">
                   {(donnees?.mensuel ?? []).map((taux, index) => {
-                    const critique = seuil != null && taux < seuil + 5;
+                    // Trois niveaux, trois couleurs franches : le mois en cours se repère à son contour et à son libellé.
+                    const niveau = seuil == null ? "ok" : taux < seuil ? "sous" : taux < seuil + 5 ? "proche" : "ok";
+                    const couleur = niveau === "sous" ? "bg-error" : niveau === "proche" ? "bg-attention" : "bg-primary/70";
+                    const texte = niveau === "sous" ? "text-error" : niveau === "proche" ? "text-attention" : "text-on-surface-variant";
                     const courant = index === new Date().getMonth();
                     return (
                       <div key={MOIS_COURTS[index]} className="flex-1 min-w-0 flex flex-col items-center gap-1 h-full justify-end">
-                        <span className={`hidden sm:inline font-code-num text-code-num ${critique ? "text-secondary font-bold" : courant ? "text-primary font-bold" : "text-on-surface-variant"}`}>{taux}%</span>
+                        <span className={`hidden sm:inline font-code-num text-code-num ${niveau === "ok" ? (courant ? "text-primary font-bold" : "text-on-surface-variant") : `${texte} font-bold`}`}>{taux}%</span>
                         <div
-                          className={`w-full rounded-t ${critique ? "bg-secondary shadow-sm" : courant ? "bg-primary shadow-sm" : "bg-primary/20 hover:bg-primary transition-colors"}`}
+                          className={`w-full rounded-t transition-[filter] duration-200 hover:brightness-110 ${couleur} ${courant ? "ring-2 ring-primary ring-offset-1" : ""}`}
                           style={{ height: `${taux}%` }}
-                          title={`${MOIS_COURTS[index]} : ${taux} %`}
+                          title={`${MOIS_COURTS[index]} : ${taux} %${niveau === "sous" ? " (sous le seuil)" : niveau === "proche" ? " (proche du seuil)" : ""}`}
                         />
-                        <span className={`font-label-sm text-label-sm ${critique ? "text-secondary font-bold" : courant ? "text-primary font-bold" : "text-on-surface-variant"}`}>{MOIS_COURTS[index]}</span>
+                        <span className={`font-label-sm text-label-sm ${courant ? "text-primary font-bold underline underline-offset-2" : niveau === "ok" ? "text-on-surface-variant" : `${texte} font-bold`}`}>{MOIS_COURTS[index]}</span>
                       </div>
                     );
                   })}
                 </div>
               </div>
-            </div>
-            <div className="lg:col-span-12 p-5 bg-surface-container-lowest rounded-lg shadow-sm space-y-3 flex flex-col">
-              <div>
-                <h2 className="font-headline-sm text-headline-sm text-on-surface">Quorums par structure</h2>
-                <p className="font-body-sm text-body-sm text-on-surface-variant">
-                  Présence du jour · {seuilsCommuns ? `seuil de ${seuilsCommuns} %` : "seuil propre à chaque structure"}
-                </p>
-              </div>
-              <table className="w-full text-left font-body-sm text-body-sm">
-                <thead>
-                  <tr className="text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wide border-b border-hairline">
-                    <th className="py-2 pr-2 font-semibold">Structure</th>
-                    <th className="py-2 px-2 font-semibold w-32">Présence</th>
-                    <th className="py-2 pl-2 font-semibold text-right">Statut</th>
-                    <th className="py-2 pl-2 w-10"><span className="sr-only">Actions</span></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(donnees?.quorums ?? []).map((quorum) => {
-                    const sous = quorum.presence < quorum.seuil;
-                    const attention = quorum.presence < quorum.seuil + 5;
-                    return (
-                      <tr key={quorum.entite} className="border-b border-hairline last:border-0" title={`${quorum.nom} · ${quorum.detail} · seuil ${quorum.seuil} %`}>
-                        <td className={`py-2 pr-2 font-semibold leading-snug ${sous ? "text-error" : "text-on-surface"}`}>{quorum.entite}</td>
-                        <td className="py-2 px-2">
-                          <span className="flex items-center gap-2">
-                            <span className="h-1.5 flex-1 rounded-full bg-surface-container-high overflow-hidden" aria-hidden="true">
-                              <span className={`block h-full rounded-full ${sous ? "bg-error" : attention ? "bg-secondary" : "bg-primary"}`} style={{ width: `${quorum.presence}%` }} />
-                            </span>
-                            <span className="font-code-num text-on-surface w-10 text-right">{quorum.presence} %</span>
-                          </span>
-                        </td>
-                        <td className="py-2 pl-2 text-right">
-                          <span className={`inline-block px-2 py-0.5 rounded font-label-sm text-label-sm font-semibold whitespace-nowrap ${sous ? "bg-error text-on-error" : attention ? "bg-secondary-fixed text-on-secondary-fixed" : "bg-primary-fixed text-on-primary-fixed"}`}>
-                            {sous ? "Sous le seuil" : attention ? "Attention" : "Conforme"}
-                          </span>
-                        </td>
-                        <td className="py-2 pl-2 text-right">
-                          {quorum.peut_modifier ? (
-                            <button
-                              type="button"
-                              title="Modifier le quorum de cette structure"
-                              aria-label={`Modifier le quorum de ${quorum.entite}`}
-                              className="p-1.5 rounded text-on-surface-variant hover:text-primary hover:bg-surface-container"
-                              onClick={() => setQuorumDe(quorum)}
-                            >
-                              <Icone nom="edit" className="text-lg" />
-                            </button>
-                          ) : null}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-              {(donnees?.quorums.length ?? 0) === 0 ? (
-                <p className="font-body-sm text-body-sm text-on-surface-variant">Aucun agent n'est rattaché à une structure des paramètres.</p>
-              ) : null}
-              {donnees?.quorums_non_rattaches ? (
-                <p className="font-label-sm text-label-sm text-on-surface-variant">
-                  {donnees.quorums_non_rattaches} agent{donnees.quorums_non_rattaches > 1 ? "s" : ""} non compté{donnees.quorums_non_rattaches > 1 ? "s" : ""} : leur structure ne figure pas dans les paramètres.
-                </p>
-              ) : null}
             </div>
           </div>
 
@@ -336,7 +277,6 @@ export function CongesScreen() {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-2">
               <div>
                 <h2 className="font-headline-sm text-headline-sm text-on-surface">Registre d'arbitrage & visa des demandes de congé</h2>
-                <p className="font-body-sm text-body-sm text-on-surface-variant">Demandes soumises à la sous-direction des carrières : l'arrêté est signé avec la signature électronique du DRH.</p>
               </div>
               <span className="font-code-num text-code-num font-bold text-primary px-2 py-0.5 bg-surface-container rounded whitespace-nowrap">
                 {donnees ? `${donnees.en_attente} dossier${donnees.en_attente > 1 ? "s" : ""} en attente d'arbitrage` : "…"}
@@ -345,30 +285,30 @@ export function CongesScreen() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3 bg-surface-container-low rounded">
               <label className="block">
                 <span className="block font-label-sm text-label-sm text-on-surface font-semibold mb-1">Structure</span>
-                <select className={FILTRE} value={entite} onChange={(event) => setEntite(event.target.value)}>
+                <Select className={FILTRE} value={entite} onChange={(event) => setEntite(event.target.value)}>
                   <option value="">Toutes les structures</option>
                   {entites.map((sigle) => (
                     <option key={sigle} value={sigle}>{sigle}</option>
                   ))}
-                </select>
+                </Select>
               </label>
               <label className="block">
                 <span className="block font-label-sm text-label-sm text-on-surface font-semibold mb-1">Type de congé</span>
-                <select className={FILTRE} value={nature} onChange={(event) => setNature(event.target.value)}>
+                <Select className={FILTRE} value={nature} onChange={(event) => setNature(event.target.value)}>
                   <option value="">Tous les régimes de congé</option>
                   {natures.map((item) => (
                     <option key={item} value={item}>{item}</option>
                   ))}
-                </select>
+                </Select>
               </label>
               <label className="block">
                 <span className="block font-label-sm text-label-sm text-on-surface font-semibold mb-1">Statut d'instruction</span>
-                <select className={FILTRE} value={instruction} onChange={(event) => setInstruction(event.target.value)}>
+                <Select className={FILTRE} value={instruction} onChange={(event) => setInstruction(event.target.value)}>
                   <option value="">Tous les statuts</option>
                   {(donnees?.instructions ?? []).map((item) => (
                     <option key={item.code} value={item.code}>{item.libelle}</option>
                   ))}
-                </select>
+                </Select>
               </label>
             </div>
             <div className="overflow-x-auto">
@@ -409,7 +349,6 @@ export function CongesScreen() {
 
         </div>
       </div>
-      {quorumDe ? <ModaleQuorum quorum={quorumDe} defaut={seuil} onClose={() => setQuorumDe(null)} /> : null}
       {action ? <ModaleArbitrage demande={action.demande} action={action.action} onClose={() => setAction(null)} /> : null}
     </AppChrome>
   );
@@ -568,57 +507,6 @@ function ModaleArbitrage({ demande, action, onClose }: { demande: DemandeConge; 
           />
         </label>
       )}
-    </Modale>
-  );
-}
-
-/** Règle le quorum d'une structure. Vide : elle reprend celui de la structure qui la contient, puis le quorum par défaut. */
-function ModaleQuorum({ quorum, defaut, onClose }: { quorum: Registre["quorums"][number]; defaut?: number; onClose: () => void }) {
-  const client = useQueryClient();
-  const feedback = useFeedback();
-  const [valeur, setValeur] = useState(quorum.quorum_propre != null ? String(quorum.quorum_propre) : "");
-  const envoi = useMutation({
-    mutationFn: () => api(`/api/v1/structures/${encodeURIComponent(quorum.code)}/quorum/`, {
-      method: "PATCH",
-      body: JSON.stringify({ quorum_presence_pourcent: valeur.trim() === "" ? null : Number(valeur) }),
-    }),
-    onSuccess: async () => {
-      await Promise.all([
-        client.invalidateQueries({ queryKey: ["carrieres-conges"] }),
-        client.invalidateQueries({ queryKey: ["structures"] }),
-      ]);
-      feedback.toast("Quorum mis à jour", quorum.nom);
-      onClose();
-    },
-  });
-  return (
-    <Modale
-      titre="Quorum de présence"
-      sousTitre={quorum.nom}
-      icone="groups"
-      taille="sm"
-      onClose={onClose}
-      onSubmit={() => envoi.mutate()}
-      enCours={envoi.isPending}
-      erreur={envoi.error instanceof ApiError ? envoi.error.message : envoi.isError ? "Le quorum n'a pas été enregistré." : undefined}
-    >
-      <label className="block space-y-1">
-        <span className="block font-label-md text-label-md text-on-surface font-semibold">Présence minimale (%)</span>
-        <input
-          className="w-full h-10 px-3 rounded border border-outline-variant bg-surface-container-lowest text-on-surface font-body-sm text-body-sm focus:outline-none focus:ring-2 focus:ring-primary"
-          type="number"
-          min={1}
-          max={100}
-          step={1}
-          inputMode="numeric"
-          placeholder={defaut != null ? `Hérité (${quorum.seuil} %)` : "Hérité"}
-          value={valeur}
-          onChange={(event) => setValeur(event.target.value)}
-        />
-        <span className="block font-label-sm text-label-sm text-on-surface-variant">
-          Aujourd'hui : {quorum.presence} % de présence ({quorum.detail}). Laissez vide pour reprendre le quorum de la structure qui la contient, puis le quorum par défaut.
-        </span>
-      </label>
     </Modale>
   );
 }

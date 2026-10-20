@@ -8,6 +8,7 @@ import { Skeleton } from "../../ui/Motion";
 import { Pagination, usePagination } from "../../ui/Pagination";
 import { AppChrome } from "../AppChrome";
 import { Icone } from "../../ui/Icone";
+import { Select } from "../../ui/Select";
 
 type Statut = "visite" | "quittance" | "arrete" | "transmis" | "notifie";
 type Dossier = {
@@ -133,7 +134,6 @@ export function FinCarriereScreen() {
             <div className="lg:col-span-12 bg-surface-container-lowest p-6 rounded shadow-sm flex flex-col justify-between">
               <div className="pb-4">
                 <h2 className="font-headline-sm text-headline-sm text-on-surface">Pyramide des âges & départs prévisionnels</h2>
-                <p className="font-body-sm text-body-sm text-on-surface-variant">Répartition par âge des {donnees?.effectif ?? "…"} agents suivis, calculée sur leurs dates de naissance</p>
               </div>
               <div className="py-4 space-y-3.5">
                 {tableau.isPending
@@ -193,18 +193,18 @@ export function FinCarriereScreen() {
                     </button>
                   ) : null}
                 </div>
-                <select aria-label="Filtrer par établissement" className="px-3 py-1.5 bg-surface-container-low text-on-surface font-body-sm text-body-sm rounded border-0 focus:ring-1 focus:ring-primary cursor-pointer" value={entite} onChange={(event) => setEntite(event.target.value)}>
+                <Select aria-label="Filtrer par établissement" className="px-3 py-1.5 bg-surface-container-low text-on-surface font-body-sm text-body-sm rounded border-0 focus:ring-1 focus:ring-primary cursor-pointer" value={entite} onChange={(event) => setEntite(event.target.value)}>
                   <option value="">Tous les établissements</option>
                   {entites.map((sigle) => (
                     <option key={sigle} value={sigle}>{sigle}</option>
                   ))}
-                </select>
-                <select aria-label="Filtrer par statut" className="px-3 py-1.5 bg-surface-container-low text-on-surface font-body-sm text-body-sm rounded border-0 focus:ring-1 focus:ring-primary cursor-pointer" value={statut} onChange={(event) => setStatut(event.target.value)}>
+                </Select>
+                <Select aria-label="Filtrer par statut" className="px-3 py-1.5 bg-surface-container-low text-on-surface font-body-sm text-body-sm rounded border-0 focus:ring-1 focus:ring-primary cursor-pointer" value={statut} onChange={(event) => setStatut(event.target.value)}>
                   <option value="">Statut : tout afficher</option>
                   {statuts.map(([code, libelle]) => (
                     <option key={code} value={code}>{libelle}</option>
                   ))}
-                </select>
+                </Select>
                 {filtreActif ? (
                   <button className="inline-flex items-center gap-1 px-3 py-1.5 rounded text-primary font-label-sm text-label-sm font-semibold hover:bg-surface-container" type="button" onClick={() => { setRecherche(""); setEntite(""); setStatut(""); }}>
                     <Icone nom="filter_alt_off" className="text-sm" />
@@ -467,12 +467,12 @@ function Editeur({ panneau, donnees, onClose }: { panneau: Panneau; donnees: Tab
 
 function ListeAgents({ agents, value, onChange, requis = false, disabled = false }: { agents: AgentChoix[]; value: string; onChange: (valeur: string) => void; requis?: boolean; disabled?: boolean }) {
   return (
-    <select className={CHAMP} required={requis} disabled={disabled} value={value} onChange={(event) => onChange(event.target.value)}>
+    <Select className={CHAMP} required={requis} disabled={disabled} value={value} onChange={(event) => onChange(event.target.value)}>
       <option value="">{requis ? "Choisir un agent…" : "Aucun"}</option>
       {agents.map((agent) => (
         <option key={agent.matricule} value={agent.matricule}>{agent.nom_complet} · {agent.organisme_sigle}</option>
       ))}
-    </select>
+    </Select>
   );
 }
 
@@ -521,9 +521,9 @@ function FormulaireAdmission({ dossier, statuts, onClose }: { dossier: Dossier; 
           <label className="block"><span className={LIBELLE}>Entrée en service</span><input className={CHAMP} type="date" value={saisie.entree_service} onChange={champ("entree_service")} /></label>
           <label className="block">
             <span className={LIBELLE}>Statut</span>
-            <select className={CHAMP} value={saisie.statut} onChange={champ("statut")}>
+            <Select className={CHAMP} value={saisie.statut} onChange={champ("statut")}>
               {statuts.map((item) => <option key={item.code} value={item.code}>{item.libelle}</option>)}
-            </select>
+            </Select>
           </label>
         </div>
         <label className="block"><span className={LIBELLE}>Précision</span><input className={CHAMP} maxLength={160} value={saisie.statut_detail} onChange={champ("statut_detail")} /></label>
@@ -564,9 +564,9 @@ function FormulaireCessation({ dossier, agents, occupes, motifs, onClose }: { do
       <div className="space-y-4">
         <label className="block">
           <span className={LIBELLE}>Motif <span className="text-error">*</span></span>
-          <select className={CHAMP} required value={saisie.motif} onChange={champ("motif")}>
+          <Select className={CHAMP} required value={saisie.motif} onChange={champ("motif")}>
             {motifs.map((item) => <option key={item.id} value={item.id}>{item.libelle}</option>)}
-          </select>
+          </Select>
         </label>
         <label className="block"><span className={LIBELLE}>Agent <span className="text-error">*</span></span><ListeAgents agents={choix} value={saisie.matricule} onChange={(valeur) => setSaisie({ ...saisie, matricule: valeur })} requis disabled={Boolean(dossier)} /></label>
         <label className="block"><span className={LIBELLE}>Date d'effet <span className="text-error">*</span></span><input className={CHAMP} required type="date" value={saisie.date_cessation} onChange={champ("date_cessation")} /></label>

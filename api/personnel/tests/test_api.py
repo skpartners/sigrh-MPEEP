@@ -295,7 +295,7 @@ def test_dossier_agent(api):
     assert valeurs["Date de prise de service dans le ministère"] == "2018-10-01"
     assert valeurs["Date de prise de service dans l'emploi"] == "2015-01-12"
     assert valeurs["Date de prise de service dans la fonction"] == "2022-03-15"
-    assert valeurs["Positions"] == "En activité"
+    assert valeurs["Positions"] == "En formation"  # retenu pour un module de formation en cours (jeu de démonstration)
     assert valeurs["Lieu de Travail"].startswith("Immeuble SCIAM")
 
     anonyme = api.get("/api/v1/agents/349812K/dossier/")
@@ -345,7 +345,7 @@ def test_modifier_situation_administrative(api):
     assert valeurs["Service"] == "Service de la Solde"
     assert valeurs["Sous-Direction"] == ""
     assert valeurs["Emploi"] == "Administrateur"
-    assert valeurs["Grade"] == "A5, échelon 4"
+    assert valeurs["Grade"] == "A5"
     assert valeurs["Catégorie"] == "Catégorie A"
     assert valeurs["Fonction"] == "Chef de service"
     assert valeurs["Positions"] == "Détachement"
@@ -881,7 +881,7 @@ def test_depot_de_conge_entre_dans_le_circuit(api):
         **auth,
     )
     assert depot.status_code == 201
-    demande = next(item for item in depot.json()["demandes"] if item["nature"] == "Congé annuel (10 j)")
+    demande = next(item for item in depot.json()["demandes"] if item["nature"] == "Congé annuel (14 j)")  # week-ends compris
     assert demande["categorie"] == "conge"
     assert demande["etape"].startswith("Étape 2")
     assert demande["visas"][0]["avis"] == "Déposée"
@@ -2552,6 +2552,9 @@ def test_planification_annuelle_des_conges(api):
     chef_nom = "349812K"
     chef_user = User.objects.get(username=chef_nom)
     Profil.objects.filter(user__username__in=[agent_nom, silencieux]).update(superieur=chef_user)
+    from personnel.models import Agent
+
+    Agent.objects.filter(matricule__in=[agent_nom, silencieux]).update(conges_acquis=30, conges_consommes=0)  # droit de référence : 30 jours
     # Le jour de l'application (fuseau du projet), pas celui de la machine qui lance les tests.
     aujourd_hui = timezone.localdate()
     corps = {
@@ -2575,21 +2578,21 @@ def test_planification_annuelle_des_conges(api):
     assert Publication.objects.filter(reference="PLAN-CONGES-2026", statut="diffuse").exists()
 
     agent = _connexion(api, agent_nom)
-    depose = api.post("/api/v1/conges/planification/deposer/", {"debut": "2026-07-06", "fin": "2026-07-24"}, format="json", **agent)
+    depose = api.post("/api/v1/conges/planification/deposer/", {"debut": "2026-07-06", "fin": "2026-08-04"}, format="json", **agent)
     assert depose.status_code == 200
     plan = PlanConge.objects.get(agent__username=agent_nom)
     assert plan.palier == "hierarchie" and plan.chez.username == chef_nom
 
     chef = _connexion(api, chef_nom)
-    trop_tot = api.post(f"/api/v1/conges/planification/{plan.id}/transmettre/", {"debut": "2026-07-13", "fin": "2026-07-31", "motif": "Trop tôt."}, format="json", **chef)
+    trop_tot = api.post(f"/api/v1/conges/planification/{plan.id}/transmettre/", {"debut": "2026-07-13", "fin": "2026-08-11", "motif": "Trop tôt."}, format="json", **chef)
     assert trop_tot.status_code == 409
 
     CampagnePlanConge.objects.filter(exercice=2026).update(limite_agents=aujourd_hui - timedelta(days=1))
-    sans_motif = api.post(f"/api/v1/conges/planification/{plan.id}/transmettre/", {"debut": "2026-07-13", "fin": "2026-07-31"}, format="json", **chef)
+    sans_motif = api.post(f"/api/v1/conges/planification/{plan.id}/transmettre/", {"debut": "2026-07-13", "fin": "2026-08-11"}, format="json", **chef)
     assert sans_motif.status_code == 400
     avec_motif = api.post(
         f"/api/v1/conges/planification/{plan.id}/transmettre/",
-        {"debut": "2026-07-13", "fin": "2026-07-31", "motif": "Présence requise la première semaine de juillet."},
+        {"debut": "2026-07-13", "fin": "2026-08-11", "motif": "Présence requise la première semaine de juillet."},
         format="json",
         **chef,
     )
@@ -2598,10 +2601,10 @@ def test_planification_annuelle_des_conges(api):
     plan.refresh_from_db()
     assert plan.palier == "rh"
 
-    assert api.post("/api/v1/conges/planification/deposer/", {"debut": "2026-08-03", "fin": "2026-08-21"}, format="json", **_connexion(api, silencieux)).status_code == 409
+    assert api.post("/api/v1/conges/planification/deposer/", {"debut": "2026-08-03", "fin": "2026-09-01"}, format="json", **_connexion(api, silencieux)).status_code == 409
     fixe = api.post(
         "/api/v1/conges/planification/fixer/",
-        {"matricule": silencieux, "debut": "2026-08-03", "fin": "2026-08-21"},
+        {"matricule": silencieux, "debut": "2026-08-03", "fin": "2026-09-01"},
         format="json",
         **chef,
     )
@@ -3143,3 +3146,489 @@ def test_sous_rubrique_de_conge_suit_le_circuit_de_sa_rubrique(api):
     assert reponse.status_code == 201
     demande = next(item for item in reponse.json()["demandes"] if item["nature"].startswith("Congé de maladie de courte durée"))
     assert [visa["instance"] for visa in demande["visas"]][:2] == ["Requête déposée", "Directeur"]
+
+
+def test_parcours_academique_plusieurs_diplomes(api):
+    auth = {"HTTP_AUTHORIZATION": f"Token {_token(api)}"}
+    url = "/api/v1/agents/349812K/diplomes/"
+    assert api.post(url, {"niveau_etude": "inconnu"}, format="json", **auth).status_code == 400
+    avant = len(api.get("/api/v1/agents/349812K/", **auth).json()["parcours_academique"]["diplomes"])
+    api.post(url, {"niveau_etude": "licence", "libelle": "Licence de droit", "domaine_formation": "Droit"}, format="json", **auth)
+    ajout = api.post(url, {"niveau_etude": "master", "libelle": "Master de gestion", "domaine_formation": "Gestion"}, format="json", **auth)
+    assert ajout.status_code == 201
+    parcours = ajout.json()["parcours_academique"]
+    assert len(parcours["diplomes"]) == avant + 2
+    assert parcours["niveau_etude_code"] == "master"  # le diplôme le plus élevé alimente la fiche
+    retrait = api.delete(f"{url}{parcours['diplomes'][-1]['id']}/", **auth)
+    assert retrait.status_code == 200
+    assert len(retrait.json()["parcours_academique"]["diplomes"]) == avant + 1
+
+
+def test_profil_controle_telephone_et_noms(api):
+    auth = {"HTTP_AUTHORIZATION": f"Token {_token(api)}"}
+    url = "/api/v1/agents/349812K/profil/"
+    assert api.patch(url, {"telephone": "12345"}, format="json", **auth).status_code == 400
+    assert api.patch(url, {"contact_urgence_telephone": "+33 6 12 34 56 78"}, format="json", **auth).status_code == 400
+    assert api.patch(url, {"prenoms": "K0uassi"}, format="json", **auth).status_code == 400
+    assert api.patch(url, {"courriel": "pas-un-courriel"}, format="json", **auth).status_code == 400
+    ok = api.patch(url, {"telephone": "+225 07 08 09 10 11", "telephone_secondaire": "", "nom_jeune_fille": "N'Guessan"}, format="json", **auth)
+    assert ok.status_code == 200
+
+
+def test_position_en_formation_pendant_un_module(api):
+    from datetime import timedelta
+
+    from django.utils import timezone
+
+    from personnel.models import Agent, InscriptionFormation
+    from personnel.positions import synchroniser_situation
+
+    agent = Agent.objects.get(matricule="349812K")
+    inscription = InscriptionFormation.objects.filter(demande__agent=agent).first()
+    assert inscription is not None
+    jour = timezone.localdate()
+    session = inscription.session
+    session.date_debut, session.date_fin, session.cloturee_le, session.annulee = jour - timedelta(days=2), jour + timedelta(days=5), None, False
+    session.save()
+    agent.situation = "En activité"
+    synchroniser_situation(agent)
+    assert agent.situation == "En formation"
+    # La session terminée, l'agent redevient en activité.
+    session.date_fin = jour - timedelta(days=1)
+    session.save()
+    synchroniser_situation(agent)
+    assert agent.situation == "En activité"
+
+
+def test_diplome_relie_a_son_justificatif(api, tmp_path, settings):
+    from django.core.files.uploadedfile import SimpleUploadedFile
+
+    settings.MEDIA_ROOT = tmp_path
+    auth = {"HTTP_AUTHORIZATION": f"Token {_token(api)}"}
+    url = "/api/v1/agents/349812K/diplomes/"
+    pdf = lambda: SimpleUploadedFile("master.pdf", b"%PDF-1.4 test", content_type="application/pdf")  # noqa: E731
+
+    # À l'ajout : le fichier est versé au coffre (rubrique Diplômes) et rattaché à la ligne.
+    ajout = api.post(url, {"niveau_etude": "master", "libelle": "Master de gestion", "fichier": pdf()}, format="multipart", **auth)
+    assert ajout.status_code == 201
+    corps = ajout.json()
+    ligne = next(d for d in corps["parcours_academique"]["diplomes"] if d["libelle"] == "Master de gestion")
+    assert ligne["piece"]["intitule"].startswith("Diplôme")
+    piece = next(p for p in corps["pieces"] if p["id"] == ligne["piece"]["id"])
+    assert piece["categorie"] == "Diplômes & Certifications" and piece["diplome"] == "Master de gestion"
+
+    # Un justificatif déjà versé, non rattaché, peut être choisi pour une autre ligne ; un fichier étranger est refusé.
+    versee = api.post("/api/v1/agents/349812K/documents/", {"rubrique": "diplomes", "type_document": "diplome", "fichier": pdf()}, format="multipart", **auth)
+    libre = versee.json()["parcours_academique"]["pieces_libres"][-1]
+    sans = api.post(url, {"niveau_etude": "licence", "libelle": "Licence de droit"}, format="json", **auth).json()
+    cible = next(d for d in sans["parcours_academique"]["diplomes"] if d["libelle"] == "Licence de droit")
+    assert api.post(f"{url}{cible['id']}/justificatif/", {"piece_id": "999999"}, format="json", **auth).status_code == 400
+    lie = api.post(f"{url}{cible['id']}/justificatif/", {"piece_id": libre["id"]}, format="json", **auth)
+    assert lie.status_code == 200
+    assert next(d for d in lie.json()["parcours_academique"]["diplomes"] if d["id"] == cible["id"])["piece"]["id"] == libre["id"]
+
+    # Détacher laisse la pièce au coffre.
+    detache = api.delete(f"{url}{cible['id']}/justificatif/", **auth)
+    assert next(d for d in detache.json()["parcours_academique"]["diplomes"] if d["id"] == cible["id"])["piece"] is None
+    assert any(p["id"] == libre["id"] for p in detache.json()["pieces"])
+
+
+def test_conge_sans_remplacant_et_decompte_par_nature(api):
+    auth = _auth(api)
+    url = "/api/v1/agents/340188P/conges/demande/"
+    autre = next(
+        enfant["code"] for type_ in api.get("/api/v1/agents/340188P/", **auth).json()["types_conges"]
+        for enfant in (type_["enfants"] or [{"code": type_["code"], "libelle": type_["libelle"]}])
+        if "annuel" not in enfant["libelle"].lower()
+    )
+    # Du lundi 4 au lundi 18 mai 2026 : 14 jours calendaires, 10 jours ouvrables. Le remplaçant est facultatif.
+    annuel = api.post(url, {"type": "conge-annuel", "debut": "2026-05-04", "fin": "2026-05-18"}, format="json", **auth)
+    assert annuel.status_code == 201
+    assert any(d["nature"] == "Congé annuel (14 j)" for d in annuel.json()["demandes"])
+    ouvrable = api.post(url, {"type": autre, "debut": "2026-05-04", "fin": "2026-05-18"}, format="json", **auth)
+    assert ouvrable.status_code == 201
+    assert any(d["nature"].endswith("(10 j)") for d in ouvrable.json()["demandes"])
+
+
+def test_conge_suit_le_circuit_de_validation_jusqu_a_la_cloture(api):
+    from personnel.models import Agent
+
+    auth = _auth(api)
+    avant = Agent.objects.get(matricule="340188P").conges_consommes
+    depot = api.post(
+        "/api/v1/agents/340188P/conges/demande/",
+        {"type": "conge-annuel", "debut": "2026-05-04", "fin": "2026-05-12"},
+        format="json",
+        **auth,
+    )
+    assert depot.status_code == 201
+    demande = next(d for d in depot.json()["demandes"] if d["nature"] == "Congé annuel (8 j)")
+    reference = demande["reference"]
+    attendus = [v["instance"] for v in demande["visas"] if v["avis"] == "En attente" and not v["instance"].startswith("Scan")]
+    assert attendus  # au moins un visa à apposer
+
+    # L'approbateur retrouve la demande dans sa liste « à viser », puis la vise étape par étape.
+    decision = f"/api/v1/demandes-actes/{reference}/decision/"
+    for rang, instance in enumerate(attendus):
+        a_viser = api.get("/api/v1/demandes-actes/", **auth).json()["a_traiter"]
+        courante = next((d for d in a_viser if d["reference"] == reference), None)
+        assert courante is not None, f"la demande devrait attendre le visa « {instance} »"
+        assert courante["categorie"] == "conge"
+        reponse = api.post(decision, {"sens": "valider"}, format="json", **auth)
+        assert reponse.status_code == 200
+        suivie = next(d for d in reponse.json()["demandes"] if d["reference"] == reference)
+        if rang < len(attendus) - 1:
+            assert not suivie["etape"].startswith("Clôturée")
+
+    assert suivie["etape"] == "Clôturée : congé accordé"
+    assert Agent.objects.get(matricule="340188P").conges_consommes == avant + 8
+    assert api.post(decision, {"sens": "valider"}, format="json", **auth).status_code in {400, 403}  # plus rien à viser
+
+
+def test_conge_refuse_clot_la_demande_sans_toucher_au_reliquat(api):
+    from personnel.models import Agent
+
+    auth = _auth(api)
+    avant = Agent.objects.get(matricule="340188P").conges_consommes
+    depot = api.post("/api/v1/agents/340188P/conges/demande/", {"type": "conge-annuel", "debut": "2026-06-01", "fin": "2026-06-08"}, format="json", **auth)
+    reference = next(d for d in depot.json()["demandes"] if d["nature"] == "Congé annuel (7 j)")["reference"]
+    decision = f"/api/v1/demandes-actes/{reference}/decision/"
+    assert api.post(decision, {"sens": "refuser"}, format="json", **auth).status_code == 400  # motif exigé
+    refus = api.post(decision, {"sens": "refuser", "motif": "Période de clôture des comptes"}, format="json", **auth)
+    assert refus.status_code == 200
+    assert next(d for d in refus.json()["demandes"] if d["reference"] == reference)["etape"] == "Clôturée : demande refusée"
+    assert Agent.objects.get(matricule="340188P").conges_consommes == avant
+
+
+def test_modules_ouverts_exposent_leurs_details_et_l_inscription_est_protegee(api):
+    auth = _auth(api)
+    module = next(m for m in api.get("/api/v1/agents/340188P/", **auth).json()["sessions_formations"] if m["code"] == "prep-redacteur")
+    for champ in ("type_libelle", "lieu", "date_debut", "date_fin", "heures", "places", "places_restantes", "inscriptions_fin"):
+        assert champ in module
+    assert 0 <= module["places_restantes"] <= module["places"]
+    # Un agent sans lien avec le dossier ne peut pas y déposer une candidature.
+    autre = _jeton(api, "394812H")
+    assert api.post("/api/v1/agents/340188P/formations/inscription/", {"code": "prep-redacteur"}, format="json", **autre).status_code == 403
+
+
+def _autre_structure(matricule: str) -> int:
+    from personnel.dotation_agents import structure_actuelle
+    from personnel.models import Agent, EntiteTutelle
+
+    actuelle = structure_actuelle(Agent.objects.get(matricule=matricule))
+    return EntiteTutelle.objects.exclude(niveau="ministere").exclude(pk=actuelle.pk if actuelle else 0).order_by("id").first().pk
+
+
+def test_mutation_demandee_par_l_agent_suit_le_circuit_puis_le_rattache(api):
+    from personnel.models import Agent, EntiteTutelle, EtapeParcours, Mutation
+
+    agent, drh = _jeton(api, "340188P"), _auth(api)
+    cible = _autre_structure("340188P")
+    url = "/api/v1/mobilite/mutations/"
+    assert api.post(url, {"structure": cible}, format="json", **agent).status_code == 400  # motif exigé
+    assert api.post(url, {"structure": 0, "motif": "Rapprochement"}, format="json", **agent).status_code == 400
+    depot = api.post(url, {"structure": cible, "motif": "Rapprochement familial"}, format="json", **agent)
+    assert depot.status_code == 201
+    mutation = depot.json()
+    assert mutation["pour_un_autre"] is False and mutation["statut"] == "en_cours"
+    assert [v["avis"] for v in mutation["visas"]] == ["Déposée", "En attente", "En attente", "En attente"]
+    assert api.post(url, {"structure": cible, "motif": "Encore"}, format="json", **agent).status_code == 400  # une seule demande en cours
+    assert api.post(f"/api/v1/demandes-actes/{mutation['reference']}/decision/", {"sens": "valider"}, format="json", **agent).status_code == 403  # pas sa propre demande
+
+    decision = f"/api/v1/demandes-actes/{mutation['reference']}/decision/"
+    for _ in range(3):
+        a_viser = api.get("/api/v1/demandes-actes/", **drh).json()["a_traiter"]
+        assert any(d["reference"] == mutation["reference"] and d["categorie"] == "mutation" for d in a_viser)
+        assert api.post(decision, {"sens": "valider"}, format="json", **drh).status_code == 200
+
+    item = Mutation.objects.get(demande__reference=mutation["reference"])
+    assert item.statut == "accordee"
+    assert item.demande.etape == "Clôturée : mutation accordée"
+    assert Agent.objects.get(matricule="340188P").structure == EntiteTutelle.objects.get(pk=cible).nom
+    assert EtapeParcours.objects.filter(agent__matricule="340188P", type="mutation", reference_acte=mutation["reference"]).exists()
+
+
+def test_mutation_demandee_par_la_hierarchie_notifie_l_agent(api):
+    from personnel.models import Mutation, Notification
+
+    drh = _auth(api)
+    cible = _autre_structure("340188P")
+    depot = api.post("/api/v1/mobilite/mutations/", {"matricule": "340188P", "structure": cible, "motif": "Besoin du service"}, format="json", **drh)
+    assert depot.status_code == 201
+    mutation = depot.json()
+    assert mutation["pour_un_autre"] is True
+    # La hiérarchie qui dépose a déjà donné ses visas ; l'agent est prévenu dès le dépôt.
+    assert mutation["visas"][1]["avis"] == "Favorable"
+    assert Notification.objects.filter(destinataire__username="340188P", titre="Demande de mutation vous concernant").exists()
+
+    # Un refus clôt la demande, avec un motif, et prévient l'agent comme le demandeur.
+    for cle in ("DRH-2018-044",):
+        assert Mutation.objects.filter(demandeur__username=cle).exists()
+    decision = f"/api/v1/demandes-actes/{mutation['reference']}/decision/"
+    assert api.post(decision, {"sens": "refuser"}, format="json", **drh).status_code == 400
+    assert api.post(decision, {"sens": "refuser", "motif": "Effectif insuffisant"}, format="json", **drh).status_code == 200
+    assert Mutation.objects.get(demande__reference=mutation["reference"]).statut == "refusee"
+    assert Notification.objects.filter(destinataire__username="340188P", titre="Mutation refusée").exists()
+
+
+def test_mutation_d_un_autre_agent_reservee_a_sa_hierarchie(api):
+    simple = _jeton(api, "394812H")
+    cible = _autre_structure("340188P")
+    refus = api.post("/api/v1/mobilite/mutations/", {"matricule": "340188P", "structure": cible, "motif": "Test"}, format="json", **simple)
+    assert refus.status_code == 403
+
+
+def test_mutation_avec_document_joint_facultatif(api, tmp_path, settings):
+    from django.core.files.uploadedfile import SimpleUploadedFile
+
+    settings.MEDIA_ROOT = tmp_path
+    agent, drh = _jeton(api, "340188P"), _auth(api)
+    cible = _autre_structure("340188P")
+    url = "/api/v1/mobilite/mutations/"
+    mauvais = SimpleUploadedFile("lettre.exe", b"MZ", content_type="application/octet-stream")
+    assert api.post(url, {"structure": cible, "motif": "Rapprochement", "justificatif": mauvais}, format="multipart", **agent).status_code == 400
+
+    lettre = SimpleUploadedFile("lettre.pdf", b"%PDF-1.4 lettre", content_type="application/pdf")
+    depot = api.post(url, {"structure": cible, "motif": "Rapprochement", "justificatif": lettre}, format="multipart", **agent)
+    assert depot.status_code == 201
+    mutation = depot.json()
+    assert mutation["document_nom"].startswith("lettre") and mutation["document_url"]
+    # L'approbateur retrouve le document dans sa liste « à viser ».
+    ligne = next(d for d in api.get("/api/v1/demandes-actes/", **drh).json()["a_traiter"] if d["reference"] == mutation["reference"])
+    assert ligne["justificatif_url"]
+
+
+def test_etat_pdf_de_l_agent_reprend_toutes_les_informations_du_profil(api, monkeypatch):
+    from personnel.rapports import documents
+
+    auth = _auth(api)
+    api.patch("/api/v1/agents/349812K/profil/", {"nom_jeune_fille": "Traoré", "telephone": "07 08 09 10 11", "adresse_residence": "Cocody Angré", "ville": "Abidjan"}, format="json", **auth)
+    api.post("/api/v1/agents/349812K/enfants/", {"nom": "Koné", "prenoms": "Awa", "sexe": "F", "date_naissance": "2015-04-02", "lieu_naissance": "Bouaké"}, format="json", **auth)
+    api.post("/api/v1/agents/349812K/diplomes/", {"niveau_etude": "master", "libelle": "Master de gestion", "domaine_formation": "Gestion"}, format="json", **auth)
+
+    saisis = []
+    original = documents._sections_profil
+    monkeypatch.setattr(documents, "_sections_profil", lambda feuille, agent: saisis.append(original(feuille, agent)) or saisis[-1])
+    reponse = api.get("/api/v1/agents/349812K/dossier/", **auth)
+    assert reponse.status_code == 200 and reponse.content.startswith(b"%PDF")
+
+    def textes(element):
+        if hasattr(element, "_cellvalues"):
+            for ligne in element._cellvalues:
+                for cellule in ligne:
+                    yield from textes(cellule)
+        elif hasattr(element, "text"):
+            yield element.text
+        elif isinstance(element, (list, tuple)):
+            for sous in element:
+                yield from textes(sous)
+
+    contenu = " ".join(textes(saisis[0])).casefold()  # les titres de section sont imprimés en capitales
+    for attendu in ("État civil", "Coordonnées", "Famille", "Parcours académique", "Traoré", "Cocody Angré", "Koné Awa", "Bouaké", "Master de gestion"):
+        assert attendu.casefold() in contenu, attendu
+
+
+def test_l_agent_est_prevenu_quand_son_dossier_est_modifie_par_un_autre(api, tmp_path, settings):
+    from django.core.files.uploadedfile import SimpleUploadedFile
+
+    from personnel.models import Notification
+
+    settings.MEDIA_ROOT = tmp_path
+
+    drh = _auth(api)
+    lui = _jeton(api, "349812K")
+    mes = lambda: list(Notification.objects.filter(destinataire__username="349812K", categorie="dossier").values_list("titre", "message"))  # noqa: E731
+    avant = len(mes())
+
+    # Situation administrative : l'agent apprend quelles rubriques ont changé, avant → après.
+    dossier = api.get("/api/v1/agents/349812K/", **drh).json()
+    saisie = {**dossier["situation_saisie"], "grade": "A6", "fonction": "Sous-directeur"}
+    assert api.patch("/api/v1/agents/349812K/", saisie, format="json", **drh).status_code == 200
+    titre, message = mes()[-1] if len(mes()) > avant else ("", "")
+    assert titre == "Votre situation administrative a été modifiée" and "Grade" in message and "A6" in message and "Fonction" in message
+
+    # Une saisie sans changement ne prévient personne.
+    nombre = len(mes())
+    api.patch("/api/v1/agents/349812K/", {**dossier["situation_saisie"], "grade": "A6", "fonction": "Sous-directeur"}, format="json", **drh)
+    assert len(mes()) == nombre
+
+    # Positions administratives : ajout, modification, suppression.
+    acte = SimpleUploadedFile("acte.pdf", b"%PDF-1.4 acte", content_type="application/pdf")
+    ajout = api.post("/api/v1/agents/349812K/positions/", {"type": "disponibilite", "date_debut": "2030-01-01", "document": acte}, format="multipart", **drh)
+    assert ajout.status_code == 201, ajout.content
+    api.patch(f"/api/v1/agents/349812K/positions/{ajout.json()['id']}/", {"date_fin": "2030-12-31"}, format="json", **drh)
+    api.delete(f"/api/v1/agents/349812K/positions/{ajout.json()['id']}/", **drh)
+    titres = [t for t, _m in mes()]
+    assert {"Position administrative ajoutée", "Position administrative modifiée", "Position administrative supprimée"} <= set(titres)
+
+    # Parcours professionnel.
+    etape = api.post("/api/v1/agents/349812K/parcours/", {"type": "promotion", "intitule": "Promotion au grade A6", "date_effet": "2026-01-01"}, format="json", **drh)
+    assert etape.status_code == 201
+    assert "Parcours professionnel : événement ajouté" in [t for t, _m in mes()]
+
+    # Quand l'agent modifie lui-même son dossier, il n'est pas notifié de sa propre action.
+    avant_soi = len(mes())
+    api.patch("/api/v1/agents/349812K/profil/", {"ville": "Abidjan"}, format="json", **lui)
+    assert len(mes()) == avant_soi
+
+
+def test_le_compte_administrateur_indique_ses_conges_comme_un_agent_mais_pas_le_drh(api):
+    from datetime import timedelta
+
+    from django.contrib.auth.models import User
+    from django.utils import timezone
+
+    from personnel.models import Organisme, PlanConge, Profil
+
+    rh = _connexion(api, "411904C")
+    drh = _connexion(api, "DRH-2018-044")
+    admin = User.objects.create_user(username="ADMIN-conges", password="Sigrh-Dev-2026")
+    Profil.objects.create(user=admin, fonction="Administrateur", role="Administrateur", organisme=Organisme.objects.first(), administrateur=True)
+    aujourd_hui = timezone.localdate()
+    corps = {
+        "limite_agents": (aujourd_hui + timedelta(days=5)).isoformat(), "limite_hierarchie": (aujourd_hui + timedelta(days=12)).isoformat(),
+        "limite_rh": (aujourd_hui + timedelta(days=20)).isoformat(), "limite_drh": (aujourd_hui + timedelta(days=30)).isoformat(),
+        "delai": (aujourd_hui + timedelta(days=35)).isoformat(), "communique": "Choisissez vos dates.", "exercice": 2026,
+    }
+    assert api.post("/api/v1/conges/planification/ouvrir/", corps, format="json", **rh).status_code == 201
+    assert api.post("/api/v1/conges/planification/accorder/", **drh).status_code == 200
+
+    compte = _connexion(api, "ADMIN-conges")
+    assert api.get("/api/v1/conges/planification/", **compte).json()["campagne"]["formulaire"] is True
+    assert api.get("/api/v1/conges/planification/", **drh).json()["campagne"]["formulaire"] is False
+    assert api.post("/api/v1/conges/planification/deposer/", {"debut": "2026-07-06", "fin": "2026-08-04"}, format="json", **drh).status_code == 403
+    assert api.post("/api/v1/conges/planification/deposer/", {"debut": "2026-07-06", "fin": "2026-08-04"}, format="json", **compte).status_code == 200
+    assert PlanConge.objects.filter(agent__username="ADMIN-conges").exists()
+
+
+def test_conges_pris_en_deux_temps(api):
+    from datetime import timedelta
+
+    from django.utils import timezone
+
+    from personnel.models import PlanConge
+
+    from personnel.models import Agent
+
+    Agent.objects.filter(matricule__in=["394812H", "318490K", "523406L"]).update(conges_acquis=30, conges_consommes=0)  # droit de référence : 30 jours
+    rh = _connexion(api, "411904C")
+    drh = _connexion(api, "DRH-2018-044")
+    agent = _connexion(api, "394812H")
+    aujourd_hui = timezone.localdate()
+    corps = {
+        "limite_agents": (aujourd_hui + timedelta(days=5)).isoformat(), "limite_hierarchie": (aujourd_hui + timedelta(days=12)).isoformat(),
+        "limite_rh": (aujourd_hui + timedelta(days=20)).isoformat(), "limite_drh": (aujourd_hui + timedelta(days=30)).isoformat(),
+        "delai": (aujourd_hui + timedelta(days=35)).isoformat(), "communique": "Choisissez vos dates.", "exercice": 2026,
+    }
+    assert api.post("/api/v1/conges/planification/ouvrir/", corps, format="json", **rh).status_code == 201
+    assert api.post("/api/v1/conges/planification/accorder/", **drh).status_code == 200
+    url = "/api/v1/conges/planification/deposer/"
+
+    # Une seconde période incomplète, ou qui chevauche la première, est refusée.
+    assert api.post(url, {"debut": "2026-07-06", "fin": "2026-07-17", "debut2": "2026-12-14"}, format="json", **agent).status_code == 400
+    assert api.post(url, {"debut": "2026-07-06", "fin": "2026-07-17", "debut2": "2026-07-15", "fin2": "2026-07-24"}, format="json", **agent).status_code == 400
+    assert api.post(url, {"debut": "2026-07-06", "fin": "2026-07-17", "debut2": "2026-12-28", "fin2": "2026-12-20"}, format="json", **agent).status_code == 400
+
+    # Deux temps, donnés dans le désordre : la période la plus proche passe en premier.
+    ok = api.post(url, {"debut": "2026-12-14", "fin": "2026-12-28", "debut2": "2026-07-06", "fin2": "2026-07-20"}, format="json", **agent)
+    assert ok.status_code == 200
+    plan = PlanConge.objects.get(agent__username="394812H")
+    assert (plan.debut.isoformat(), plan.fin.isoformat(), plan.debut2.isoformat(), plan.fin2.isoformat()) == ("2026-07-06", "2026-07-20", "2026-12-14", "2026-12-28")
+    ligne = next(p for p in ok.json()["plans"] if p["moi"])
+    assert ligne["debut2"] == "2026-12-14" and ligne["fin2"] == "2026-12-28"
+
+    # Les deux temps réunis donnent le congé auquel l'agent a droit (30 jours) : ni plus, ni moins.
+    trop_court = _connexion(api, "318490K")
+    refus = api.post(url, {"debut": "2026-07-06", "fin": "2026-07-17", "debut2": "2026-12-14", "fin2": "2026-12-25"}, format="json", **trop_court)
+    assert refus.status_code == 400 and "30 jours" in refus.json()["detail"] and "6 à placer" in refus.json()["detail"]
+    trop_long = api.post(url, {"debut": "2026-07-06", "fin": "2026-07-25", "debut2": "2026-12-14", "fin2": "2026-12-25"}, format="json", **trop_court)
+    assert trop_long.status_code == 400 and "de trop" in trop_long.json()["detail"]
+    assert api.get("/api/v1/conges/planification/", **trop_court).json()["droit_moi"] == 30
+
+    # Une seule période reste possible.
+    seul = _connexion(api, "318490K")
+    assert api.post(url, {"debut": "2026-08-03", "fin": "2026-09-01"}, format="json", **seul).status_code == 200
+    assert PlanConge.objects.get(agent__username="318490K").debut2 is None
+
+
+def test_conge_annuel_suit_les_dates_arretees_par_la_campagne(api):
+    from datetime import date, timedelta
+
+    from django.contrib.auth.models import User
+
+    from personnel.models import CampagnePlanConge, PlanConge
+
+    auth = _auth(api)
+    url = "/api/v1/agents/340188P/conges/demande/"
+    campagne = CampagnePlanConge.objects.create(
+        exercice=2026, statut=CampagnePlanConge.Statut.PUBLIEE, delai=date(2026, 3, 1), limite_agents=date(2026, 1, 10),
+        limite_hierarchie=date(2026, 1, 15), limite_rh=date(2026, 1, 20), limite_drh=date(2026, 1, 25), communique="Planification.",
+    )
+
+    # Sans plan arrêté, les dates restent libres.
+    libre = api.post(url, {"type": "conge-annuel", "debut": "2026-05-04", "fin": "2026-05-09"}, format="json", **auth)
+    assert libre.status_code == 201
+    from personnel.models import Demande
+
+    Demande.objects.filter(agent__matricule="340188P", categorie="conge").delete()
+
+    PlanConge.objects.create(
+        campagne=campagne, agent=User.objects.get(username="340188P"), debut=date(2026, 7, 6), fin=date(2026, 7, 10),
+        debut2=date(2026, 12, 14), fin2=date(2026, 12, 18), palier=PlanConge.Palier.PUBLIE,
+    )
+    # D'autres dates que celles de la campagne sont refusées.
+    assert api.post(url, {"type": "conge-annuel", "debut": "2026-05-04", "fin": "2026-05-09"}, format="json", **auth).status_code == 400
+    # Chaque période de la campagne s'active une fois : le jour de reprise est le lendemain du dernier jour.
+    premiere = api.post(url, {"type": "conge-annuel", "debut": "2026-07-06", "fin": "2026-07-11"}, format="json", **auth)
+    assert premiere.status_code == 201
+    assert any(d["nature"] == "Congé annuel (5 j)" and d["debut"] == "2026-07-06" for d in premiere.json()["demandes"])
+    deja = api.post(url, {"type": "conge-annuel", "debut": "2026-07-06", "fin": "2026-07-11"}, format="json", **auth)
+    assert deja.status_code == 400
+    seconde = api.post(url, {"type": "conge-annuel", "debut": "2026-12-14", "fin": "2026-12-19"}, format="json", **auth)
+    assert seconde.status_code == 201
+
+
+def test_l_agent_voit_les_conges_choisis_par_ses_collegues_de_structure(api):
+    from datetime import timedelta
+
+    from django.utils import timezone
+
+    from personnel.models import Agent
+
+    Agent.objects.filter(matricule__in=["394812H", "318490K", "340188P"]).update(conges_acquis=30, conges_consommes=0)
+    Agent.objects.filter(matricule__in=["394812H", "318490K"]).update(structure="Service test")
+    Agent.objects.filter(matricule="340188P").update(structure="Autre service")
+    rh = _connexion(api, "411904C")
+    drh = _connexion(api, "DRH-2018-044")
+    aujourd_hui = timezone.localdate()
+    corps = {
+        "limite_agents": (aujourd_hui + timedelta(days=5)).isoformat(), "limite_hierarchie": (aujourd_hui + timedelta(days=12)).isoformat(),
+        "limite_rh": (aujourd_hui + timedelta(days=20)).isoformat(), "limite_drh": (aujourd_hui + timedelta(days=30)).isoformat(),
+        "delai": (aujourd_hui + timedelta(days=35)).isoformat(), "communique": "Choisissez vos dates.", "exercice": 2026,
+    }
+    assert api.post("/api/v1/conges/planification/ouvrir/", corps, format="json", **rh).status_code == 201
+    assert api.post("/api/v1/conges/planification/accorder/", **drh).status_code == 200
+
+    marie, paul, autre = _connexion(api, "394812H"), _connexion(api, "318490K"), _connexion(api, "340188P")
+    assert api.get("/api/v1/conges/planification/", **paul).json()["collegues"] == []
+    # Marie choisit ses dates : Paul, de la même structure, les voit tout de suite, avant toute validation.
+    assert api.post("/api/v1/conges/planification/deposer/", {"debut": "2026-07-06", "fin": "2026-08-04"}, format="json", **marie).status_code == 200
+    vus = api.get("/api/v1/conges/planification/", **paul).json()["collegues"]
+    assert [c["matricule"] for c in vus] == ["394812H"]
+    assert vus[0]["debut"] == "2026-07-06" and vus[0]["fin"] == "2026-08-04" and vus[0]["palier"] in {"hierarchie", "rh"}
+    # Un agent d'une autre structure ne les voit pas, et Marie ne se voit pas elle-même.
+    assert api.get("/api/v1/conges/planification/", **autre).json()["collegues"] == []
+    assert api.get("/api/v1/conges/planification/", **marie).json()["collegues"] == []
+
+
+def test_la_communication_n_invente_aucune_donnee_en_production(api):
+    from personnel.models import ConsultationFlash, Publication
+
+    auth = _auth(api)
+    Publication.objects.all().delete()
+    ConsultationFlash.objects.all().delete()
+    # Ouvrir l'écran, son compteur, ses exports ou la consultation ne recrée ni publications ni sondage d'exemple.
+    for route in ("/api/v1/communication/", "/api/v1/communication/compteur/", "/api/v1/communication/consultation/", "/api/v1/communication/export/"):
+        api.get(route, **auth)
+    assert not Publication.objects.exists()
+    assert not ConsultationFlash.objects.exists()

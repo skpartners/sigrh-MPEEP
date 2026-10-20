@@ -80,9 +80,6 @@ export function CarteLogo({ reglages }: { reglages: Reglages | undefined }) {
   return (
     <section className={CARTE} style={{ "--delay": "120ms" } as CSSProperties} aria-labelledby="titre-logo">
       <h2 id="titre-logo" className="font-headline-sm text-headline-sm text-on-surface">Logo de la structure</h2>
-      <p className="mt-1 font-body-sm text-body-sm text-on-surface-variant">
-        Le logo s'affiche dans l'en-tête, sur la page de connexion et sur les documents officiels. Sans logo déposé, les armoiries par défaut sont utilisées. Image PNG, JPG ou WEBP, au plus 2 Mo.
-      </p>
       <div className="mt-6 flex flex-col sm:flex-row sm:items-center gap-6">
         <div className="h-32 w-32 shrink-0 rounded-xl border border-hairline bg-surface-container flex items-center justify-center p-3">
           <img src={visible} alt="Logo de la structure" className="max-h-full max-w-full object-contain" />
@@ -110,9 +107,6 @@ export function CarteEmplois({ reglages }: { reglages: Reglages | undefined }) {
   return (
     <section className={CARTE} style={{ "--delay": "200ms" } as CSSProperties} aria-labelledby="titre-emplois">
       <h2 id="titre-emplois" className="font-headline-sm text-headline-sm text-on-surface">Emplois reconnus par la Fonction publique</h2>
-      <p className="mt-1 font-body-sm text-body-sm text-on-surface-variant">
-        Chargez la liste des emplois et des grades reconnus par la Fonction publique. Elle devient la référence du système : dossiers des agents, expression des besoins, Conférence de programmation, dotation. Un emploi se charge avec sa famille et son grade ; une ligne incorrecte annule tout le chargement.
-      </p>
       <dl className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-4 font-body-sm text-body-sm">
         <div className="rounded-lg bg-surface-container-low p-4"><dt className="text-on-surface-variant">Emplois reconnus par la Fonction publique</dt><dd className="mt-1 font-headline-sm text-headline-sm font-bold text-on-surface">{ref ? ref.emplois_fonction_publique.toLocaleString("fr-FR") : "—"}</dd></div>
         <div className="rounded-lg bg-surface-container-low p-4"><dt className="text-on-surface-variant">Emplois ajoutés par le ministère</dt><dd className="mt-1 font-headline-sm text-headline-sm font-bold text-on-surface">{ref ? ref.emplois_ministere.toLocaleString("fr-FR") : "—"}</dd></div>

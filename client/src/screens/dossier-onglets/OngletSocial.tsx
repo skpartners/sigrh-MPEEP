@@ -2,6 +2,7 @@ import type { Dossier } from "../../api/types";
 import { Pagination, usePagination } from "../../ui/Pagination";
 import { CircuitDemande, RubriqueVide, dateFr, demandeClose, estPret, groupe, pourcent, useDocumentAgent } from "./commun";
 import { Icone } from "../../ui/Icone";
+import { Select } from "../../ui/Select";
 
 /** Valeurs de l'agent affichées aux emplacements de la fiche sociale (la maquette tient lieu de repli). */
 function valeurs(agent: Dossier) {
@@ -73,9 +74,6 @@ export function OngletSocial({ agent }: { agent: Dossier }) {
             <h1 className="font-headline-lg text-headline-lg text-on-surface tracking-tight">
               {"Gestion des Prêts, Secours & Prestations"}
             </h1>
-            <p className="font-body-sm text-body-sm text-on-surface-variant">
-              Direction des Ressources Humaines • Direction Générale du Portefeuille de l'État (DGPE)
-            </p>
           </div>
           <div className="flex items-center gap-3 shrink-0">
             <button type="button" className="inline-flex items-center gap-2 px-3 py-2 rounded bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-label-md transition-colors shadow-sm" onClick={() => telecharger("rapport")}>
@@ -434,13 +432,13 @@ export function OngletSocial({ agent }: { agent: Dossier }) {
                 <Icone nom="search" className="absolute left-3 top-2.5 text-on-surface-variant text-base" />
                 <input className="pl-8 pr-3 py-1.5 rounded bg-surface-container-low font-body-sm text-body-sm text-on-surface focus:outline-none" placeholder="Filtrer par Réf. ou Motif..." type="text" />
               </div>
-              <select className="px-3 py-1.5 rounded bg-surface-container-low text-on-surface font-label-sm text-label-sm focus:outline-none">
+              <Select className="px-3 py-1.5 rounded bg-surface-container-low text-on-surface font-label-sm text-label-sm focus:outline-none">
                 <option>Tous les statuts</option>
                 <option>En attente avis assistant social</option>
                 <option>Accord commission sociale</option>
                 <option>En attente signature DRH</option>
                 <option>Décaissé Trésor</option>
-              </select>
+              </Select>
             </div>
           </div>
           {/* Table Section */}

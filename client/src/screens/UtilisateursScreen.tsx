@@ -9,6 +9,7 @@ import { useFeedback } from "../ui/Feedback";
 import { Pagination, TAILLE_PAGE, usePagination } from "../ui/Pagination";
 import { AppChrome } from "./AppChrome";
 import { Icone } from "../ui/Icone";
+import { Select } from "../ui/Select";
 
 const PAGE = "w-full px-4 sm:px-6 lg:px-8 py-6 mx-auto flex-1 space-y-6";
 const CARTE = "rounded-xl bg-surface-container-lowest border border-hairline";
@@ -296,14 +297,14 @@ export function UtilisateursScreen() {
         <section className={`${CARTE} overflow-hidden motion-rise`} style={{ "--delay": "80ms" } as CSSProperties}>
           <div className="grid gap-3 p-4 md:grid-cols-3">
             <input className={CHAMP} value={recherche} placeholder="Matricule ou nom…" aria-label="Rechercher un compte" onChange={(event) => setRecherche(event.target.value)} />
-            <select className={CHAMP} value={role} aria-label="Filtrer par rôle" onChange={(event) => setRole(event.target.value)}>
+            <Select className={CHAMP} value={role} aria-label="Filtrer par rôle" onChange={(event) => setRole(event.target.value)}>
               <option value="">Tous les rôles</option>
               {data.roles.map((item) => <option key={item.role} value={item.role}>{item.role}</option>)}
-            </select>
-            <select className={CHAMP} value={structure} aria-label="Filtrer par structure" onChange={(event) => setStructure(event.target.value)}>
+            </Select>
+            <Select className={CHAMP} value={structure} aria-label="Filtrer par structure" onChange={(event) => setStructure(event.target.value)}>
               <option value="">Toutes les structures</option>
               {optionsEntites(data.structures)}
-            </select>
+            </Select>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[57.5rem] text-left">
@@ -446,7 +447,7 @@ export function UtilisateursScreen() {
             {alerteOuverte ? <p className="sm:col-span-2 font-body-sm text-body-sm text-error">{alerteOuverte}</p> : null}
             <label className="block space-y-1">
               <span className="font-label-sm text-label-sm text-on-surface-variant">Pôle</span>
-              <select
+              <Select
                 className={CHAMP}
                 required
                 value={formulaire.pole}
@@ -465,11 +466,11 @@ export function UtilisateursScreen() {
                 {data.structures.reduce<{ code: string; libelle: string }[]>((poles, item) => (
                   poles.some((pole) => pole.code === item.pole) ? poles : [...poles, { code: item.pole, libelle: item.pole_libelle }]
                 ), []).map((pole) => <option key={pole.code} value={pole.code}>{pole.libelle}</option>)}
-              </select>
+              </Select>
             </label>
             <label className="block space-y-1">
               <span className="font-label-sm text-label-sm text-on-surface-variant">Structure</span>
-              <select
+              <Select
                 className={CHAMP}
                 required
                 disabled={!formulaire.pole}
@@ -488,11 +489,11 @@ export function UtilisateursScreen() {
                 {rangerStructures(data.structures.filter((item) => item.pole === formulaire.pole)).map(({ item, profondeur }) => (
                   <option key={item.code} value={item.code}>{`${"– ".repeat(profondeur)}${item.nom}`}</option>
                 ))}
-              </select>
+              </Select>
             </label>
             <label className="block space-y-1">
               <span className="font-label-sm text-label-sm text-on-surface-variant">Rôle dans la structure</span>
-              <select
+              <Select
                 className={CHAMP}
                 disabled={!structureChoisie}
                 value={structureChoisie ? poste : ""}
@@ -503,7 +504,7 @@ export function UtilisateursScreen() {
                 <option value="" disabled>Choisir une structure…</option>
                 <option value="responsable" disabled={Boolean(responsableDejaNomme)}>Premier responsable</option>
                 <option value="agent">Agent</option>
-              </select>
+              </Select>
               {structureChoisie ? (
                 <span className="block font-body-sm text-body-sm text-on-surface-variant">
                   Habilitations du rôle « {formulaire.role} ».
@@ -520,9 +521,9 @@ export function UtilisateursScreen() {
             {structureChoisie && chef ? (
               <label className="block space-y-1 sm:col-span-2">
                 <span className="font-label-sm text-label-sm text-on-surface-variant">Supérieur hiérarchique</span>
-                <select className={CHAMP} required disabled value={chef.matricule}>
+                <Select className={CHAMP} required disabled value={chef.matricule}>
                   <option value={chef.matricule}>{chef.nom_complet} — {chef.role}</option>
-                </select>
+                </Select>
                 <span className="block font-body-sm text-body-sm text-on-surface-variant">
                   {chef.interimaire === (poste === "agent" ? structureChoisie.code : structureChoisie.parent)
                     ? "Intérimaire qui assure pleinement les fonctions de ce poste."
@@ -546,7 +547,7 @@ export function UtilisateursScreen() {
             ) : null}
             <label className="block space-y-1 sm:col-span-2">
               <span className="font-label-sm text-label-sm text-on-surface-variant">Intérimaire</span>
-              <select
+              <Select
                 className={CHAMP}
                 value={formulaire.interimaire}
                 onChange={(event) => setFormulaire({ ...formulaire, interimaire: event.target.value })}
@@ -555,7 +556,7 @@ export function UtilisateursScreen() {
                 {rangerStructures(data.structures.filter((item) => !(poste === "responsable" && item.code === formulaire.structure))).map(({ item, profondeur }) => (
                   <option key={item.code} value={item.code}>{`${"– ".repeat(profondeur)}${item.nom}`}</option>
                 ))}
-              </select>
+              </Select>
               {formulaire.interimaire ? (
                 <span className="block font-body-sm text-body-sm text-on-surface-variant">
                   {(() => {
@@ -602,7 +603,7 @@ export function UtilisateursScreen() {
                       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                         <span className="font-body-sm text-body-sm font-bold text-on-surface">{module.libelle}</span>
                         {formulaire.personnaliser && peutAttribuer ? (
-                          <select
+                          <Select
                             className={`${CHAMP} sm:max-w-56`}
                             aria-label={`Habilitation pour ${module.libelle}`}
                             value={valeur}
@@ -615,7 +616,7 @@ export function UtilisateursScreen() {
                             {NIVEAUX.filter((code) => rangDroit(code) <= plafond || code === valeur).map((code) => (
                               <option key={code} value={code}>{LIBELLE_DROIT[code]}</option>
                             ))}
-                          </select>
+                          </Select>
                         ) : (
                           <span className="font-label-sm text-label-sm text-on-surface-variant">{LIBELLE_DROIT[formulaire.personnaliser ? valeur : defaut] ?? defaut} · {formulaire.personnaliser ? "fixé par le supérieur" : "droit du rôle"}</span>
                         )}
@@ -632,7 +633,7 @@ export function UtilisateursScreen() {
                               <li key={fonction.id} className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                                 <span className="pl-3 font-body-sm text-body-sm text-on-surface-variant">{fonction.libelle}</span>
                                 {formulaire.personnaliser && peutAttribuer ? (
-                                  <select
+                                  <Select
                                     className={`${CHAMP} sm:max-w-72`}
                                     aria-label={`Habilitation de ${fonction.libelle}`}
                                     value={choisi}
@@ -645,7 +646,7 @@ export function UtilisateursScreen() {
                                     {NIVEAUX.filter((code) => rangDroit(code) <= toit || code === choisi).map((code) => (
                                       <option key={code} value={code}>{LIBELLE_DROIT[code]}</option>
                                     ))}
-                                  </select>
+                                  </Select>
                                 ) : (
                                   <span className="font-label-sm text-label-sm text-on-surface-variant">
                                     {LIBELLE_DROIT[formulaire.personnaliser ? (choisi || valeur) : duRole] ?? duRole}

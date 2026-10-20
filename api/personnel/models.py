@@ -1,5 +1,6 @@
 from django.contrib.auth.models import User
 from django.db import models
+from django.utils import timezone
 
 
 class Organisme(models.Model):
@@ -415,6 +416,7 @@ class ActeDemandable(models.Model):
     justificatif = models.CharField(max_length=200, blank=True, help_text="Conseil affiché pour le justificatif à joindre.")
     ordre = models.PositiveSmallIntegerField(default=0)
     parent = models.ForeignKey("self", null=True, blank=True, on_delete=models.PROTECT, related_name="enfants")
+    libelle_groupe = models.CharField(max_length=160, blank=True, help_text="Titre du groupe dans la liste des actes, quand la rubrique en a ; sinon son libellé")
 
     class Meta:
         ordering = ["ordre", "libelle"]
@@ -654,7 +656,8 @@ class CollecteBesoinFormation(models.Model):
 
     @property
     def ouverte(self) -> bool:
-        return self.cloturee_le is None
+        """Ouverte jusqu'à sa date limite (incluse), sauf clôture anticipée."""
+        return self.cloturee_le is None and self.date_limite >= timezone.localdate()
 
 
 class CollecteReponseFormation(models.Model):
@@ -809,6 +812,29 @@ class Enfant(models.Model):
 
     class Meta:
         ordering = ["date_naissance", "id"]
+
+
+class Diplome(models.Model):
+    """Une ligne du parcours académique de l'agent : un agent peut en déclarer plusieurs."""
+
+    NIVEAUX = [
+        ("cepe", "CEPE"),
+        ("bepc", "BEPC"),
+        ("bac", "BAC"),
+        ("licence", "Licence"),
+        ("master", "Master"),
+        ("doctorat", "Doctorat"),
+    ]
+
+    agent = models.ForeignKey(Agent, on_delete=models.CASCADE, related_name="diplomes")
+    niveau_etude = models.CharField(max_length=10, choices=NIVEAUX)
+    libelle = models.CharField(max_length=240, blank=True)
+    domaine_formation = models.CharField(max_length=160, blank=True)
+    # Justificatif versé au dossier personnel numérique (rubrique « Diplômes & Certifications »).
+    piece = models.ForeignKey("PieceJointe", null=True, blank=True, on_delete=models.SET_NULL, related_name="diplomes")
+
+    class Meta:
+        ordering = ["id"]
 
 
 class AyantDroit(models.Model):
@@ -1115,6 +1141,29 @@ class MouvementAgent(models.Model):
         ordering = ["-date_effet", "-id"]
 
 
+class Mutation(models.Model):
+    """Demande de mutation vers une autre structure, déposée par l'agent ou par sa hiérarchie, validée par le circuit."""
+
+    class Statut(models.TextChoices):
+        EN_COURS = "en_cours", "En cours de validation"
+        ACCORDEE = "accordee", "Accordée"
+        REFUSEE = "refusee", "Refusée"
+
+    agent = models.ForeignKey(Agent, on_delete=models.CASCADE, related_name="mutations")
+    demande = models.OneToOneField(Demande, on_delete=models.CASCADE, related_name="mutation")
+    demandeur = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name="mutations_demandees")
+    demandeur_nom = models.CharField(max_length=160, blank=True)
+    structure_demandee = models.ForeignKey("EntiteTutelle", on_delete=models.PROTECT, related_name="mutations_demandees")
+    origine_nom = models.CharField(max_length=240, blank=True, help_text="Structure de l'agent au dépôt de la demande")
+    motif = models.CharField(max_length=500)
+    date_souhaitee = models.DateField(null=True, blank=True)
+    statut = models.CharField(max_length=10, choices=Statut.choices, default=Statut.EN_COURS)
+    decidee_le = models.DateField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-id"]
+
+
 class MiseADisposition(models.Model):
     """Demande de l'agent d'être mis à disposition d'une autre structure.
 
@@ -1272,7 +1321,7 @@ class ProcedureDisciplinaire(models.Model):
     grief = models.CharField(max_length=160)
     description = models.TextField()
     degre = models.PositiveSmallIntegerField(default=1, help_text="Degré de sanction encouru (1 à 3)")
-    rapporteur = models.CharField(max_length=120)
+    rapporteur = models.CharField(max_length=120, blank=True)
     stade = models.CharField(max_length=120)
     stade_detail = models.CharField(max_length=160, blank=True)
     avis = models.CharField(max_length=20, choices=Avis.choices, default=Avis.INSTRUCTION)
@@ -1675,6 +1724,9 @@ class PlanConge(models.Model):
     agent = models.ForeignKey(User, on_delete=models.CASCADE, related_name="plans_conges")
     debut = models.DateField()
     fin = models.DateField()
+    # Les congés peuvent se prendre en deux temps : seconde période, après la première.
+    debut2 = models.DateField(null=True, blank=True)
+    fin2 = models.DateField(null=True, blank=True)
     origine = models.CharField(max_length=20, choices=Origine.choices, default=Origine.SAISIE)
     palier = models.CharField(max_length=20, choices=Palier.choices, default=Palier.AGENT)
     echeance = models.DateField(null=True, blank=True)
@@ -1702,6 +1754,8 @@ class MouvementPlanConge(models.Model):
     motif = models.TextField(blank=True)
     debut = models.DateField(null=True, blank=True)
     fin = models.DateField(null=True, blank=True)
+    debut2 = models.DateField(null=True, blank=True)
+    fin2 = models.DateField(null=True, blank=True)
     cree_le = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -1723,6 +1777,8 @@ class RepriseConge(models.Model):
     demandeur = models.ForeignKey(User, on_delete=models.CASCADE, related_name="reprises_conges")
     debut = models.DateField()
     fin = models.DateField()
+    debut2 = models.DateField(null=True, blank=True)
+    fin2 = models.DateField(null=True, blank=True)
     motif = models.TextField()
     palier = models.CharField(max_length=20, choices=Palier.choices, default=Palier.HIERARCHIE)
     chez = models.ForeignKey(

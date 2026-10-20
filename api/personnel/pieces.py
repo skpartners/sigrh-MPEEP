@@ -55,7 +55,6 @@ CATALOGUE_DOCUMENTS = [
         "libelle": "Actes d'état civil",
         "types": [
             {"code": "acte_naissance", "libelle": "Copie d'acte de naissance de l'agent"},
-            {"code": "certificat_nationalite", "libelle": "Certificat de nationalité"},
             {"code": "acte_mariage", "libelle": "Acte de mariage"},
             {"code": "acte_naissance_enfant", "libelle": "Acte de naissance d'un enfant"},
         ],
@@ -112,6 +111,17 @@ def deposer_document(agent: Agent, fichier, rubrique: str, type_code: str, preci
         fichier=fichier,
     )
     return None
+
+
+RUBRIQUE_DIPLOMES = "Diplômes & Certifications"
+
+
+def verser_justificatif_diplome(agent: Agent, fichier, libelle: str) -> tuple[PieceJointe | None, str | None]:
+    """Verse le justificatif d'un diplôme dans le dossier numérique. Retourne la pièce créée, ou un message d'erreur."""
+    erreur = deposer_document(agent, fichier, "diplomes", "diplome", libelle, "")
+    if erreur:
+        return None, erreur
+    return agent.pieces.order_by("-id").first(), None
 
 
 def _controler_fichier(agent: Agent, fichier) -> str | None:

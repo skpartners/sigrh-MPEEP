@@ -101,7 +101,11 @@ export function PageMotion({ children, className = "", reveal = true }: { childr
   useEffect(() => {
     const cible = hash ? document.getElementById(decodeURIComponent(hash.slice(1))) : null;
     if (cible) cible.scrollIntoView({ behavior: reducedMotion() ? "auto" : "smooth", block: "start" });
-    else window.scrollTo({ top: 0 });
+    else {
+      // Le contenu défile dans sa zone, entre la barre du haut et le pied de page ; la fenêtre ne défile que sur un écran très bas.
+      document.querySelector<HTMLElement>(".zone-defilement")?.scrollTo({ top: 0 });
+      window.scrollTo({ top: 0 });
+    }
   }, [pathname, hash]);
 
   useAutoReveal(ref, reveal);

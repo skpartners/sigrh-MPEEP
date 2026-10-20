@@ -9,6 +9,7 @@ from rest_framework.response import Response
 
 from .visibilite import dans_le_perimetre
 from .models import Agent, EtapeParcours
+from .informer import informer_parcours
 from .present import parcours_agent, parcours_row
 
 
@@ -66,7 +67,9 @@ def parcours(request, matricule: str):
     valeurs, erreur = _lire(request.data)
     if erreur:
         return Response({"detail": erreur}, status=400)
-    return Response(parcours_row(EtapeParcours.objects.create(agent=agent, **valeurs)), status=201)
+    item = EtapeParcours.objects.create(agent=agent, **valeurs)
+    informer_parcours(agent, request.user, item, "ajouté")
+    return Response(parcours_row(item), status=201)
 
 
 @api_view(["PATCH", "DELETE"])
@@ -78,6 +81,7 @@ def etape_parcours(request, matricule: str, pk: int):
         return refus_carriere()
     item = get_object_or_404(EtapeParcours, pk=pk, agent=agent)
     if request.method == "DELETE":
+        informer_parcours(agent, request.user, item, "supprimé")
         item.delete()
         return Response(status=204)
     valeurs, erreur = _lire(request.data, item)
@@ -86,4 +90,5 @@ def etape_parcours(request, matricule: str, pk: int):
     for champ, valeur in valeurs.items():
         setattr(item, champ, valeur)
     item.save()
+    informer_parcours(agent, request.user, item, "modifié")
     return Response(parcours_row(item))

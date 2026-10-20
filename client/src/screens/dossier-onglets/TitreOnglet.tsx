@@ -10,7 +10,6 @@ export function TitreOnglet({ titre, actions }: { titre: string; actions?: React
           <span className="text-on-surface-variant font-label-sm text-label-sm">• Statut Général des Fonctionnaires (Loi n°2023-892)</span>
         </div>
         <h1 className="font-headline-lg text-headline-lg text-on-surface tracking-tight">{titre}</h1>
-        <p className="font-body-sm text-body-sm text-on-surface-variant">Direction des Ressources Humaines • Direction Générale du Portefeuille de l'État (DGPE)</p>
       </div>
       {actions}
     </div>

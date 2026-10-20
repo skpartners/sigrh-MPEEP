@@ -5,6 +5,7 @@ import type { ConfigurationCircuits, ElementCircuit } from "../../api/types";
 import { useFeedback } from "../../ui/Feedback";
 import { Icone } from "../../ui/Icone";
 import { BOUTON_PRIMAIRE, BOUTON_SECONDAIRE, Modale } from "../../ui/Modale";
+import { Select } from "../../ui/Select";
 
 const CARD = "rounded-xl bg-surface-container-lowest border border-hairline";
 const CHAMP = "w-full h-10 px-3 rounded border border-outline-variant bg-surface-container-lowest font-body-md text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-primary";
@@ -73,7 +74,6 @@ export function ElementsConfigurables({ famille }: { famille: Famille }) {
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
           <h2 id={titreId} className="font-headline-md text-headline-md text-on-surface">{texte.titre}</h2>
-          <p className="font-body-sm text-body-sm text-on-surface-variant max-w-3xl">{texte.aide}</p>
         </div>
         <button type="button" onClick={() => setEdition({ id: null, libelle: "", parent: "" })}
           className="inline-flex items-center gap-2 px-4 py-2 rounded bg-primary text-on-primary font-label-lg text-label-lg hover:bg-primary-container transition-colors shrink-0">
@@ -159,10 +159,10 @@ function Editeur({ famille, edition, rubriques, possedeEnfants, onChange, onFerm
         {texte.sousRubrique ? (
           <label className="block space-y-1.5">
             <span className="font-label-md text-label-md text-on-surface font-semibold">Rubrique</span>
-            <select className={CHAMP} value={edition.parent} disabled={possedeEnfants} onChange={(e) => onChange({ ...edition, parent: e.target.value })}>
+            <Select className={CHAMP} value={edition.parent} disabled={possedeEnfants} onChange={(e) => onChange({ ...edition, parent: e.target.value })}>
               <option value="">Aucune : congé de premier niveau</option>
               {rubriques.map((rubrique) => <option key={rubrique.code} value={rubrique.code}>Sous-rubrique de « {rubrique.libelle} »</option>)}
-            </select>
+            </Select>
             <span className="block font-body-sm text-body-sm text-on-surface-variant">
               {possedeEnfants ? "Ce congé a des sous-rubriques : il ne peut pas être rangé sous un autre." : "Sans circuit propre, une sous-rubrique suit le circuit de sa rubrique."}
             </span>

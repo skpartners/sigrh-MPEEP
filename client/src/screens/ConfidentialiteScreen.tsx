@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { PublicHeaderNav } from "./PublicHeaderNav";
 import { useHauteurFixe } from "../ui/HauteurFixe";
 import { Icone } from "../ui/Icone";
+import { Select } from "../ui/Select";
 
 export function ConfidentialiteScreen() {
   const enteteRef = useRef<HTMLElement>(null);
@@ -744,7 +745,7 @@ export function ConfidentialiteScreen() {
                             *
                           </span>
                         </label>
-                        <select className={"w-full h-10 px-3 rounded bg-surface-container-lowest text-on-surface font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary shadow-sm"} id={"request-type"} required>
+                        <Select className={"w-full h-10 px-3 rounded bg-surface-container-lowest text-on-surface font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary shadow-sm"} id={"request-type"} required>
                           <option value={""}>
                             Sélectionner l'objet officiel
                           </option>
@@ -760,7 +761,7 @@ export function ConfidentialiteScreen() {
                           <option value={"attestation"}>
                             Délivrance d'attestation de conformité légale
                           </option>
-                        </select>
+                        </Select>
                       </div>
                     </div>
                     <div className={"space-y-1"}>

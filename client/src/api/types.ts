@@ -244,6 +244,9 @@ export type Dossier = AgentBrief & {
     enfants: { id: number; nom: string; prenoms: string; sexe: string; date_naissance: string; lieu_naissance: string }[];
   };
   parcours_academique: {
+    diplomes: { id: number; niveau_etude: string; niveau_etude_code: string; libelle: string; domaine_formation: string; piece: { id: number; intitule: string; fichier_url: string } | null }[];
+    /** Justificatifs de diplôme déjà au coffre, pas encore rattachés à une ligne. */
+    pieces_libres: { id: number; intitule: string }[];
     niveau_etude: string;
     niveau_etude_code: string;
     libelle_diplome: string;
@@ -283,7 +286,10 @@ export type Dossier = AgentBrief & {
   types_conges: { code: string; libelle: string; enfants: { code: string; libelle: string }[] }[];
   types_absences: { code: string; libelle: string }[];
   types_formations: { code: string; libelle: string; publics: string[]; piece_requise: boolean; piece_libelle: string }[];
-  sessions_formations: { code: string; libelle: string; type: string; cadre: string; objectif: string }[];
+  sessions_formations: {
+    code: string; libelle: string; type: string; type_libelle: string; cadre: string; objectif: string; lieu: string; formateur: string;
+    date_debut: string | null; date_fin: string | null; heures: number; places: number; places_restantes: number; inscriptions_fin: string | null;
+  }[];
   collecte_formation: {
     ouverte: boolean;
     date_limite: string;
@@ -367,7 +373,7 @@ export type Dossier = AgentBrief & {
     statut: string;
     certification: string;
   }[];
-  pieces: { id: number; intitule: string; categorie: string; date_depot: string; taille_ko: number; verifiee: boolean; fichier_url: string; date_expiration: string }[];
+  pieces: { id: number; intitule: string; categorie: string; date_depot: string; taille_ko: number; verifiee: boolean; fichier_url: string; date_expiration: string; diplome?: string }[];
   catalogue_documents: { code: string; libelle: string; types: { code: string; libelle: string }[] }[];
   demandes: {
     reference: string;

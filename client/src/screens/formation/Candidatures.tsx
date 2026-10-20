@@ -5,6 +5,7 @@ import { useFlip } from "../../ui/Motion";
 import type { Candidature, EtatCandidature, TableauFormation } from "./types";
 import { BadgeCandidature, CARTE, CHAMP, EnTeteSection, Modale, Vide, Zone, messageErreur, useEnregistrement } from "./ui";
 import { Icone } from "../../ui/Icone";
+import { Select } from "../../ui/Select";
 
 const PAR_PAGE = 10;
 const FILTRES: { valeur: EtatCandidature | ""; libelle: string }[] = [
@@ -72,10 +73,10 @@ export function Candidatures({ data }: { data: TableauFormation }) {
         </label>
         <label className="sm:col-span-5">
           <span className="sr-only">Module</span>
-          <select className={CHAMP} value={session} onChange={(e) => { setSession(e.target.value); setPage(0); }}>
+          <Select className={CHAMP} value={session} onChange={(e) => { setSession(e.target.value); setPage(0); }}>
             <option value="">Tous les modules</option>
             {data.sessions.map((s) => <option key={s.code} value={s.code}>{s.libelle}</option>)}
-          </select>
+          </Select>
         </label>
       </div>
 

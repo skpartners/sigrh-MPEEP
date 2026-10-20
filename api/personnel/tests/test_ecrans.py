@@ -308,3 +308,22 @@ def test_action_sociale_budget_registre_et_mandatement(api):
         **auth,
     )
     assert cree.status_code == 201 and cree.json()["etat"] == "commission"
+
+
+def test_discipline_le_rapporteur_est_facultatif_a_l_ouverture(api):
+    auth = _auth(api)
+    donnees = api.get("/api/v1/carrieres/discipline/", **auth).json()
+    avant = len(donnees["procedures"])
+    sans = api.post(
+        "/api/v1/carrieres/discipline/",
+        {"matricule": "394812H", "grief": "Retards répétés", "description": "Constatés sur le mois.", "degre": 1},
+        format="json",
+        **auth,
+    )
+    assert sans.status_code == 201 and sans.json()["rapporteur"] == ""
+    assert len(api.get("/api/v1/carrieres/discipline/", **auth).json()["procedures"]) == avant + 1
+    # Un rapporteur indiqué mais inconnu, ou l'agent lui-même, reste refusé.
+    inconnu = api.post("/api/v1/carrieres/discipline/", {"matricule": "394812H", "grief": "Retards", "description": "Faits.", "rapporteur": "XXXX"}, format="json", **auth)
+    assert inconnu.status_code == 400
+    soi = api.post("/api/v1/carrieres/discipline/", {"matricule": "394812H", "grief": "Retards", "description": "Faits.", "rapporteur": "394812H"}, format="json", **auth)
+    assert soi.status_code == 400

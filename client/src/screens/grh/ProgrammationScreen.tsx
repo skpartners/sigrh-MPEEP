@@ -9,6 +9,7 @@ import { Modale } from "../../ui/Modale";
 import { Pagination, usePagination } from "../../ui/Pagination";
 import { CHAMP, Kpi, LIBELLE, PageGrh, Section } from "./ui";
 import { LIBELLE_ETAT, type CampagneBesoins } from "../gpec/besoinsCommun";
+import { Select } from "../../ui/Select";
 
 type Etape = "conference" | "catalogue";
 type Decision = "maintenu" | "modifie";
@@ -161,12 +162,12 @@ export function ProgrammationScreen({ etape }: { etape: Etape }) {
                   </button>
                 ) : null}
               </div>
-              <select aria-label="Filtrer par décision" className={`${CHAMP} w-auto`} value={filtre} onChange={(e) => setFiltre(e.target.value)}>
+              <Select aria-label="Filtrer par décision" className={`${CHAMP} w-auto`} value={filtre} onChange={(e) => setFiltre(e.target.value)}>
                 <option value="">Toutes les décisions</option>
                 <option value="attente">À examiner</option>
                 <option value="maintenu">Maintenus</option>
                 <option value="modifie">Modifiés</option>
-              </select>
+              </Select>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left font-body-sm text-body-sm">

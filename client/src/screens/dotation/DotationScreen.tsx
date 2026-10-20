@@ -9,6 +9,7 @@ import { SelectEmploi, useNomenclature } from "../../ui/Nomenclature";
 import { usePagination } from "../../ui/Pagination";
 import { CHAMP as CHAMP_GRH, Kpi, LIBELLE as LIBELLE_GRH, PageGrh } from "../grh/ui";
 import { BOUTON, BOUTON_LEGER, CHAMP, ICONE, LIBELLE, LienDocument, Pastille, Recherche, TableauListe, erreurDe, type AgentRef, type Disposition, type Mouvement, type Redeploiement, type Structure } from "./commun";
+import { Select } from "../../ui/Select";
 
 type Donnees = {
   affectations: Mouvement[];
@@ -174,10 +175,10 @@ function FormulaireMouvement({ type, mouvement, donnees, onClose }: { type: "aff
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <label className="block md:col-span-2">
           <span className={LIBELLE}>Agent <span className="text-error">*</span></span>
-          <select className={CHAMP} required disabled={Boolean(mouvement)} value={saisie.matricule} onChange={champ("matricule")}>
+          <Select className={CHAMP} required disabled={Boolean(mouvement)} value={saisie.matricule} onChange={champ("matricule")}>
             <option value="">Choisir un agent…</option>
             {choisis.map((a) => <option key={a.matricule} value={a.matricule}>{a.nom_complet} · {a.matricule}{a.affecte ? ` · ${a.structure}` : " · sans structure"}</option>)}
-          </select>
+          </Select>
         </label>
         {reaffectation && !mouvement ? (
           <div className="md:col-span-2 rounded bg-surface-container-low px-3 py-2 font-body-sm text-body-sm">
@@ -187,10 +188,10 @@ function FormulaireMouvement({ type, mouvement, donnees, onClose }: { type: "aff
         ) : null}
         <label className="block">
           <span className={LIBELLE}>{reaffectation ? "Nouvelle structure" : "Structure d'affectation"} <span className="text-error">*</span></span>
-          <select className={CHAMP} required value={saisie.structure} onChange={champ("structure")}>
+          <Select className={CHAMP} required value={saisie.structure} onChange={champ("structure")}>
             <option value="">Choisir une structure…</option>
             {donnees.structures.map((s) => <option key={s.id} value={s.id}>{s.nom} ({s.niveau_libelle})</option>)}
-          </select>
+          </Select>
         </label>
         <label className="block">
           <span className={LIBELLE}>Emploi</span>
@@ -201,10 +202,10 @@ function FormulaireMouvement({ type, mouvement, donnees, onClose }: { type: "aff
         ) : (
           <label className="block">
             <span className={LIBELLE}>Catégorie</span>
-            <select className={CHAMP} value={saisie.categorie} onChange={champ("categorie")}>
+            <Select className={CHAMP} value={saisie.categorie} onChange={champ("categorie")}>
               <option value="fonctionnaire">Fonctionnaire</option>
               <option value="contractuel">Contractuel</option>
-            </select>
+            </Select>
           </label>
         )}
         <label className="block"><span className={LIBELLE}>Date d'effet <span className="text-error">*</span></span><input className={CHAMP} required type="date" value={saisie.date_effet} onChange={champ("date_effet")} /></label>
@@ -313,13 +314,13 @@ function Dispositions({ lignes }: { lignes: Disposition[] }) {
     <>
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <Recherche valeur={recherche} onChange={setRecherche} libelle="Rechercher une mise à disposition" placeholder="Agent, structure d'accueil, ministère…" />
-        <select aria-label="Filtrer par état" className={`${CHAMP} w-auto`} value={filtre} onChange={(e) => setFiltre(e.target.value)}>
+        <Select aria-label="Filtrer par état" className={`${CHAMP} w-auto`} value={filtre} onChange={(e) => setFiltre(e.target.value)}>
           <option value="">Tous les états</option>
           <option value="en_attente">En attente de la hiérarchie</option>
           <option value="acceptee">À constater</option>
           <option value="constatee">Constatées</option>
           <option value="rejetee">Rejetées</option>
-        </select>
+        </Select>
         <p className="font-body-sm text-body-sm text-on-surface-variant">L'agent demande depuis son profil, sa hiérarchie décide, la DRH constate et suit.</p>
       </div>
       <TableauListe colonnes={["Agent", "Structure d'accueil", "Période", "Avis d'accueil", "Décision de la hiérarchie", "Suivi DRH", "Actions"]} vide={filtrees.length ? null : lignes.length ? "Aucune mise à disposition ne correspond à ces critères." : "Aucune demande de mise à disposition."} page={{ ...page, libelle: "mise à disposition" }}>

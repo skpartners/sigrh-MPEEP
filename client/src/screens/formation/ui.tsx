@@ -5,6 +5,7 @@ import { useFeedback } from "../../ui/Feedback";
 import { BOUTON_PRIMAIRE, BOUTON_SECONDAIRE, Modale as ModaleCommune, type ModaleProps } from "../../ui/Modale";
 import type { EtatCandidature, EtatSession } from "./types";
 import { Icone } from "../../ui/Icone";
+import { Select } from "../../ui/Select";
 
 export const CHAMP =
   "w-full h-10 px-3 rounded border border-outline-variant bg-surface-container-lowest font-body-md text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-primary disabled:bg-surface-container-low disabled:text-on-surface-variant";
@@ -117,12 +118,12 @@ export function DateChamp({ valeur, onChange, min, ...props }: ChampProps & { va
 export function Liste({ valeur, onChange, options, vide, ...props }: ChampProps & { valeur: string; onChange: (v: string) => void; options: { valeur: string; libelle: string }[]; vide?: string }) {
   return (
     <Libelle {...props}>
-      <select className={CHAMP} value={valeur} required={props.obligatoire} onChange={(e) => onChange(e.target.value)}>
+      <Select className={CHAMP} value={valeur} required={props.obligatoire} onChange={(e) => onChange(e.target.value)}>
         {vide !== undefined ? <option value="">{vide}</option> : null}
         {options.map((o) => (
           <option key={o.valeur} value={o.valeur}>{o.libelle}</option>
         ))}
-      </select>
+      </Select>
     </Libelle>
   );
 }

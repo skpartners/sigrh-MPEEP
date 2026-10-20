@@ -9,6 +9,7 @@ import { useAction } from "../../ui/useAction";
 import { AppChrome } from "../AppChrome";
 import { optionsEntites } from "../../ui/Entites";
 import { Icone } from "../../ui/Icone";
+import { Select } from "../../ui/Select";
 
 const PAGE = "w-full px-4 sm:px-6 lg:px-8 py-6 mx-auto flex-1 space-y-6";
 const CARTE = "rounded-xl bg-surface-container-lowest border border-hairline";
@@ -193,9 +194,6 @@ export function DotationScreen({ ongletInitial = "affectation" }: { ongletInitia
           <div className="mt-3 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <h1 className="font-headline-lg text-headline-lg text-on-surface">Dotation en personnel et plafonds d'emplois</h1>
-              <p className="mt-2 max-w-3xl font-body-md text-body-md text-on-surface-variant">
-                Exercice {data.annee}. {data.intitule}. {data.fondement}.
-              </p>
             </div>
             <div className="flex flex-wrap gap-2">
               <button type="button" className={SECOND} onClick={() => void exporter()}>
@@ -255,14 +253,14 @@ export function DotationScreen({ ongletInitial = "affectation" }: { ongletInitia
           </div>
           <div className="grid gap-3 px-6 pb-4 md:grid-cols-3">
             <input className={CHAMP} value={filtre} placeholder="Référence, poste, entité…" onChange={(event) => { setFiltre(event.target.value); setPage(1); }} />
-            <select className={CHAMP} value={entite} onChange={(event) => { setEntite(event.target.value); setPage(1); }}>
+            <Select className={CHAMP} value={entite} onChange={(event) => { setEntite(event.target.value); setPage(1); }}>
               <option value="">Toutes les entités</option>
               {optionsEntites(data.entites)}
-            </select>
-            <select className={CHAMP} value={statut} onChange={(event) => { setStatut(event.target.value); setPage(1); }}>
+            </Select>
+            <Select className={CHAMP} value={statut} onChange={(event) => { setStatut(event.target.value); setPage(1); }}>
               <option value="">Tous les statuts</option>
               {data.statuts.map((item) => <option key={item.code} value={item.code}>{item.libelle}</option>)}
-            </select>
+            </Select>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[55rem] text-left">
@@ -353,7 +351,6 @@ export function DotationScreen({ ongletInitial = "affectation" }: { ongletInitia
         <section className={`${CARTE} p-6`}>
           <div>
             <h2 className="font-headline-sm text-headline-sm text-on-surface">Plafonds par branche</h2>
-            <p className="font-body-sm text-body-sm text-on-surface-variant">Le plafond suit les besoins exprimés par les structures : effectif en poste plus volume demandé.</p>
           </div>
           <div className="mt-4 space-y-4">
             {data.branches.map((branche) => (
@@ -381,7 +378,6 @@ export function DotationScreen({ ongletInitial = "affectation" }: { ongletInitia
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h2 className="font-headline-sm text-headline-sm text-on-surface">Redéploiements entre entités</h2>
-              <p className="font-body-sm text-body-sm text-on-surface-variant">Mouvements d'effectifs entre structures, dans la limite des plafonds d'emplois.</p>
             </div>
             <button type="button" className={PRIMAIRE} onClick={() => { setPont({ cedant: "", recepteur: "", profil: "", effectif: "1", note: "" }); setPanneau("pont"); }}>
               Acter une passerelle
@@ -405,25 +401,25 @@ export function DotationScreen({ ongletInitial = "affectation" }: { ongletInitia
         <Modale titre={panneau === "modifier" ? `Modifier ${demande?.reference ?? ""}` : ongletActif.saisie} onClose={fermer} large>
           <form className="grid gap-3 sm:grid-cols-2" onSubmit={(event) => { event.preventDefault(); (panneau === "modifier" ? modifier : creer).mutate(); }}>
             <label className="block sm:col-span-2">Entité
-              <select className={`${CHAMP} mt-1`} required value={plan.entite} onChange={(event) => {
+              <Select className={`${CHAMP} mt-1`} required value={plan.entite} onChange={(event) => {
                 const code = event.target.value;
                 const choisi = data.entites.find((item) => item.code === code);
                 setPlan({ ...plan, entite: code, direction: choisi?.nom ?? "", poste: posteAuto(data.postes, code, plan.poste) });
               }}>
                 <option value="">Choisir</option>
                 {optionsEntites(data.entites)}
-              </select>
+              </Select>
             </label>
             <label className="block">Direction
               <input className={`${CHAMP} mt-1`} required value={plan.direction} onChange={(event) => setPlan({ ...plan, direction: event.target.value })} />
             </label>
             <label className="block">Poste
-              <select className={`${CHAMP} mt-1`} required value={plan.poste} onChange={(event) => setPlan({ ...plan, poste: event.target.value })}>
+              <Select className={`${CHAMP} mt-1`} required value={plan.poste} onChange={(event) => setPlan({ ...plan, poste: event.target.value })}>
                 <option value="">Choisir</option>
                 {postesPour(data.postes, plan.entite, plan.poste).map((item) => (
                   <option key={item.libelle} value={item.libelle}>{item.libelle}</option>
                 ))}
-              </select>
+              </Select>
             </label>
             <p className="sm:col-span-2 font-body-sm text-body-sm text-on-surface-variant">
               Onglet : {ONGLETS.find((item) => item.id === onglet)?.libelle}
@@ -448,9 +444,9 @@ export function DotationScreen({ ongletInitial = "affectation" }: { ongletInitia
           <form className="space-y-3" onSubmit={(event) => { event.preventDefault(); instruire.mutate(); }}>
             <p className="font-body-sm text-body-sm text-on-surface-variant">{demande.entite} · {demande.poste}</p>
             <label className="block">Décision
-              <select className={`${CHAMP} mt-1`} value={instruction.statut} onChange={(event) => setInstruction({ ...instruction, statut: event.target.value })}>
+              <Select className={`${CHAMP} mt-1`} value={instruction.statut} onChange={(event) => setInstruction({ ...instruction, statut: event.target.value })}>
                 {data.statuts.map((item) => <option key={item.code} value={item.code}>{item.libelle}</option>)}
-              </select>
+              </Select>
             </label>
             <label className="block">Référence de visa
               <input className={`${CHAMP} mt-1`} value={instruction.visa} onChange={(event) => setInstruction({ ...instruction, visa: event.target.value })} />
@@ -529,16 +525,16 @@ export function DotationScreen({ ongletInitial = "affectation" }: { ongletInitia
         <Modale titre="Arbitrer un redéploiement" onClose={fermer}>
           <form className="space-y-3" onSubmit={(event) => { event.preventDefault(); deciderPont.mutate(); }}>
             <label className="block">Passerelle
-              <select className={`${CHAMP} mt-1`} required value={decisionPont.id} onChange={(event) => setDecisionPont({ ...decisionPont, id: event.target.value })}>
+              <Select className={`${CHAMP} mt-1`} required value={decisionPont.id} onChange={(event) => setDecisionPont({ ...decisionPont, id: event.target.value })}>
                 <option value="">Choisir</option>
                 {data.passerelles.map((item) => <option key={item.id} value={item.id}>{item.cedant} vers {item.recepteur}</option>)}
-              </select>
+              </Select>
             </label>
             <label className="block">Décision
-              <select className={`${CHAMP} mt-1`} value={decisionPont.statut} onChange={(event) => setDecisionPont({ ...decisionPont, statut: event.target.value })}>
+              <Select className={`${CHAMP} mt-1`} value={decisionPont.statut} onChange={(event) => setDecisionPont({ ...decisionPont, statut: event.target.value })}>
                 <option value="actee">Actée</option>
                 <option value="proposee">Laisser en proposition</option>
-              </select>
+              </Select>
             </label>
             <label className="block">Motif
               <textarea className={`${CHAMP} mt-1 h-24 py-2`} required value={decisionPont.note} onChange={(event) => setDecisionPont({ ...decisionPont, note: event.target.value })} />

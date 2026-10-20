@@ -5,6 +5,7 @@ import type { CircuitConfigure, ConfigurationCircuits, ElementCircuit } from "..
 import { useFeedback } from "../../ui/Feedback";
 import { BOUTON_PRIMAIRE, BOUTON_SECONDAIRE, Modale } from "../../ui/Modale";
 import { Icone } from "../../ui/Icone";
+import { Select } from "../../ui/Select";
 
 const CARD = "rounded-xl bg-surface-container-lowest border border-hairline";
 const CHAMP = "w-full h-10 px-3 rounded border border-outline-variant bg-surface-container-lowest font-body-md text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-primary";
@@ -60,9 +61,6 @@ export function ConfigurerCircuits() {
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
           <h2 id={titreId} className="font-headline-md text-headline-md text-on-surface">Configurer un circuit</h2>
-          <p className="font-body-sm text-body-sm text-on-surface-variant max-w-3xl">
-            Définissez les visas, puis attribuez le circuit à un élément précis : un congé, un type d'absence ou un acte que l'agent peut demander. Sans circuit attribué, l'élément suit le circuit par défaut.
-          </p>
         </div>
         <button
           type="button"
@@ -247,7 +245,7 @@ function Editeur({
               return (
               <li key={index} className="grid grid-cols-1 sm:grid-cols-[auto_1fr_1fr_auto] gap-2 items-center">
                 <span className="w-7 h-7 rounded-full bg-primary text-on-primary font-code-num text-code-num flex items-center justify-center font-bold">{index + 1}</span>
-                <select
+                <Select
                   className={CHAMP}
                   aria-label={`Rôle de l'étape ${index + 1}`}
                   value={etape.instance}
@@ -263,7 +261,7 @@ function Editeur({
                   {roles.map((role) => (
                     <option key={role.role} value={role.role}>{role.role}</option>
                   ))}
-                </select>
+                </Select>
                 <span className="font-body-sm text-body-sm text-on-surface-variant px-1">
                   {etape.fonction || "La fonction suit le rôle"}
                 </span>

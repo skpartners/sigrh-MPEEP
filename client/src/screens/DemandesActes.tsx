@@ -6,12 +6,36 @@ import { dateCourte } from "../ui/format";
 import { Icone } from "../ui/Icone";
 import { ApercuFichier, telechargerFichier } from "../ui/ApercuFichier";
 import { BOUTON_PRIMAIRE, BOUTON_SECONDAIRE, Modale } from "../ui/Modale";
+import { Select } from "../ui/Select";
 
 type Demande = Dossier["demandes"][number];
-type TypeActe = { code: string; parent: string; libelle: string; icone: string; periode: boolean; destinataire: boolean; justificatif: string; circuit: string[] };
+type EntreeListe = { type: TypeActe; libelle: string } | { type: null; groupe: string; membres: TypeActe[] };
+
+/**
+ * Liste déroulante des actes : un choix simple par acte, et un groupe pour les actes qui en déclarent un
+ * (ou, à défaut, pour les sous-rubriques d'une rubrique). Une rubrique qui a des sous-rubriques reste un choix général.
+ */
+function entreesListe(types: TypeActe[]): EntreeListe[] {
+  const entrees: EntreeListe[] = [];
+  for (const type of types) {
+    const groupe = type.groupe || (type.parent ? types.find((item) => item.code === type.parent)?.libelle ?? "" : "");
+    if (!groupe) {
+      const general = types.some((item) => item.parent === type.code);
+      entrees.push({ type, libelle: general ? `${type.libelle} (général)` : type.libelle });
+      continue;
+    }
+    const existant = entrees.find((entree): entree is Extract<EntreeListe, { type: null }> => entree.type === null && entree.groupe === groupe);
+    if (existant) existant.membres.push(type);
+    else entrees.push({ type: null, groupe, membres: [type] });
+  }
+  return entrees;
+}
+
+type TypeActe = { code: string; parent: string; groupe: string; libelle: string; icone: string; periode: boolean; destinataire: boolean; justificatif: string; circuit: string[] };
 type ATraiter = {
   reference: string;
   nature: string;
+  categorie: string;
   agent: { matricule: string; nom_complet: string };
   motif: string;
   debut: string;
@@ -131,26 +155,19 @@ function FormulaireDemande({ agent, types }: { agent: Dossier; types: TypeActe[]
       <h2 id="titre-nouvelle-demande" className="font-headline-sm text-headline-sm text-on-surface font-bold mb-1 flex items-center gap-2">
         <Icone nom="description" className="text-primary text-xl" />Demande d’actes administratifs
       </h2>
-      <p className="font-body-sm text-on-surface-variant mb-5">
-        Votre demande suit le circuit de validation de l’acte choisi. Une fois tous les visas apposés, l’acte est disponible au téléchargement.
-      </p>
       <form onSubmit={envoyer} className="space-y-5 max-w-3xl">
         <div>
           <label htmlFor="type-demande" className="block font-label-md text-on-surface mb-2">Acte demandé</label>
-          <select id="type-demande" value={code} onChange={(e) => setCode(e.target.value)} required className={CHAMP}>
+          <Select id="type-demande" value={code} onChange={(e) => setCode(e.target.value)} required className={CHAMP}>
             <option value="">Choisir l’acte…</option>
-            {types.filter((item) => !item.parent).map((racine) => {
-              const enfants = types.filter((item) => item.parent === racine.code);
-              return enfants.length === 0 ? (
-                <option key={racine.code} value={racine.code}>{racine.libelle}</option>
-              ) : (
-                <optgroup key={racine.code} label={racine.libelle}>
-                  <option value={racine.code}>{racine.libelle} (général)</option>
-                  {enfants.map((enfant) => <option key={enfant.code} value={enfant.code}>{enfant.libelle}</option>)}
-                </optgroup>
-              );
-            })}
-          </select>
+            {entreesListe(types).map((entree) => entree.type ? (
+              <option key={entree.type.code} value={entree.type.code}>{entree.libelle}</option>
+            ) : (
+              <optgroup key={entree.groupe} label={entree.groupe}>
+                {entree.membres.map((membre) => <option key={membre.code} value={membre.code}>{membre.libelle}</option>)}
+              </optgroup>
+            ))}
+          </Select>
           {type ? <p className="mt-1 text-sm text-on-surface-variant">Visas : {type.circuit.join(" → ")}.</p> : null}
         </div>
         {type?.periode ? (
@@ -285,13 +302,18 @@ function DemandesAViser({ demandes }: { demandes: ATraiter[] }) {
   return (
     <section className="bg-surface-container-lowest rounded-xl border border-primary/30 p-6" aria-labelledby="titre-a-viser">
       <h2 id="titre-a-viser" className="font-headline-sm text-headline-sm text-on-surface font-bold mb-4 flex items-center gap-2">
-        <Icone nom="rule" className="text-primary text-xl" />Demandes d’actes à viser ({demandes.length})
+        <Icone nom="rule" className="text-primary text-xl" />Demandes à viser ({demandes.length})
       </h2>
       <ul className="space-y-3">
         {demandes.map((item) => (
           <li key={item.reference} className="rounded-lg bg-surface-container-low p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="min-w-0">
-              <p className="font-label-md text-label-md text-on-surface font-bold">{item.nature} · {item.agent.nom_complet}</p>
+              <p className="font-label-md text-label-md text-on-surface font-bold">
+                {item.categorie === "conge" || item.categorie === "mutation" ? (
+                  <span className="mr-2 rounded bg-secondary-container px-2 py-0.5 font-label-sm text-on-secondary-container">{item.categorie === "conge" ? "Congé" : "Mutation"}</span>
+                ) : null}
+                {item.nature} · {item.agent.nom_complet}
+              </p>
               <p className="font-code-num text-label-sm text-on-surface-variant">
                 {item.reference} · {item.etape}{item.debut ? ` · ${periode(item.debut, item.fin)}` : ""}
               </p>

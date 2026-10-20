@@ -9,6 +9,7 @@ import { Pagination, usePagination } from "../../ui/Pagination";
 import { CLE_FORMATION, type TableauFormation } from "../formation/types";
 import { CircuitDemande, RubriqueVide, demandeClose, etapeCourante, type Demande } from "./commun";
 import { Icone } from "../../ui/Icone";
+import { Select } from "../../ui/Select";
 
 /** Formation & parcours de l'agent : catalogue des types, arbitrages en cours et candidature. */
 export function OngletFormation({ agent }: { agent: Dossier }) {
@@ -70,9 +71,6 @@ export function OngletFormation({ agent }: { agent: Dossier }) {
             <h1 className="font-headline-lg text-headline-lg text-on-surface tracking-tight">
               {"Gestion des Formations & Certifications"}
             </h1>
-            <p className="font-body-sm text-body-sm text-on-surface-variant">
-              Direction des Ressources Humaines • Direction Générale du Portefeuille de l'État (DGPE)
-            </p>
           </div>
           <div className="flex items-center gap-2.5 shrink-0">
             <button className="inline-flex items-center gap-2 px-3.5 py-2 rounded bg-surface-container-low text-primary font-label-lg text-label-lg hover:bg-surface-container transition-colors" type="button" data-soon="Ce document n'est pas encore servi par le dossier.">
@@ -255,9 +253,6 @@ export function OngletFormation({ agent }: { agent: Dossier }) {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                   <h2 className="font-headline-sm text-headline-sm text-on-surface">Modules Agréés</h2>
-                  <p className="font-body-sm text-body-sm text-on-surface-variant">
-                    Sélectionnez une thématique pour inscrire les fonctionnaires et contractuels de l'État
-                  </p>
                 </div>
                 {/* Filtres rapides sous forme de pills */}
                 <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
@@ -342,9 +337,6 @@ export function OngletFormation({ agent }: { agent: Dossier }) {
                 {" "}
                 <span>{"Parcours Professionnel Certifié & Évaluations Régaliennes"}</span>
               </h3>
-              <p className="font-label-sm text-label-sm text-on-surface-variant leading-relaxed">
-                Les attestations sont versées au dossier
-              </p>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left font-body-sm text-body-sm">
@@ -474,14 +466,14 @@ const LECTURE = "w-full min-h-10 px-3 py-2 rounded bg-surface-container-low text
 const LIBELLE = "block font-label-md text-label-md text-on-surface font-semibold";
 
 /** Candidature à un module : type, module ouvert, pièce exigée, puis versement au circuit. */
-function Inscription({ agent, typeInitial, onClose }: { agent: Dossier; typeInitial: string; onClose: () => void }) {
+export function Inscription({ agent, typeInitial, moduleInitial = "", onClose }: { agent: Dossier; typeInitial: string; moduleInitial?: string; onClose: () => void }) {
   const feedback = useFeedback();
   const client = useQueryClient();
   const sessions = agent.sessions_formations ?? [];
   const types = (agent.types_formations ?? []).filter((type) => sessions.some((session) => session.type === type.code));
   const [type, setType] = useState(types.some((item) => item.code === typeInitial) ? typeInitial : (types[0]?.code ?? ""));
   const modules = sessions.filter((session) => session.type === type);
-  const [module, setModule] = useState(modules[0]?.code ?? "");
+  const [module, setModule] = useState(modules.some((item) => item.code === moduleInitial) ? moduleInitial : (modules[0]?.code ?? ""));
   const [fichier, setFichier] = useState<File | null>(null);
   const [enCours, setEnCours] = useState(false);
   const choisi = modules.find((session) => session.code === module) ?? modules[0];
@@ -550,7 +542,7 @@ function Inscription({ agent, typeInitial, onClose }: { agent: Dossier; typeInit
             <span className={LIBELLE}>
               Type de formation sollicité <span className="text-error">*</span>
             </span>
-            <select className={CHAMP} value={type} onChange={(event) => changerType(event.target.value)} required>
+            <Select className={CHAMP} value={type} onChange={(event) => changerType(event.target.value)} required>
               {types.length ? (
                 types.map((item) => (
                   <option key={item.code} value={item.code}>{item.libelle}</option>
@@ -558,14 +550,14 @@ function Inscription({ agent, typeInitial, onClose }: { agent: Dossier; typeInit
               ) : (
                 <option value="">Aucun type n'est ouvert par la direction de la formation continue.</option>
               )}
-            </select>
+            </Select>
           </label>
         </div>
         <label className="space-y-1 block">
           <span className={LIBELLE}>
             Module <span className="text-error">*</span>
           </span>
-          <select className={CHAMP} value={choisi?.code ?? ""} onChange={(event) => setModule(event.target.value)} required>
+          <Select className={CHAMP} value={choisi?.code ?? ""} onChange={(event) => setModule(event.target.value)} required>
             {modules.length ? (
               modules.map((session) => (
                 <option key={session.code} value={session.code}>{session.libelle}</option>
@@ -573,7 +565,7 @@ function Inscription({ agent, typeInitial, onClose }: { agent: Dossier; typeInit
             ) : (
               <option value="">Aucun module n'est ouvert pour ce type.</option>
             )}
-          </select>
+          </Select>
         </label>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-1">

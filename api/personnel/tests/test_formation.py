@@ -19,6 +19,12 @@ def api():
     return client
 
 
+def _dans_un_mois() -> str:
+    from datetime import date, timedelta
+
+    return (date.today() + timedelta(days=30)).isoformat()
+
+
 def _session(api, code):
     return next(s for s in api.get("/api/v1/formation/").json()["sessions"] if s["code"] == code)
 
@@ -109,9 +115,9 @@ def test_collecte_des_besoins_puis_fusion(api):
     from personnel.models import Notification
 
     assert api.get("/api/v1/formation/").json()["collecte"] is None
-    lancee = api.post("/api/v1/formation/collecte/", {"date_limite": "2026-12-31", "communique": "Exprimez vos besoins."}, format="json")
+    lancee = api.post("/api/v1/formation/collecte/", {"date_limite": _dans_un_mois(), "communique": "Exprimez vos besoins."}, format="json")
     assert lancee.status_code == 201 and lancee.json()["ouverte"] is True
-    assert api.post("/api/v1/formation/collecte/", {"date_limite": "2026-12-31"}, format="json").status_code == 409
+    assert api.post("/api/v1/formation/collecte/", {"date_limite": _dans_un_mois()}, format="json").status_code == 409
 
     agent = APIClient()
     jeton = agent.post("/api/v1/auth/login/", {"matricule": "340188P", "password": "Sigrh-Dev-2026"}, format="json").json()["token"]
@@ -139,3 +145,44 @@ def test_inscription_par_la_sd_et_export(api):
     export = api.get("/api/v1/formation/plan/export/")
     assert export["Content-Type"].startswith("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
     assert "Séminaire de perfectionnement au pilotage" in zipfile.ZipFile(io.BytesIO(export.content)).read("xl/worksheets/sheet1.xml").decode("utf-8")
+
+
+def test_campagne_reservee_et_cloture_automatique(api):
+    from datetime import date, timedelta
+
+    from personnel.models import CollecteBesoinFormation
+
+    # Un simple agent ne lance ni ne clôture une campagne.
+    agent = APIClient()
+    agent.credentials(HTTP_AUTHORIZATION="Token " + agent.post("/api/v1/auth/login/", {"matricule": "340188P", "password": "Sigrh-Dev-2026"}, format="json").json()["token"])
+    assert agent.post("/api/v1/formation/collecte/", {"date_limite": _dans_un_mois()}, format="json").status_code == 403
+    assert agent.post("/api/v1/formation/collecte/cloturer/").status_code == 403
+
+    # Le DRH la lance ; une date passée est refusée.
+    assert api.post("/api/v1/formation/collecte/", {"date_limite": (date.today() - timedelta(days=1)).isoformat()}, format="json").status_code == 400
+    assert api.post("/api/v1/formation/collecte/", {"date_limite": _dans_un_mois()}, format="json").status_code == 201
+    assert agent.get("/api/v1/agents/340188P/").json()["collecte_formation"]["ouverte"] is True
+
+    # La date limite passée, la campagne est close sans intervention, et on ne peut plus y répondre.
+    CollecteBesoinFormation.objects.update(date_limite=date.today() - timedelta(days=1))
+    assert agent.get("/api/v1/agents/340188P/").json()["collecte_formation"]["ouverte"] is False
+    assert agent.post("/api/v1/formation/collecte/repondre/", {"ras": True}, format="json").status_code == 409
+    assert CollecteBesoinFormation.objects.get().cloturee_le is not None
+
+
+def test_planifier_un_module_sans_cycle_ni_cout_avec_son_organisation(api):
+    url = "/api/v1/formation/sessions/"
+    # Ni cycle ni coût à saisir ; par défaut, un module est dispensé par le ministère.
+    interne = api.post(url, {"libelle": "Rédaction administrative", "heures": 21, "places": 12}, format="json")
+    assert interne.status_code == 201, interne.content
+    assert interne.json()["cadre"] == "ci_ministere" and interne.json()["cout_participant"] == 0 and interne.json()["type"]
+    # Un module peut aussi être organisé avec des partenaires techniques, ou hors du pays.
+    partenaire = api.post(url, {"libelle": "Passation des marchés", "heures": 30, "places": 20, "cadre": "ci_partenaires"}, format="json")
+    assert partenaire.status_code == 201 and partenaire.json()["cadre"] == "ci_partenaires"
+    assert partenaire.json()["cadre_libelle"] == "Formations dispensées par des partenaires techniques"
+    assert api.post(url, {"libelle": "Test", "heures": 10, "places": 10, "cadre": "inconnu"}, format="json").status_code == 400
+    assert api.post(url, {"libelle": "Test", "heures": 10, "places": 10, "type": "INCONNU"}, format="json").status_code == 400
+    # La modification garde le cycle du module et change son organisation.
+    code = partenaire.json()["code"]
+    modif = api.patch(f"{url}{code}/", {"libelle": "Passation des marchés", "heures": 30, "places": 20, "cadre": "hors_ci_courte"}, format="json")
+    assert modif.status_code == 200 and modif.json()["cadre"] == "hors_ci_courte" and modif.json()["type"] == partenaire.json()["type"]

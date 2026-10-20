@@ -8,6 +8,7 @@ import { Icone } from "../../ui/Icone";
 import { Modale } from "../../ui/Modale";
 import { Pagination, usePagination } from "../../ui/Pagination";
 import { CARTE, CHAMP, Kpi, LIBELLE, pourcent, PageGrh, Section } from "./ui";
+import { Select } from "../../ui/Select";
 
 type Externe = {
   id: number;
@@ -155,18 +156,18 @@ function ModaleExterne({ suivi, externe, cadreInitial, onClose }: { suivi: Suivi
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <label className="block md:col-span-2">
           <span className={LIBELLE}>Agent <span className="text-error">*</span></span>
-          <select className={CHAMP} required value={saisie.matricule} onChange={champ("matricule")}>
+          <Select className={CHAMP} required value={saisie.matricule} onChange={champ("matricule")}>
             <option value="">Choisir un agent…</option>
             {suivi.agents_choix.map((a) => <option key={a.matricule} value={a.matricule}>{a.nom_complet} · {a.matricule}</option>)}
-          </select>
+          </Select>
         </label>
         <label className="block md:col-span-2"><span className={LIBELLE}>Formation <span className="text-error">*</span></span><input className={CHAMP} required maxLength={200} value={saisie.intitule} onChange={champ("intitule")} /></label>
         <label className="block md:col-span-2">
           <span className={LIBELLE}>Lieu et catégorie <span className="text-error">*</span></span>
-          <select className={CHAMP} required value={saisie.cadre} onChange={champ("cadre")}>
+          <Select className={CHAMP} required value={saisie.cadre} onChange={champ("cadre")}>
             <option value="">Choisir…</option>
             {suivi.cadres_externes.map((c) => <option key={c.code} value={c.code}>{c.zone_libelle} · {c.libelle}</option>)}
-          </select>
+          </Select>
         </label>
         <label className="block"><span className={LIBELLE}>Dispensateur</span><input className={CHAMP} maxLength={200} value={saisie.dispensateur} onChange={champ("dispensateur")} placeholder="Établissement, partenaire…" /></label>
         <label className="block"><span className={LIBELLE}>Lieu (ville, pays)</span><input className={CHAMP} maxLength={160} value={saisie.lieu} onChange={champ("lieu")} /></label>
@@ -200,17 +201,17 @@ function ModaleInscription({ suivi, modules, onClose }: { suivi: Suivi; modules:
       <div className="grid grid-cols-1 gap-4">
         <label className="block">
           <span className={LIBELLE}>Module <span className="text-error">*</span></span>
-          <select className={CHAMP} required value={module} onChange={(e) => setModule(e.target.value)}>
+          <Select className={CHAMP} required value={module} onChange={(e) => setModule(e.target.value)}>
             {modules.length === 0 ? <option value="">Aucun module ouvert aux inscriptions</option> : null}
             {modules.map((m) => <option key={m.code} value={m.code}>{m.libelle}</option>)}
-          </select>
+          </Select>
         </label>
         <label className="block">
           <span className={LIBELLE}>Agent <span className="text-error">*</span></span>
-          <select className={CHAMP} required value={matricule} onChange={(e) => setMatricule(e.target.value)}>
+          <Select className={CHAMP} required value={matricule} onChange={(e) => setMatricule(e.target.value)}>
             <option value="">Choisir un agent…</option>
             {suivi.agents_choix.map((a) => <option key={a.matricule} value={a.matricule}>{a.nom_complet} · {a.matricule}</option>)}
-          </select>
+          </Select>
         </label>
       </div>
     </Modale>
@@ -247,25 +248,25 @@ function ModaleSuivi({ ligne, issues, onClose }: { ligne: LigneSuivi; issues: Su
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <label className="block">
           <span className={LIBELLE}>Présence</span>
-          <select className={CHAMP} value={saisie.present} onChange={(e) => setSaisie({ ...saisie, present: e.target.value })}>
+          <Select className={CHAMP} value={saisie.present} onChange={(e) => setSaisie({ ...saisie, present: e.target.value })}>
             <option value="">Non renseignée</option>
             <option value="oui">Présent</option>
             <option value="non">Absent</option>
-          </select>
+          </Select>
         </label>
         <label className="block">
           <span className={LIBELLE}>Note de satisfaction</span>
-          <select className={CHAMP} value={saisie.note} onChange={(e) => setSaisie({ ...saisie, note: e.target.value })}>
+          <Select className={CHAMP} value={saisie.note} onChange={(e) => setSaisie({ ...saisie, note: e.target.value })}>
             <option value="">Aucune</option>
             {[1, 2, 3, 4, 5].map((n) => <option key={n} value={n}>{n} / 5</option>)}
-          </select>
+          </Select>
         </label>
         <label className="block md:col-span-2">
           <span className={LIBELLE}>Issue particulière</span>
-          <select className={CHAMP} value={saisie.issue} onChange={(e) => setSaisie({ ...saisie, issue: e.target.value })}>
+          <Select className={CHAMP} value={saisie.issue} onChange={(e) => setSaisie({ ...saisie, issue: e.target.value })}>
             <option value="">Aucune : la position suit le module</option>
             {issues.map((i) => <option key={i.code} value={i.code}>{i.libelle}</option>)}
-          </select>
+          </Select>
         </label>
         <label className="block md:col-span-2">
           <span className={LIBELLE}>Observation</span>

@@ -471,10 +471,17 @@ def type_formation(request, code: str):
 # --- Sessions : planification ----------------------------------------------------
 
 
-def _lire_session(data) -> dict:
-    type_formation = TypeFormation.objects.filter(code=str(data.get("type") or "")).first()
+def _lire_session(data, actuel: SessionFormation | None = None) -> dict:
+    # Le cycle ne se choisit plus à la planification : un module garde le sien, sinon il prend le cycle par défaut.
+    code_cycle = str(data.get("type") or "").strip()
+    if code_cycle:
+        type_formation = TypeFormation.objects.filter(code=code_cycle).first()
+        if type_formation is None:
+            raise Invalide("Ce cycle de formation est inconnu.")
+    else:
+        type_formation = actuel.type_formation if actuel else _type_par_defaut()
     if type_formation is None:
-        raise Invalide("Choisissez le cycle de formation.")
+        raise Invalide("Aucun cycle de formation n'est défini : créez-en un avant de planifier un module.")
     prestataire = None
     if data.get("prestataire"):
         prestataire = Prestataire.objects.filter(pk=data.get("prestataire")).first()
@@ -491,7 +498,7 @@ def _lire_session(data) -> dict:
         "libelle": _texte(data, "libelle", "intitulé du module", 160, obligatoire=True),
         "objectif": _texte(data, "objectif", "objectif", 240),
         "cadre_budgetaire": _texte(data, "cadre_budgetaire", "cadre budgétaire", 160),
-        "cadre": _cadre(data),
+        "cadre": _cadre(data, actuel),
         "prestataire": prestataire,
         "lieu": _texte(data, "lieu", "lieu", 160),
         "formateur": _texte(data, "formateur", "formateur", 160),
@@ -499,13 +506,19 @@ def _lire_session(data) -> dict:
         "date_fin": fin,
         "heures": _entier(data, "heures", "volume horaire", 0, 2000),
         "places": _entier(data, "places", "nombre de places", 1, 1000),
-        "cout_participant": _entier(data, "cout_participant", "coût par participant", 0, 10**10),
+        # Le coût par participant ne se saisit plus : il reste celui du module, ou zéro.
+        "cout_participant": _entier(data, "cout_participant", "coût par participant", 0, 10**10) if data.get("cout_participant") not in (None, "") else (actuel.cout_participant if actuel else 0),
     }
 
 
-def _cadre(_data) -> str:
-    """Un module du plan est toujours une formation dispensée par le ministère, en Côte d'Ivoire."""
-    return "ci_ministere"
+def _cadre(data, actuel: SessionFormation | None = None) -> str:
+    """Comment le module est organisé : en interne par le ministère, avec des partenaires techniques, hors du pays…"""
+    choisi = str(data.get("cadre") or "").strip()
+    if not choisi:
+        return actuel.cadre if actuel and actuel.cadre else "ci_ministere"
+    if choisi not in {code for code, _libelle in SessionFormation.CADRES}:
+        raise Invalide("Choisissez l'organisation de la formation dans la liste.")
+    return choisi
 
 
 @api_view(["POST"])
@@ -545,7 +558,7 @@ def session(request, code: str):
     if item.cloturee_le or item.annulee:
         return _erreur("Un module terminé ou annulé ne se modifie plus.", 409)
     try:
-        valeurs = _lire_session(request.data)
+        valeurs = _lire_session(request.data, item)
     except Invalide as exc:
         return _erreur(exc.message)
     if valeurs["places"] < _occupees(item):
@@ -796,8 +809,31 @@ def _besoin_row(b: BesoinFormation) -> dict:
     }
 
 
+def cloturer_echues() -> None:
+    """La clôture est automatique : une campagne dont la date limite est passée est close, et ses rappels sont soldés."""
+    echues = CollecteBesoinFormation.objects.filter(cloturee_le=None, date_limite__lt=timezone.localdate())
+    if echues.update(cloturee_le=timezone.now()):
+        Notification.objects.filter(titre=TITRE_COLLECTE, lue=False).update(lue=True)
+
+
 def _collecte_ouverte() -> CollecteBesoinFormation | None:
+    cloturer_echues()
     return CollecteBesoinFormation.objects.filter(annee=EXERCICE, cloturee_le=None).order_by("-lancee_le").first()
+
+
+def _peut_piloter_collecte(user) -> bool:
+    """Seuls le responsable de la formation et le DRH lancent ou clôturent une campagne : droit de validation sur « Besoins de formation »."""
+    from .utilisateurs import RANG, acces_menu
+
+    profil = getattr(user, "profil", None)
+    if profil is None:
+        return False
+    acces = acces_menu(profil)
+    droit = acces["fonctions"].get("Formations|Besoins de formation") or acces["modules"].get("Formations", "refus")
+    return RANG.get(droit, 0) >= RANG["validation"]
+
+
+REFUS_COLLECTE = "Seuls le responsable de la formation et le DRH peuvent lancer ou clôturer une campagne."
 
 
 def _collecte_row() -> dict | None:
@@ -871,6 +907,8 @@ def _type_par_defaut():
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def lancer_collecte(request):
+    if not _peut_piloter_collecte(request.user):
+        return _erreur(REFUS_COLLECTE, 403)
     if _collecte_ouverte() is not None:
         return _erreur("Une collecte est déjà ouverte pour cet exercice.", 409)
     try:
@@ -878,6 +916,8 @@ def lancer_collecte(request):
         communique = _texte(request.data, "communique", "message aux agents", 280)
     except Invalide as exc:
         return _erreur(exc.message)
+    if date_limite < timezone.localdate():
+        return _erreur("La date limite ne peut pas être passée : la campagne se clôt automatiquement à cette date.")
     with transaction.atomic():
         CollecteBesoinFormation.objects.create(
             annee=EXERCICE,
@@ -897,6 +937,8 @@ def lancer_collecte(request):
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def cloturer_collecte(request):
+    if not _peut_piloter_collecte(request.user):
+        return _erreur(REFUS_COLLECTE, 403)
     collecte = _collecte_ouverte()
     if collecte is None:
         return _erreur("Aucune collecte n'est ouverte.", 409)

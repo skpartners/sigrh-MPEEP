@@ -179,10 +179,14 @@ def _saisir(request):
         return refus_carriere()
     grief = (donnees.get("grief") or "").strip()
     description = (donnees.get("description") or "").strip()
-    rapporteur = Agent.objects.filter(matricule__iexact=(donnees.get("rapporteur") or "").strip()).first()
-    if not grief or not description or rapporteur is None:
-        return Response({"detail": "Le grief, les faits reprochés et un rapporteur du système sont obligatoires."}, status=400)
-    if rapporteur.pk == agent.pk:
+    # Le rapporteur n'est pas obligatoire à l'ouverture : il peut être désigné ensuite.
+    matricule_rapporteur = (donnees.get("rapporteur") or "").strip()
+    rapporteur = Agent.objects.filter(matricule__iexact=matricule_rapporteur).first() if matricule_rapporteur else None
+    if not grief or not description:
+        return Response({"detail": "Le grief et les faits reprochés sont obligatoires."}, status=400)
+    if matricule_rapporteur and rapporteur is None:
+        return Response({"detail": "Aucun agent ne porte le matricule du rapporteur."}, status=400)
+    if rapporteur is not None and rapporteur.pk == agent.pk:
         return Response({"detail": "Le rapporteur ne peut pas être l'agent mis en cause."}, status=400)
     try:
         degre = int(donnees.get("degre") or 1)
@@ -203,7 +207,7 @@ def _saisir(request):
             reference = f"DISC-{aujourd_hui.year}-{numero:03d}"
         item = ProcedureDisciplinaire.objects.create(
             reference=reference, agent=agent, saisine=aujourd_hui, grief=grief[:160], description=description,
-            degre=degre, rapporteur=rapporteur.nom_complet[:120],
+            degre=degre, rapporteur=rapporteur.nom_complet[:120] if rapporteur else "",
             stade=str(regles["stade_ouverture"])[:120], stade_detail=str(regles["detail_ouverture"])[:160],
             phase=ProcedureDisciplinaire.Phase.DEMANDE_EXPLICATION,
         )

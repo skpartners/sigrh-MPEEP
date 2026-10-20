@@ -17,6 +17,7 @@ import { EditeurPhoto, Portrait } from "../ui/PhotoProfil";
 import { Skeleton } from "../ui/Motion";
 import { AppChrome } from "./AppChrome";
 import { Icone } from "../ui/Icone";
+import { Select } from "../ui/Select";
 
 const PAGE = "w-full px-4 sm:px-6 lg:px-8 py-6 mx-auto flex-1";
 const CARD = "bg-surface-container-lowest rounded-xl border border-hairline p-6";
@@ -457,14 +458,14 @@ function OngletCarriere({ agent }: { agent: Dossier }) {
           natures.length > 1 ? (
             <label className="flex items-center gap-2">
               <span className="font-label-sm text-label-sm text-on-surface-variant">Nature :</span>
-              <select
+              <Select
                 value={nature}
                 onChange={(event) => setNature(event.target.value)}
                 className="bg-surface-container-low text-on-surface font-label-md text-label-md rounded px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary"
               >
                 <option value="">Tous les actes ({agent.actes.length})</option>
                 {natures.map((valeur) => <option key={valeur} value={valeur}>{valeur}</option>)}
-              </select>
+              </Select>
             </label>
           ) : null
         }
@@ -554,7 +555,6 @@ function Laterale({ agent }: { agent: Dossier }) {
           <Icone nom="bolt" className="text-primary text-xl" />
           Actions administratives
         </h2>
-        <p className="font-body-sm text-body-sm text-on-surface-variant mb-4">Actes mis à disposition par la hiérarchie.</p>
         <div className="flex flex-col space-y-2.5">
           {disponibles.length === 0 ? (
             <p className="font-body-sm text-body-sm text-on-surface-variant p-3 bg-surface-container-low rounded-lg">Aucun acte n'a encore été mis à disposition.</p>

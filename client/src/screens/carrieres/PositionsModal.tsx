@@ -5,6 +5,7 @@ import { useFeedback } from "../../ui/Feedback";
 import { Icone } from "../../ui/Icone";
 import { BOUTON_PRIMAIRE, BOUTON_SECONDAIRE, Modale } from "../../ui/Modale";
 import { dateCourte } from "../../ui/format";
+import { Select } from "../../ui/Select";
 
 type Position = {
   id: number;
@@ -140,9 +141,9 @@ export function PositionsModal({ matricule, nom, onClose }: { matricule: string;
         <div className="space-y-4">
           <label className="block">
             <span className={LIBELLE}>Position <span className="text-error">*</span></span>
-            <select className={CHAMP} value={saisie.type} onChange={champ("type")}>
+            <Select className={CHAMP} value={saisie.type} onChange={champ("type")}>
               {TYPES.map((item) => <option key={item.code} value={item.code}>{item.libelle}</option>)}
-            </select>
+            </Select>
           </label>
           {type.accueil ? (
             <label className="block">

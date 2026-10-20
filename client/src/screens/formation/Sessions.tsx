@@ -3,7 +3,7 @@ import { useMemo, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../../api/client";
 import type { AgentBrief } from "../../api/types";
-import { dateCourte, fcfa, nombre, pluriel } from "../../ui/format";
+import { dateCourte, nombre, pluriel } from "../../ui/format";
 import { Pagination, usePagination } from "../../ui/Pagination";
 import { useAction } from "../../ui/useAction";
 import { RefusCandidature } from "./Candidatures";
@@ -29,6 +29,7 @@ import {
   messageErreur,
   useEnregistrement,
 } from "./ui";
+import { Select } from "../../ui/Select";
 
 const ETATS: { valeur: EtatSession | ""; libelle: string }[] = [
   { valeur: "", libelle: "Tous les états" },
@@ -43,7 +44,7 @@ const ACTIF = new Set<EtatSession>(["a_planifier", "planifiee", "inscriptions_ou
 
 export function Sessions({ data }: { data: TableauFormation }) {
   const [etat, setEtat] = useState<string>("");
-  const [type, setType] = useState("");
+  const [organisation, setOrganisation] = useState("");
   const [recherche, setRecherche] = useState("");
   const [edition, setEdition] = useState<Session | "nouvelle" | null>(null);
   const [gestion, setGestion] = useState<string | null>(null);
@@ -58,7 +59,7 @@ export function Sessions({ data }: { data: TableauFormation }) {
   const sessions = data.sessions.filter(
     (s) =>
       (!etat || s.etat === etat) &&
-      (!type || s.type === type) &&
+      (!organisation || s.cadre === organisation) &&
       (!q || `${s.libelle} ${s.code} ${s.lieu} ${s.formateur} ${s.prestataire?.nom ?? ""}`.toLowerCase().includes(q)),
   );
   // Ce qui demande une action en premier : en cours, inscriptions ouvertes, puis le reste par date.
@@ -136,16 +137,16 @@ export function Sessions({ data }: { data: TableauFormation }) {
         </label>
         <label className="sm:col-span-3">
           <span className="sr-only">État</span>
-          <select className={CHAMP} value={etat} onChange={(e) => setEtat(e.target.value)}>
+          <Select className={CHAMP} value={etat} onChange={(e) => setEtat(e.target.value)}>
             {ETATS.map((e) => <option key={e.valeur} value={e.valeur}>{e.libelle}</option>)}
-          </select>
+          </Select>
         </label>
         <label className="sm:col-span-3">
-          <span className="sr-only">Cycle</span>
-          <select className={CHAMP} value={type} onChange={(e) => setType(e.target.value)}>
-            <option value="">Tous les cycles</option>
-            {data.types.map((t) => <option key={t.code} value={t.code}>{t.libelle}</option>)}
-          </select>
+          <span className="sr-only">Organisation</span>
+          <Select className={CHAMP} value={organisation} onChange={(e) => setOrganisation(e.target.value)}>
+            <option value="">Toutes les organisations</option>
+            {data.cadres.map((c) => <option key={c.code} value={c.code}>{c.libelle}</option>)}
+          </Select>
         </label>
       </div>
 
@@ -153,7 +154,7 @@ export function Sessions({ data }: { data: TableauFormation }) {
         <Vide
           icone="event_busy"
           titre={data.sessions.length ? "Aucun module ne correspond à ces critères" : "Aucun module au plan"}
-          texte={data.sessions.length ? "Modifiez les filtres ou la recherche." : "Planifiez le premier module : dates, lieu, places et coût par participant."}
+          texte={data.sessions.length ? "Modifiez les filtres ou la recherche." : "Planifiez le premier module : organisation, dates, lieu et places."}
         />
       ) : (
         <ul className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-5">
@@ -198,7 +199,7 @@ function CarteSession({
         </div>
         <div>
           <h3 className="font-headline-sm text-headline-sm text-on-surface font-bold leading-snug">{s.libelle}</h3>
-          <p className="font-label-sm text-label-sm text-primary mt-1">{s.type_libelle}</p>
+          <p className="font-label-sm text-label-sm text-primary mt-1">{s.cadre_libelle}</p>
         </div>
         <dl className="space-y-1.5 font-body-sm text-body-sm text-on-surface-variant">
           <Info icone="calendar_month" libelle="Dates">
@@ -206,7 +207,6 @@ function CarteSession({
           </Info>
           <Info icone="location_on" libelle="Lieu">{s.lieu || <span className="italic">Lieu à préciser</span>}</Info>
           <Info icone="badge" libelle="Prestataire et formateur">{[s.prestataire?.nom, s.formateur].filter(Boolean).join(" · ") || <span className="italic">Prestataire à désigner</span>}</Info>
-          <Info icone="payments" libelle="Coût">{fcfa(s.cout_participant)} par participant · engagé {fcfa(s.engage)}</Info>
         </dl>
         {s.etat === "annulee" ? (
           <p className="rounded bg-error-container/50 px-3 py-2 font-body-sm text-body-sm text-on-error-container">Annulé : {s.motif_annulation}</p>
@@ -286,7 +286,7 @@ function Info({ icone, libelle, children }: { icone: string; libelle: string; ch
 
 function FormulaireSession({ data, session, preselection = [], onClose }: { data: TableauFormation; session: Session | null; preselection?: number[]; onClose: () => void }) {
   const [f, setF] = useState({
-    type: session?.type ?? data.types[0]?.code ?? "",
+    cadre: session?.cadre || "ci_ministere",
     libelle: session?.libelle ?? (preselection.length ? data.besoins.find((b) => b.id === preselection[0])?.intitule ?? "" : ""),
     objectif: session?.objectif ?? "",
     cadre_budgetaire: session?.cadre_budgetaire ?? `Dotation ministérielle, exercice ${data.exercice}`,
@@ -297,7 +297,6 @@ function FormulaireSession({ data, session, preselection = [], onClose }: { data
     date_fin: session?.date_fin ?? "",
     heures: String(session?.heures ?? ""),
     places: String(session?.places ?? 20),
-    cout_participant: String(session?.cout_participant ?? ""),
   });
   const deja = new Set([
     ...data.besoins.filter((b) => b.session?.code === session?.code && session).map((b) => b.id),
@@ -306,8 +305,8 @@ function FormulaireSession({ data, session, preselection = [], onClose }: { data
   const [besoins, setBesoins] = useState<Set<number>>(deja);
   const enregistrer = useEnregistrement<Session>(onClose, session ? "Module mis à jour" : "Module planifié");
   const maj = (cle: keyof typeof f) => (valeur: string) => setF((actuel) => ({ ...actuel, [cle]: valeur }));
-  // Besoins du même cycle encore à couvrir (ou déjà couverts par ce module).
-  const couvrables = data.besoins.filter((b) => b.type === f.type && (b.statut !== "couvert" || deja.has(b.id)));
+  // Besoins encore à couvrir (ou déjà couverts par ce module).
+  const couvrables = data.besoins.filter((b) => b.statut !== "couvert" || deja.has(b.id));
 
   function soumettre() {
     enregistrer.mutate({
@@ -329,14 +328,13 @@ function FormulaireSession({ data, session, preselection = [], onClose }: { data
       largeur="max-w-3xl"
     >
       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-5 gap-y-4">
-        <Liste libelle="Cycle de formation" obligatoire valeur={f.type} onChange={maj("type")} options={data.types.map((t) => ({ valeur: t.code, libelle: t.libelle }))} className="md:col-span-2" />
+        <Liste libelle="Organisation de la formation" obligatoire valeur={f.cadre} onChange={maj("cadre")} options={data.cadres.map((c) => ({ valeur: c.code, libelle: c.libelle }))} className="md:col-span-2" />
         <Texte libelle="Intitulé du module" obligatoire max={160} valeur={f.libelle} onChange={maj("libelle")} className="md:col-span-2" />
         <Zone libelle="Objectif pédagogique" max={240} lignes={2} valeur={f.objectif} onChange={maj("objectif")} className="md:col-span-2" />
         <DateChamp libelle="Date de début" valeur={f.date_debut} onChange={maj("date_debut")} aide="Obligatoire pour ouvrir les inscriptions." />
         <DateChamp libelle="Date de fin" valeur={f.date_fin} min={f.date_debut || undefined} onChange={maj("date_fin")} />
         <Nombre libelle="Volume horaire" obligatoire valeur={f.heures} onChange={maj("heures")} max={2000} unite="heures" />
         <Nombre libelle="Nombre de places" obligatoire valeur={f.places} onChange={maj("places")} min={1} max={1000} unite="places" />
-        <Nombre libelle="Coût par participant" obligatoire valeur={f.cout_participant} onChange={maj("cout_participant")} unite="FCFA" />
         <Texte libelle="Cadre budgétaire" max={160} valeur={f.cadre_budgetaire} onChange={maj("cadre_budgetaire")} />
         <Liste
           libelle="Prestataire"
@@ -516,7 +514,7 @@ function Emargement({ candidature: c, fige, onChange }: { candidature: Candidatu
       </div>
       <label className="flex items-center gap-1.5 font-label-sm text-label-sm text-on-surface-variant">
         Satisfaction
-        <select
+        <Select
           className="h-8 rounded border border-outline-variant bg-surface-container-lowest px-2 font-label-md text-label-md text-on-surface"
           value={c.note_satisfaction ?? ""}
           disabled={fige || c.present === false}
@@ -524,7 +522,7 @@ function Emargement({ candidature: c, fige, onChange }: { candidature: Candidatu
         >
           <option value="">—</option>
           {[5, 4, 3, 2, 1].map((n) => <option key={n} value={n}>{n} / 5</option>)}
-        </select>
+        </Select>
       </label>
     </div>
   );
@@ -629,7 +627,6 @@ function BesoinsAFormuler({
       <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
         <div>
           <h3 className="font-label-lg text-label-lg text-on-surface font-bold">Besoins à formuler</h3>
-          <p className="font-body-sm text-body-sm text-on-surface-variant">Triez, fusionnez et reformulez, puis montez un module.</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <button type="button" className={BOUTON_SECONDAIRE} disabled={selection.size < 2} onClick={onFusion}>Fusionner</button>

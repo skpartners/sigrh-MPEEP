@@ -43,6 +43,9 @@ const POSITIONS: {
   },
 ];
 
+/** Bouton d'action en icône : même gabarit pour tous, léger soulèvement au survol. */
+const BOUTON_ICONE = "inline-flex h-9 w-9 items-center justify-center rounded-lg transition-[transform,background-color,box-shadow] duration-200 hover:-translate-y-0.5 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary motion-reduce:transition-none motion-reduce:hover:translate-y-0";
+
 const TON_POSITION: Record<Famille, { fond: string; pastille: string }> = {
   activite: { fond: "bg-primary-fixed text-on-primary-fixed", pastille: "bg-primary" },
   detachement: { fond: "bg-secondary-fixed text-on-secondary-fixed", pastille: "bg-secondary" },
@@ -118,9 +121,6 @@ export function SituationScreen() {
             <h1 className="font-headline-lg text-headline-lg text-on-surface tracking-tight">
               Gestion des situations administratives, postes et affectations
             </h1>
-            <p className="font-body-md text-body-md text-on-surface-variant max-w-3xl">
-              La situation administrative fixe la position de l'agent : activité, détachement, mise à disposition, disponibilité ou hors-cadre. Le gestionnaire tient le registre à jour. L'agent consulte son dossier sans le modifier.
-            </p>
             <div className="flex flex-wrap items-center gap-2 pt-1">
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-surface-container-low text-primary font-label-sm text-label-sm rounded-lg font-semibold">
                 <span className="w-2 h-2 rounded-full bg-primary-container" aria-hidden="true" />
@@ -182,9 +182,6 @@ export function SituationScreen() {
             <div className="p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-surface-container-low/50">
               <div>
                 <h2 className="font-headline-sm text-headline-sm text-on-surface font-bold">Registre des positions</h2>
-                <p className="font-body-sm text-body-sm text-on-surface-variant mt-0.5">
-                  Suivi juridique des actes portant nomination, détachement et renouvellement statutaire.
-                </p>
               </div>
               <label className="block w-full sm:w-72">
                 <span className="sr-only">Rechercher un agent</span>
@@ -241,34 +238,36 @@ export function SituationScreen() {
                           </span>
                         ) : null}
                       </td>
-                      <td className="py-3 px-4 text-right whitespace-nowrap">
-                        <button
-                          type="button"
-                          title="Mettre en position (détachement, disponibilité…)"
-                          aria-label={`Positions administratives de ${agent.nom_complet}`}
-                          onClick={() => setPositionDe({ matricule: agent.matricule, nom: agent.nom_complet })}
-                          className="mr-1 p-1.5 rounded text-primary hover:bg-surface-container"
-                        >
-                          <Icone nom="swap_horiz" className="text-xl" />
-                        </button>
-                        <button
-                          type="button"
-                          title="Parcours professionnel"
-                          aria-label={`Parcours professionnel de ${agent.nom_complet}`}
-                          onClick={() => setParcours({ matricule: agent.matricule, nom: agent.nom_complet })}
-                          className="mr-1 p-1.5 rounded text-primary hover:bg-surface-container"
-                        >
-                          <Icone nom="timeline" className="text-xl" />
-                        </button>
-                        <button
-                          type="button"
-                          title="Modifier la situation"
-                          aria-label={`Modifier la situation de ${agent.nom_complet}`}
-                          onClick={() => setMatricule(agent.matricule)}
-                          className="p-1.5 rounded bg-primary-container text-on-primary hover:bg-primary"
-                        >
-                          <Icone nom="edit_note" className="text-xl" />
-                        </button>
+                      <td className="py-3 px-4 text-right">
+                        <div className="inline-flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            title="Positions : détachement, disponibilité, mise à disposition…"
+                            aria-label={`Positions administratives de ${agent.nom_complet}`}
+                            onClick={() => setPositionDe({ matricule: agent.matricule, nom: agent.nom_complet })}
+                            className={`${BOUTON_ICONE} bg-surface-container text-primary hover:bg-primary-fixed`}
+                          >
+                            <Icone nom="event_busy" className="text-xl" />
+                          </button>
+                          <button
+                            type="button"
+                            title="Parcours professionnel : nominations, promotions, mutations"
+                            aria-label={`Parcours professionnel de ${agent.nom_complet}`}
+                            onClick={() => setParcours({ matricule: agent.matricule, nom: agent.nom_complet })}
+                            className={`${BOUTON_ICONE} bg-surface-container text-primary hover:bg-primary-fixed`}
+                          >
+                            <Icone nom="timeline" className="text-xl" />
+                          </button>
+                          <button
+                            type="button"
+                            title="Modifier la situation administrative"
+                            aria-label={`Modifier la situation de ${agent.nom_complet}`}
+                            onClick={() => setMatricule(agent.matricule)}
+                            className={`${BOUTON_ICONE} bg-primary text-on-primary shadow-sm hover:bg-primary-container hover:shadow-md`}
+                          >
+                            <Icone nom="edit" className="text-xl" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}

@@ -30,11 +30,10 @@ export function BoutonExcel({ titre, onExporter, disabled = false }: { titre: st
   );
 }
 
-function Carte({ id, titre, sousTitre, icone, lien, libelleLien, onExporter, className = "", children }: {
+function Carte({ id, titre, icone, lien, libelleLien, onExporter, className = "", children }: {
   onExporter?: () => void;
   id: string;
   titre: string;
-  sousTitre: string;
   icone: string;
   lien: string;
   libelleLien: string;
@@ -48,7 +47,6 @@ function Carte({ id, titre, sousTitre, icone, lien, libelleLien, onExporter, cla
           <Icone nom={icone} className="text-primary text-2xl mt-0.5" />
           <div>
             <h2 id={id} className="font-headline-sm text-headline-sm text-on-surface">{titre}</h2>
-            <p className="font-body-sm text-body-sm text-on-surface-variant">{sousTitre}</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -124,7 +122,6 @@ export function EtatEffectifs({ etats }: { etats: Etats }) {
     <Carte
       id="titre-effectifs"
       titre="État des effectifs"
-      sousTitre={etats?.perimetre ? "Agents de votre périmètre, par grade, genre, emploi, structure…" : "Agents du ministère, par grade, genre, emploi, structure…"}
       icone="groups"
       lien="/app/statistiques"
       libelleLien="Croiser dans les statistiques"
@@ -191,7 +188,6 @@ export function EtatDotations({ etats, className = "" }: { etats: Etats; classNa
     <Carte
       id="titre-dotations"
       titre="État des dotations"
-      sousTitre="Plafonds d'emplois et demandes de dotation."
       icone="account_tree"
       lien="/app/gpec/recrutement"
       libelleLien="Recrutement"
@@ -244,7 +240,6 @@ export function EtatAbsences({ etats, exercice }: { etats: Etats; exercice: numb
     <Carte
       id="titre-absences"
       titre="État des absences et congés"
-      sousTitre={`Absents du jour et absences débutées en ${exercice}.`}
       icone="event_busy"
       lien="/app/carrieres/absences"
       libelleLien="Absences"
@@ -289,7 +284,6 @@ export function EtatFormation({ etats, exercice }: { etats: Etats; exercice: num
     <Carte
       id="titre-formation"
       titre="État des mises en formation"
-      sousTitre={`Sessions et agents formés en ${exercice}.`}
       icone="school"
       lien="/app/formation"
       libelleLien="Formation"

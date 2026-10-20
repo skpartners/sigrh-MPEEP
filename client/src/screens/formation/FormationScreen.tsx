@@ -20,13 +20,14 @@ const VUES: Vue[] = ["besoins", "modules", "candidatures", "prestataires", "pass
 export function FormationScreen() {
   const [params, setParams] = useSearchParams();
   const demandee = params.get("vue") as Vue | null;
-  const vue = demandee && VUES.includes(demandee) ? demandee : "modules";
+  // Sans choix explicite, c'est le premier onglet qui s'ouvre.
+  const vue = demandee && VUES.includes(demandee) ? demandee : VUES[0];
   const feedback = useFeedback();
   const tableau = useQuery({ queryKey: CLE_FORMATION, queryFn: () => api<TableauFormation>("/api/v1/formation/") });
   const data = tableau.data;
 
   function choisir(id: Vue) {
-    setParams(id === "modules" ? {} : { vue: id }, { replace: true });
+    setParams(id === VUES[0] ? {} : { vue: id }, { replace: true });
   }
 
   async function exporter() {
@@ -51,9 +52,6 @@ export function FormationScreen() {
           <div className="space-y-4">
             <div>
               <h1 className="font-headline-lg text-headline-lg text-on-surface tracking-tight">Élaboration du plan de formation</h1>
-              <p className="font-body-md text-body-md text-on-surface-variant mt-1 max-w-3xl">
-                Formations organisées par le ministère pour ses agents : collecte des besoins, montage des modules, inscriptions et suivi des dossiers.
-              </p>
               <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">Exercice {data?.exercice ?? ""}</p>
             </div>
             <div className="flex flex-nowrap items-center gap-2 overflow-x-auto">

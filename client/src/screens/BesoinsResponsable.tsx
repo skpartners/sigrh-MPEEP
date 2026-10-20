@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { ApiError, api } from "../api/client";
 import { dateCourte, nombre } from "../ui/format";
@@ -7,12 +7,14 @@ import { Icone } from "../ui/Icone";
 import { Modale } from "../ui/Modale";
 import { SelectEmploi, useNomenclature } from "../ui/Nomenclature";
 import { Pagination, usePagination } from "../ui/Pagination";
-import { ArbreBesoins, LIBELLE_ETAT, TableauEmplois, type CampagneBesoins, type EmploiBesoins, type FicheBesoins, type NoeudBesoins, type TotauxBesoins } from "./gpec/besoinsCommun";
+import { LIBELLE_ETAT, TableauEmplois, type CampagneBesoins, type EmploiBesoins, type FicheBesoins, type NoeudBesoins, type TotauxBesoins } from "./gpec/besoinsCommun";
+import { Select } from "../ui/Select";
 
 export type MesBesoins =
   | { responsable: false }
   | {
       responsable: true;
+      exercices: number[];
       structures: { id: number; nom: string; niveau_libelle: string }[];
       campagne: CampagneBesoins | null;
       fiches: FicheBesoins[];
@@ -27,15 +29,22 @@ const CHAMP = "w-full h-10 px-3 rounded border border-outline-variant bg-surface
 const LIBELLE = "block font-label-md text-label-md text-on-surface font-semibold mb-1";
 
 /** Interroge l'espace du responsable : faux pour un agent qui ne dirige aucune structure. */
-export function useMesBesoins(actif: boolean) {
-  return useQuery({ queryKey: CLE, queryFn: () => api<MesBesoins>("/api/v1/besoins/mes-fiches/"), enabled: actif });
+export function useMesBesoins(actif: boolean, exercice?: number) {
+  return useQuery({
+    queryKey: [...CLE, exercice ?? "courant"],
+    queryFn: () => api<MesBesoins>(exercice ? `/api/v1/besoins/mes-fiches/?exercice=${exercice}` : "/api/v1/besoins/mes-fiches/"),
+    enabled: actif,
+    placeholderData: keepPreviousData,
+  });
 }
 
 /** Onglet du profil d'un responsable de structure : il répond à l'appel et suit la remontée de ses structures. */
 export function BesoinsResponsable() {
   const client = useQueryClient();
   const feedback = useFeedback();
-  const requete = useMesBesoins(true);
+  // Par défaut l'exercice en cours ; les exercices passés se consultent depuis le sélecteur, en lecture seule.
+  const [exercice, setExercice] = useState<number | undefined>(undefined);
+  const requete = useMesBesoins(true, exercice);
   const [edition, setEdition] = useState<FicheBesoins | "nouvelle" | null>(null);
   const donnees = requete.data;
   const fiches = donnees && donnees.responsable ? donnees.fiches : [];
@@ -45,7 +54,9 @@ export function BesoinsResponsable() {
   if (!donnees || !donnees.responsable) return <p className={`${CARTE} text-on-surface-variant`}>Cet espace est réservé aux responsables de structure.</p>;
 
   const campagne = donnees.campagne;
-  const saisissable = Boolean(campagne && campagne.ouverte);
+  const exercices = donnees.exercices;
+  const passe = Boolean(exercice && campagne && exercice !== exercices[0]);
+  const saisissable = Boolean(campagne && campagne.ouverte) && !passe;
   const rattachees = donnees.arbre.some((n) => n.enfants.length > 0);
   const emploisRemontes = donnees.emplois;
 
@@ -62,10 +73,21 @@ export function BesoinsResponsable() {
       <section className={CARTE}>
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h2 className="font-headline-sm text-headline-sm text-on-surface font-bold">Expression des besoins{campagne ? ` ${campagne.exercice}` : ""}</h2>
+            <h2 className="font-headline-sm text-headline-sm text-on-surface font-bold">Besoins RH{campagne ? ` ${campagne.exercice}` : ""}</h2>
             <p className="mt-1 font-body-md text-body-md text-on-surface-variant">
-              {donnees.structures.map((s) => `${s.nom} (${s.niveau_libelle})`).join(" · ")}
+              {donnees.structures.slice(0, 3).map((s) => `${s.nom} (${s.niveau_libelle})`).join(" · ")}
+              {donnees.structures.length > 3 ? ` · et ${donnees.structures.length - 3} autres structures` : ""}
             </p>
+            {exercices.length > 1 ? (
+              <label className="mt-2 inline-flex items-center gap-2 font-label-md text-label-md text-on-surface">
+                Exercice
+                <Select className="h-9 rounded border border-outline-variant bg-surface-container-lowest px-2 font-body-sm text-body-sm" value={exercice ?? exercices[0]}
+                  onChange={(e) => setExercice(Number(e.target.value) === exercices[0] ? undefined : Number(e.target.value))}>
+                  {exercices.map((annee) => <option key={annee} value={annee}>{annee}{annee === exercices[0] ? " (dernier)" : ""}</option>)}
+                </Select>
+                {passe ? <span className="font-body-sm text-body-sm text-on-surface-variant">Consultation seule</span> : null}
+              </label>
+            ) : null}
             <p className="mt-1 font-body-sm text-body-sm text-on-surface-variant">
               {LIBELLE_ETAT(campagne)}{campagne?.limite ? ` · réponse avant le ${dateCourte(campagne.limite)}` : ""}
             </p>
@@ -119,16 +141,6 @@ export function BesoinsResponsable() {
         <TableauEmplois emplois={emploisRemontes} />
       </section>
 
-      {rattachees ? (
-        <section className={CARTE}>
-          <h3 className="font-headline-sm text-headline-sm text-on-surface font-bold">Remontée des structures rattachées</h3>
-          <p className="mt-1 mb-4 font-body-sm text-body-sm text-on-surface-variant">
-            {nombre(donnees.totaux.fonctionnaires)} fonctionnaires et {nombre(donnees.totaux.contractuels)} contractuels demandés au total par votre structure et celles qui lui sont rattachées.
-          </p>
-          <ArbreBesoins arbre={donnees.arbre} />
-        </section>
-      ) : null}
-
       {edition ? <FormulaireBesoin structures={donnees.structures} fiche={edition === "nouvelle" ? null : edition} onClose={() => setEdition(null)} /> : null}
     </div>
   );
@@ -166,9 +178,9 @@ export function FormulaireBesoin({ structures, fiche, onClose, invalider = CLE }
         {structures.length > 1 && !fiche ? (
           <label className="block md:col-span-2">
             <span className={LIBELLE}>Structure <span className="text-error">*</span></span>
-            <select className={CHAMP} required value={saisie.structure} onChange={(e) => setSaisie({ ...saisie, structure: e.target.value })}>
+            <Select className={CHAMP} required value={saisie.structure} onChange={(e) => setSaisie({ ...saisie, structure: e.target.value })}>
               {structures.map((s) => <option key={s.id} value={s.id}>{s.nom}</option>)}
-            </select>
+            </Select>
           </label>
         ) : null}
         <label className="block">

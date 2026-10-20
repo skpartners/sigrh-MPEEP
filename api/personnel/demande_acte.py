@@ -5,11 +5,13 @@ en suit les étapes ; sinon il suit le circuit par défaut (visa du chef de serv
 L'acte est délivré à l'agent après le dernier visa.
 """
 
+import re
 from datetime import date
 from pathlib import Path
 
 from django.contrib.auth.models import User
 from django.db import transaction
+from django.db.models import F
 from django.utils import timezone
 from django.utils.dateparse import parse_date
 
@@ -30,9 +32,14 @@ ETAPES_DEFAUT = [
     ("Visa du chef de service", "Supérieur hiérarchique"),
     ("Visa DRH", "Directeur des Ressources Humaines"),
 ]
-ROLES_DEFAUT = {"Visa du chef de service": ROLES_CHEF, "Visa DRH": ROLES_DRH}
+ROLES_SOUS_DIRECTION = {"Sous directeur", "Directeur", "Directeur général"}
+ROLES_DEFAUT = {"Visa du chef de service": ROLES_CHEF, "Visa de la sous-direction": ROLES_SOUS_DIRECTION, "Visa DRH": ROLES_DRH}
 LIVRAISON = ("Acte délivré", "Délivrance de l'acte à l'agent")
+# Dernière étape d'un congé : le papier est versé une fois les visas apposés ; ce n'est pas un visa.
+PAPIER_CONGE = "Scan versé"
+SANS_VISA = {LIVRAISON[0], PAPIER_CONGE}
 CLOTURE_OK = ("Clôturée : acte délivré", "Acte disponible au téléchargement")
+CLOTURE_CONGE = ("Clôturée : congé accordé", "Congé accordé")
 CLOTURE_REFUS = ("Clôturée : demande refusée", "Voir le motif du refus")
 
 EXTENSIONS_JUSTIFICATIF = {".pdf", ".png", ".jpg", ".jpeg", ".webp"}
@@ -53,6 +60,7 @@ def types() -> list[dict]:
             "code": acte.code,
             "libelle": acte.libelle,
             "parent": acte.parent.code if acte.parent_id else "",
+            "groupe": acte.libelle_groupe,
             "icone": acte.icone,
             "periode": acte.periode,
             "destinataire": acte.destinataire,
@@ -200,14 +208,14 @@ def _prevenir_suivants(demande: Demande) -> None:
         if not peut_decider(compte, demande):
             continue
         Notification.objects.create(
-            destinataire=compte, categorie="demande", titre="Demande d'acte à viser",
+            destinataire=compte, categorie="demande", titre={"conge": "Demande de congé à viser", "mutation": "Demande de mutation à viser"}.get(demande.categorie, "Demande d'acte à viser"),
             message=f"{agent.nom_complet} · {demande.nature}.", lien="/app/agents?onglet=demandes", creee_le=timezone.now(),
         )
 
 
 def etape_courante(demande: Demande) -> VisaDemande | None:
     """Prochain visa à apposer ; la délivrance n'est pas un visa."""
-    return demande.visas.filter(avis="En attente").exclude(instance=LIVRAISON[0]).order_by("ordre").first()
+    return demande.visas.filter(avis="En attente").exclude(instance__in=SANS_VISA).order_by("ordre").first()
 
 
 def peut_decider(user, demande: Demande) -> bool:
@@ -228,12 +236,12 @@ def peut_decider(user, demande: Demande) -> bool:
 
 def visa_initial(demande: Demande) -> VisaDemande | None:
     """Premier visa du circuit (celui qui suit le dépôt)."""
-    return demande.visas.filter(ordre__gt=1).exclude(instance=LIVRAISON[0]).order_by("ordre").first()
+    return demande.visas.filter(ordre__gt=1).exclude(instance__in=SANS_VISA).order_by("ordre").first()
 
 
 def visa_final(demande: Demande) -> VisaDemande | None:
     """Dernier visa du circuit : celui qui délivre l'acte."""
-    return demande.visas.filter(ordre__gt=1).exclude(instance=LIVRAISON[0]).order_by("-ordre").first()
+    return demande.visas.filter(ordre__gt=1).exclude(instance__in=SANS_VISA).order_by("-ordre").first()
 
 
 def decider(demande: Demande, acteur, sens: str, motif: str) -> str | None:
@@ -258,13 +266,25 @@ def decider(demande: Demande, acteur, sens: str, motif: str) -> str | None:
             demande.visas.filter(avis="En attente").update(avis="Sans suite")
             demande.etape, demande.responsable = CLOTURE_REFUS
             demande.echeance = "Aucune suite"
+            if demande.categorie == "mutation":
+                from .mutations import refuser
+
+                refuser(demande, motif)
         else:
-            suivant = demande.visas.filter(ordre__gt=visa.ordre, avis="En attente").exclude(instance=LIVRAISON[0]).order_by("ordre").first()
+            suivant = demande.visas.filter(ordre__gt=visa.ordre, avis="En attente").exclude(instance__in=SANS_VISA).order_by("ordre").first()
             visa.avis, visa.commentaire = "Favorable", motif or "Visa apposé."
             visa.signature = copie_signature(acteur)
             visa.reference = f"MPEEP-{aujourd_hui.year}-{demande.id:05d}" if suivant is None else ""
             visa.save()
-            if suivant is None:
+            if suivant is None and demande.categorie == "mutation":
+                from .mutations import accorder
+
+                delivre = True
+                accorder(demande, aujourd_hui)
+            elif suivant is None and demande.categorie == "conge":
+                delivre = True
+                _accorder_conge(demande, aujourd_hui)
+            elif suivant is None:
                 delivre = True
                 _inscrire_absence(demande, aujourd_hui, motif)
                 VisaDemande.objects.filter(demande=demande, instance=LIVRAISON[0]).update(
@@ -281,6 +301,19 @@ def decider(demande: Demande, acteur, sens: str, motif: str) -> str | None:
     return None
 
 
+def _accorder_conge(demande: Demande, aujourd_hui: date) -> None:
+    """Dernier visa d'un congé : la demande est close, le congé annuel est décompté du reliquat de l'agent."""
+    VisaDemande.objects.filter(demande=demande, instance=PAPIER_CONGE).update(
+        avis="Accordé", titulaire="Direction des Ressources Humaines", fonction="Notification à l'agent",
+        date=aujourd_hui, commentaire="Le congé est accordé : l'agent est notifié.",
+    )
+    demande.etape, demande.responsable = CLOTURE_CONGE
+    demande.echeance = "Terminée"
+    trouve = re.search(r"\((\d+) j", demande.nature)
+    if trouve and "annuel" in demande.nature.lower():
+        Agent.objects.filter(pk=demande.agent_id).update(conges_consommes=F("conges_consommes") + int(trouve.group(1)))
+
+
 def _prevenir(demande: Demande, delivre: bool, refuse: bool, motif: str) -> None:
     """Prévient l'agent de l'issue, ou le prochain responsable quand le circuit continue."""
     if not (delivre or refuse):
@@ -289,10 +322,17 @@ def _prevenir(demande: Demande, delivre: bool, refuse: bool, motif: str) -> None
     compte = User.objects.filter(username=demande.agent.matricule).first()
     if compte is None:
         return
+    if demande.categorie == "mutation":
+        return  # la mutation informe elle-même l'agent et celui qui l'a demandée (mutations.py)
+    conge = demande.categorie == "conge"
     if delivre:
-        titre, message = "Votre acte est disponible", f"{demande.nature} : vous pouvez le télécharger."
+        titre, message = (
+            ("Votre congé est accordé", f"{demande.nature} : toutes les validations sont obtenues.")
+            if conge
+            else ("Votre acte est disponible", f"{demande.nature} : vous pouvez le télécharger.")
+        )
     else:
-        titre, message = "Demande d'acte refusée", f"{demande.nature} : {motif}"[:280]
+        titre, message = ("Demande de congé refusée" if conge else "Demande d'acte refusée"), f"{demande.nature} : {motif}"[:280]
     Notification.objects.create(
         destinataire=compte, categorie="demande", titre=titre, message=message,
         lien="/app/agents?onglet=demandes", creee_le=timezone.now(),

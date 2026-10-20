@@ -105,10 +105,11 @@ function ModaleAppel({ onClose }: { onClose: () => void }) {
   const feedback = useFeedback();
   const [saisie, setSaisie] = useState({ exercice: String(new Date().getFullYear()), limite: "", cadrage: "" });
   const envoi = useMutation({
-    mutationFn: () => api<{ prevenus: number }>("/api/v1/besoins/campagne/", { method: "POST", body: JSON.stringify({ ...saisie, exercice: Number(saisie.exercice) }) }),
+    mutationFn: () => api<{ prevenus: number; alerte: string }>("/api/v1/besoins/campagne/", { method: "POST", body: JSON.stringify({ ...saisie, exercice: Number(saisie.exercice) }) }),
     onSuccess: async (reponse) => {
       await client.invalidateQueries({ queryKey: ["besoins-centralisation"] });
-      feedback.toast(`Appel lancé : ${reponse.prevenus} responsable${reponse.prevenus > 1 ? "s" : ""} prévenu${reponse.prevenus > 1 ? "s" : ""}`);
+      if (reponse.alerte) feedback.toast("Appel lancé, mais personne n'est prévenu", reponse.alerte, "error");
+      else feedback.toast(`Appel lancé : ${reponse.prevenus} responsable${reponse.prevenus > 1 ? "s" : ""} prévenu${reponse.prevenus > 1 ? "s" : ""}`);
       onClose();
     },
   });

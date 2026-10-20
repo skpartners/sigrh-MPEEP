@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../api/client";
+import { Select } from "./Select";
 
 export type GradeNomenclature = {
   code: string;
@@ -54,7 +55,7 @@ export function SelectGrade({
   const connu = grades.some((item) => item.code === valeur);
   const anciens = grades.filter((item) => !item.en_vigueur);
   return (
-    <select
+    <Select
       className={className}
       value={valeur}
       aria-label="Grade"
@@ -83,7 +84,7 @@ export function SelectGrade({
           ))}
         </optgroup>
       )}
-    </select>
+    </Select>
   );
 }
 
@@ -103,7 +104,7 @@ export function SelectEmploi({
   const connu = emplois.some((item) => item.libelle === valeur);
   const familles = [...new Map(emplois.map((item) => [item.famille, item.famille_libelle])).entries()];
   return (
-    <select
+    <Select
       className={className}
       value={valeur}
       required={required}
@@ -122,6 +123,6 @@ export function SelectEmploi({
           ))}
         </optgroup>
       ))}
-    </select>
+    </Select>
   );
 }

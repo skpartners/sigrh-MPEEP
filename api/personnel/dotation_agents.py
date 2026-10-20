@@ -527,8 +527,14 @@ def mobilite(request):
         r for r in Redeploiement.objects.filter(statut=Redeploiement.Statut.DECLENCHE).select_related("agent", "structure_origine", "structure_destination", "initiateur")
         if r.initiateur is not None and r.initiateur.username in initiateurs
     ]
+    from .mutations import ligne as ligne_mutation
+    from .models import Mutation
+
+    mutations = Mutation.objects.select_related("agent", "demande", "structure_demandee", "demandeur")
     return Response({
         "agent": moi.matricule if moi else "",
+        "mes_mutations": [ligne_mutation(m) for m in mutations.filter(agent=moi)] if moi else [],
+        "mutations_equipe": [ligne_mutation(m) for m in mutations.filter(agent__matricule__in=matricules)],
         "mes_dispositions": [ligne_disposition(d) for d in mes],
         "hierarchie": bool(equipe),
         "dispositions_equipe": [ligne_disposition(d) for d in disp],
@@ -537,6 +543,36 @@ def mobilite(request):
         "agents": [{"matricule": a.matricule, "nom_complet": a.nom_complet, "structure": a.structure} for a in equipe],
         "structures": _structures(),
     })
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+@parser_classes([JSONParser, MultiPartParser, FormParser])
+def demander_mutation(request):
+    """L'agent demande sa mutation ; un responsable la demande pour un agent qu'il encadre."""
+    from .mutations import deposer, ligne
+
+    matricule = str(request.data.get("matricule") or "").strip()
+    moi = _agent_du_compte(request.user)
+    agent = Agent.objects.filter(matricule__iexact=matricule).first() if matricule else moi
+    if agent is None:
+        return Response({"detail": "Votre compte n'est pas rattaché à un dossier d'agent." if not matricule else "Agent introuvable."}, status=404 if matricule else 403)
+    if agent != moi and not _superieur_de(request.user, agent):
+        return Response({"detail": "Vous ne pouvez demander la mutation que de vous-même ou d'un agent que vous encadrez."}, status=403)
+    souhaitee = _date(request.data.get("date_souhaitee"))
+    if souhaitee is False:
+        return Response({"detail": "La date souhaitée est invalide."}, status=400)
+    try:
+        structure = int(request.data.get("structure") or 0)
+    except (TypeError, ValueError):
+        structure = 0
+    document, erreur = _fichier(request, "justificatif", False)
+    if erreur:
+        return Response({"detail": erreur}, status=400)
+    item, erreur = deposer(request.user, agent, structure, str(request.data.get("motif") or ""), souhaitee, document)
+    if erreur:
+        return Response({"detail": erreur}, status=400)
+    return Response(ligne(item), status=201)
 
 
 @api_view(["POST"])

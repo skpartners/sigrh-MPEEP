@@ -12,6 +12,8 @@ export type LienNav = {
   enfants?: EnfantNav[];
   /** Visible au menu mais non ouvrant : le module n'est pas encore livré. */
   bientot?: boolean;
+  /** Absent des cartes de l'accueil : on y accède par un autre chemin (menu de l'agent). */
+  horsAccueil?: boolean;
 };
 export type SectionNav = { groupe: string; liens: LienNav[] };
 
@@ -102,6 +104,7 @@ export const NAV: SectionNav[] = [
       {
         to: "/app/parametres",
         end: true,
+        horsAccueil: true,
         icone: "tune",
         libelle: "Paramètres",
         resume: "L'identité de la ministre, les délais, les couleurs, les circuits, les habilitations, les comptes et les structures.",

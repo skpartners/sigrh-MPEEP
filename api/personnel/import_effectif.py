@@ -47,14 +47,14 @@ COLONNES = (
     ("nom", "Nom", (), True, "Texte", "", "KOFFI", "Nom de famille."),
     ("prenoms", "Prénoms", (), True, "Texte", "", "Yao Christian", "Tous les prénoms."),
     ("sexe", "Sexe", (), True, "H ou F", "H, F (Homme, Femme)", "H", "Genre de l'agent."),
-    ("date_naissance", "Date de naissance", (), True, "JJ/MM/AAAA ou AAAA-MM-JJ", "", "14/03/1981", "Sert au calcul de la limite d'âge et de la tranche d'âge."),
+    ("date_naissance", "Date de naissance", (), False, "JJ/MM/AAAA ou AAAA-MM-JJ", "", "14/03/1981", "Sert au calcul de la limite d'âge et de la tranche d'âge ; à compléter dans le dossier si elle manque."),
     ("lieu_naissance", "Lieu de naissance", (), False, "Texte", "", "Abidjan", ""),
     ("situation_matrimoniale", "Situation matrimoniale", (), False, "Texte", "Célibataire, Marié(e), Veuf(ve), Divorcé(e)", "Marié(e)", ""),
     ("telephone", "Téléphone", (), False, "Texte", "", "+225 07 00 00 00 00", ""),
     ("courriel", "Courriel", (), False, "Adresse courriel", "", "agent@exemple.ci", ""),
     ("structure", "Structure d'affectation", ("structure",), True, "Nom exact d'une structure", "Feuille Structures", "Service des actes", "Service, sous-direction ou direction de l'agent. Elle doit exister dans Paramètres > Structures du ministère."),
     ("emploi", "Emploi", (), False, "Nom exact d'un emploi", "Feuille Emplois", "Administrateur civil", "Emploi de la nomenclature reconnue par la Fonction publique."),
-    ("grade", "Grade", (), True, "Code du grade", "Feuille Grades", "A4", "La catégorie (A, B, C, D) s'en déduit."),
+    ("grade", "Grade", (), True, "Code du grade", "Feuille Grades", "A4", "La catégorie (A, B, C, D) s'en déduit. Facultatif pour un contractuel."),
     ("echelon", "Échelon", (), False, "Nombre ou texte", "", "3", ""),
     ("corps", "Corps", (), False, "Texte", "", "Corps des administrateurs civils", ""),
     ("fonction", "Fonction", (), False, "Texte", "", "Chef de service", "Fonction exercée (chef de service, sous-directeur…)."),
@@ -152,24 +152,27 @@ def _preparer(lignes, structures, grades, emplois, roles) -> tuple[list[dict], l
             if sexe is None:
                 raise _Ligne(numero, "Le sexe vaut H (homme) ou F (femme).")
             naissance = _date_ligne(v.get("date_naissance"), "date de naissance", numero)
-            if naissance is None:
-                raise _Ligne(numero, "La date de naissance est obligatoire.")
-            if not 1930 <= naissance.year <= timezone.localdate().year - 15:
+            # La date de naissance peut manquer dans une base reprise telle quelle ; elle se complète ensuite dans le dossier.
+            if naissance is not None and not 1930 <= naissance.year <= timezone.localdate().year - 15:
                 raise _Ligne(numero, f"La date de naissance {naissance:%d/%m/%Y} n'est pas plausible.")
             structure = structures.get(_norm(_obligatoire(v.get("structure"), "La structure d'affectation", numero)))
             if structure is None:
                 raise _Ligne(numero, f"La structure « {_texte(v.get('structure'))} » n'existe pas dans les paramètres. Recopiez un nom de la feuille Structures.")
-            grade = grades.get(_obligatoire(v.get("grade"), "Le grade", numero).casefold())
-            if grade is None:
-                raise _Ligne(numero, f"Le grade « {_texte(v.get('grade'))} » est inconnu. Recopiez un code de la feuille Grades.")
+            type_agent = TYPES_AGENT.get(_norm(_obligatoire(v.get("type_agent"), "Le type d'agent", numero)))
+            if type_agent is None:
+                raise _Ligne(numero, "Le type d'agent vaut Fonctionnaire ou Contractuel.")
+            grade = None
+            if type_agent == "Contractuel" and (_vide(v.get("grade")) or _norm(_texte(v.get("grade"))) in {"non defini", "nc"}):
+                pass  # un contractuel n'a pas forcément de grade de la Fonction publique
+            else:
+                grade = grades.get(_obligatoire(v.get("grade"), "Le grade", numero).casefold())
+                if grade is None:
+                    raise _Ligne(numero, f"Le grade « {_texte(v.get('grade'))} » est inconnu. Recopiez un code de la feuille Grades.")
             emploi = None
             if not _vide(v.get("emploi")):
                 emploi = emplois.get(_norm(_texte(v.get("emploi"))))
                 if emploi is None:
                     raise _Ligne(numero, f"L'emploi « {_texte(v.get('emploi'))} » n'est pas reconnu par la Fonction publique. Recopiez un nom de la feuille Emplois.")
-            type_agent = TYPES_AGENT.get(_norm(_obligatoire(v.get("type_agent"), "Le type d'agent", numero)))
-            if type_agent is None:
-                raise _Ligne(numero, "Le type d'agent vaut Fonctionnaire ou Contractuel.")
             role = "Agent"
             if not _vide(v.get("role")):
                 role = roles.get(_norm(_texte(v.get("role"))))
@@ -190,7 +193,7 @@ def _preparer(lignes, structures, grades, emplois, roles) -> tuple[list[dict], l
                 "lieu_naissance": "" if _vide(v.get("lieu_naissance")) else _texte(v.get("lieu_naissance"))[:160],
                 "statut_matrimonial": matrimonial,
                 "telephone": "" if _vide(v.get("telephone")) else _texte(v.get("telephone"))[:40], "courriel": courriel,
-                "structure": structure, "emploi": emploi.libelle if emploi else "", "grade": grade.code, "categorie": grade.categorie,
+                "structure": structure, "emploi": emploi.libelle if emploi else "", "grade": grade.code if grade else "", "categorie": grade.categorie if grade else "",
                 "echelon": echelon[:20], "corps": "" if _vide(v.get("corps")) else _texte(v.get("corps"))[:180],
                 "fonction": "" if _vide(v.get("fonction")) else _texte(v.get("fonction"))[:180], "type_agent": type_agent,
                 "mode_recrutement": "" if _vide(v.get("mode_recrutement")) else _texte(v.get("mode_recrutement"))[:120],

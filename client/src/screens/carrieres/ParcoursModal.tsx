@@ -6,6 +6,7 @@ import { useFeedback } from "../../ui/Feedback";
 import { Icone } from "../../ui/Icone";
 import { BOUTON_PRIMAIRE, BOUTON_SECONDAIRE, Modale } from "../../ui/Modale";
 import { dateCourte } from "../../ui/format";
+import { Select } from "../../ui/Select";
 
 const CHAMP = "w-full h-10 px-3 rounded border border-outline-variant bg-surface-container-lowest text-on-surface font-body-sm text-body-sm focus:outline-none focus:ring-2 focus:ring-primary";
 const LIBELLE = "block font-label-md text-label-md text-on-surface font-semibold mb-1";
@@ -89,9 +90,9 @@ export function ParcoursModal({ matricule, nom, onClose }: { matricule: string; 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <label className="block">
               <span className={LIBELLE}>Type <span className="text-error">*</span></span>
-              <select className={CHAMP} value={saisie.type} onChange={champ("type")}>
+              <Select className={CHAMP} value={saisie.type} onChange={champ("type")}>
                 {TYPES_PARCOURS.map(([code, libelle]) => <option key={code} value={code}>{libelle}</option>)}
-              </select>
+              </Select>
             </label>
             <label className="block">
               <span className={LIBELLE}>Date d'effet <span className="text-error">*</span></span>

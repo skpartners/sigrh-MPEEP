@@ -7,6 +7,7 @@ import { BOUTON_PRIMAIRE, BOUTON_SECONDAIRE, Modale } from "../../ui/Modale";
 import { Skeleton } from "../../ui/Motion";
 import { AppChrome } from "../AppChrome";
 import { Icone } from "../../ui/Icone";
+import { Select } from "../../ui/Select";
 
 type Sens = "valider" | "invalider";
 type TypeAutorisation = "autorisation" | "autorisation-speciale" | "permission-speciale";
@@ -79,7 +80,6 @@ export function AbsencesScreen() {
   const pageCourante = Math.min(page, pages);
   const visibles = filtrees.slice((pageCourante - 1) * PAR_PAGE, pageCourante * PAR_PAGE);
   const entites = [...new Set((donnees?.autorisations ?? []).map((item) => item.structure))].sort();
-  const agentsConcernes = new Set((donnees?.autorisations ?? []).map((item) => item.agent.matricule)).size;
   const total = donnees?.indicateurs.total ?? 0;
   const presence = donnees?.presenteisme;
 
@@ -117,9 +117,6 @@ export function AbsencesScreen() {
                 <h1 className="font-headline-lg text-headline-lg text-on-surface tracking-tight">
                   Gestion des autorisations d'absences
                 </h1>
-                <p className="font-body-md text-body-md text-on-surface-variant max-w-3xl">
-                  Les demandes déposées par les agents depuis leur profil arrivent ici. Chacune se valide ou s'invalide, avec un motif à l'appui.
-                </p>
               </div>
               {/* Actions rapides de haut de page */}
               <div className="flex flex-wrap sm:flex-nowrap items-center gap-3 shrink-0">
@@ -197,9 +194,6 @@ export function AbsencesScreen() {
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <h2 className="font-headline-sm text-headline-sm text-on-surface">Ventilation Statutaire des Motifs d'Absence</h2>
-                  <p className="font-label-sm text-label-sm text-on-surface-variant">
-                    Exercice {donnees?.exercice ?? ""} · {agentsConcernes} agent{agentsConcernes > 1 ? "s" : ""} concerné{agentsConcernes > 1 ? "s" : ""}
-                  </p>
                 </div>
                 <span className="px-2.5 py-1 rounded bg-surface-container text-on-surface font-code-num text-code-num font-bold whitespace-nowrap">
                   Total : {total} cas déclarés
@@ -232,13 +226,10 @@ export function AbsencesScreen() {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div>
                 <h2 className="font-headline-sm text-headline-sm text-on-surface">Autorisations à statuer</h2>
-                <p className="font-body-sm text-body-sm text-on-surface-variant">
-                  Le gestionnaire valide ou invalide la demande. Le motif est consigné avec la décision.
-                </p>
               </div>
               {/* Filtres rapides */}
               <div className="flex flex-wrap items-center gap-2">
-                <select
+                <Select
                   aria-label="Filtrer par structure"
                   className="px-3 py-1.5 rounded bg-surface-container-low text-on-surface font-label-sm text-label-sm focus:outline-none focus:ring-1 focus:ring-primary"
                   value={entite}
@@ -251,8 +242,8 @@ export function AbsencesScreen() {
                   {entites.map((sigle) => (
                     <option key={sigle} value={sigle}>{sigle}</option>
                   ))}
-                </select>
-                <select
+                </Select>
+                <Select
                   aria-label="Filtrer par type d'absence"
                   className="px-3 py-1.5 rounded bg-surface-container-low text-on-surface font-label-sm text-label-sm focus:outline-none focus:ring-1 focus:ring-primary"
                   value={type}
@@ -265,7 +256,7 @@ export function AbsencesScreen() {
                   {(donnees?.types ?? []).map((item) => (
                     <option key={item.code} value={item.code}>{item.libelle}</option>
                   ))}
-                </select>
+                </Select>
               </div>
             </div>
             {/* Tableau Administratif Conforme */}

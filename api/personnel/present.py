@@ -134,8 +134,28 @@ def etat_civil(agent: Agent) -> dict:
 
 
 def parcours_academique(agent: Agent) -> dict:
-    """Niveau d'étude, diplôme le plus élevé et domaine de formation."""
+    """Niveau d'étude, diplôme le plus élevé et domaine de formation, puis chaque diplôme déclaré."""
     return {
+        "diplomes": [
+            {
+                "id": item.id,
+                "niveau_etude": item.get_niveau_etude_display(),
+                "niveau_etude_code": item.niveau_etude,
+                "libelle": item.libelle,
+                "domaine_formation": item.domaine_formation,
+                "piece": (
+                    {"id": item.piece.id, "intitule": item.piece.intitule, "fichier_url": item.piece.fichier.url if item.piece.fichier else ""}
+                    if item.piece_id
+                    else None
+                ),
+            }
+            for item in agent.diplomes.all()
+        ],
+        # Justificatifs de diplôme déjà versés au coffre et pas encore rattachés à une ligne du parcours.
+        "pieces_libres": [
+            {"id": piece.id, "intitule": piece.intitule}
+            for piece in agent.pieces.filter(categorie="Diplômes & Certifications", diplomes__isnull=True).exclude(intitule__startswith="CV")
+        ],
         "niveau_etude": agent.get_niveau_etude_display(),
         "niveau_etude_code": agent.niveau_etude,
         "libelle_diplome": agent.libelle_diplome,
@@ -170,7 +190,7 @@ def situation_administrative(agent: Agent) -> list[dict]:
     """Les dix-sept rubriques de la situation administrative, dans l'ordre du dossier."""
     return [
         {"libelle": "Matricule", "valeur": agent.matricule},
-        {"libelle": "Structure", "valeur": agent.organisme.nom},
+        {"libelle": "Structure", "valeur": agent.structure or agent.organisme.nom},
         {"libelle": "Direction", "valeur": agent.direction},
         {"libelle": "Sous-Direction", "valeur": agent.sous_direction},
         {"libelle": "Service", "valeur": agent.service},
@@ -179,7 +199,7 @@ def situation_administrative(agent: Agent) -> list[dict]:
         {"libelle": "Type Agent", "valeur": agent.type_agent},
         {"libelle": "Mode Recrutement", "valeur": agent.mode_recrutement},
         {"libelle": "Catégorie", "valeur": _categorie_statutaire(agent.grade, agent.categorie)},
-        {"libelle": "Grade", "valeur": f"{agent.grade}, échelon {agent.echelon}" if agent.echelon else agent.grade},
+        {"libelle": "Grade", "valeur": agent.grade},
         {"libelle": "Date de première prise de service (Fonction Publique)", "valeur": _date_premiere_prise(agent)},
         {
             "libelle": "Date de prise de service dans le ministère",
@@ -244,8 +264,9 @@ def types_actes() -> list[dict]:
 
 def collecte_formation(agent: Agent) -> dict | None:
     """Collecte ouverte du ministère, et la réponse déjà donnée par cet agent s'il y en a une."""
-    from .formation import EXERCICE
+    from .formation import EXERCICE, cloturer_echues
 
+    cloturer_echues()
     collecte = CollecteBesoinFormation.objects.filter(annee=EXERCICE).order_by("-lancee_le").first()
     if collecte is None:
         return None
@@ -263,14 +284,25 @@ def collecte_formation(agent: Agent) -> dict | None:
 
 def sessions_formations() -> list[dict]:
     """Modules ouverts par la direction de la formation continue."""
-    sessions = SessionFormation.objects.filter(ouverte=True).select_related("type_formation")
+    from .formation import _occupees
+
+    sessions = SessionFormation.objects.filter(ouverte=True).select_related("type_formation").prefetch_related("inscriptions__demande")
     return [
         {
             "code": item.code,
             "libelle": item.libelle,
             "type": item.type_formation.code,
+            "type_libelle": item.type_formation.libelle,
             "cadre": item.cadre_budgetaire,
             "objectif": item.objectif,
+            "lieu": item.lieu,
+            "formateur": item.formateur,
+            "date_debut": item.date_debut.isoformat() if item.date_debut else None,
+            "date_fin": item.date_fin.isoformat() if item.date_fin else None,
+            "heures": item.heures,
+            "places": item.places,
+            "places_restantes": max(item.places - _occupees(item), 0),
+            "inscriptions_fin": item.inscriptions_fin.isoformat() if item.inscriptions_fin else None,
         }
         for item in sessions
     ]
@@ -564,6 +596,7 @@ def agent_detail(agent: Agent) -> dict:
                     "verifiee": item.verifiee,
                     "fichier_url": item.fichier.url if item.fichier else "",
                     "date_expiration": item.date_expiration.isoformat() if item.date_expiration else "",
+                    "diplome": next((d.libelle or d.get_niveau_etude_display() for d in item.diplomes.all()), ""),
                 }
                 for item in agent.pieces.all()
             ],

@@ -857,8 +857,10 @@ class Command(BaseCommand):
     def _communications(self, auteur: User) -> None:
         from datetime import date as jour
 
+        from personnel.communication import semer_demo
         from personnel.communications import ANNONCES_INITIALES
 
+        semer_demo()  # publications et sondage d'exemple : la démonstration seulement, jamais en production
         Communication.objects.all().delete()
         for annonce in ANNONCES_INITIALES:
             Communication.objects.create(

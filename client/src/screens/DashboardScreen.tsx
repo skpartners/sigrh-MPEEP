@@ -126,7 +126,6 @@ function FileVisas({ visas, signatureUrl }: { visas: Dashboard["visas"] | undefi
           <Icone nom="rule" className="text-primary text-2xl" />
           <div>
             <h2 id="titre-visas" className="font-headline-sm text-headline-sm text-on-surface">Actes en attente de votre visa</h2>
-            <p className="font-body-sm text-body-sm text-on-surface-variant">Le document circule pour signature. Le papier à en-tête n'est établi qu'après l'accord, puis scanné pour ouvrir le droit.</p>
             {signatureUrl ? null : (
               <p className="font-label-sm text-label-sm text-error font-semibold mt-1">Déposez votre signature dans le menu de profil avant d'apposer un visa.</p>
             )}

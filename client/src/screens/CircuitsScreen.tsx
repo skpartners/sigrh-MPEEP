@@ -44,7 +44,6 @@ export function CircuitsScreen() {
           <section className="space-y-4 motion-rise" style={{ "--delay": "80ms" } as CSSProperties} aria-labelledby="titre-parcours">
             <div>
               <h2 id="titre-parcours" className="font-headline-md text-headline-md text-on-surface">Parcours d'une requête par défaut</h2>
-              <p className="font-body-sm text-body-sm text-on-surface-variant">Circuit appliqué par défaut, en cinq étapes, avec contrôle de légalité et retour possible à l'agent.</p>
             </div>
             <ol className={`${CARD} p-6 grid grid-cols-1 lg:grid-cols-5 gap-4`}>
               {data

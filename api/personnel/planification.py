@@ -38,6 +38,14 @@ def _est_drh(user) -> bool:
     return profil.role == "Directeur" and getattr(profil.structure, "code", "") == "drh"
 
 
+def _est_drh_en_titre(user) -> bool:
+    """Le DRH lui-même, pas le compte administrateur : seul lui ne dépose pas son calendrier, puisqu'il l'arrête."""
+    profil = _profil(user)
+    if profil is None:
+        return False
+    return profil.role == "DRH" or (profil.role == "Directeur" and getattr(profil.structure, "code", "") == "drh")
+
+
 def _est_rh(user) -> bool:
     profil = _profil(user)
     if profil is None or _est_drh(user):
@@ -65,12 +73,58 @@ def _date(valeur):
         return None
 
 
-def _periode(corps) -> tuple | Response:
-    debut = _date(corps.get("debut"))
-    fin = _date(corps.get("fin"))
+def _valider_periodes(debut, fin, debut2, fin2) -> tuple | Response:
+    """Une ou deux périodes, rangées dans l'ordre du calendrier et sans chevauchement."""
     if debut is None or fin is None or fin < debut:
         return Response({"detail": "Indiquez une date de début et une date de fin, dans cet ordre."}, status=400)
-    return debut, fin
+    if debut2 is None and fin2 is None:
+        return debut, fin, None, None
+    if debut2 is None or fin2 is None or fin2 < debut2:
+        return Response({"detail": "La seconde période demande un début et une fin, dans cet ordre."}, status=400)
+    if debut2 < debut:  # la période la plus proche passe en premier
+        debut, fin, debut2, fin2 = debut2, fin2, debut, fin
+    if debut2 <= fin:
+        return Response({"detail": "Les deux périodes ne peuvent pas se chevaucher."}, status=400)
+    return debut, fin, debut2, fin2
+
+
+def _periode(corps) -> tuple | Response:
+    """(début, fin, début2, fin2) lus dans la requête ; la seconde période est facultative."""
+    return _valider_periodes(_date(corps.get("debut")), _date(corps.get("fin")), _date(corps.get("debut2")), _date(corps.get("fin2")))
+
+
+def _droit(user) -> int | None:
+    """Jours de congé annuel auxquels l'agent a réellement droit (acquis moins consommés) ; None si le compte n'a pas de dossier."""
+    agent = Agent.objects.filter(matricule=user.username).first()
+    return agent.reliquat_conges if agent else None
+
+
+def _controler_droit(user, periode: tuple, qui: str = "Vos congés") -> Response | None:
+    """Les deux temps réunis donnent exactement le congé auquel l'agent a droit."""
+    droit = _droit(user)
+    if not droit:
+        return None
+    total = sum((fin - debut).days + 1 for debut, fin in ((periode[0], periode[1]), (periode[2], periode[3])) if debut and fin)
+    if total != droit:
+        manque = droit - total
+        precision = f"il en reste {manque} à placer" if manque > 0 else f"{-manque} de trop"
+        return Response({"detail": f"{qui} doivent totaliser {droit} jours : {total} choisis, {precision}."}, status=400)
+    return None
+
+
+def _periode_du_plan(corps, plan) -> tuple | Response:
+    """Les périodes de la requête, complétées par celles du plan pour ce qui n'est pas précisé."""
+    debut2, fin2 = (_date(corps.get("debut2")), _date(corps.get("fin2"))) if ("debut2" in corps or "fin2" in corps) else (plan.debut2, plan.fin2)
+    return _valider_periodes(_date(corps.get("debut")) or plan.debut, _date(corps.get("fin")) or plan.fin, debut2, fin2)
+
+
+def _texte_periodes(debut, fin, debut2=None, fin2=None) -> str:
+    texte = f"du {debut:%d/%m/%Y} au {fin:%d/%m/%Y}"
+    return f"{texte} et du {debut2:%d/%m/%Y} au {fin2:%d/%m/%Y}" if debut2 and fin2 else texte
+
+
+def _appliquer_periodes(plan: PlanConge, periode: tuple) -> None:
+    plan.debut, plan.fin, plan.debut2, plan.fin2 = periode
 
 
 def _participants():
@@ -89,12 +143,12 @@ def _prochain(user):
 def _placer(plan: PlanConge, palier: str, chez) -> None:
     plan.palier = palier
     plan.chez = chez
-    plan.save(update_fields=["palier", "chez", "debut", "fin", "origine"])
+    plan.save(update_fields=["palier", "chez", "debut", "fin", "debut2", "fin2", "origine"])
 
 
 def _tracer(plan, auteur, action: str, motif: str = "") -> None:
     MouvementPlanConge.objects.create(
-        plan=plan, auteur=auteur, action=action, motif=motif, debut=plan.debut, fin=plan.fin,
+        plan=plan, auteur=auteur, action=action, motif=motif, debut=plan.debut, fin=plan.fin, debut2=plan.debut2, fin2=plan.fin2,
     )
 
 
@@ -179,6 +233,8 @@ def _ligne(plan: PlanConge, user) -> dict:
         "fonction": profil.fonction if profil else "",
         "debut": plan.debut.isoformat(),
         "fin": plan.fin.isoformat(),
+        "debut2": plan.debut2.isoformat() if plan.debut2 else None,
+        "fin2": plan.fin2.isoformat() if plan.fin2 else None,
         "origine": plan.origine,
         "origine_libelle": plan.get_origine_display(),
         "echeance": plan.echeance.isoformat() if plan.echeance else None,
@@ -186,6 +242,7 @@ def _ligne(plan: PlanConge, user) -> dict:
         "palier_libelle": plan.get_palier_display(),
         "chez": _nom(plan.chez) if plan.chez_id else "",
         "moi": plan.agent_id == user.id,
+        "droit": _droit(plan.agent),
         "traitable": _peut_traiter(user, plan),
         "blocage": "" if (refus := _fenetre(user, plan)) in (None, "Ce plan n'est pas à votre niveau.") else refus,
         "mouvements": [
@@ -195,6 +252,8 @@ def _ligne(plan: PlanConge, user) -> dict:
                 "motif": item.motif,
                 "debut": item.debut.isoformat() if item.debut else None,
                 "fin": item.fin.isoformat() if item.fin else None,
+                "debut2": item.debut2.isoformat() if item.debut2 else None,
+                "fin2": item.fin2.isoformat() if item.fin2 else None,
                 "quand": timezone.localtime(item.cree_le).strftime("%d/%m/%Y %H:%M"),
             }
             for item in plan.mouvements.all()[:6]
@@ -210,6 +269,8 @@ def _reprise(item: RepriseConge, user) -> dict:
         "demandeur": _nom(item.demandeur),
         "debut": item.debut.isoformat(),
         "fin": item.fin.isoformat(),
+        "debut2": item.debut2.isoformat() if item.debut2 else None,
+        "fin2": item.fin2.isoformat() if item.fin2 else None,
         "motif": item.motif,
         "palier": item.palier,
         "chez": _nom(item.chez) if item.chez_id else "",
@@ -248,7 +309,7 @@ def _sans_dates(user, campagne: CampagnePlanConge) -> list[dict]:
         elif chez is None and palier == PlanConge.Palier.RH and _est_rh(user) and timezone.localdate() <= campagne.limite_rh:
             manquants.append(agent)
     return [
-        {"matricule": agent.username, "nom": _nom(agent), "fonction": _profil(agent).fonction if _profil(agent) else ""}
+        {"matricule": agent.username, "nom": _nom(agent), "fonction": _profil(agent).fonction if _profil(agent) else "", "droit": _droit(agent)}
         for agent in manquants
     ]
 
@@ -259,6 +320,27 @@ def _limites(campagne: CampagnePlanConge) -> list[dict]:
         {"niveau": "hierarchie", "libelle": "Responsables", "date": campagne.limite_hierarchie.isoformat()},
         {"niveau": "rh", "libelle": "Équipe RH", "date": campagne.limite_rh.isoformat()},
         {"niveau": "drh", "libelle": "DRH", "date": campagne.limite_drh.isoformat()},
+    ]
+
+
+def _collegues(user, campagne: CampagnePlanConge | None) -> list[dict]:
+    """Les congés choisis par les collègues de la même structure, validés ou non : pour ne pas se placer sur leurs périodes."""
+    agent = Agent.objects.filter(matricule=user.username).first()
+    if campagne is None or agent is None or not agent.structure:
+        return []
+    pairs = list(Agent.objects.filter(structure=agent.structure).exclude(matricule=user.username).values_list("matricule", flat=True))
+    return [
+        {
+            "matricule": plan.agent.username,
+            "nom": _nom(plan.agent),
+            "debut": plan.debut.isoformat(),
+            "fin": plan.fin.isoformat(),
+            "debut2": plan.debut2.isoformat() if plan.debut2 else None,
+            "fin2": plan.fin2.isoformat() if plan.fin2 else None,
+            "palier": plan.palier,
+            "palier_libelle": plan.get_palier_display(),
+        }
+        for plan in campagne.plans.filter(agent__username__in=pairs).select_related("agent", "agent__profil")
     ]
 
 
@@ -282,9 +364,11 @@ def _tableau(user) -> dict:
     moi = next((item for item in plans if item["moi"]), None)
     phase = _phase(campagne) if campagne else ""
     formulaire = bool(
-        campagne and phase == "agents" and not _est_drh(user) and (moi is None or moi["palier"] == PlanConge.Palier.AGENT)
+        campagne and phase == "agents" and not _est_drh_en_titre(user) and (moi is None or moi["palier"] == PlanConge.Palier.AGENT)
     )
     return {
+        "droit_moi": _droit(user),
+        "collegues": _collegues(user, campagne),
         "role": "drh" if _est_drh(user) else "rh" if _est_rh(user) else "chef" if Profil.objects.filter(superieur=user).exists() else "agent",
         "campagne": None if campagne is None else {
             "id": campagne.id,
@@ -420,18 +504,21 @@ def deposer(request):
     if campagne is None or campagne.statut != CampagnePlanConge.Statut.OUVERTE or timezone.localdate() > campagne.limite_agents:
         detail = "La date limite des agents est passée. Votre responsable fixera vos dates." if campagne and campagne.statut == CampagnePlanConge.Statut.REMONTEE else "La planification n'est pas ouverte."
         return Response({"detail": detail}, status=409)
-    if _est_drh(request.user):
+    if _est_drh_en_titre(request.user):
         return Response({"detail": "Le DRH ne dépose pas son propre calendrier dans cette campagne."}, status=403)
     if PlanConge.objects.filter(campagne=campagne, agent=request.user).exclude(palier=PlanConge.Palier.AGENT).exists():
         return Response({"detail": "Vos dates sont déjà transmises."}, status=409)
     periode = _periode(request.data)
     if isinstance(periode, Response):
         return periode
+    refus = _controler_droit(request.user, periode)
+    if refus:
+        return refus
     palier, chez = _prochain(request.user)
     plan, _cree = PlanConge.objects.update_or_create(
         campagne=campagne, agent=request.user,
         defaults={
-            "debut": periode[0], "fin": periode[1], "origine": PlanConge.Origine.SAISIE,
+            "debut": periode[0], "fin": periode[1], "debut2": periode[2], "fin2": periode[3], "origine": PlanConge.Origine.SAISIE,
             "palier": palier, "chez": chez,
             "echeance": campagne.limite_hierarchie if palier == PlanConge.Palier.HIERARCHIE else campagne.limite_rh,
         },
@@ -440,7 +527,7 @@ def deposer(request):
     if chez:
         _notifier(
             chez, "Congés reçus",
-            f"{_nom(request.user)} a choisi du {periode[0]:%d/%m/%Y} au {periode[1]:%d/%m/%Y}. Vous les viserez après le {campagne.limite_agents:%d/%m/%Y}.",
+            f"{_nom(request.user)} a choisi {_texte_periodes(*periode)}. Vous les viserez après le {campagne.limite_agents:%d/%m/%Y}.",
         )
     return Response(_tableau(request.user))
 
@@ -474,30 +561,32 @@ def fixer(request):
     periode = _periode(request.data)
     if isinstance(periode, Response):
         return periode
+    refus = _controler_droit(agent, periode, f"Les congés de {_nom(agent)}")
+    if refus:
+        return refus
     plan = PlanConge.objects.create(
-        campagne=campagne, agent=agent, debut=periode[0], fin=periode[1],
+        campagne=campagne, agent=agent, debut=periode[0], fin=periode[1], debut2=periode[2], fin2=periode[3],
         origine=PlanConge.Origine.CHEF, palier=palier, chez=chez, echeance=echeance,
     )
     _tracer(plan, request.user, "fixe")
     _notifier(
         agent, "Vos congés ont été fixés",
-        f"{_nom(request.user)} a fixé vos congés du {periode[0]:%d/%m/%Y} au {periode[1]:%d/%m/%Y}, vous n'aviez pas choisi vos dates.",
+        f"{_nom(request.user)} a fixé vos congés {_texte_periodes(*periode)}, vous n'aviez pas choisi vos dates.",
         urgente=True,
     )
     return Response(_tableau(request.user))
 
 
-def _modifier(plan: PlanConge, user, debut, fin, motif: str) -> Response | None:
-    change = debut != plan.debut or fin != plan.fin
+def _modifier(plan: PlanConge, user, periode: tuple, motif: str) -> Response | None:
+    change = periode != (plan.debut, plan.fin, plan.debut2, plan.fin2)
     if change and not motif:
         return Response({"detail": "Joignez l'explication de la modification."}, status=400)
-    plan.debut = debut
-    plan.fin = fin
+    _appliquer_periodes(plan, periode)
     if change:
         _tracer(plan, user, "modifie", motif)
         _notifier(
             plan.agent, "Vos congés ont été modifiés",
-            f"{_nom(user)} a modifié vos dates : du {debut:%d/%m/%Y} au {fin:%d/%m/%Y}. Motif : {motif}",
+            f"{_nom(user)} a modifié vos dates : {_texte_periodes(*periode)}. Motif : {motif}",
             urgente=True,
         )
     return None
@@ -512,16 +601,18 @@ def transmettre(request, pk: int):
     refus = _fenetre(request.user, plan)
     if refus:
         return Response({"detail": refus}, status=403 if refus == "Ce plan n'est pas à votre niveau." else 409)
-    debut = _date(request.data.get("debut")) or plan.debut
-    fin = _date(request.data.get("fin")) or plan.fin
-    if fin < debut:
-        return Response({"detail": "La date de fin précède la date de début."}, status=400)
+    periode = _periode_du_plan(request.data, plan)
+    if isinstance(periode, Response):
+        return periode
+    refus = _controler_droit(plan.agent, periode, f"Les congés de {_nom(plan.agent)}")
+    if refus:
+        return refus
     motif = str(request.data.get("motif") or "").strip()
-    refus = _modifier(plan, request.user, debut, fin, motif)
+    refus = _modifier(plan, request.user, periode, motif)
     if refus:
         return refus
     if plan.palier in {PlanConge.Palier.RH, PlanConge.Palier.DRH}:
-        plan.save(update_fields=["debut", "fin"])
+        plan.save(update_fields=["debut", "fin", "debut2", "fin2"])
         return Response(_tableau(request.user))
     palier, chez = _prochain(request.user)
     plan.palier = palier
@@ -530,7 +621,7 @@ def transmettre(request, pk: int):
         plan.echeance = _dans_le_delai(plan.campagne, timezone.localdate() + timedelta(days=_duree_hierarchie(plan.campagne)))
     else:
         plan.echeance = plan.campagne.limite_rh
-    plan.save(update_fields=["debut", "fin", "palier", "chez", "echeance"])
+    plan.save(update_fields=["debut", "fin", "debut2", "fin2", "palier", "chez", "echeance"])
     _tracer(plan, request.user, "transmis", motif)
     if chez:
         _notifier(chez, "Plan de congés à revoir", f"Les dates de {_nom(plan.agent)} vous sont transmises.")
@@ -574,15 +665,17 @@ def renvoyer(request, pk: int):
     motif = str(request.data.get("motif") or "").strip()
     if not motif:
         return Response({"detail": "Indiquez la modification demandée."}, status=400)
-    debut = _date(request.data.get("debut")) or plan.debut
-    fin = _date(request.data.get("fin")) or plan.fin
-    if fin < debut:
-        return Response({"detail": "La date de fin précède la date de début."}, status=400)
-    plan.debut, plan.fin = debut, fin
+    periode = _periode_du_plan(request.data, plan)
+    if isinstance(periode, Response):
+        return periode
+    refus = _controler_droit(plan.agent, periode, f"Les congés de {_nom(plan.agent)}")
+    if refus:
+        return refus
+    _appliquer_periodes(plan, periode)
     plan.palier = PlanConge.Palier.RH
     plan.chez = None
     plan.echeance = plan.campagne.limite_drh
-    plan.save(update_fields=["debut", "fin", "palier", "chez", "echeance"])
+    plan.save(update_fields=["debut", "fin", "debut2", "fin2", "palier", "chez", "echeance"])
     _tracer(plan, request.user, "demande", motif)
     _notifier(plan.agent, "Le DRH demande une modification", f"{_nom(request.user)} demande une modification. Motif : {motif}", urgente=True)
     for rh in _participants():
@@ -605,7 +698,7 @@ def publier(request):
             _tracer(plan, request.user, "publie")
             _notifier(
                 plan.agent, "Congés arrêtés",
-                f"Vos congés {campagne.exercice} sont arrêtés du {plan.debut:%d/%m/%Y} au {plan.fin:%d/%m/%Y}.",
+                f"Vos congés {campagne.exercice} sont arrêtés {_texte_periodes(plan.debut, plan.fin, plan.debut2, plan.fin2)}.",
                 urgente=True,
             )
         campagne.statut = CampagnePlanConge.Statut.PUBLIEE
@@ -624,6 +717,9 @@ def reprendre(request, pk: int):
     periode = _periode(request.data)
     if isinstance(periode, Response):
         return periode
+    refus = _controler_droit(plan.agent, periode, f"Les congés de {_nom(plan.agent)}")
+    if refus:
+        return refus
     motif = str(request.data.get("motif") or "").strip()
     if not motif:
         return Response({"detail": "Indiquez le motif de la demande."}, status=400)
@@ -631,10 +727,10 @@ def reprendre(request, pk: int):
     if palier == PlanConge.Palier.RH:
         palier = RepriseConge.Palier.RH
     reprise = RepriseConge.objects.create(
-        plan=plan, demandeur=request.user, debut=periode[0], fin=periode[1], motif=motif, palier=palier, chez=chez,
+        plan=plan, demandeur=request.user, debut=periode[0], fin=periode[1], debut2=periode[2], fin2=periode[3], motif=motif, palier=palier, chez=chez,
     )
     if chez:
-        _notifier(chez, "Demande de modification de congés", f"{_nom(plan.agent)} demande du {periode[0]:%d/%m/%Y} au {periode[1]:%d/%m/%Y}. Motif : {motif}")
+        _notifier(chez, "Demande de modification de congés", f"{_nom(plan.agent)} demande {_texte_periodes(*periode)}. Motif : {motif}")
     return Response(_reprise(reprise, request.user), status=201)
 
 
@@ -649,13 +745,13 @@ def suivre_reprise(request, pk: int):
     motif = str(request.data.get("motif") or "").strip()
     if reprise.palier == RepriseConge.Palier.DRH and sens == "accepter":
         plan = reprise.plan
-        plan.debut, plan.fin = reprise.debut, reprise.fin
-        plan.save(update_fields=["debut", "fin"])
+        _appliquer_periodes(plan, (reprise.debut, reprise.fin, reprise.debut2, reprise.fin2))
+        plan.save(update_fields=["debut", "fin", "debut2", "fin2"])
         reprise.palier = RepriseConge.Palier.ACCEPTEE
         reprise.chez = None
         reprise.save(update_fields=["palier", "chez"])
         _tracer(plan, request.user, "reprise", reprise.motif)
-        _notifier(plan.agent, "Modification de congés acceptée", f"{_nom(request.user)} a accepté du {plan.debut:%d/%m/%Y} au {plan.fin:%d/%m/%Y}. Motif initial : {reprise.motif}")
+        _notifier(plan.agent, "Modification de congés acceptée", f"{_nom(request.user)} a accepté {_texte_periodes(plan.debut, plan.fin, plan.debut2, plan.fin2)}. Motif initial : {reprise.motif}")
         return Response(_tableau(request.user))
     if reprise.palier == RepriseConge.Palier.DRH and sens == "refuser":
         if not motif:

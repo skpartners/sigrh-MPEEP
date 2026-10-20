@@ -123,6 +123,8 @@
   --color-tertiary-fixed-dim: color-mix(in oklab, var(--brand-2) 45%, #fff);
   --color-on-tertiary-fixed: var(--color-on-primary-fixed);
   --color-on-tertiary-fixed-variant: var(--brand-1);
+  /* Orange d'alerte : se distingue du vert de la marque et du rouge de l'erreur (graphiques de seuil). */
+  --color-attention: #d97706;
   --color-error: #dc2626;
   --color-on-error: #ffffff;
   --color-error-container: #fee2e2;
@@ -1142,4 +1144,117 @@ a[class*="rounded"]:active {
    et pose --echelle-carte). « scale » est indépendant de « transform », que l'animation d'entrée utilise. */
 .login-carte {
   scale: var(--echelle-carte, 1);
+}
+
+/*
+ * Le contenu de l'application défile entre la barre du haut et le pied de page, qui restent en place : le curseur de
+ * défilement ne remonte plus derrière eux. Les marges calées sur ces barres (var(--haut-entete), var(--haut-pied)) valent
+ * donc 0 à l'intérieur ; sur un écran très bas le pied de page est dans le flux et la fenêtre défile comme avant.
+ */
+@media not all and (max-height: 37.5em) {
+  .zone-defilement {
+    position: fixed;
+    top: var(--haut-entete);
+    bottom: var(--haut-pied);
+    left: 0;
+    right: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  .zone-defilement > main {
+    --haut-entete: 0px;
+    --haut-pied: 0px;
+    min-height: 100%;
+  }
+}
+
+/*
+ * Boutons d'action : forme en pilule, relief et animations propres, pour ne pas les confondre avec les onglets
+ * (pastilles plates sur un rail). Trois niveaux : principal (plein), secondaire (contour), discret (sans fond).
+ * Survol 180 ms, pression 80 ms ; l'icône suit le mouvement avec un léger retard.
+ */
+.bouton-action {
+  --bouton-courbe: cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 2.75rem;
+  padding: 0.5rem 1.25rem;
+  border-radius: 9999px;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  line-height: 1.2;
+  cursor: pointer;
+  user-select: none;
+  transition:
+    transform 180ms var(--bouton-courbe),
+    box-shadow 180ms var(--bouton-courbe),
+    background-color 180ms var(--bouton-courbe),
+    border-color 180ms var(--bouton-courbe),
+    color 180ms var(--bouton-courbe);
+}
+.bouton-action .bouton-icone {
+  transition: transform 220ms var(--ease-out) 30ms;
+}
+.bouton-action:hover:not(:disabled) .bouton-icone {
+  transform: translateY(-1px) rotate(-8deg) scale(1.12);
+}
+.bouton-action:active:not(:disabled) {
+  transform: translateY(0) scale(0.97);
+  transition-duration: 80ms;
+}
+.bouton-action:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 3px;
+}
+.bouton-action:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.bouton-action--principal {
+  color: var(--color-on-primary);
+  background-image: linear-gradient(135deg, var(--color-primary), var(--color-primary-container));
+  box-shadow: 0 1px 2px color-mix(in oklab, var(--color-primary) 30%, transparent), 0 6px 16px -6px color-mix(in oklab, var(--color-primary) 55%, transparent);
+}
+.bouton-action--principal:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 2px 4px color-mix(in oklab, var(--color-primary) 30%, transparent), 0 12px 22px -8px color-mix(in oklab, var(--color-primary) 65%, transparent);
+  filter: brightness(1.08);
+}
+
+.bouton-action--secondaire {
+  color: var(--color-primary);
+  background-color: color-mix(in oklab, white 85%, transparent);
+  border: 1.5px solid color-mix(in oklab, var(--color-primary) 45%, transparent);
+  box-shadow: 0 1px 2px color-mix(in oklab, var(--color-primary) 12%, transparent);
+}
+.bouton-action--secondaire:hover:not(:disabled) {
+  transform: translateY(-2px);
+  background-color: color-mix(in oklab, var(--color-primary) 9%, white);
+  border-color: var(--color-primary);
+  box-shadow: 0 8px 18px -8px color-mix(in oklab, var(--color-primary) 40%, transparent);
+}
+
+.bouton-action--discret {
+  color: var(--color-on-surface-variant);
+  background-color: transparent;
+}
+.bouton-action--discret:hover:not(:disabled) {
+  color: var(--color-on-surface);
+  background-color: color-mix(in oklab, var(--color-on-surface) 8%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bouton-action,
+  .bouton-action .bouton-icone {
+    transition: background-color 120ms linear, border-color 120ms linear, color 120ms linear;
+  }
+  .bouton-action:hover:not(:disabled),
+  .bouton-action:active:not(:disabled),
+  .bouton-action:hover:not(:disabled) .bouton-icone {
+    transform: none;
+  }
 }

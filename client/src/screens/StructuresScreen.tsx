@@ -11,6 +11,7 @@ import { Pagination, usePagination } from "../ui/Pagination";
 import { ActionsImport } from "./ImportAgents";
 import { AppChrome } from "./AppChrome";
 import { Icone } from "../ui/Icone";
+import { Select } from "../ui/Select";
 
 const PAGE = "w-full px-4 sm:px-6 lg:px-8 py-6 mx-auto flex-1 space-y-6";
 const CARTE = "rounded-xl bg-surface-container-lowest border border-hairline";
@@ -261,10 +262,10 @@ export function StructuresScreen() {
 
         <section className={`${CARTE} overflow-hidden motion-rise`} style={{ "--delay": "160ms" } as CSSProperties}>
           <div className="p-4">
-            <select className={`${CHAMP} max-w-sm`} value={pole} aria-label="Filtrer par pôle" onChange={(event) => setPole(event.target.value)}>
+            <Select className={`${CHAMP} max-w-sm`} value={pole} aria-label="Filtrer par pôle" onChange={(event) => setPole(event.target.value)}>
               <option value="">Tous les pôles</option>
               {data.poles.map((item) => <option key={item.code} value={item.code}>{item.libelle}</option>)}
-            </select>
+            </Select>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[55rem] text-left">
@@ -338,18 +339,18 @@ export function StructuresScreen() {
             </label>
             <label className="block space-y-1">
               <span className="font-label-sm text-label-sm text-on-surface-variant">Pôle</span>
-              <select
+              <Select
                 className={CHAMP}
                 required
                 value={formulaire.pole}
                 onChange={(event) => setFormulaire({ ...formulaire, pole: event.target.value, parent: "" })}
               >
                 {data.poles.map((item) => <option key={item.code} value={item.code}>{item.libelle}</option>)}
-              </select>
+              </Select>
             </label>
             <label className="block space-y-1">
               <span className="font-label-sm text-label-sm text-on-surface-variant">Niveau</span>
-              <select
+              <Select
                 className={CHAMP}
                 required
                 value={formulaire.niveau}
@@ -364,7 +365,7 @@ export function StructuresScreen() {
                 <option value="direction-centrale">Direction centrale</option>
                 <option value="sous-direction">Sous-direction</option>
                 <option value="service">Service</option>
-              </select>
+              </Select>
             </label>
             <label className="block space-y-1">
               <span className="font-label-sm text-label-sm text-on-surface-variant">Quorum de présence (%)</span>
@@ -386,7 +387,7 @@ export function StructuresScreen() {
             {formulaire.niveau !== "ministere" ? (
               <label className="block space-y-1">
                 <span className="font-label-sm text-label-sm text-on-surface-variant">Rattachement</span>
-                <select
+                <Select
                   className={CHAMP}
                   required={formulaire.niveau === "direction-generale"}
                   value={formulaire.parent}
@@ -403,7 +404,7 @@ export function StructuresScreen() {
                         )
                     ))
                     .map((item) => <option key={item.code} value={item.code}>{item.nom}</option>)}
-                </select>
+                </Select>
               </label>
             ) : null}
           </div>
@@ -474,13 +475,13 @@ function VoletGrades() {
       <div className="p-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="max-w-3xl font-body-sm text-body-sm text-on-surface-variant">{data.source} Chaque grade comporte quatre classes : exceptionnelle, principale, première et deuxième.</p>
-          <select className={`${CHAMP} mt-3 max-w-sm`} value={categorie} aria-label="Filtrer par catégorie" onChange={(event) => setCategorie(event.target.value)}>
+          <Select className={`${CHAMP} mt-3 max-w-sm`} value={categorie} aria-label="Filtrer par catégorie" onChange={(event) => setCategorie(event.target.value)}>
             <option value="">Toutes les catégories</option>
             <option value="A">Catégorie A</option>
             <option value="B">Catégorie B</option>
             <option value="C">Catégorie C</option>
             <option value="D">Catégorie D</option>
-          </select>
+          </Select>
         </div>
         <button
           type="button"
@@ -567,12 +568,12 @@ function VoletGrades() {
             </label>
             <label className="block space-y-1">
               <span className="font-label-sm text-label-sm text-on-surface-variant">Catégorie</span>
-              <select className={CHAMP} value={formulaire.categorie} onChange={(event) => setFormulaire({ ...formulaire, categorie: event.target.value })}>
+              <Select className={CHAMP} value={formulaire.categorie} onChange={(event) => setFormulaire({ ...formulaire, categorie: event.target.value })}>
                 <option value="A">A — conception et direction</option>
                 <option value="B">B — application</option>
                 <option value="C">C — exécution</option>
                 <option value="D">D — exécution</option>
-              </select>
+              </Select>
             </label>
             <label className="block space-y-1">
               <span className="font-label-sm text-label-sm text-on-surface-variant">Définition</span>
@@ -716,14 +717,14 @@ function ListeEmplois({
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
           <input className={CHAMP} value={recherche} onChange={(event) => setRecherche(event.target.value)} placeholder="Rechercher un emploi" aria-label="Rechercher un emploi" />
-          <select className={CHAMP} value={famille} aria-label="Filtrer par famille" onChange={(event) => setFamille(event.target.value)}>
+          <Select className={CHAMP} value={famille} aria-label="Filtrer par famille" onChange={(event) => setFamille(event.target.value)}>
             <option value="">Toutes les familles</option>
             {data.familles.map((item) => <option key={item.code} value={item.code}>{item.libelle}</option>)}
-          </select>
-          <select className={CHAMP} value={grade} aria-label="Filtrer par grade" onChange={(event) => setGrade(event.target.value)}>
+          </Select>
+          <Select className={CHAMP} value={grade} aria-label="Filtrer par grade" onChange={(event) => setGrade(event.target.value)}>
             <option value="">Tous les grades</option>
             {data.grades.map((item) => <option key={item.code} value={item.code}>{item.code}{item.en_vigueur ? "" : " (ancien)"}</option>)}
-          </select>
+          </Select>
         </div>
       </div>
       <div className="overflow-x-auto">
@@ -782,15 +783,15 @@ function ListeEmplois({
             </label>
             <label className="block space-y-1">
               <span className="font-label-sm text-label-sm text-on-surface-variant">Famille</span>
-              <select className={CHAMP} required value={formulaire.famille} onChange={(event) => setFormulaire({ ...formulaire, famille: event.target.value })}>
+              <Select className={CHAMP} required value={formulaire.famille} onChange={(event) => setFormulaire({ ...formulaire, famille: event.target.value })}>
                 {data.familles.map((item) => <option key={item.code} value={item.code}>{item.libelle}</option>)}
-              </select>
+              </Select>
             </label>
             <label className="block space-y-1">
               <span className="font-label-sm text-label-sm text-on-surface-variant">Grade</span>
-              <select className={CHAMP} required value={formulaire.grade} onChange={(event) => setFormulaire({ ...formulaire, grade: event.target.value })}>
+              <Select className={CHAMP} required value={formulaire.grade} onChange={(event) => setFormulaire({ ...formulaire, grade: event.target.value })}>
                 {data.grades.map((item) => <option key={item.code} value={item.code}>{item.code} — catégorie {item.categorie}</option>)}
-              </select>
+              </Select>
             </label>
           </div>
         </Modale>

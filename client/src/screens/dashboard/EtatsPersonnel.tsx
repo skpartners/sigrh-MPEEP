@@ -5,6 +5,7 @@ import { dateCourte, nombre } from "../../ui/format";
 import { Icone } from "../../ui/Icone";
 import { usePagination } from "../../ui/Pagination";
 import { CHAMP, Recherche, TableauListe } from "../dotation/commun";
+import { Select } from "../../ui/Select";
 
 type Ventilation = { libelle: string; hommes: number; femmes: number; total: number };
 type Programme = { programme: string; hommes: number; femmes: number; total: number; structures: Ventilation[] };
@@ -317,10 +318,10 @@ function DetailAgents({ lignes }: { lignes: Etats["autres"]["detail"] }) {
     <Etat titre="Agents du ministère par famille d'emploi, par emploi, par grade, par genre et par structure">
       <div className="flex flex-wrap items-center gap-3 mb-4">
         <Recherche valeur={recherche} onChange={setRecherche} libelle="Rechercher dans l'état" placeholder="Emploi, grade, structure…" />
-        <select aria-label="Filtrer par famille d'emploi" className={`${CHAMP} w-auto`} value={famille} onChange={(e) => setFamille(e.target.value)}>
+        <Select aria-label="Filtrer par famille d'emploi" className={`${CHAMP} w-auto`} value={famille} onChange={(e) => setFamille(e.target.value)}>
           <option value="">Toutes les familles d'emploi</option>
           {familles.map((f) => <option key={f} value={f}>{f}</option>)}
-        </select>
+        </Select>
         <span className="font-body-sm text-body-sm text-on-surface-variant">{nombre(total)} agent{total > 1 ? "s" : ""}</span>
       </div>
       <TableauListe colonnes={["Famille d'emploi", "Emploi", "Grade", "Genre", "Structure", "Effectif"]} vide={filtrees.length ? null : "Aucun agent ne correspond à ces critères."} page={{ ...page, libelle: "ligne" }}>

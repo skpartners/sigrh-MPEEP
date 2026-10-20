@@ -10,6 +10,7 @@ import { ActionsImport } from "./ImportAgents";
 import { AppChrome } from "./AppChrome";
 import { CLE_COMMUNICATION } from "./CommunicationBouton";
 import { Icone } from "../ui/Icone";
+import { Select } from "../ui/Select";
 
 type CodeLibelle = { code: string; libelle: string };
 type Publication = {
@@ -184,9 +185,6 @@ export function CommunicationScreen() {
           <div className="space-y-1.5 min-w-0">
             <p className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Pilotage central · Documents publics & communication</p>
             <h1 className="font-headline-lg text-headline-lg text-on-surface">Espace communication et publications officielles</h1>
-            <p className="font-body-md text-body-md text-on-surface-variant max-w-4xl">
-              Notes de service, circulaires, communiqués et alertes destinés aux agents du portefeuille.
-            </p>
           </div>
           <div className="flex flex-wrap items-center gap-2 shrink-0">
             <ActionsImport
@@ -223,14 +221,14 @@ export function CommunicationScreen() {
 
         <div className="flex flex-col lg:flex-row gap-3 p-4 rounded-lg bg-surface-container-lowest border border-hairline">
           <input className={`${CHAMP} flex-1`} value={recherche} onChange={(event) => setRecherche(event.target.value)} placeholder="Titre, référence ou signataire" aria-label="Rechercher une publication" />
-          <select className={CHAMP} value={nature} aria-label="Filtrer par nature" onChange={(event) => setNature(event.target.value)}>
+          <Select className={CHAMP} value={nature} aria-label="Filtrer par nature" onChange={(event) => setNature(event.target.value)}>
             <option value="">Toutes les natures</option>
             {(data?.natures ?? []).map((item) => <option key={item.code} value={item.code}>{item.libelle}</option>)}
-          </select>
-          <select className={CHAMP} value={perimetre} aria-label="Filtrer par destinataires" onChange={(event) => setPerimetre(event.target.value)}>
+          </Select>
+          <Select className={CHAMP} value={perimetre} aria-label="Filtrer par destinataires" onChange={(event) => setPerimetre(event.target.value)}>
             <option value="">Tous les destinataires</option>
             {(data?.perimetres ?? []).map((item) => <option key={item.code} value={item.code}>{item.libelle}</option>)}
-          </select>
+          </Select>
           <button type="button" className={BOUTON_SECONDAIRE} onClick={() => { setRecherche(""); setNature(""); setPerimetre(""); }}>Réinitialiser</button>
         </div>
 
@@ -388,14 +386,14 @@ export function CommunicationScreen() {
         >
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Champ libelle="Nature">
-              <select className={CHAMP} value={saisie.nature} onChange={(event) => setSaisie({ ...saisie, nature: event.target.value })}>
+              <Select className={CHAMP} value={saisie.nature} onChange={(event) => setSaisie({ ...saisie, nature: event.target.value })}>
                 {data.natures.map((item) => <option key={item.code} value={item.code}>{item.libelle}</option>)}
-              </select>
+              </Select>
             </Champ>
             <Champ libelle="Urgence">
-              <select className={CHAMP} value={saisie.urgence} onChange={(event) => setSaisie({ ...saisie, urgence: event.target.value })}>
+              <Select className={CHAMP} value={saisie.urgence} onChange={(event) => setSaisie({ ...saisie, urgence: event.target.value })}>
                 {data.urgences.map((item) => <option key={item.code} value={item.code}>{item.libelle}</option>)}
-              </select>
+              </Select>
             </Champ>
             <Champ libelle="Référence">
               <input className={CHAMP} readOnly value={data.reference_suivante} />
@@ -407,9 +405,9 @@ export function CommunicationScreen() {
               <input className={CHAMP} required maxLength={240} value={saisie.intitule} onChange={(event) => setSaisie({ ...saisie, intitule: event.target.value })} />
             </label>
             <Champ libelle="Destinataires">
-              <select className={CHAMP} value={saisie.perimetre} onChange={(event) => setSaisie({ ...saisie, perimetre: event.target.value })}>
+              <Select className={CHAMP} value={saisie.perimetre} onChange={(event) => setSaisie({ ...saisie, perimetre: event.target.value })}>
                 {data.perimetres.map((item) => <option key={item.code} value={item.code}>{item.libelle}</option>)}
-              </select>
+              </Select>
             </Champ>
           </div>
           <label className="mt-4 flex flex-col gap-1 font-label-md text-label-md text-on-surface">

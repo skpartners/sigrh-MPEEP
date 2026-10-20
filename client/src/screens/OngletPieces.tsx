@@ -6,6 +6,7 @@ import { dateCourte } from "../ui/format";
 import { BOUTON_PRIMAIRE, BOUTON_SECONDAIRE, Modale } from "../ui/Modale";
 import { TitreOnglet } from "./dossier-onglets/TitreOnglet";
 import { Icone } from "../ui/Icone";
+import { Select } from "../ui/Select";
 
 const QUOTA_KO = 50 * 1024;
 const PAR_PAGE = 8;
@@ -81,9 +82,6 @@ export function OngletPieces({ agent }: { agent: Dossier }) {
         <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6">
           <div className="space-y-1">
             <h2 id="titre-pieces" className="font-headline-sm text-headline-sm text-on-surface font-bold">Coffre du dossier</h2>
-            <p className="font-body-sm text-body-sm text-on-surface-variant">
-              Pièces de {agent.nom_complet}, dans la limite de 50 Mo.
-            </p>
           </div>
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-5 shrink-0">
             <div className="bg-surface-container-low p-3.5 rounded-lg w-full sm:w-56 space-y-2">
@@ -415,9 +413,9 @@ function DepotPiece({ agent, onClose, onEnregistre }: {
       <div className="space-y-5">
         <label className="space-y-1.5 block max-w-xl">
           <span className="block font-label-md text-label-md text-on-surface font-semibold">Acte <span className="text-error">*</span></span>
-          <select className={CHAMP} value={acte} onChange={(event) => setActe(event.target.value)} required>
+          <Select className={CHAMP} value={acte} onChange={(event) => setActe(event.target.value)} required>
             {agent.types_actes.map((type) => <option key={type.code} value={type.libelle}>{type.libelle}</option>)}
-          </select>
+          </Select>
         </label>
         <div
           className={`p-8 rounded-xl text-center space-y-3 ${survole ? "bg-surface-container" : "bg-surface-container-low"}`}

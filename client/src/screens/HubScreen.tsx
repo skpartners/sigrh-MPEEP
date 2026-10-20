@@ -58,6 +58,7 @@ export function HubScreen() {
   const liens = useMemo(
     () =>
       NAV.flatMap((section) => section.liens).filter((lien) => {
+        if (lien.horsAccueil) return false;
         if (!requete) return true;
         const enfants = sousMenus(lien).map((enfant) => enfant.libelle).join(" ");
         return `${lien.libelle} ${lien.resume} ${enfants}`.toLocaleLowerCase("fr").includes(requete);
@@ -136,37 +137,18 @@ export function HubScreen() {
 
   return (
     <AppChrome>
-      <div className="w-full px-4 sm:px-6 lg:px-8 py-6 mx-auto flex-1 flex flex-col gap-8">
-        <section className="flex flex-col gap-5">
+      <div className="w-full px-4 sm:px-6 lg:px-8 pt-3 pb-1 mx-auto flex-1 flex flex-col gap-4">
+        <section className="flex flex-col gap-3">
           {/* Bannière héro */}
           <div className="relative overflow-hidden rounded-2xl motion-rise">
             <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary to-primary-container" aria-hidden="true" />
             <div className="motion-float-1 absolute -right-10 -top-10 w-52 h-52 rounded-full bg-secondary-container/20 blur-3xl pointer-events-none" aria-hidden="true" />
             <div className="motion-float-2 absolute left-1/3 -bottom-8 w-44 h-44 rounded-full bg-secondary/15 blur-2xl pointer-events-none" aria-hidden="true" />
             <div className="motion-float-1 absolute right-1/4 bottom-0 w-24 h-24 rounded-full bg-secondary-container/10 blur-xl pointer-events-none" aria-hidden="true" style={{ animationDelay: "3.5s" }} />
-            <div className="relative z-10 px-6 sm:px-8 py-7 court:py-4">
-              <div className="flex flex-wrap items-center gap-2 mb-3">
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-secondary-container/15 border border-secondary-container/30 text-secondary-container font-label-sm text-label-sm font-semibold">
-                  <span className="relative flex items-center justify-center w-2 h-2 shrink-0">
-                    <span className="motion-pulse-dot absolute inset-0 rounded-full bg-secondary-container" aria-hidden="true" />
-                    <span className="relative z-10 w-1.5 h-1.5 rounded-full bg-secondary-container" />
-                  </span>
-                  Session active
-                </span>
-                {me.data ? (
-                  <span className="font-label-sm text-label-sm text-on-primary/60">
-                    {me.data.fonction}
-                    {" · "}
-                    <strong className="text-on-primary/85 font-semibold">{me.data.organisme_sigle}</strong>
-                  </span>
-                ) : null}
-              </div>
-              <h1 className="font-headline-lg text-headline-lg sm:font-headline-xl sm:text-headline-xl text-on-primary tracking-tight">
+            <div className="relative z-10 px-6 sm:px-8 py-4 court:py-3">
+              <h1 className="font-headline-md text-headline-md sm:font-headline-lg sm:text-headline-lg text-on-primary tracking-tight">
                 Menu principal
               </h1>
-              <p className="font-body-md text-body-md text-on-primary/60 mt-1.5 max-w-lg">
-                Sélectionnez un module pour accéder à ses fonctionnalités.
-              </p>
             </div>
             <div className="absolute bottom-0 left-0 right-0 h-px bg-secondary-container/40" aria-hidden="true" />
           </div>
@@ -177,7 +159,7 @@ export function HubScreen() {
             <input
               ref={champ}
               id={rechercheId}
-              className="w-full pl-10 pr-16 py-3 rounded-xl bg-surface-container-lowest text-on-surface placeholder:text-on-surface-variant font-body-md text-body-md border border-hairline shadow-sm focus:outline-none focus:ring-2 focus:ring-secondary-container/40 focus:border-secondary-container"
+              className="w-full pl-10 pr-16 py-2 rounded-xl bg-surface-container-lowest text-on-surface placeholder:text-on-surface-variant font-body-md text-body-md border border-hairline shadow-sm focus:outline-none focus:ring-2 focus:ring-secondary-container/40 focus:border-secondary-container"
               placeholder="Rechercher un module…"
               type="search"
               value={filtre}
@@ -194,7 +176,7 @@ export function HubScreen() {
             Aucun module ne correspond à « {filtre.trim()} ».
           </p>
         ) : (
-          <div ref={grilleRef} data-no-reveal className="flex flex-wrap gap-5">
+          <div ref={grilleRef} data-no-reveal className="flex flex-wrap gap-4">
             {liens.map((lien) => {
               const accent = ACCENTS[indexCarte % ACCENTS.length];
               indexCarte += 1;
@@ -249,12 +231,12 @@ export function CarteModule({
       <div className={`absolute -top-8 -right-8 w-32 h-32 rounded-full ${accent.tache} blur-3xl pointer-events-none`} aria-hidden="true" />
 
       {/* Contenu principal */}
-      <div className="relative z-10 flex flex-col flex-1 gap-4">
+      <div className="relative z-10 flex flex-col flex-1 gap-3">
 
         {/* Ligne 1 : icône + badge */}
         <div className="flex items-start justify-between gap-3">
           <span
-            className={`w-16 h-16 rounded-2xl flex items-center justify-center text-[1.875rem] shrink-0 ${accent.icone} ${autorise ? "group-hover:scale-105 group-hover:-rotate-3 transition-[transform,box-shadow] duration-300" : ""}`}
+            className={`w-14 h-14 rounded-2xl flex items-center justify-center text-[1.625rem] shrink-0 ${accent.icone} ${autorise ? "group-hover:scale-105 group-hover:-rotate-3 transition-[transform,box-shadow] duration-300" : ""}`}
             aria-hidden="true"
           >
             <Icone nom={lien.icone} />
@@ -265,13 +247,10 @@ export function CarteModule({
           </span>
         </div>
 
-        {/* Titre + description */}
+        {/* Titre */}
         <div className="space-y-1.5">
           <span className={`block font-headline-sm text-headline-sm font-bold text-on-surface leading-snug ${autorise ? accent.titre : ""} transition-colors`}>
             {lien.libelle}
-          </span>
-          <span className="block font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
-            {lien.resume}
           </span>
         </div>
 
@@ -293,25 +272,20 @@ export function CarteModule({
         ) : null}
       </div>
 
-      {/* CTA pleine largeur */}
-      <div className="relative z-10 mt-auto pt-4">
-        <div className="border-t border-hairline/60 mb-3" />
-        {autorise ? (
-          <span className={`btn-ripple flex items-center justify-between gap-2 w-full px-4 py-2.5 rounded-xl font-label-lg text-label-lg font-semibold bg-surface-container border border-hairline text-on-surface-variant transition-[background-color,color,border-color,box-shadow] duration-300 ${accent.cta} group-hover:shadow-sm`}>
-            <span>Ouvrir le module</span>
-            <Icone nom="arrow_forward" className="text-lg shrink-0 group-hover:translate-x-1 transition-transform duration-250" />
-          </span>
-        ) : (
+      {/* Statut des cartes non accessibles */}
+      {!autorise ? (
+        <div className="relative z-10 mt-auto pt-4">
+          <div className="border-t border-hairline/60 mb-3" />
           <span className="flex items-center justify-between gap-2 w-full px-4 py-2.5 rounded-xl font-label-md text-label-md bg-surface-container/50 text-on-surface-variant border border-hairline/40">
             <span>{bientot ? "Bientôt disponible" : "Hors de votre habilitation"}</span>
             <Icone nom={bientot ? "construction" : "lock"} className="text-base opacity-50 shrink-0" />
           </span>
-        )}
-      </div>
+        </div>
+      ) : null}
     </>
   );
 
-  const classe = `group relative flex flex-col rounded-2xl bg-white/80 backdrop-blur-2xl border border-white/50 shadow-[0_4px_24px_color-mix(in_oklab,var(--color-primary)_12%,transparent)] overflow-hidden min-h-72 p-5 ${className}`;
+  const classe = `group relative flex flex-col rounded-2xl bg-white/80 backdrop-blur-2xl border border-white/50 shadow-[0_4px_24px_color-mix(in_oklab,var(--color-primary)_12%,transparent)] overflow-hidden min-h-44 p-4 ${className}`;
 
   if (!autorise) {
     return (
@@ -321,7 +295,7 @@ export function CarteModule({
     );
   }
   return (
-    <Link to={vers} className={`${classe} hover:shadow-[0_16px_48px_color-mix(in_oklab,var(--color-primary)_20%,transparent)] hover:border-white/70 hover:bg-white/90 transition-[box-shadow,border-color,background-color] duration-300`}>
+    <Link to={vers} className={`${classe} hover:shadow-[0_16px_48px_color-mix(in_oklab,var(--color-primary)_20%,transparent)] hover:border-white/70 hover:bg-white/90 hover:z-10 focus-visible:z-10 hover:scale-[1.06] focus-visible:scale-[1.06] motion-reduce:hover:scale-100 motion-reduce:focus-visible:scale-100 transition-[transform,box-shadow,border-color,background-color] duration-700 ease-[linear(0,0.027,0.096,0.192,0.303,0.42,0.535,0.643,0.74,0.825,0.895,0.952,0.997,1.029,1.052,1.065,1.072,1.073,1.071,1.065,1.058,1.049,1.041,1.032,1.025,1.018,1.012,1.007,1.003,1,0.997,0.996,0.995,0.995,0.995,0.995,1)]`}>
       {corps}
     </Link>
   );

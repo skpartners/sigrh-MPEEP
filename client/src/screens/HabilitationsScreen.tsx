@@ -95,9 +95,6 @@ export function HabilitationsScreen() {
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
               <div className="space-y-1.5">
                 <h1 className="font-headline-lg text-headline-lg text-on-surface tracking-tight">Habilitations</h1>
-                <p className="font-body-md text-body-md text-on-surface-variant max-w-3xl">
-                  Chaque colonne est une entrée du menu. Le droit affiché est celui de cette entrée, ou celui du module s'il n'a pas été précisé.
-                </p>
               </div>
               <button
                 className="inline-flex items-center gap-2 px-3 py-1.5 rounded bg-surface-container-high text-on-surface font-label-md text-label-md hover:bg-surface-container transition-colors shrink-0"

@@ -6,6 +6,7 @@ import { dateCourte } from "../ui/format";
 import { Icone } from "../ui/Icone";
 import { ApercuFichier, telechargerFichier } from "../ui/ApercuFichier";
 import { BOUTON_PRIMAIRE, BOUTON_SECONDAIRE, Modale } from "../ui/Modale";
+import { Select } from "../ui/Select";
 
 type Piece = Dossier["pieces"][number];
 type Rubrique = Dossier["catalogue_documents"][number];
@@ -79,7 +80,7 @@ export function DocumentsAgent({ agent, edition = true }: { agent: Dossier; edit
                   <li key={type.code} className="px-6 py-4 space-y-3">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <p className="font-label-md text-label-md font-bold text-on-surface">{type.libelle}</p>
-                      {versees.length === 0 && modifiable ? (
+                      {modifiable ? (
                         <button type="button" onClick={() => setDepot({ rubrique: rubrique.code, type: type.code })}
                           className="inline-flex items-center gap-1.5 text-primary font-label-sm text-label-sm underline rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
                           <Icone nom="add" className="text-base" />Ajouter
@@ -125,6 +126,11 @@ function LigneDocument({ piece, onApercu }: { piece: Piece; onApercu: () => void
           <span className={`px-2 py-0.5 rounded font-label-sm text-label-sm font-bold ${piece.verifiee ? "bg-primary/10 text-primary" : "bg-surface-container text-on-surface-variant"}`}>
             {piece.verifiee ? "Vérifiée" : "En attente de vérification"}
           </span>
+          {piece.diplome ? (
+            <span className="px-2 py-0.5 rounded font-label-sm text-label-sm font-bold bg-secondary-container text-on-secondary-container">
+              Justificatif du diplôme : {piece.diplome}
+            </span>
+          ) : null}
         </div>
       </div>
       <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-center">
@@ -201,15 +207,15 @@ function DepotDocument({ agent, initial, onClose }: { agent: Dossier; initial: {
       <div className="space-y-4">
         <label className="block space-y-1.5">
           <span className="block font-label-md text-label-md text-on-surface font-semibold">Rubrique</span>
-          <select className={CHAMP} value={rubrique} onChange={(event) => changerRubrique(event.target.value)}>
+          <Select className={CHAMP} value={rubrique} onChange={(event) => changerRubrique(event.target.value)}>
             {agent.catalogue_documents.map((item) => <option key={item.code} value={item.code}>{item.libelle}</option>)}
-          </select>
+          </Select>
         </label>
         <label className="block space-y-1.5">
           <span className="block font-label-md text-label-md text-on-surface font-semibold">Type de document <span className="text-error">*</span></span>
-          <select className={CHAMP} value={type} onChange={(event) => setType(event.target.value)} required>
+          <Select className={CHAMP} value={type} onChange={(event) => setType(event.target.value)} required>
             {groupe?.types.map((item) => <option key={item.code} value={item.code}>{item.libelle}</option>)}
-          </select>
+          </Select>
         </label>
         <label className="block space-y-1.5">
           <span className="block font-label-md text-label-md text-on-surface font-semibold">Précision (facultatif)</span>

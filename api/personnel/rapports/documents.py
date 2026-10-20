@@ -571,6 +571,7 @@ def _corps_dossier(feuille, agent) -> list:
             ("Radiation", _iso(proj["date_radiation"]) if proj else "—"),
         ]),
         Spacer(1, 4 * mm),
+        *_sections_profil(feuille, agent),
         *section(feuille, "Situation administrative"),
         fiche(feuille, [
             (ligne["libelle"], _valeur_situation(ligne["valeur"]))
@@ -597,6 +598,18 @@ def _corps_dossier(feuille, agent) -> list:
             ),
         ]
     histoire += [
+        Spacer(1, 3 * mm),
+        *section(feuille, "Parcours professionnel"),
+        tableau(
+            feuille,
+            ["Date d'effet", "Nature", "Intitulé", "Acte"],
+            [
+                [_jour(item.date_effet), item.get_type_display(), item.intitule + (f" : {item.detail}" if item.detail else ""), item.reference_acte]
+                for item in agent.parcours.all()
+            ],
+            [1.2, 1.2, 3.2, 1.4],
+            compact=True,
+        ),
         Spacer(1, 3 * mm),
         *section(feuille, "Actes et décisions"),
         tableau(
@@ -691,6 +704,71 @@ def _corps_dossier(feuille, agent) -> list:
             ),
         ]
     return histoire
+
+
+def _sections_profil(feuille, agent) -> list:
+    """Ce que l'agent renseigne dans son profil : état civil, coordonnées, famille et parcours académique."""
+    naissance = " à ".join(part for part in (_iso(agent.date_naissance.isoformat()) if agent.date_naissance else "", agent.lieu_naissance) if part)
+    matrimonial = agent.get_statut_matrimonial_display() if agent.statut_matrimonial else ""
+    if matrimonial and agent.date_mariage:
+        matrimonial = f"{matrimonial} (mariage le {_iso(agent.date_mariage.isoformat())})"
+    piece = " ".join(part for part in (agent.get_type_piece_identite_display() if agent.type_piece_identite else "", agent.numero_piece_identite) if part)
+    urgence = " · ".join(part for part in (agent.contact_urgence_nom, agent.contact_urgence_telephone) if part)
+    conjoint = " ".join(part for part in (agent.conjoint_nom, agent.conjoint_prenoms) if part)
+    enfants = list(agent.enfants.all())
+    diplomes = list(agent.diplomes.select_related("piece"))
+    return [
+        *section(feuille, "État civil"),
+        fiche(feuille, [
+            ("Nom", agent.nom),
+            ("Prénoms", agent.prenoms),
+            ("Nom de jeune fille", agent.nom_jeune_fille),
+            ("Sexe", agent.get_sexe_display() if agent.sexe else ""),
+            ("Naissance", naissance),
+            ("Situation matrimoniale", matrimonial),
+            ("Pièce d'identité", piece),
+        ]),
+        Spacer(1, 3 * mm),
+        *section(feuille, "Coordonnées"),
+        fiche(feuille, [
+            ("Adresse de résidence", ", ".join(part for part in (agent.adresse_residence, agent.ville) if part)),
+            ("Téléphone principal", agent.telephone),
+            ("Téléphone secondaire", agent.telephone_secondaire),
+            ("Courriel", agent.courriel),
+            ("Personne à contacter en urgence", urgence),
+        ]),
+        Spacer(1, 3 * mm),
+        *section(feuille, "Famille"),
+        fiche(feuille, [
+            ("Conjoint", conjoint),
+            ("Téléphone du conjoint", agent.conjoint_telephone),
+            ("Courriel du conjoint", agent.conjoint_courriel),
+        ]),
+        Spacer(1, 2 * mm),
+        tableau(
+            feuille,
+            ["Enfant", "Sexe", "Naissance", "Lieu"],
+            [
+                [f"{item.nom} {item.prenoms}", item.get_sexe_display(), _jour(item.date_naissance), item.lieu_naissance]
+                for item in enfants
+            ],
+            [2.6, 1, 1.4, 1.8],
+            compact=True,
+        ),
+        Spacer(1, 3 * mm),
+        *section(feuille, "Parcours académique"),
+        tableau(
+            feuille,
+            ["Niveau", "Diplôme", "Domaine", "Justificatif"],
+            [
+                [item.get_niveau_etude_display(), item.libelle, item.domaine_formation, "Versé" if item.piece_id else "Non versé"]
+                for item in diplomes
+            ],
+            [1, 2.8, 1.8, 1.2],
+            compact=True,
+        ),
+        Spacer(1, 3 * mm),
+    ]
 
 
 def _valeur_situation(valeur) -> str:
@@ -860,7 +938,12 @@ def _corps_etat_conges(feuille, annee, totaux, campagne, plans, demandes) -> lis
                 feuille,
                 ["Agent", "Matricule", "Du", "Au", "Palier"],
                 [
-                    [_personne(plan.agent), plan.agent.username, _jour(plan.debut), _jour(plan.fin), plan.get_palier_display()]
+                    [
+                        _personne(plan.agent), plan.agent.username,
+                        _jour(plan.debut) + (f" ; {_jour(plan.debut2)}" if plan.debut2 else ""),
+                        _jour(plan.fin) + (f" ; {_jour(plan.fin2)}" if plan.fin2 else ""),
+                        plan.get_palier_display(),
+                    ]
                     for plan in plans
                 ],
                 [2.2, 1.2, 1.3, 1.3, 1.6],

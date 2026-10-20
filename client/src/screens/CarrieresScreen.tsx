@@ -10,6 +10,7 @@ import { useAction } from "../ui/useAction";
 import { useFeedback } from "../ui/Feedback";
 import { AppChrome } from "./AppChrome";
 import { Icone } from "../ui/Icone";
+import { Select } from "../ui/Select";
 
 const CARD = "rounded-xl bg-surface-container-lowest border border-hairline";
 const PAR_PAGE = 6;
@@ -70,9 +71,6 @@ export function CarrieresScreen() {
               <div className="space-y-2">
                 <p className="font-label-sm text-label-sm text-primary font-bold uppercase tracking-wider">Carrières</p>
                 <h1 className="font-headline-lg text-headline-lg text-on-surface tracking-tight">Accueil</h1>
-                <p className="font-body-md text-body-md text-on-surface-variant max-w-3xl">
-                  {data?.chapo ?? "Pilotage des actes, des avancements et des mouvements du portefeuille de l'État."}
-                </p>
                 <p className="font-body-sm text-body-sm text-on-surface-variant">Session statutaire 2026 · décret n° 2023-894/FP</p>
               </div>
               <div className="flex flex-wrap items-center gap-3 shrink-0">
@@ -212,7 +210,6 @@ function TableauAvancement({ lignes }: { lignes: Ligne[] | undefined }) {
               <Icone nom="rule" className="text-primary" />
               Campagne annuelle d'avancement
             </h2>
-            <p className="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Ancienneté d'échelon certifiée et notation de service.</p>
           </div>
           <div className="inline-flex p-1 bg-surface-container-low rounded-lg shrink-0" role="group" aria-label="Régime d'avancement">
             {[["", "Tous les régimes"], ...regimes.map((mode) => [mode, mode === "Au choix" ? "Au choix (mérite)" : "À l'ancienneté"])].map(([valeur, libelle]) => (
@@ -248,7 +245,7 @@ function TableauAvancement({ lignes }: { lignes: Ligne[] | undefined }) {
           </label>
           <label className="sm:col-span-4">
             <span className="sr-only">Avis du supérieur</span>
-            <select
+            <Select
               value={avis}
               onChange={(event) => {
                 setAvis(event.target.value);
@@ -259,7 +256,7 @@ function TableauAvancement({ lignes }: { lignes: Ligne[] | undefined }) {
               <option value="">Tous les avis</option>
               <option value="Favorable">Avis favorable</option>
               <option value="Réservé">Avis réservé</option>
-            </select>
+            </Select>
           </label>
         </div>
       </div>
@@ -413,7 +410,6 @@ function Mouvements({ mouvements }: { mouvements: Carrieres["mouvements"] | unde
           </span>
           <div>
             <h2 id="titre-mouvements" className="font-headline-sm text-headline-sm text-on-surface font-bold">Mouvements stratégiques</h2>
-            <p className="font-body-sm text-body-sm text-on-surface-variant">Nominations, mutations et détachements sur les postes de direction.</p>
           </div>
         </div>
         {mouvements ? (
