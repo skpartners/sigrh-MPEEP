@@ -48,10 +48,25 @@ def _besoins_par_pole() -> dict[str, int]:
     return totaux
 
 
+def _effectifs_par_pole() -> dict[str, int]:
+    """Agents en poste, comptés dans le registre et regroupés selon le pôle de leur structure."""
+    from .rattachement import structure_de, structures_par_nom
+
+    par_nom = structures_par_nom()
+    totaux: dict[str, int] = {}
+    for agent in Agent.objects.only("service", "sous_direction", "direction", "structure"):
+        entite = structure_de(agent, par_nom)
+        if entite is not None:
+            totaux[entite.pole.code] = totaux.get(entite.pole.code, 0) + 1
+    return totaux
+
+
 def _appliquer_plafonds(branches: list[BranchePlafond]) -> list[BranchePlafond]:
     """Le plafond d'une branche est l'effectif en poste plus les besoins exprimés par ses structures."""
     besoins = _besoins_par_pole()
+    effectifs = _effectifs_par_pole()
     for item in branches:
+        item.effectif = effectifs.get(item.code, 0)
         item.besoins = besoins.get(item.code, 0)
         item.plafond = item.effectif + item.besoins
     return branches

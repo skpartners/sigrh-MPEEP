@@ -10,7 +10,7 @@ import { AppChrome } from "../AppChrome";
 import { Icone } from "../../ui/Icone";
 import { Select } from "../../ui/Select";
 
-type Statut = "visite" | "quittance" | "arrete" | "transmis" | "notifie";
+type Statut = "quittance" | "arrete" | "transmis" | "notifie";
 type Dossier = {
   id: number;
   automatique: boolean;
@@ -18,6 +18,7 @@ type Dossier = {
   agent: AgentBrief & { fonction: string };
   anciennete: string;
   date_limite: string | null;
+  age: number | null;
   age_limite: number;
   age_statutaire: number;
   decret: string;
@@ -58,13 +59,6 @@ const ROUTE = "/api/v1/carrieres/fin-de-carriere/";
 const ICONE = "p-1.5 rounded text-on-surface-variant hover:text-primary hover:bg-surface-container transition-colors";
 const MOIS = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
 const MOIS_COURTS = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."];
-const PASTILLE: Record<Statut, string> = {
-  visite: "bg-secondary-fixed text-on-secondary-fixed",
-  quittance: "bg-surface-container-high text-on-surface",
-  arrete: "bg-primary/10 text-primary",
-  transmis: "bg-primary-fixed text-on-primary-fixed",
-  notifie: "bg-primary-fixed text-on-primary-fixed",
-};
 const COULEUR_TRANCHE: Record<string, { texte: string; barre: string }> = {
   "60+": { texte: "text-secondary", barre: "bg-secondary-container" },
   "55-59": { texte: "text-primary", barre: "bg-primary" },
@@ -225,18 +219,17 @@ export function FinCarriereScreen() {
                     <th className="py-3 px-4 font-bold">Société / direction</th>
                     <th className="py-3 px-4 font-bold">Grade & ancienneté</th>
                     <th className="py-3 px-4 font-bold">Date limite / âge</th>
-                    <th className="py-3 px-4 font-bold" data-min="">Statut réglementaire</th>
                     <th className="py-3 px-4 font-bold text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-surface-container-low font-body-md text-body-md text-on-surface">
                   {tableau.isPending ? (
                     <tr>
-                      <td colSpan={6} className="py-4 px-6"><Skeleton className="h-10 w-full" /></td>
+                      <td colSpan={5} className="py-4 px-6"><Skeleton className="h-10 w-full" /></td>
                     </tr>
                   ) : filtres.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="py-6 px-6 text-on-surface-variant">{tableau.isError ? "Le registre n'a pas pu être chargé." : "Aucun dossier ne correspond à ces filtres."}</td>
+                      <td colSpan={5} className="py-6 px-6 text-on-surface-variant">{tableau.isError ? "Le registre n'a pas pu être chargé." : "Aucun dossier ne correspond à ces filtres."}</td>
                     </tr>
                   ) : (
                     pageDossiers.visibles.map((dossier) => (
@@ -261,17 +254,10 @@ export function FinCarriereScreen() {
                         <td className="py-4 px-4">
                           <span className="font-semibold text-on-surface font-code-num text-code-num block">{dossier.date_limite ? dateLongue(dossier.date_limite) : "—"}</span>
                           {dossier.automatique ? (
-                            <span className="font-label-sm text-label-sm text-secondary font-bold">{dossier.decret ? `Report · décret ${dossier.decret}` : `Limite ${dossier.age_limite} ans révolus`}</span>
+                            <span className="font-label-sm text-label-sm text-secondary font-bold">{dossier.decret ? `Report · décret ${dossier.decret}` : dossier.age === null ? "Âge inconnu" : `${dossier.age} ans`}</span>
                           ) : (
                             <span className="font-label-sm text-label-sm text-secondary font-bold">{dossier.motif?.libelle}</span>
                           )}
-                        </td>
-                        <td className="py-4 px-4">
-                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded font-label-sm text-label-sm font-bold ${PASTILLE[dossier.statut]}`}>
-                            <span className="w-1.5 h-1.5 rounded-full bg-current opacity-70" />
-                            {dossier.statut_libelle}
-                          </span>
-                          <span className="block font-label-sm text-label-sm text-on-surface-variant mt-1">{dossier.statut_detail}</span>
                         </td>
                         <td className="py-4 px-4 text-right">
                           <button className={ICONE} type="button" aria-label={`Modifier le dossier de ${dossier.agent.nom_complet}`} onClick={() => setPanneau({ genre: "dossier", dossier })}><Icone nom="edit" className="text-lg" /></button>

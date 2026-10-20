@@ -43,3 +43,7 @@ desktop.ini
 .vscode/
 *.swp
 .claude/settings.local.json
+
+# Sauvegardes locales de la base et classeurs contenant des données personnelles
+api/db.sqlite3*
+Base_personnel*.xlsx

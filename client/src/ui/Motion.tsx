@@ -117,17 +117,61 @@ export function PageMotion({ children, className = "", reveal = true }: { childr
   );
 }
 
-/** Fine barre de progression en haut de l'écran pendant les requêtes API. */
+/**
+ * Fine barre de progression en haut de l'écran pendant les requêtes API.
+ * Elle n'apparaît qu'après un court délai (pas de clignotement sur les réponses rapides), avance de plus en
+ * plus lentement tant que ça charge, puis se complète et s'efface.
+ */
 export function TopProgress() {
-  const active = useIsFetching() + useIsMutating() > 0;
+  const actif = useIsFetching() + useIsMutating() > 0;
+  const [etat, setEtat] = useState<"repos" | "charge" | "fin">("repos");
+  const [avance, setAvance] = useState(0);
+  const debut = useRef(0);
+
+  useEffect(() => {
+    if (actif) {
+      const depart = setTimeout(() => {
+        debut.current = Date.now();
+        setAvance(0.08);
+        setEtat("charge");
+      }, 250);
+      return () => clearTimeout(depart);
+    }
+    if (etat !== "charge") return;
+    // Visible au moins un instant, pour qu'elle se lise comme un chargement et non comme un scintillement.
+    const attente = Math.max(0, 450 - (Date.now() - debut.current));
+    const complete = setTimeout(() => {
+      setAvance(1);
+      setEtat("fin");
+    }, attente);
+    const repos = setTimeout(() => {
+      setEtat("repos");
+      setAvance(0);
+    }, attente + 500);
+    return () => {
+      clearTimeout(complete);
+      clearTimeout(repos);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [actif]);
+
+  useEffect(() => {
+    if (etat !== "charge") return;
+    const pas = setInterval(() => setAvance((valeur) => valeur + (0.92 - valeur) * 0.12), 250);
+    return () => clearInterval(pas);
+  }, [etat]);
+
   return (
     <div
-      className={`fixed top-0 left-0 right-0 z-[80] h-0.5 pointer-events-none transition-opacity duration-300 ${active ? "opacity-100" : "opacity-0"}`}
+      className="chargement-haut"
+      data-etat={etat}
       role="progressbar"
-      aria-hidden={!active}
+      aria-hidden={etat === "repos"}
       aria-label="Chargement des données"
+      aria-valuemin={0}
+      aria-valuemax={100}
     >
-      <div className="motion-indeterminate h-full w-full" />
+      <div className="chargement-haut-barre" style={{ transform: `scaleX(${avance})` }} />
     </div>
   );
 }

@@ -81,6 +81,7 @@ A_SUPPRIMER = (
     "BesoinFormation", "EnveloppeSociale", "DemandeDotation", "AlertePoste", "Passerelle", "JournalEffectif", "CampagneBesoin",
     "SessionParitaire", "PilotageFinCarriere", "ActionAccompagnement", "DistinctionCarriere", "CampagnePlanConge", "RappelRetour",
     "CompositionStatistique", "AlerteReleve", "MouvementStrategique", "Demande", "Acte", "VisaEnAttente",
+    "EtapeCircuit", "DispositifSocial",
 )
 
 

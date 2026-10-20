@@ -1326,7 +1326,11 @@ def test_dotation_et_expression_des_besoins(api):
     page = api.get("/api/v1/dotation/", **auth)
     assert page.status_code == 200
     corps = page.json()
-    assert corps["effectif"] == 4826
+    # L'effectif se compte dans le registre des agents : aucun chiffre figé.
+    assert corps["effectif"] == sum(branche["effectif"] for branche in corps["branches"])
+    from personnel.models import Agent
+
+    assert 0 < corps["effectif"] <= Agent.objects.count()
     assert corps["plafond"] == corps["effectif"] + sum(branche["besoins"] for branche in corps["branches"])
     assert all(branche["plafond"] == branche["effectif"] + branche["besoins"] for branche in corps["branches"])
     assert len(corps["demandes"]) == 4
@@ -2311,7 +2315,9 @@ def test_statistiques(api):
     assert structures >= 24
     assert corps["structures"] == structures
     assert corps["agents"] > 0
-    assert corps["effectif"] == 4826
+    from personnel.models import Agent
+
+    assert 0 < corps["effectif"] <= Agent.objects.count()
     assert sum(item["structures"] for item in corps["par_pole"]) == structures
     assert corps["kpi"]["dossiers"] == corps["agents"]
     assert len(corps["lignes"]) == corps["structures"]

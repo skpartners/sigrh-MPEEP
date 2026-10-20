@@ -8,7 +8,7 @@ import random
 from datetime import date, datetime, timedelta
 
 from django.contrib.auth.models import User
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from django.utils import timezone
 
@@ -76,10 +76,21 @@ SUPERIEURS = {
 
 
 class Command(BaseCommand):
+    def add_arguments(self, parser):
+        parser.add_argument("--forcer", action="store_true", help="Charger la démonstration même si l'effectif réel est déjà chargé (développement seulement).")
+
     help = "Charge le jeu de démonstration du prototype SIGRH (données fictives)."
 
     @transaction.atomic
     def handle(self, *args, **options):
+        from personnel.models import ParametresMinistere
+
+        reglages = ParametresMinistere.objects.filter(pk=1).first()
+        if reglages and reglages.donnees_reelles and not options.get("forcer"):
+            raise CommandError(
+                "Cette base contient l'effectif réel : les données de démonstration l'écraseraient. "
+                "Utilisez --forcer uniquement sur une base de développement."
+            )
         self.rng = random.Random(2026)
         organismes = self._organismes()
         agents = self._agents(organismes)

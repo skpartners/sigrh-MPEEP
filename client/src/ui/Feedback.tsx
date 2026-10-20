@@ -7,9 +7,13 @@ import { Icone } from "./Icone";
 const SHOW_DELAY_MS = 180;
 // Une fois visible, l'overlay reste assez longtemps pour être lu.
 const MIN_VISIBLE_MS = 600;
-const TOAST_MS = 4200;
+// Durée d'affichage selon la gravité : une erreur reste plus longtemps, le temps d'être lue.
+const DUREE_TOAST: Record<ToastTon, number> = { success: 4500, info: 5000, message: 5000, warning: 7500, error: 9000 };
+// Au-delà, les plus anciens partent : l'écran ne doit pas se couvrir de notifications.
+const TOASTS_VISIBLES = 4;
 
-type Toast = { id: number; title: string; message?: string; tone: "success" | "error" | "info" | "message" };
+type ToastTon = "success" | "error" | "warning" | "info" | "message";
+type Toast = { id: number; title: string; message?: string; tone: ToastTon; duree: number };
 
 type ConfirmRequest = {
   title: string;
@@ -53,9 +57,12 @@ export function FeedbackProvider({ children }: { children: ReactNode }) {
 
   const toast = useCallback((title: string, message?: string, tone: Toast["tone"] = "success") => {
     const id = ++nextId.current;
-    setToasts((list) => [...list, { id, title, message, tone }]);
-    setTimeout(() => setToasts((list) => list.filter((item) => item.id !== id)), TOAST_MS);
+    // Un message long se lit plus lentement : on ajoute un peu de temps, sans dépasser quatre secondes.
+    const duree = DUREE_TOAST[tone] + Math.min(4000, (message?.length ?? 0) * 25);
+    setToasts((list) => [...list, { id, title, message, tone, duree }].slice(-TOASTS_VISIBLES));
   }, []);
+
+  const fermerToast = useCallback((id: number) => setToasts((list) => list.filter((item) => item.id !== id)), []);
 
   const confirm = useCallback(
     (title: string, options: { message?: string; confirmLabel?: string } = {}) =>
@@ -138,23 +145,13 @@ export function FeedbackProvider({ children }: { children: ReactNode }) {
         />
       ) : null}
       {createPortal(
-        <div className="fixed bottom-[calc(var(--haut-pied)+5.5rem)] right-6 z-[90] flex flex-col items-end gap-3" aria-live="polite">
+        <div
+          className="pointer-events-none fixed bottom-[calc(var(--haut-pied)+5.5rem)] left-4 right-4 z-[90] flex flex-col items-end gap-3 sm:left-auto sm:right-6"
+          aria-live="polite"
+          aria-relevant="additions"
+        >
           {toasts.map((item) => (
-            <div
-              key={item.id}
-              role="status"
-              className="motion-toast bg-surface-container-lowest shadow-xl rounded-lg p-4 w-[22rem] max-w-[calc(100vw-3rem)] flex items-start gap-3"
-            >
-              <div className={`p-2 rounded shrink-0 ${TOAST_TONE[item.tone].className}`}>
-                <Icone nom={TOAST_TONE[item.tone].icon} className="text-xl" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-label-lg text-label-lg text-on-surface font-bold">{item.title}</p>
-                {item.message ? (
-                  <p className="font-body-sm text-body-sm text-on-surface-variant mt-0.5">{item.message}</p>
-                ) : null}
-              </div>
-            </div>
+            <ToastItem key={item.id} item={item} onClose={fermerToast} />
           ))}
         </div>,
         document.body,
@@ -163,12 +160,78 @@ export function FeedbackProvider({ children }: { children: ReactNode }) {
   );
 }
 
-const TOAST_TONE: Record<Toast["tone"], { icon: string; className: string }> = {
-  success: { icon: "download_done", className: "bg-primary-fixed text-primary" },
-  error: { icon: "error", className: "bg-error-container text-on-error-container" },
-  info: { icon: "schedule", className: "bg-surface-container text-on-surface-variant" },
-  message: { icon: "chat", className: "bg-primary-fixed text-primary" },
+const TOAST_TONE: Record<ToastTon, { icon: string; badge: string; bordure: string; barre: string }> = {
+  success: { icon: "check_circle", badge: "bg-succes-container text-succes", bordure: "border-l-succes", barre: "bg-succes" },
+  error: { icon: "error", badge: "bg-error-container text-on-error-container", bordure: "border-l-error", barre: "bg-error" },
+  warning: { icon: "warning", badge: "bg-attention/15 text-attention", bordure: "border-l-attention", barre: "bg-attention" },
+  info: { icon: "info", badge: "bg-info-container text-info", bordure: "border-l-info", barre: "bg-info" },
+  message: { icon: "chat", badge: "bg-primary-fixed text-primary", bordure: "border-l-primary", barre: "bg-primary" },
 };
+
+/** Une notification : s'arrête au survol et quand l'onglet est caché, se ferme à la croix, sort en douceur. */
+function ToastItem({ item, onClose }: { item: Toast; onClose: (id: number) => void }) {
+  const ton = TOAST_TONE[item.tone];
+  const [survol, setSurvol] = useState(false);
+  const [cache, setCache] = useState(() => document.hidden);
+  const [sortie, setSortie] = useState(false);
+  const reste = useRef(item.duree);
+  const pause = survol || cache;
+
+  useEffect(() => {
+    const suivre = () => setCache(document.hidden);
+    document.addEventListener("visibilitychange", suivre);
+    return () => document.removeEventListener("visibilitychange", suivre);
+  }, []);
+
+  // Le temps restant se conserve d'une pause à l'autre : le compte à rebours reprend où il s'était arrêté.
+  useEffect(() => {
+    if (pause || sortie) return;
+    const debut = Date.now();
+    const minuteur = setTimeout(() => setSortie(true), reste.current);
+    return () => {
+      clearTimeout(minuteur);
+      reste.current = Math.max(0, reste.current - (Date.now() - debut));
+    };
+  }, [pause, sortie]);
+
+  useEffect(() => {
+    if (!sortie) return;
+    const minuteur = setTimeout(() => onClose(item.id), 220);
+    return () => clearTimeout(minuteur);
+  }, [sortie, item.id, onClose]);
+
+  return (
+    <div
+      role={item.tone === "error" ? "alert" : "status"}
+      className={`${sortie ? "toast-sortie" : "motion-toast"} pointer-events-auto relative flex w-[23rem] max-w-full items-start gap-3 overflow-hidden rounded-xl border border-hairline border-l-4 bg-surface-container-lowest p-4 pr-11 shadow-xl ${ton.bordure}`}
+      onPointerEnter={() => setSurvol(true)}
+      onPointerLeave={() => setSurvol(false)}
+      onFocus={() => setSurvol(true)}
+      onBlur={() => setSurvol(false)}
+    >
+      <div className={`flex size-9 shrink-0 items-center justify-center rounded-full ${ton.badge}`}>
+        <Icone nom={ton.icon} className="text-xl" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="font-label-lg text-label-lg font-bold text-on-surface">{item.title}</p>
+        {item.message ? <p className="mt-0.5 font-body-sm text-body-sm text-on-surface-variant">{item.message}</p> : null}
+      </div>
+      <button
+        type="button"
+        className="absolute right-2 top-2 inline-flex size-7 items-center justify-center rounded-full text-on-surface-variant transition-colors hover:bg-surface-container hover:text-on-surface"
+        aria-label="Fermer la notification"
+        onClick={() => setSortie(true)}
+      >
+        <Icone nom="close" className="text-base" />
+      </button>
+      <span
+        className={`toast-progression ${ton.barre}`}
+        style={{ animationDuration: `${item.duree}ms`, animationPlayState: pause ? "paused" : "running" }}
+        aria-hidden="true"
+      />
+    </div>
+  );
+}
 
 function ConfirmDialog({ title, message, confirmLabel = "Confirmer", onClose }: { title: string; message?: string; confirmLabel?: string; onClose: (ok: boolean) => void }) {
   // Focus sur « Annuler » : une validation involontaire au clavier reste impossible. Échap annule.
@@ -199,9 +262,15 @@ function ConfirmDialog({ title, message, confirmLabel = "Confirmer", onClose }: 
 }
 
 function BusyOverlay({ label, detail }: { label: string; detail?: string }) {
+  // Au-delà de quelques secondes, on rassure : l'attente est normale, la page n'est pas figée.
+  const [longue, setLongue] = useState(false);
+  useEffect(() => {
+    const minuteur = setTimeout(() => setLongue(true), 8000);
+    return () => clearTimeout(minuteur);
+  }, []);
   return (
     <Modale role="alertdialog" titre={label} sousTitre={detail} taille="sm" sansFermeture centre onClose={() => undefined}>
-      <div className="flex flex-col items-center pt-2 text-center" aria-busy="true">
+      <div className="flex flex-col items-center pt-2 text-center" aria-busy="true" role="status">
         <div className="relative h-20 w-20">
           <svg className="motion-spin absolute inset-0" viewBox="0 0 80 80" aria-hidden="true">
             <circle cx="40" cy="40" r="34" fill="none" stroke="var(--color-surface-container-high)" strokeWidth="5" />
@@ -211,6 +280,9 @@ function BusyOverlay({ label, detail }: { label: string; detail?: string }) {
           <img src={`${import.meta.env.BASE_URL}logo.png`} alt="" className="motion-breathe absolute inset-0 m-auto h-11 w-11 object-contain" />
         </div>
         <div className="motion-indeterminate mt-5 h-1 w-full overflow-hidden rounded-full bg-surface-container" />
+        {longue ? (
+          <p className="mt-4 font-body-sm text-body-sm text-on-surface-variant">Cela prend un peu plus de temps que prévu. Merci de patienter, ne fermez pas cette page.</p>
+        ) : null}
       </div>
     </Modale>
   );

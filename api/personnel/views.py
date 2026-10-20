@@ -44,6 +44,7 @@ from .models import (
     TypeFinCarriere,
     VisaEnAttente,
 )
+from . import resume_carrieres
 from .circuits_config import enregistrer, lister
 from .parametres import identite_ministre, portrait_url
 from .utilisateurs import acces_menu, perimetre_matricules
@@ -74,8 +75,48 @@ from .present import (
 EXERCICE = 2026
 
 
+# Textes d'accueil seulement : aucun chiffre. Les indicateurs sont toujours lus dans les registres.
+SNAPSHOT_PAR_DEFAUT = {
+    "accueil": {
+        "titre": "Système intégré de gestion des ressources humaines du Portefeuille de l'État",
+        "chapo": "Le socle numérique unifié pour le pilotage des carrières, le suivi des actes administratifs, l'action sociale et le développement des compétences des agents.",
+        "piliers": [
+            {
+                "code": "SD-01", "titre": "Sous-direction de la gestion des carrières",
+                "texte": "Cycle statutaire de l'agent, de l'affectation à la liquidation des droits à pension.",
+                "points": ["Référentiel matriculaire unique", "Avancements d'échelon et reclassements", "Départs à la retraite (GPEEC)", "Mutations"],
+                "lien": "/app/carrieres",
+            },
+            {
+                "code": "SD-02", "titre": "Sous-direction de l'action sociale",
+                "texte": "Prévoyance, santé et soutien matériel aux agents.",
+                "points": ["Aides exceptionnelles et secours", "Prêts d'équipement et logement", "Médecine du travail"],
+                "lien": "/app/action-sociale",
+            },
+            {
+                "code": "SD-03", "titre": "Sous-direction de la formation continue",
+                "texte": "Compétences managériales et perfectionnement des agents.",
+                "points": ["Besoins annuels de formation", "Cycles de formation", "Dossier de formation de l'agent", "Plan de formation"],
+                "lien": "/app/formation",
+            },
+        ],
+    },
+    "dashboard": {},
+    "carriere": {
+        "titre": "Sous-direction de la gestion des carrières",
+        "chapo": "Pilotage des actes, des avancements et des mouvements du ministère.",
+    },
+    "modules": {
+        "social": {"titre": "Sous-direction de l'action sociale", "chapo": "Aides, prêts et secours des agents."},
+        "formation": {"titre": "Sous-direction de la formation continue", "chapo": "Plans de formation et certifications."},
+        "carriere": {"titre": "Actes de carrière", "chapo": "Arrêtés, mutations et disponibilités."},
+    },
+}
+
+
 def _snapshot() -> SnapshotExercice:
-    return get_object_or_404(SnapshotExercice, annee=EXERCICE)
+    snap, _cree = SnapshotExercice.objects.get_or_create(annee=EXERCICE, defaults=SNAPSHOT_PAR_DEFAUT)
+    return snap
 
 
 def _me(user, request) -> dict:
@@ -149,6 +190,7 @@ def accueil(_request):
             "photo_ministre_url": portrait_url(),
             "ministre": identite_ministre(),
             **snap.accueil,
+            "piliers": [{cle: valeur for cle, valeur in pilier.items() if cle != "indicateur"} for pilier in snap.accueil.get("piliers", [])],
             "chiffres": _chiffres_intro(),
             "actes_recents": [acte_row(acte) for acte in actes],
         }
@@ -924,7 +966,7 @@ def dashboard(request):
     return Response(
         {
             "exercice": EXERCICE,
-            "campagne": snap.dashboard.get("campagne"),
+            "campagne": None,
             # Indicateurs et états lus en direct, à la place des chiffres figés de l'instantané.
             "kpis": kpis(request.user, EXERCICE, etats_calcules),
             "etats": etats_calcules,
@@ -1301,7 +1343,9 @@ def carrieres(request):
     alertes = agents_visibles(AlerteReleve.objects.select_related("titulaire", "titulaire__organisme", "organisme"), request.user, "titulaire__matricule")
     return Response(
         {
-            **snap.carriere,
+            "titre": snap.carriere.get("titre", SNAPSHOT_PAR_DEFAUT["carriere"]["titre"]),
+            "chapo": snap.carriere.get("chapo", SNAPSHOT_PAR_DEFAUT["carriere"]["chapo"]),
+            **resume_carrieres.resume(request.user, timezone.localdate()),
             "lignes": [avancement_row(item) for item in lignes],
             "mouvements": [mouvement_row(item) for item in mouvements],
             "alertes": [alerte_row(item) for item in alertes],

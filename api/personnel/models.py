@@ -1389,7 +1389,6 @@ class DossierRetraite(models.Model):
     """Dossier de départ à la retraite instruit par la sous-direction des carrières."""
 
     class Statut(models.TextChoices):
-        VISITE = "visite", "Visite médicale de sortie"
         QUITTANCE = "quittance", "Quittance de fin de gestion"
         ARRETE = "arrete", "Arrêté signé"
         TRANSMIS = "transmis", "Transmis à la CGRAE"
@@ -1402,7 +1401,7 @@ class DossierRetraite(models.Model):
     date_cessation = models.DateField(null=True, blank=True, help_text="Date d'effet des cessations saisies (démission, décès…).")
     decret = models.CharField(max_length=80, blank=True, help_text="Référence du décret présidentiel qui reporte la retraite.")
     date_decret = models.DateField(null=True, blank=True)
-    statut = models.CharField(max_length=20, choices=Statut.choices, default=Statut.VISITE)
+    statut = models.CharField(max_length=20, choices=Statut.choices, default=Statut.QUITTANCE)
     statut_detail = models.CharField(max_length=160, blank=True)
 
     class Meta:

@@ -71,6 +71,7 @@ def dossier_row(item: DossierRetraite, aujourd_hui: date) -> dict:
         "agent": {**agent_brief(agent), "fonction": agent.fonction},
         "anciennete": _anciennete(item.entree_service, aujourd_hui),
         "date_limite": limite.isoformat() if limite else None,
+        "age": _age(agent.date_naissance, aujourd_hui) if agent.date_naissance else None,
         "age_limite": item.age_limite,
         "age_statutaire": age_statutaire(agent),
         "decret": item.decret,
@@ -94,7 +95,7 @@ def assurer_admissions(aujourd_hui: date) -> None:
         if (_anniversaire(agent.date_naissance, age) - aujourd_hui).days > HORIZON_ADMISSION:
             continue
         DossierRetraite.objects.create(
-            agent=agent, motif=motif, age_limite=age, entree_service=_date(agent.prise_service), statut=DossierRetraite.Statut.VISITE,
+            agent=agent, motif=motif, age_limite=age, entree_service=_date(agent.prise_service), statut=DossierRetraite.Statut.QUITTANCE,
         )
 
 
@@ -222,7 +223,7 @@ def _dossier_depuis(donnees, agent: Agent | None = None, entree_actuelle: date |
     age = _entier(donnees.get("age_limite"), 60)
     if age is None or not 40 <= age <= 75:
         return Response({"detail": "L'âge limite doit être compris entre 40 et 75 ans."}, status=400)
-    statut = (donnees.get("statut") or DossierRetraite.Statut.VISITE).strip()
+    statut = (donnees.get("statut") or DossierRetraite.Statut.QUITTANCE).strip()
     if statut not in DossierRetraite.Statut.values:
         return Response({"detail": "Ce statut de dossier n'existe pas."}, status=400)
     return agent, entree, age, statut, (donnees.get("statut_detail") or "").strip()[:160]

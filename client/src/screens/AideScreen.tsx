@@ -395,11 +395,11 @@ const MODULES: ModuleAide[] = [
     ],
     cas: [
       "Un directeur de grade A4 atteint 65 ans dans dix mois. Vous ouvrez son dossier de retraite et vous désignez le successeur du poste de direction.",
-      "Un agent de catégorie B atteint 60 ans. L'admission s'ouvre d'elle-même. Le dossier suit la visite, la quittance, l'arrêté, puis la CGRAE.",
+      "Un agent de catégorie B atteint 60 ans. L'admission s'ouvre d'elle-même. Le dossier suit la quittance, l'arrêté, puis la CGRAE.",
     ],
     circuit: [
       "Le départ à la limite d'âge s'ouvre de lui-même. Les autres motifs de sortie sont saisis.",
-      "Le dossier suit ensuite la visite médicale de sortie, la quittance de fin de gestion et l'arrêté signé.",
+      "Le dossier suit ensuite la quittance de fin de gestion et l'arrêté signé.",
       "Le dossier est transmis à la CGRAE, puis la CGRAE est notifiée.",
     ],
     obligations: [

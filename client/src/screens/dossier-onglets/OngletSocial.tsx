@@ -4,7 +4,7 @@ import { CircuitDemande, RubriqueVide, dateFr, demandeClose, estPret, groupe, po
 import { Icone } from "../../ui/Icone";
 import { Select } from "../../ui/Select";
 
-/** Valeurs de l'agent affichées aux emplacements de la fiche sociale (la maquette tient lieu de repli). */
+/** Valeurs affichées dans la fiche sociale : celles du registre, ou un repli neutre quand rien n'est renseigné. */
 function valeurs(agent: Dossier) {
   const social = agent.social;
   const enveloppe = social?.enveloppe && social.enveloppe.allouee > 0 ? social.enveloppe : null;
@@ -12,28 +12,26 @@ function valeurs(agent: Dossier) {
   const compte = agent.prestations.length;
   return {
     nom: agent.nom_complet,
-    envAllouee: enveloppe ? groupe(enveloppe.allouee) : "120 000 000",
-    envLigne: enveloppe?.ligne ?? "7412-Action-Soc",
-    envEngagee: enveloppe ? groupe(enveloppe.engagee) : "72 800 000",
-    envExecution: enveloppe ? pourcent(enveloppe.taux_execution) : "60.7",
-    envReliquat: enveloppe ? groupe(enveloppe.reliquat) : "47 200 000",
-    envReserve: enveloppe ? pourcent(Math.round((enveloppe.reliquat / enveloppe.allouee) * 1000) / 10) : "39.3",
-    envSession: enveloppe ? String(enveloppe.session).padStart(2, "0") : "04",
-    envDemandes: !enveloppe
-      ? "12 demandes en instance d'instruction paritaire."
-      : enveloppe.demandes === 0
+    envAllouee: enveloppe ? groupe(enveloppe.allouee) : "0",
+    envLigne: enveloppe?.ligne || "—",
+    envEngagee: enveloppe ? groupe(enveloppe.engagee) : "0",
+    envExecution: enveloppe ? pourcent(enveloppe.taux_execution) : "0",
+    envReliquat: enveloppe ? groupe(enveloppe.reliquat) : "0",
+    envReserve: enveloppe ? pourcent(Math.round((enveloppe.reliquat / enveloppe.allouee) * 1000) / 10) : "0",
+    envSession: enveloppe ? String(enveloppe.session).padStart(2, "0") : "—",
+    envDemandes: !enveloppe || enveloppe.demandes === 0
         ? "Aucune demande en instance d'instruction paritaire."
         : enveloppe.demandes === 1
           ? "1 demande en instance d'instruction paritaire."
           : `${enveloppe.demandes} demandes en instance d'instruction paritaire.`,
-    envDate: enveloppe?.session_date ?? "Jeudi 19 Mars 2026",
-    envContact: enveloppe?.contact || "Mme A. Bakayoko (Poste 4410)",
-    dispSecoursDeces: dispositif("secours-deces", "Plafond : 1 500 000 FCFA"),
-    dispHospitalisation: dispositif("hospitalisation", "Prise en charge : jusqu'à 80%"),
-    dispAllocationRentree: dispositif("allocation-rentree", "150 000 FCFA / enfant"),
-    dispTauxBonifie: dispositif("taux-bonifie", "Taux Bonifié 3.5%"),
-    dispPretImmobilier: dispositif("pret-immobilier", "25 000 000 FCFA"),
-    dispPretMensualites: dispositif("pret-mensualites", "180 mensualités"),
+    envDate: enveloppe?.session_date || "Non fixée",
+    envContact: enveloppe?.contact || "Non renseigné",
+    dispSecoursDeces: dispositif("secours-deces", "Non renseigné"),
+    dispHospitalisation: dispositif("hospitalisation", "Non renseigné"),
+    dispAllocationRentree: dispositif("allocation-rentree", "Non renseigné"),
+    dispTauxBonifie: dispositif("taux-bonifie", "Non renseigné"),
+    dispPretImmobilier: dispositif("pret-immobilier", "Non renseigné"),
+    dispPretMensualites: dispositif("pret-mensualites", "Non renseigné"),
     visite: ligneVisite(agent.visite_medicale),
     visiteCourte: agent.visite_medicale.toLowerCase().startsWith("à jour") ? "À Jour (Conforme)" : agent.visite_medicale.split("(")[0].trim() || "À jour",
     comptePrestations: compte > 1 ? `${compte} requêtes sur ${compte} dossiers enregistrés` : compte === 1 ? "1 requête sur 1 dossier enregistré" : "0 requête sur 0 dossier enregistré",
