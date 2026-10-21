@@ -89,6 +89,7 @@ export type SessionUser = {
   signature_url: string;
   photo_url: string;
   administrateur?: boolean;
+  adhesion_complete?: boolean;
   acces?: { modules: Record<string, string>; fonctions: Record<string, string> };
 };
 
@@ -706,4 +707,9 @@ export type AnnuaireUtilisateurs = {
   structures: EntiteTutelle[];
   organismes: Organisme[];
   administrateur?: boolean;
+};
+
+export type AdhesionEtat = {
+  complet: boolean;
+  documents: { code: string; libelle: string; version: string; route: string; acceptee: boolean; acceptee_le: string | null }[];
 };

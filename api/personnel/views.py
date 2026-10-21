@@ -45,6 +45,7 @@ from .models import (
     VisaEnAttente,
 )
 from . import resume_carrieres
+from .adhesion import adhesion_complete
 from .circuits_config import enregistrer, lister
 from .parametres import identite_ministre, portrait_url
 from .utilisateurs import acces_menu, perimetre_matricules
@@ -136,6 +137,7 @@ def _me(user, request) -> dict:
         "signature_url": signature,
         "photo_url": agent.photo.url if agent and agent.photo else "",
         "administrateur": bool(profil.administrateur),
+        "adhesion_complete": adhesion_complete(user),
         "acces": acces_menu(profil),
     }
 

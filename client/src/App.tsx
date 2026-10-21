@@ -13,6 +13,7 @@ import { ParametresScreen } from "./screens/ParametresScreen";
 import { StructuresScreen } from "./screens/StructuresScreen";
 import { UtilisateursScreen } from "./screens/UtilisateursScreen";
 import { AideScreen } from "./screens/AideScreen";
+import { AdhesionScreen } from "./screens/AdhesionScreen";
 import { DashboardScreen } from "./screens/DashboardScreen";
 import { DossierScreen } from "./screens/DossierScreen";
 import { BesoinsScreen } from "./screens/ModuleScreens";
@@ -58,6 +59,7 @@ export function App() {
               <Route path="/conditions-generales" element={<CguScreen />} />
               <Route path="/confidentialite" element={<ConfidentialiteScreen />} />
               <Route path="/protection-des-donnees" element={<ProtectionDonneesScreen />} />
+              <Route path="/app/adhesion" element={<RequireAuth sansAdhesion><AdhesionScreen /></RequireAuth>} />
               <Route path="/app" element={<RequireAuth><HubScreen /></RequireAuth>} />
               <Route path="/app/vue-densemble" element={<Navigate to="/app/tableau-de-bord" replace />} />
               <Route path="/app/tableau-de-bord" element={<RequireAuth><DashboardScreen /></RequireAuth>} />
@@ -167,7 +169,7 @@ function SessionApplicative({ children }: { children: ReactNode }) {
 
   return (
     <TempsReelProvider actif={actif}>
-      <MessagerieProvider actif={actif}>{children}</MessagerieProvider>
+      <MessagerieProvider actif={actif && pathname !== "/app/adhesion"}>{children}</MessagerieProvider>
     </TempsReelProvider>
   );
 }

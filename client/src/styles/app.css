@@ -1324,3 +1324,9 @@ a[class*="rounded"]:active {
     transform: none;
   }
 }
+
+/* Page juridique affichée dans le parcours d'adhésion : plus de barre fixe à contourner. */
+html[data-integre] {
+  --haut-entete: 0px;
+  --haut-pied: 0px;
+}

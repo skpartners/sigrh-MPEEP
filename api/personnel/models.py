@@ -1946,3 +1946,20 @@ class PositionAdministrative(models.Model):
 
     class Meta:
         ordering = ["-date_debut", "-id"]
+
+
+class AdhesionJuridique(models.Model):
+    """Acceptation, par un compte, d'une version d'un document juridique (CGU, confidentialité, protection des données).
+
+    Une ligne par compte, document et version : une nouvelle version du document redemande l'adhésion.
+    """
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="adhesions")
+    document = models.CharField(max_length=40)
+    version = models.CharField(max_length=20)
+    accepte_le = models.DateTimeField(default=timezone.now)
+    adresse_ip = models.GenericIPAddressField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["accepte_le"]
+        constraints = [models.UniqueConstraint(fields=["user", "document", "version"], name="adhesion_unique")]

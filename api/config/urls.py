@@ -8,8 +8,11 @@ from django.views.static import serve
 DIST = settings.BASE_DIR.parent / "client" / "dist"
 
 
+@xframe_options_sameorigin
 def application_front(request, chemin=""):
-    """Sert le front construit : les fichiers réels, puis index.html pour les routes de l'écran."""
+    """Sert le front construit : les fichiers réels, puis index.html pour les routes de l'écran. Cadre autorisé depuis la même origine
+    seulement (parcours d'adhésion : les documents juridiques s'affichent dans la page).
+    """
     if not DIST.is_dir():
         return HttpResponseNotFound("Le front n'est pas construit.")
     relatif = chemin.replace("\\", "/").lstrip("/")

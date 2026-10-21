@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import absences, besoins, dotation_agents, etats_rh, action_sociale, actions, communication, communications, discipline, effectifs, fin_carriere, formation, grh, parcours, positions, import_communications, import_structures, messagerie, parametres, planification, utilisateurs, views
+from . import absences, adhesion, besoins, dotation_agents, etats_rh, action_sociale, actions, communication, communications, discipline, effectifs, fin_carriere, formation, grh, parcours, positions, import_communications, import_structures, messagerie, parametres, planification, utilisateurs, views
 
 urlpatterns = [
     path("health/", views.health, name="health"),
@@ -15,6 +15,7 @@ urlpatterns = [
     path("auth/login/", views.login, name="login"),
     path("auth/logout/", views.logout, name="logout"),
     path("me/", views.me, name="me"),
+    path("adhesion/", adhesion.adhesion, name="adhesion"),
     path("me/mot-de-passe/", views.changer_mot_de_passe, name="me-mot-de-passe"),
     path("parametres/", parametres.parametres, name="parametres"),
     path("parametres/identite/", parametres.enregistrer_identite_ministre, name="parametres-identite"),
