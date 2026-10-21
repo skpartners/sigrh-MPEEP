@@ -72,7 +72,7 @@ def test_import_cree_un_referentiel_lie(api):
     )
     assert reponse.status_code == 200, reponse.json()
     assert reponse.json()["crees"] == 4
-    structure = EntiteTutelle.objects.get(nom="Cellule du suivi des réformes")
+    structure = EntiteTutelle.objects.get(nom="Cellule du Suivi des Réformes")
     assert structure.pole.nom == "Pôle de la transformation"
     assert structure.niveau == "direction-centrale"
     assert structure.parent_id is None

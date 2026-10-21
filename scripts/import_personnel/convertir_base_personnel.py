@@ -27,6 +27,7 @@ from django.db import transaction  # noqa: E402
 from personnel import import_effectif, import_structures  # noqa: E402
 from personnel.classeur import habiller  # noqa: E402
 from personnel.import_agents import _norm  # noqa: E402
+from personnel.normalisation import nom_structure  # noqa: E402
 from personnel.models import Agent, Diplome, EmploiReferentiel, EntiteTutelle, GradeReferentiel, PoleMinisteriel  # noqa: E402
 
 FICHIER = os.environ.get("BASE_PERSONNEL", "")
@@ -93,7 +94,7 @@ definies: dict[str, dict] = {}  # nom normalisé → définition à créer
 
 
 def alias(nom: str) -> str:
-    return ALIAS.get(n(nom).casefold(), n(nom))
+    return ALIAS.get(n(nom).casefold()) or nom_structure(n(nom))  # même graphie que la base normalisée
 
 
 def nom_de_rang(r) -> str:

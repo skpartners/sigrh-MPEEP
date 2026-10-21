@@ -1675,7 +1675,7 @@ def test_gestion_des_utilisateurs(api):
     assert cree.status_code == 201
     assert cree.json()["actif"] is True
     assert cree.json()["structure"] == "svc-actes"
-    assert cree.json()["structure_nom"] == "Service des actes"
+    assert cree.json()["structure_nom"] == "Service des Actes"
     assert cree.json()["pole"] == "cabinet"
     assert cree.json()["superieur"] == "DRH-2018-044"
 
@@ -1733,7 +1733,7 @@ def test_gestion_des_utilisateurs(api):
     assert agent.status_code == 201
     assert agent.json()["superieur"] == "USR-2026-01"
     assert agent.json()["structure"] == "svc-actes"
-    assert agent.json()["structure_nom"] == "Service des actes"
+    assert agent.json()["structure_nom"] == "Service des Actes"
 
     hors_ministere = api.post(
         "/api/v1/utilisateurs/",

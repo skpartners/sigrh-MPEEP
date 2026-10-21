@@ -47,3 +47,8 @@ desktop.ini
 # Sauvegardes locales de la base et classeurs contenant des données personnelles
 api/db.sqlite3*
 Base_personnel*.xlsx
+
+# Sauvegardes de base et rapports de normalisation (données personnelles)
+*.sqlite3.*
+*.bak
+api/rapports_normalisation/

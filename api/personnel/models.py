@@ -2,6 +2,8 @@ from django.contrib.auth.models import User
 from django.db import models
 from django.utils import timezone
 
+from .normalisation import nom_structure, normaliser_identite
+
 
 class Organisme(models.Model):
     code = models.SlugField(max_length=40, unique=True)
@@ -133,6 +135,14 @@ class Agent(models.Model):
 
     class Meta:
         ordering = ["nom", "prenoms"]
+
+    def save(self, *args, **kwargs):
+        # Une seule graphie, quelle que soit la saisie : voir personnel/normalisation.py.
+        identite = normaliser_identite(self.nom, self.prenoms, self.nom_jeune_fille, deduire_epoux=False)
+        self.nom, self.prenoms, self.nom_jeune_fille = identite.nom, identite.prenoms, identite.nom_jeune_fille
+        for champ in ("structure", "direction", "sous_direction", "service"):
+            setattr(self, champ, nom_structure(getattr(self, champ)))
+        super().save(*args, **kwargs)
 
     def __str__(self) -> str:
         return f"{self.nom} {self.prenoms}"
@@ -1047,6 +1057,10 @@ class EntiteTutelle(models.Model):
     class Meta:
         ordering = ["ordre", "nom"]
         verbose_name = "structure"
+
+    def save(self, *args, **kwargs):
+        self.nom = nom_structure(self.nom)
+        super().save(*args, **kwargs)
 
     def __str__(self) -> str:
         return self.nom

@@ -57,11 +57,11 @@ def test_seul_un_responsable_voit_et_saisit_ses_besoins(monde):
     assert monde["simple"].get("/api/v1/besoins/mes-fiches/").json() == {"responsable": False}
     assert monde["simple"].post("/api/v1/besoins/fiches/", _fiche(), format="json").status_code == 403
     vue = monde["service"].get("/api/v1/besoins/mes-fiches/").json()
-    assert vue["responsable"] and [s["nom"] for s in vue["structures"]] == ["Service test"]
+    assert vue["responsable"] and [s["nom"] for s in vue["structures"]] == ["Service Test"]
     assert monde["service"].post("/api/v1/besoins/fiches/", _fiche(fonctionnaires=0, contractuels=0), format="json").status_code == 400
     assert monde["service"].post("/api/v1/besoins/fiches/", _fiche(fonctionnaires=-1), format="json").status_code == 400
     cree = monde["service"].post("/api/v1/besoins/fiches/", _fiche(), format="json")
-    assert cree.status_code == 201 and cree.json()["volume"] == 3 and cree.json()["chemin"] == ["Direction test", "Sous-direction test", "Service test"]
+    assert cree.status_code == 201 and cree.json()["volume"] == 3 and cree.json()["chemin"] == ["Direction Test", "Sous-direction Test", "Service Test"]
 
 
 def test_la_centralisation_remonte_du_service_a_la_direction(monde):
@@ -75,7 +75,7 @@ def test_la_centralisation_remonte_du_service_a_la_direction(monde):
     sous = racine["enfants"][0]
     assert sous["cumul"]["total"] == 4 and sous["enfants"][0]["propre"] == {"fonctionnaires": 2, "contractuels": 1, "total": 3}
     service = monde["service"].get("/api/v1/besoins/").json()
-    assert len(service["fiches"]) == 1 and service["arbre"][0]["nom"] == "Service test"
+    assert len(service["fiches"]) == 1 and service["arbre"][0]["nom"] == "Service Test"
     # Le DRH voit tout.
     tout = monde["drh"].get("/api/v1/besoins/").json()
     assert tout["totaux"]["volume"] >= 6 + 16 and tout["peut_lancer"]

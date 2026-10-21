@@ -88,7 +88,7 @@ def test_le_chargement_cree_agents_comptes_et_messages_sans_toucher_aux_donnees_
     assert corps["crees"] == 2 and corps["comptes_crees"] == 2 and corps["supprimes"] == {}
     assert Agent.objects.count() == avant + 2
     agent = Agent.objects.get(matricule="REEL-001")
-    assert agent.service == "Service des actes" and agent.categorie == "A" and agent.type_agent == "Fonctionnaire"
+    assert agent.service == "Service des Actes" and agent.categorie == "A" and agent.type_agent == "Fonctionnaire"
     # Le matricule est l'identifiant, matricule@2026 le mot de passe initial, et l'agent en est informé.
     connexion = api.post("/api/v1/auth/login/", {"matricule": "REEL-001", "password": "REEL-001@2026"}, format="json")
     assert connexion.status_code == 200
@@ -96,7 +96,7 @@ def test_le_chargement_cree_agents_comptes_et_messages_sans_toucher_aux_donnees_
     message = Notification.objects.get(destinataire__username="REEL-001")
     assert "mot de passe" in message.message and message.urgente
     chef = Profil.objects.get(user__username="REEL-002")
-    assert chef.role == "Chef de service" and chef.structure.nom == "Service des actes" and chef.superieur.username == "REEL-001"
+    assert chef.role == "Chef de service" and chef.structure.nom == "Service des Actes" and chef.superieur.username == "REEL-001"
     # Recharger le même classeur met à jour sans doubler les comptes.
     seconde = _poster(api, auth, _classeur(_ligne(**{"Nom": "DIABATÉ-KONÉ"})))
     assert seconde.json()["crees"] == 0 and seconde.json()["mis_a_jour"] == 1 and seconde.json()["comptes_crees"] == 0
