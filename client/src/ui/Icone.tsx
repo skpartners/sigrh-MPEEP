@@ -169,6 +169,7 @@ import {
   Save,
   Sigma,
   Tag,
+  ExternalLink,
 } from "lucide-react";
 
 /** Ancien nom Material Symbols → tracé simple. Les noms viennent aussi de l'API. */
@@ -288,6 +289,7 @@ const ICONES: Record<string, LucideIcon> = {
   folder_zip: FolderArchive,
   forum: MessagesSquare,
   gavel: Gavel,
+  open_in_new: ExternalLink,
   group_add: UserPlus,
   group_work: Users,
   groups: Users,
