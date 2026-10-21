@@ -1,6 +1,9 @@
+import { readFileSync } from "node:fs";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig, type Connect, type Plugin } from "vite";
+
+const versionApplication = JSON.parse(readFileSync(new URL("./package.json", import.meta.url), "utf8")).version as string;
 
 function redirigerRacine(): Plugin {
   const rediriger: Connect.NextHandleFunction = (req, res, next) => {
@@ -25,6 +28,9 @@ function redirigerRacine(): Plugin {
 
 export default defineConfig({
   base: "/sigrh/",
+  define: {
+    __VERSION_APPLICATION__: JSON.stringify(versionApplication),
+  },
   plugins: [redirigerRacine(), react(), tailwindcss()],
   server: {
     host: "127.0.0.1",

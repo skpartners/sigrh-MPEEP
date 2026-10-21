@@ -161,7 +161,7 @@ export function MessagerieProvider({ children, actif }: { children: ReactNode; a
           aria-expanded={ouvert}
           aria-haspopup="dialog"
           aria-label={ouvert ? "Fermer la messagerie" : "Ouvrir la messagerie"}
-          className="fixed z-[60] bottom-[calc(var(--haut-pied)+1rem)] right-6 w-14 h-14 rounded-full bg-primary text-on-primary shadow-xl hover:bg-primary-container flex items-center justify-center"
+          className="fixed z-[60] bottom-[calc(var(--haut-pied)+0.75rem)] right-3 w-11 h-11 sm:bottom-[calc(var(--haut-pied)+1rem)] sm:right-6 sm:w-14 sm:h-14 rounded-full bg-primary text-on-primary shadow-xl hover:bg-primary-container flex items-center justify-center"
         >
           <Icone nom={ouvert && !sortie ? "close" : "forum"} className="text-2xl" />
         </button>

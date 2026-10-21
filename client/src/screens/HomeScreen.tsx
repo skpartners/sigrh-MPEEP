@@ -8,7 +8,8 @@ import { reducedMotion, useSlideNavigate } from "../ui/Motion";
 import { PublicHeaderNav } from "./PublicHeaderNav";
 import { useHauteurFixe } from "../ui/HauteurFixe";
 import { Icone } from "../ui/Icone";
-import { LogoMinistere, srcArmoiries } from "../ui/Logo";
+import { srcArmoiries } from "../ui/Logo";
+import { MarqueSigrh } from "../ui/MarqueSigrh";
 
 /** Extrait l'entier de tête d'une chaîne (ex : "1 247 agents" → 1247) et anime le comptage.
  *  Si la valeur ne commence pas par un chiffre, elle s'affiche directement sans animation. */
@@ -130,24 +131,9 @@ export function HomeScreen() {
         </div>
       </div>
       <div className={"h-16 mx-auto px-margin-desktop flex items-center justify-between gap-space-md"}>
-        <div className={"flex items-center gap-space-md"}>
-          <LogoMinistere alt="Armoiries de la République de Côte d'Ivoire" className="h-12 w-12 object-contain" />
-          <div className={"flex flex-col"}>
-            <span className={"font-label-lg text-label-lg text-primary uppercase tracking-tight"}>
-              SIGRH-PORTFEUILLE
-            </span>
-            <span className={"font-label-sm text-label-sm text-on-surface-variant truncate max-w-xl"}>
-              Ministère du Portefeuille de l'État et des Entreprises Publiques
-            </span>
-          </div>
-        </div>
+        <MarqueSigrh />
         <PublicHeaderNav />
         <div className={"flex items-center gap-space-md"}>
-          <div className={"hidden sm:flex items-center gap-space-xs bg-surface-container-high px-space-md py-space-xs rounded"}>
-            <span className={"font-label-sm text-label-sm text-on-surface-variant"}>
-              Plateforme Souveraine
-            </span>
-          </div>
           <div className={"w-8 h-8 rounded-full bg-primary flex items-center justify-center"}>
             <Icone nom="person" className="text-on-primary text-[1.125rem]" />
           </div>

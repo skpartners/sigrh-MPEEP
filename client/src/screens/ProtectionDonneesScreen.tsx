@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { PublicHeaderNav } from "./PublicHeaderNav";
 import { useHauteurFixe } from "../ui/HauteurFixe";
 import { Icone } from "../ui/Icone";
+import { MarqueSigrh } from "../ui/MarqueSigrh";
 
 export function ProtectionDonneesScreen() {
   const enteteRef = useRef<HTMLElement>(null);
@@ -31,17 +32,7 @@ export function ProtectionDonneesScreen() {
         </div>
       </div>
       <div className={"h-16 mx-auto px-margin-desktop flex items-center justify-between gap-space-md"}>
-        <div className={"flex items-center gap-space-md"}>
-          <img alt="Armoiries de la République de Côte d'Ivoire" className="h-12 w-12 object-contain" src={`${import.meta.env.BASE_URL}logo.png`} />
-          <div className={"flex flex-col"}>
-            <span className={"font-label-lg text-label-lg text-primary uppercase tracking-tight"}>
-              SIGRH-PORTFEUILLE
-            </span>
-            <span className={"font-label-sm text-label-sm text-on-surface-variant truncate max-w-xl"}>
-              Ministère du Portefeuille de l'État et des Entreprises Publiques
-            </span>
-          </div>
-        </div>
+        <MarqueSigrh />
         <PublicHeaderNav />
         <div className={"flex items-center gap-space-md"}>
           <div className={"hidden sm:flex items-center gap-space-xs bg-surface-container-high px-space-md py-space-xs rounded"}>

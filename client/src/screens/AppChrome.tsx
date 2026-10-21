@@ -15,12 +15,12 @@ import { CommunicationBouton } from "./CommunicationBouton";
 import { MessagerieBouton } from "./Messagerie";
 import { NotificationBell } from "./NotificationBell";
 import { Icone } from "../ui/Icone";
-import { LogoMinistere } from "../ui/Logo";
 import { destinationModule, lienActif, libellePage, menuAutorise, menuCourant, moduleAutorise, NAV, pageHorsHabilitation, repliHabilitation, sousMenus, type LienNav } from "./navigation";
+import { MarqueSigrh } from "../ui/MarqueSigrh";
 
-// Même palier que lg: de Tailwind (64rem) : il suit la taille de police du navigateur, et le zoom
+// Même palier que lg: de Tailwind (63,5 rem, voir @theme dans app.css) : il suit la taille de police du navigateur, et le zoom
 // réduit déjà la largeur utile en px CSS.
-const ECRAN_LARGE = "(width >= 64rem)";
+const ECRAN_LARGE = "(width >= 63.5rem)";
 
 function ecranLarge(): boolean {
   return window.matchMedia(ECRAN_LARGE).matches;
@@ -155,18 +155,8 @@ export function AppChrome({ children, sansSidebar = false, actions }: { children
                 <Icone nom={menuOpen ? "menu_open" : "menu"} className="text-2xl" />
               </button>
             ) : null}
-            <Link to="/app" title="Menu principal" aria-label="Menu principal" className="flex max-[22rem]:hidden items-center gap-3 min-w-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2">
-              <span className="relative flex items-center justify-center shrink-0">
-                <LogoMinistere alt="Armoiries de la République de Côte d'Ivoire" className="h-8 w-8 sm:h-10 sm:w-10 object-contain" />
-                <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-secondary-container border border-white/40" aria-hidden="true" />
-              </span>
-              <span className="hidden sm:flex flex-col min-w-0">
-                <span className="font-label-md text-label-md font-bold truncate flex items-center gap-0.5">
-                  <span className="text-primary">SIGRH</span>
-                  <span className="text-secondary">·</span>
-                </span>
-                <span className="font-label-sm text-label-sm text-on-surface-variant truncate flex items-center gap-1.5" title="Ministère du Portefeuille de l'État et des Entreprises Publiques">MPEEP<span className="font-label-xs text-label-xs text-on-surface-variant/50 tabular-nums">v0</span></span>
-              </span>
+            <Link to="/app" title="SIGRH-PORTEFEUILLE" aria-label="Menu principal" className="flex max-[22rem]:hidden items-center min-w-0 rounded">
+              <MarqueSigrh compact />
             </Link>
           </div>
           <div className="outils flex items-center gap-0.5 sm:gap-2 shrink-0" role="toolbar" aria-label="Outils de l'application">
@@ -274,14 +264,14 @@ export function AppChrome({ children, sansSidebar = false, actions }: { children
           </PageMotion>
         </main>
       </div>
-      <footer ref={piedRef} className="app-pied fixed tres-court:static bottom-0 inset-x-0 z-50 bg-white/80 backdrop-blur-2xl border-t border-hairline/60 shadow-[0_-1px_16px_color-mix(in_oklab,var(--color-primary)_8%,transparent)] py-3 sm:py-4 court:py-2 px-4 sm:px-8">
+      <footer ref={piedRef} className="app-pied fixed tres-court:static bottom-0 inset-x-0 z-50 bg-white/80 backdrop-blur-2xl border-t border-hairline/60 shadow-[0_-1px_16px_color-mix(in_oklab,var(--color-primary)_8%,transparent)] py-1.5 sm:py-4 court:py-2 px-4 sm:px-8">
         {/* Ligne accent animée — Jitter gradient sweep (footer) */}
         <div className="motion-gradient-sweep absolute top-0 left-0 right-0 h-0.5" aria-hidden="true" />
         <div className="mx-auto flex max-w-[120rem] flex-col items-center justify-between gap-1 sm:flex-row sm:gap-4">
           <p className="font-label-sm text-label-sm text-on-surface-variant text-center sm:text-left">
-            <span className="font-semibold text-on-surface">République de Côte d'Ivoire</span>
-            <span className="hidden md:inline"> · Ministère du Portefeuille de l'État et des Entreprises Publiques</span>
-            <span aria-hidden="true"> · </span>© {new Date().getFullYear()}
+            © {new Date().getFullYear()} République de Côte d'Ivoire
+            <span className="mx-2 opacity-40" aria-hidden="true">·</span>
+            <span className="tabular-nums">Version {__VERSION_APPLICATION__}</span>
           </p>
           <nav className="flex flex-wrap items-center justify-center sm:justify-end" aria-label="Informations légales et assistance">
             <ul className="flex flex-wrap items-center justify-center gap-x-1 sm:justify-end">
@@ -324,7 +314,7 @@ function OngletsModules({ courant, acces }: { courant: LienNav | null; acces: Se
     return () => window.removeEventListener("resize", mesurer);
   }, [cle, modules.length]);
 
-  const onglet = "relative z-10 inline-flex items-center gap-2 whitespace-nowrap rounded-xl px-3.5 py-2 font-label-md text-label-md transition-colors duration-300";
+  const onglet = "relative z-10 inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-xl px-3.5 py-2 font-label-md text-label-md transition-colors duration-300";
   return (
     <nav aria-label="Modules" className="sticky top-[calc(var(--haut-entete)+0.5rem)] z-30 px-4 sm:px-6 lg:px-8 mt-4">
       <div className="rounded-2xl border border-white/60 bg-white/70 p-1 shadow-[0_4px_20px_color-mix(in_oklab,var(--color-primary)_10%,transparent)] backdrop-blur-xl">
@@ -360,7 +350,7 @@ function OngletsModules({ courant, acces }: { courant: LienNav | null; acces: Se
   );
 }
 
-const LIEN_PIED = "rounded px-2 py-1 font-label-sm text-label-sm font-semibold text-on-surface-variant transition-colors hover:text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary";
+const LIEN_PIED = "rounded px-1.5 py-0.5 sm:px-2 sm:py-1 font-label-sm text-label-sm font-semibold text-on-surface-variant transition-colors hover:text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary";
 
 const PAGES_FIXES: Record<string, { libelle: string; icone: string; resume: string }> = {
   "/app/aide": { libelle: "Aide & documentation", icone: "help", resume: "Guides d'utilisation et explications détaillées des modules du SIGRH." },
@@ -466,7 +456,14 @@ function ProfileMenu({ user }: { user: SessionUser | undefined }) {
           <span className="font-label-md text-label-md text-on-surface font-semibold leading-tight">
             {user?.nom_complet ?? "Session"}
           </span>
-          <span className="font-label-sm text-label-sm text-on-surface-variant" title={user?.fonction || undefined}>{user?.fonction ? sigleFonction(user.fonction) : ""}</span>
+          {user?.administrateur ? (
+            <span className="inline-flex w-fit items-center gap-1 rounded bg-secondary-container px-1.5 font-label-sm text-label-sm font-semibold text-on-secondary-container">
+              <Icone nom="admin_panel_settings" className="text-sm leading-none" />
+              Mode administrateur
+            </span>
+          ) : (
+            <span className="font-label-sm text-label-sm text-on-surface-variant" title={user?.fonction || undefined}>{user?.fonction ? sigleFonction(user.fonction) : ""}</span>
+          )}
         </span>
         <Icone nom="expand_more" className="text-lg text-on-surface-variant hidden sm:inline" />
       </button>

@@ -958,7 +958,7 @@ export function AideScreen() {
             </div>
           </nav>
 
-          <div className="space-y-8 min-w-0">
+          <div className="space-y-8 min-w-0" data-no-reveal>
             <header className="motion-rise rounded-xl overflow-hidden bg-primary text-on-primary">
               <Bandeau />
               <div className="p-6 sm:p-8">
@@ -969,7 +969,7 @@ export function AideScreen() {
               </div>
             </header>
 
-            <section id="communs" className="reveal scroll-mt-[calc(var(--haut-entete)+1rem)] space-y-4" aria-labelledby="titre-communs">
+            <section id="communs" className="scroll-mt-[calc(var(--haut-entete)+1rem)] space-y-4" aria-labelledby="titre-communs">
               <h2 id="titre-communs" className="font-headline-sm text-headline-sm text-on-surface">Règles communes</h2>
               <div className="flex flex-col gap-4">
                 {COMMUNS.map((bloc, index) => (
@@ -978,7 +978,7 @@ export function AideScreen() {
               </div>
             </section>
 
-            <section id="barre" className="reveal scroll-mt-[calc(var(--haut-entete)+1rem)] space-y-4" aria-labelledby="titre-barre">
+            <section id="barre" className="scroll-mt-[calc(var(--haut-entete)+1rem)] space-y-4" aria-labelledby="titre-barre">
               <h2 id="titre-barre" className="font-headline-sm text-headline-sm text-on-surface">Barre du haut</h2>
               <div className="flex flex-col gap-4">
                 {BARRE.map((bloc, index) => (
@@ -1056,7 +1056,7 @@ function Partie({ titre, icone, lignes, ton, ordonne = false }: { titre: string;
 
 function CarteModule({ module }: { module: ModuleAide }) {
   return (
-    <article id={module.id} className="reveal scroll-mt-[calc(var(--haut-entete)+1rem)] rounded-xl border border-hairline bg-surface-container-lowest overflow-hidden" aria-labelledby={`titre-${module.id}`}>
+    <article id={module.id} className="scroll-mt-[calc(var(--haut-entete)+1rem)] rounded-xl border border-hairline bg-surface-container-lowest overflow-hidden" aria-labelledby={`titre-${module.id}`}>
       <Bandeau />
       <div className="p-6">
         <Corps module={module} />
@@ -1067,7 +1067,7 @@ function CarteModule({ module }: { module: ModuleAide }) {
 
 function GroupeMenu({ groupe }: { groupe: Extract<Rubrique, { genre: "groupe" }> }) {
   return (
-    <article id={groupe.id} className="reveal scroll-mt-[calc(var(--haut-entete)+1rem)] rounded-xl border border-hairline bg-surface-container-lowest overflow-hidden" aria-labelledby={`titre-${groupe.id}`}>
+    <article id={groupe.id} className="scroll-mt-[calc(var(--haut-entete)+1rem)] rounded-xl border border-hairline bg-surface-container-lowest overflow-hidden" aria-labelledby={`titre-${groupe.id}`}>
       <Bandeau />
       <div className="p-6">
         <Entete id={groupe.id} icone={groupe.icone} titre={groupe.titre} resume={groupe.resume} chemin={groupe.chemin} />

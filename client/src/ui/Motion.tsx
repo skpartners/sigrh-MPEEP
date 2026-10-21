@@ -27,32 +27,15 @@ export function useAutoReveal(root: RefObject<HTMLElement | null>, actif = true)
     const container = root.current;
     if (!actif || !container || reducedMotion() || !("IntersectionObserver" in window)) return;
 
-    const targets = Array.from(container.querySelectorAll<HTMLElement>(REVEAL_SELECTOR)).filter(
-      (el) => !el.closest("header, aside, footer, nav") && !el.matches("[data-no-reveal]"),
-    );
-
     const marked = new Set<HTMLElement>();
     const initiallyVisible = new Set<HTMLElement>();
-
-    for (const el of targets) {
-      let parent = el.parentElement;
-      let nested = false;
-      while (parent && parent !== container) {
-        if (marked.has(parent)) { nested = true; break; }
-        parent = parent.parentElement;
-      }
-      if (nested) continue;
-      marked.add(el);
-      if (el.getBoundingClientRect().top < window.innerHeight) {
-        initiallyVisible.add(el);
-      }
-    }
 
     // Deux compteurs séparés : les éléments visibles au chargement
     // et les éléments révélés au défilement ne partagent pas le même batch.
     let batchInit = 0;
     let batchScroll = 0;
     let frame = 0;
+    let scanFrame = 0;
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -70,17 +53,42 @@ export function useAutoReveal(root: RefObject<HTMLElement | null>, actif = true)
         cancelAnimationFrame(frame);
         frame = requestAnimationFrame(() => { batchScroll = 0; });
       },
-      { rootMargin: "0px 0px -6% 0px", threshold: 0.04 },
+      // Seuil 0 : un bloc plus haut que l'écran n'atteint jamais 4 % de visibilité.
+      { rootMargin: "0px 0px -6% 0px", threshold: 0 },
     );
 
-    for (const el of marked) {
-      el.classList.add("reveal");
-      observer.observe(el);
-    }
+    const scan = () => {
+      const targets = Array.from(container.querySelectorAll<HTMLElement>(REVEAL_SELECTOR)).filter(
+        (el) => !el.closest("header, aside, footer, nav") && !el.matches("[data-no-reveal]") && !marked.has(el),
+      );
+      for (const el of targets) {
+        let parent = el.parentElement;
+        let nested = false;
+        while (parent && parent !== container) {
+          if (marked.has(parent)) { nested = true; break; }
+          parent = parent.parentElement;
+        }
+        if (nested) continue;
+        marked.add(el);
+        if (el.getBoundingClientRect().top < window.innerHeight) initiallyVisible.add(el);
+        el.classList.add("reveal");
+        observer.observe(el);
+      }
+    };
+
+    scan();
+    // Le contenu de page arrive après la session : un seul passage au montage le manquerait.
+    const mutations = new MutationObserver(() => {
+      cancelAnimationFrame(scanFrame);
+      scanFrame = requestAnimationFrame(scan);
+    });
+    mutations.observe(container, { childList: true, subtree: true });
 
     return () => {
+      mutations.disconnect();
       observer.disconnect();
       cancelAnimationFrame(frame);
+      cancelAnimationFrame(scanFrame);
       for (const el of marked) {
         el.classList.remove("reveal", "is-revealed");
         el.style.removeProperty("--reveal-delay");

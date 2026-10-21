@@ -9,6 +9,10 @@
 @custom-variant court (@media (max-height: 47.5em));
 @custom-variant tres-court (@media (max-height: 37.5em));
 @theme {
+  /* Paliers un peu sous 48 et 64 rem : une tablette à 768 px (portrait) ou 1024 px (paysage) tombe franchement
+     dans md et lg, même si le navigateur arrondit ou si la police par défaut est un peu plus grande. */
+  --breakpoint-md: 47.5rem;
+  --breakpoint-lg: 63.5rem;
   --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
   --font-headline-xl: var(--font-sans);
   --font-headline-xl-mobile: var(--font-sans);
@@ -982,17 +986,20 @@ a[class*="rounded"]:active {
     overflow-x: clip;
   }
 
-  main > *,
-  main .flex > *,
-  main .inline-flex,
-  main .grid > * {
-    min-width: 0;
-  }
+  /* Filet de sécurité : dans la couche base, pour que min-w-* / max-w-* posés sur un élément l'emportent. */
+  @layer base {
+    main > *,
+    main .flex > *,
+    main .inline-flex,
+    main .grid > * {
+      min-width: 0;
+    }
 
-  main .flex,
-  main .inline-flex,
-  main .grid {
-    max-width: 100%;
+    main .flex,
+    main .inline-flex,
+    main .grid {
+      max-width: 100%;
+    }
   }
 
   main h1,
@@ -1089,6 +1096,18 @@ a[class*="rounded"]:active {
     padding: 0.5rem 0.75rem;
   }
 
+  /* Tablette : deux champs par ligne dans chaque fiche, l'ouvrage reste pleine largeur. */
+  @media (width >= 47.5rem) {
+    table:not(.tableau-fixe) > tbody > tr > * {
+      flex-basis: calc(50% - 0.5rem);
+    }
+
+    table:not(.tableau-fixe) > tbody > tr > :last-child,
+    table:not(.tableau-fixe) > tbody > tr > [colspan] {
+      flex-basis: 100%;
+    }
+  }
+
   .overflow-x-auto:has(table.tableau-fixe) {
     max-width: 100%;
     -webkit-overflow-scrolling: touch;
@@ -1096,7 +1115,7 @@ a[class*="rounded"]:active {
 }
 
 /* Cibles tactiles, barre d'outils et onglets : téléphone et tablette. */
-@media screen and (width < 64rem) {
+@media screen and (width < 63.5rem) {
   button,
   [role="tab"],
   [role="menuitem"],
@@ -1174,9 +1193,10 @@ a[class*="rounded"]:active {
   }
 }
 
-@media screen and (width < 48rem) {
-  main .flex:not(.flex-col):not(.flex-nowrap),
-  .modale-carte .flex:not(.flex-col):not(.flex-nowrap) {
+@media screen and (width < 47.5rem) {
+  /* Une piste qui défile (overflow-x-auto) garde ses éléments sur une ligne. */
+  main .flex:not(.flex-col):not(.flex-nowrap):not(.overflow-x-auto),
+  .modale-carte .flex:not(.flex-col):not(.flex-nowrap):not(.overflow-x-auto) {
     flex-wrap: wrap;
   }
 }
