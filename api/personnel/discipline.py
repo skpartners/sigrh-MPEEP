@@ -13,6 +13,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from .models import Agent, BlocEcran, Notification, PieceJointe, ProcedureDisciplinaire, SanctionDisciplinaire, SessionParitaire
+from .roles import ROLES_SIMPLES
 from .rapports.convocation import Signataire, rendre_convocation
 from .parcours import peut_gerer_carriere, refus_carriere
 from .visibilite import agent_visible, agents_visibles, refus_hors_perimetre
@@ -232,7 +233,7 @@ def resoudre_signataire() -> Signataire | None:
     """Signature du DRH si elle est déposée, sinon celle de son intérimaire ou de son remplaçant."""
     titulaire = (
         User.objects.filter(is_active=True, profil__structure__code="drh")
-        .exclude(profil__role="Agent")
+        .exclude(profil__role__in=ROLES_SIMPLES)
         .select_related("profil", "profil__structure")
         .order_by("pk")
         .first()

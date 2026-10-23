@@ -339,6 +339,8 @@ def types_conges() -> list[dict]:
 
 
 def conges_agent(agent: Agent) -> dict:
+    from . import droits_conges
+
     annee = date.today().year
     prises = sum(
         item.jours
@@ -352,6 +354,8 @@ def conges_agent(agent: Agent) -> dict:
         "report": agent.report_conges,
         "autorisations": agent.autorisations_acquises,
         "autorisations_restantes": max(0, agent.autorisations_acquises - prises),
+        "droits": droits_conges.detail(agent),
+        "exercice": droits_conges.exercice_a_attribuer(agent),
     }
 
 
@@ -617,6 +621,8 @@ def agent_detail(agent: Agent) -> dict:
                     "fin": item.fin.isoformat() if item.fin else "",
                     "destinataire": item.destinataire,
                     "justificatif_url": item.justificatif.url if item.justificatif else "",
+                    "document_signe": bool(item.document_signe),
+                    "signe_le": item.signe_le.isoformat() if item.signe_le else "",
                     "visas": [
                         {
                             "ordre": visa.ordre,

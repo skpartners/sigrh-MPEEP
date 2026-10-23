@@ -12,6 +12,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from .taches import en_arriere_plan
 from .classeur import habiller
 from .nomenclature import FAMILLES, SOURCE
 from .models import (
@@ -604,6 +605,7 @@ def lancer_appel(request):
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
+@en_arriere_plan("Gestion de la dotation (PDF)")
 def exporter_dotation_pdf(_request):
     from .rapports.documents import rendre_dotation
 
@@ -638,6 +640,7 @@ def exporter_dotation_pdf(_request):
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
+@en_arriere_plan("Registre de dotation")
 def exporter_dotation(_request):
     lignes = [
         [
@@ -740,7 +743,9 @@ def _ligne_structure(item, seuils=None):
     from .structures import NIVEAUX
 
     libelles = dict(NIVEAUX)
-    effectif, herite = (seuils if seuils is not None else seuils_effectifs(quorum_presence())).get(item.id, (quorum_presence(), True))
+    seuils = seuils if seuils is not None else seuils_effectifs(quorum_presence())
+    # Le quorum par défaut ne se lit que pour une structure inconnue des seuils : pas une requête par ligne.
+    effectif, herite = seuils.get(item.id) or (quorum_presence(), True)
     return {
         "quorum_presence_pourcent": item.quorum_presence_pourcent,
         "quorum_effectif": effectif,

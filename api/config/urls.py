@@ -24,13 +24,25 @@ def application_front(request, chemin=""):
     index = DIST / "index.html"
     if not index.is_file():
         return HttpResponseNotFound("Le front n'est pas construit.")
-    return FileResponse(index.open("rb"))
+    # La page d'entrée change à chaque déploiement : le navigateur la redemande toujours (voir NouvelleVersion côté front).
+    reponse = FileResponse(index.open("rb"))
+    reponse["Cache-Control"] = "no-cache"
+    return reponse
+
+
+# Dossiers dont les fichiers ne sortent que par une route authentifiée (messagerie, résultats de tâches, documents signés).
+DOSSIERS_PROTEGES = ("messagerie/", "taches/", "documents-signes/")
 
 
 @xframe_options_sameorigin
 def media(request, path):
     """Sert les fichiers déposés ; le dossier est lu à chaque requête, pas au chargement des routes."""
-    return serve(request, path, document_root=settings.MEDIA_ROOT)
+    if path.replace("\\", "/").lstrip("/").startswith(DOSSIERS_PROTEGES):
+        return HttpResponseNotFound("Fichier introuvable.")
+    reponse = serve(request, path, document_root=settings.MEDIA_ROOT)
+    # Un fichier déposé garde son nom : le navigateur peut le garder une heure, sans le redemander à chaque page.
+    reponse["Cache-Control"] = "public, max-age=3600"
+    return reponse
 
 
 urlpatterns = [

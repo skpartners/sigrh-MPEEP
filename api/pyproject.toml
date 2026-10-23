@@ -10,6 +10,13 @@ dependencies = [
     "channels>=4.2",
     "daphne>=4.1",
     "reportlab>=4.2",
+    "celery>=5.4",
+    "redis>=5",
+    "channels-redis>=4.2",
+    "uvicorn>=0.30",
+    "websockets>=13",
+    "whitenoise>=6.7",
+    "psycopg[binary]>=3.2",
 ]
 
 [dependency-groups]

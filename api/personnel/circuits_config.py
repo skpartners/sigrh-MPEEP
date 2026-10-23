@@ -29,7 +29,7 @@ def lister() -> dict:
         },
         "roles": [
             {"role": item.role, "description": item.description}
-            for item in RoleMatrice.objects.exclude(role="Agent")
+            for item in RoleMatrice.objects.exclude(role__in=("Agent", "Secrétaire"))  # ni l'agent ni le secrétariat ne visent
         ],
     }
 

@@ -9,7 +9,7 @@ from django.utils.dateparse import parse_date
 
 from .circuits_config import etapes_pour_absence, etapes_pour_conge
 from .inscriptions import _reference
-from .models import Absence, Demande, TypeAbsence, TypeConge, VisaDemande
+from .models import PLAFOND_EXERCICE, Absence, Demande, TypeAbsence, TypeConge, VisaDemande
 
 ETAPE = ("Étape 2 : chef de service", "Avis hiérarchique attendu")
 
@@ -46,6 +46,8 @@ def deposer(agent, payload: dict) -> str | None:
             return erreur
     interim = " ".join(str(payload.get("interim") or "").split())  # facultatif
     observations = " ".join(str(payload.get("observations") or "").split())
+    if type_conge is not None and _annuel(type_conge) and jours > PLAFOND_EXERCICE:
+        return f"On ne peut pas prendre plus de {PLAFOND_EXERCICE} jours au titre d'un seul exercice : déposez une demande par exercice."
     if type_conge is not None and _annuel(type_conge) and _deja_ouvert(agent) + jours > agent.reliquat_conges:
         return f"Le reliquat de congé annuel ({agent.reliquat_conges} j) ne couvre pas cette demande."
     aujourd_hui = timezone.localdate()

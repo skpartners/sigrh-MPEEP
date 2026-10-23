@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { api, logout } from "../api/client";
-import type { AdhesionEtat } from "../api/types";
+import type { AdhesionEtat, SessionUser } from "../api/types";
 import { Icone } from "../ui/Icone";
 import { MarqueSigrh } from "../ui/MarqueSigrh";
 
@@ -20,9 +20,14 @@ export function AdhesionScreen() {
     mutationFn: (document: { code: string; version: string }) =>
       api<AdhesionEtat>("/api/v1/adhesion/", { method: "POST", body: JSON.stringify({ document: document.code, version: document.version }) }),
     onSuccess: (suite) => {
+      // Le compte est déclaré à jour avant de quitter la page : sinon la garde de /app, qui lit encore l'ancien état,
+      // renvoie ici et l'écran reste vide jusqu'à l'actualisation.
+      if (suite.complet) client.setQueryData<SessionUser>(["me"], (me) => (me ? { ...me, adhesion_complete: true } : me));
       client.setQueryData(["adhesion"], suite);
       if (suite.complet) {
-        void client.invalidateQueries({ queryKey: ["me"] }).then(() => navigate("/app", { replace: true }));
+        // Dernier document accepté : on entre dans l'application par un chargement complet. L'écran du parcours se démonte
+        // sans attendre la route suivante, et c'est ce qui laissait une page vide jusqu'à l'actualisation.
+        window.location.replace(`${import.meta.env.BASE_URL}app`);
       }
     },
   });
@@ -43,7 +48,15 @@ export function AdhesionScreen() {
     navigate("/connexion", { replace: true });
   }
 
-  if (etat.data?.complet) return <Navigate to="/app" replace />;
+  // Parcours déjà terminé (page rouverte) : retour au menu. Juste après le dernier clic, le chargement complet s'en charge.
+  if (etat.data?.complet && !accepter.isSuccess) return <Navigate to="/app" replace />;
+  if (accepter.isSuccess && etat.data?.complet) {
+    return (
+      <div className="flex min-h-dvh items-center justify-center bg-surface" role="status">
+        <p className="font-body-md text-body-md text-on-surface-variant">Ouverture de votre espace…</p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-dvh flex-col bg-surface font-body-md text-body-md text-on-surface">

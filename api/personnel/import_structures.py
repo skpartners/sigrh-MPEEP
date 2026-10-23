@@ -11,6 +11,7 @@ from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from .taches import en_arriere_plan
 from .effectifs import _code_libre
 from .import_agents import ImportInvalide, _jusqu_a_entete, _lire_feuille, _norm, _texte, _vide
 from .nomenclature import FAMILLES
@@ -559,6 +560,7 @@ def modele_import(_request):
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 @parser_classes([MultiPartParser, FormParser])
+@en_arriere_plan("Import des structures")
 def importer_structures(request):
     fichier = request.FILES.get("fichier")
     if fichier is None:

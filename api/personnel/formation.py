@@ -19,6 +19,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from .taches import en_arriere_plan
 from .classeur import habiller
 from .models import (
     Agent,
@@ -371,6 +372,7 @@ def plan(request):
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
+@en_arriere_plan("Plan de formation")
 def export_plan(request):
     """Plan de formation en classeur Excel coloré."""
     aujourd_hui = timezone.localdate()

@@ -95,6 +95,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
+    "config.statiques.WhiteNoiseFront",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -123,12 +124,35 @@ TEMPLATES = [
     },
 ]
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+# Base de données. SQLite par défaut, réglée pour plusieurs processus (WAL : les lectures ne bloquent pas l'écriture, le
+# délai d'attente évite les erreurs « database is locked »). Pour une forte charge, PostgreSQL : SIGRH_DB_ENGINE=postgres
+# avec SIGRH_DB_NAME, SIGRH_DB_USER, SIGRH_DB_PASSWORD, SIGRH_DB_HOST et SIGRH_DB_PORT (voir README, « Passer à PostgreSQL »).
+if _env("SIGRH_DB_ENGINE").lower() in {"postgres", "postgresql"}:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": _env("SIGRH_DB_NAME", "sigrh"),
+            "USER": _env("SIGRH_DB_USER", "sigrh"),
+            "PASSWORD": _env("SIGRH_DB_PASSWORD"),
+            "HOST": _env("SIGRH_DB_HOST", "127.0.0.1"),
+            "PORT": _env("SIGRH_DB_PORT", "5432"),
+            # Connexions réutilisées d'une requête à l'autre, et vérifiées avant emploi.
+            "CONN_MAX_AGE": 120,
+            "CONN_HEALTH_CHECKS": True,
+        }
     }
-}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+            "OPTIONS": {
+                "timeout": 30,
+                "transaction_mode": "IMMEDIATE",
+                "init_command": "PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL; PRAGMA busy_timeout=30000",
+            },
+        }
+    }
 
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
@@ -143,6 +167,10 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = "/sigrh/static/"
+# Fichiers hachés du front : validité d'un an (voir config/statiques.py).
+WHITENOISE_IMMUTABLE_FILE_TEST = r"^/sigrh/assets/"
+WHITENOISE_MAX_AGE = 300
+WHITENOISE_INDEX_FILE = False
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 SPA_ORIGINS = _publics([
@@ -172,6 +200,36 @@ CHANNEL_LAYERS = {
         else {"BACKEND": "channels.layers.InMemoryChannelLayer"}
     )
 }
+
+# Cache partagé entre les processus (Redis) : avancement des tâches de fond, réponses courtes des écrans lourds.
+# Sans CACHE_REDIS_URL, cache en mémoire du processus (développement, tests).
+_CACHE_REDIS_URL = _env("CACHE_REDIS_URL")
+CACHES = {
+    "default": (
+        {"BACKEND": "django.core.cache.backends.redis.RedisCache", "LOCATION": _CACHE_REDIS_URL, "KEY_PREFIX": "sigrh", "TIMEOUT": 300}
+        if _CACHE_REDIS_URL
+        else {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}
+    )
+}
+
+# Tâches planifiées (Celery + Redis). Sans CELERY_BROKER_URL, rien n'est branché : le serveur garde sa boucle interne
+# (personnel/echeances.py). Avec un broker, le worker et beat prennent le relais (services SIGRH-Celery et SIGRH-Celery-Beat).
+CELERY_BROKER_URL = _env("CELERY_BROKER_URL")
+CELERY_RESULT_BACKEND = _env("CELERY_RESULT_BACKEND") or CELERY_BROKER_URL or None
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_ENABLE_UTC = True
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
+CELERY_TASK_IGNORE_RESULT = True
+CELERY_BEAT_SCHEDULE = {
+    # Toutes les six heures, comme la boucle interne qu'il remplace.
+    "surveiller-echeances": {"task": "personnel.surveiller_echeances", "schedule": 6 * 3600},
+    # Résultats de tâches de fond et fichiers de la messagerie : jamais conservés au-delà de leur durée.
+    "purger-taches": {"task": "personnel.purger_taches", "schedule": 3600},
+    "purger-medias": {"task": "personnel.purger_medias", "schedule": 1800},
+}
+# Un worker traite plusieurs tâches à la fois (threads) : un long import ne bloque pas les rappels ni les autres exports.
+CELERY_WORKER_PREFETCH_MULTIPLIER = 1
+CELERY_TASK_ACKS_LATE = True
 
 MEDIA_ROOT = BASE_DIR / "media"
 MEDIA_URL = "/sigrh/media/"

@@ -1330,3 +1330,31 @@ html[data-integre] {
   --haut-entete: 0px;
   --haut-pied: 0px;
 }
+
+/* Documents officiels : la feuille s'imprime en A4 sans marge d'imprimante, ses marges sont celles du modèle Word. */
+@page feuille-officielle {
+  size: A4;
+  margin: 0;
+}
+.feuille-officielle {
+  page: feuille-officielle;
+}
+
+/* Le trait orangé de l'en-tête et le filet du pied sont des aplats : ils doivent sortir tels quels sur papier. */
+.feuille-officielle,
+.feuille-officielle * {
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+/* Barre de progression sans valeur connue : un segment qui traverse. */
+.motion-indeterminee {
+  animation: indeterminee 1.4s ease-in-out infinite;
+}
+@keyframes indeterminee {
+  from { margin-left: -33%; }
+  to { margin-left: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .motion-indeterminee { animation: none; margin-left: 0; }
+}

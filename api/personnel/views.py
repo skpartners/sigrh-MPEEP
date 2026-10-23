@@ -11,6 +11,7 @@ from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
+from .taches import en_arriere_plan
 from .models import (
     Absence,
     Acte,
@@ -49,6 +50,7 @@ from .adhesion import adhesion_complete
 from .circuits_config import enregistrer, lister
 from .parametres import identite_ministre, portrait_url
 from .utilisateurs import acces_menu, perimetre_matricules
+from .secretariat import peut_secretariat
 from .visibilite import agents_visibles, dans_le_perimetre
 from .statistiques import FiltreInconnu, calculer, classeur, diaporama, lire_echeance, synthese
 from .statistiques_dynamiques import (
@@ -120,6 +122,30 @@ def _snapshot() -> SnapshotExercice:
     return snap
 
 
+
+MOTS_VIDES = {"de", "des", "du", "la", "le", "les", "l", "d", "et", "a", "au", "aux", "en"}
+NIVEAUX_COURRIER = {"direction-centrale", "sous-direction", "service"}
+
+
+def _sigle_structure(structure) -> str:
+    """Sigle d'une structure : son code s'il est déjà un sigle, sinon les initiales de son nom."""
+    if "-" not in structure.code and len(structure.code) <= 6:
+        return structure.code.upper()
+    mots = re.split(r"[\s'’\-]+", structure.nom)
+    return "".join(mot[0] for mot in mots if mot and mot.lower() not in MOTS_VIDES).upper()
+
+
+def _reference_courrier(user) -> dict:
+    """Éléments du numéro de courrier : sigle du ministère, hiérarchie de la structure de l'imprimeur, ses initiales."""
+    chaine = []
+    structure = user.profil.structure
+    while structure is not None:
+        if structure.niveau in NIVEAUX_COURRIER and structure.code != "cabinet":
+            chaine.insert(0, _sigle_structure(structure))
+        structure = structure.parent
+    initiales = "".join(mot[0] for mot in f"{user.last_name} {user.first_name}".split() if mot).lower()
+    return {"structures": chaine, "initiales": initiales}
+
 def _me(user, request) -> dict:
     profil = user.profil
     signature = ""
@@ -138,6 +164,8 @@ def _me(user, request) -> dict:
         "photo_url": agent.photo.url if agent and agent.photo else "",
         "administrateur": bool(profil.administrateur),
         "adhesion_complete": adhesion_complete(user),
+        "reference_courrier": _reference_courrier(user),
+        "secretariat": peut_secretariat(user),
         "acces": acces_menu(profil),
     }
 
@@ -641,6 +669,7 @@ def retirer_enfant(request, matricule: str, pk: int):
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
+@en_arriere_plan("Dossier de l'agent (PDF)")
 @dans_le_perimetre
 def exporter_dossier(_request, matricule: str):
     from .rapports.documents import rendre_dossier
@@ -738,6 +767,7 @@ def statistiques(request):
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
+@en_arriere_plan("Export des statistiques")
 def export_statistiques(request, format_export):
     try:
         corps = calculer(
@@ -980,6 +1010,7 @@ def dashboard(request):
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
+@en_arriere_plan("Rapport de pilotage")
 def exporter_pilotage(request):
     from .rapports.pilotage import rendre_pilotage
 
@@ -1025,6 +1056,7 @@ def modele_import_agents(_request):
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 @parser_classes([MultiPartParser, FormParser])
+@en_arriere_plan("Import des agents")
 def importer_agents(request):
     from .import_agents import ImportInvalide, importer
 
@@ -1268,6 +1300,10 @@ def document_demande_acte(request, reference: str):
     role = getattr(getattr(request.user, "profil", None), "role", "")
     if request.user.username != demande.agent.matricule and role not in ROLES_CHEF:
         return Response({"detail": "Cet acte ne vous est pas destiné."}, status=403)
+    if demande.document_signe:
+        from .secretariat import _reponse_fichier
+
+        return _reponse_fichier(demande)
     if not delivree(demande):
         return Response({"detail": "Cet acte n'est pas encore délivré."}, status=409)
     visa = visa_final(demande)
@@ -1287,6 +1323,7 @@ def document_demande_acte(request, reference: str):
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
+@en_arriere_plan("Archive des pièces du dossier")
 @dans_le_perimetre
 def archive_pieces(_request, matricule: str):
     from .pieces import archive

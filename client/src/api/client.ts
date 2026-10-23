@@ -1,3 +1,5 @@
+import { attendreTache, type SuiviTache } from "./taches";
+
 const RACINE = "/sigrh";
 const BASE = (import.meta.env.DEV
   ? (import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8101")
@@ -94,8 +96,21 @@ export async function api<T>(path: string, options: RequestInit = {}): Promise<T
   }
   // 204 (suppression) : pas de corps à lire.
   if (response.status === 204) return undefined as T;
-  return (await response.json()) as T;
+  const corps = (await response.json()) as T;
+  // 202 : le serveur a confié le traitement à un worker ; on attend sa fin et on rend la réponse de la vue, comme avant.
+  const tache = response.status === 202 ? (corps as { tache?: string; libelle?: string }) : null;
+  if (tache?.tache) {
+    const suivi = await attendreTache(tache.tache, tache.libelle ?? "Traitement", lireTache);
+    if (suivi.statut === "echec") {
+      const resultat = (suivi.resultat ?? {}) as { detail?: string; erreurs?: ErreurLigne[] };
+      throw new ApiError(suivi.code || 500, resultat.detail || suivi.message || "Le traitement a échoué.", Array.isArray(resultat.erreurs) ? resultat.erreurs : []);
+    }
+    return suivi.resultat as T;
+  }
+  return corps;
 }
+
+const lireTache = (id: string) => api<SuiviTache>(`/api/v1/taches/${id}/`);
 
 /** Télécharge un fichier binaire authentifié (archive ZIP, par exemple). */
 export async function telecharger(path: string, nom: string): Promise<void> {
@@ -117,8 +132,18 @@ export async function telecharger(path: string, nom: string): Promise<void> {
     }
     throw new ApiError(response.status, detail);
   }
-  const blob = await response.blob();
-  const disposition = response.headers.get("Content-Disposition") ?? "";
+  // 202 : fichier préparé par un worker. On attend la fin de la tâche, puis on récupère le fichier produit.
+  if (response.status === 202 && (response.headers.get("Content-Type") ?? "").includes("json")) {
+    const { tache, libelle } = (await response.json()) as { tache: string; libelle?: string };
+    const suivi = await attendreTache(tache, libelle ?? nom, lireTache);
+    if (suivi.statut === "echec") throw new ApiError(suivi.code || 500, ((suivi.resultat ?? {}) as { detail?: string }).detail || suivi.message || "Le traitement a échoué.");
+    await telecharger(`/api/v1/taches/${tache}/fichier/`, suivi.nom_fichier || nom);
+    return;
+  }
+  enregistrerFichier(await response.blob(), response.headers.get("Content-Disposition") ?? "", nom);
+}
+
+function enregistrerFichier(blob: Blob, disposition: string, nom: string) {
   const serveur = disposition.match(/filename="([^"]+)"/)?.[1];
   const url = URL.createObjectURL(blob);
   const lien = document.createElement("a");
@@ -126,4 +151,53 @@ export async function telecharger(path: string, nom: string): Promise<void> {
   lien.download = serveur || nom;
   lien.click();
   URL.revokeObjectURL(url);
+}
+
+/** Récupère le fichier d'une tâche terminée (la liste de l'indicateur propose ce téléchargement). */
+export async function telechargerTache(suivi: SuiviTache): Promise<void> {
+  await telecharger(`/api/v1/taches/${suivi.id}/fichier/`, suivi.nom_fichier || "fichier");
+}
+
+/** Envoie un formulaire avec fichiers en suivant l'avancement de l'envoi (fetch ne le permet pas). */
+export function televerser<T>(path: string, corps: FormData, onProgression?: (pourcentage: number) => void): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const requete = new XMLHttpRequest();
+    requete.open("POST", adresseApi(path));
+    requete.setRequestHeader("Accept", "application/json");
+    const token = getToken();
+    if (token) requete.setRequestHeader("Authorization", `Token ${token}`);
+    requete.upload.onprogress = (evenement) => {
+      if (evenement.lengthComputable) onProgression?.(Math.round((evenement.loaded / evenement.total) * 100));
+    };
+    requete.onerror = () => reject(new ApiError(0, "La connexion au serveur a été interrompue."));
+    requete.onload = () => {
+      let donnees: unknown = null;
+      try {
+        donnees = JSON.parse(requete.responseText);
+      } catch {
+        donnees = null;
+      }
+      if (requete.status >= 200 && requete.status < 300) resolve(donnees as T);
+      else reject(new ApiError(requete.status, (donnees as { detail?: string } | null)?.detail || "L'envoi n'a pas abouti."));
+    };
+    requete.send(corps);
+  });
+}
+
+/** Récupère un fichier protégé (média de la messagerie) sous forme d'URL locale : une balise <img> n'envoie pas le jeton. */
+export async function chargerMedia(path: string): Promise<Blob> {
+  const headers = new Headers();
+  const token = getToken();
+  if (token) headers.set("Authorization", `Token ${token}`);
+  const reponse = await fetch(adresseApi(path), { headers });
+  if (!reponse.ok) {
+    let detail = "Le fichier n'a pas pu être chargé.";
+    try {
+      detail = ((await reponse.json()) as { detail?: string }).detail || detail;
+    } catch {
+      /* corps non JSON */
+    }
+    throw new ApiError(reponse.status, detail);
+  }
+  return reponse.blob();
 }

@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import absences, adhesion, besoins, dotation_agents, etats_rh, action_sociale, actions, communication, communications, discipline, effectifs, fin_carriere, formation, grh, parcours, positions, import_communications, import_structures, messagerie, parametres, planification, utilisateurs, views
+from . import absences, adhesion, secretariat, taches, besoins, dotation_agents, etats_rh, action_sociale, actions, communication, communications, discipline, effectifs, fin_carriere, formation, grh, parcours, positions, import_communications, import_structures, messagerie, parametres, planification, utilisateurs, views
 
 urlpatterns = [
     path("health/", views.health, name="health"),
@@ -20,6 +20,8 @@ urlpatterns = [
     path("parametres/", parametres.parametres, name="parametres"),
     path("parametres/identite/", parametres.enregistrer_identite_ministre, name="parametres-identite"),
     path("parametres/connexion/", parametres.enregistrer_connexion, name="parametres-connexion"),
+    path("parametres/signataire/", parametres.enregistrer_signataire, name="parametres-signataire"),
+    path("parametres/signataire/chercher/", parametres.chercher_signataire, name="parametres-signataire-chercher"),
     path("parametres/inactivite/", parametres.enregistrer_inactivite, name="parametres-inactivite"),
     path("parametres/delais/", parametres.enregistrer_delais, name="parametres-delais"),
     path("parametres/couleurs/", parametres.enregistrer_couleurs, name="parametres-couleurs"),
@@ -47,6 +49,12 @@ urlpatterns = [
     path("demandes-actes/", views.demandes_actes, name="demandes-actes"),
     path("agents/<str:matricule>/actes-demandes/", views.deposer_demande_acte, name="agent-acte-demande"),
     path("demandes-actes/<str:reference>/decision/", views.decider_demande_acte, name="demande-acte-decision"),
+    path("taches/", taches.mes_taches, name="taches"),
+    path("taches/<uuid:identifiant>/", taches.tache, name="tache"),
+    path("taches/<uuid:identifiant>/fichier/", taches.fichier_tache, name="tache-fichier"),
+    path("secretariat/", secretariat.liste, name="secretariat"),
+    path("secretariat/<str:reference>/signe/", secretariat.fichier_signe, name="secretariat-signe"),
+    path("secretariat/<str:reference>/signe/verser/", secretariat.verser_signe, name="secretariat-verser"),
     path("demandes-actes/<str:reference>/document/", views.document_demande_acte, name="demande-acte-document"),
     path("agents/<str:matricule>/enfants/",views.ajouter_enfant, name="agent-enfants"),
     path("agents/<str:matricule>/enfants/<int:pk>/", views.retirer_enfant, name="agent-enfant"),
@@ -217,6 +225,10 @@ urlpatterns = [
     path("messagerie/conversations/", messagerie.conversations, name="messagerie-conversations"),
     path("messagerie/conversations/<int:pk>/messages/", messagerie.messages, name="messagerie-messages"),
     path("messagerie/conversations/<int:pk>/lu/", messagerie.marquer_lu, name="messagerie-lu"),
+    path("messagerie/messages/<int:pk>/", messagerie.supprimer_message, name="messagerie-message"),
+    path("messagerie/pieces/<int:pk>/", messagerie.piece, name="messagerie-piece"),
+    path("messagerie/messages/<int:pk>/", messagerie.supprimer_message, name="messagerie-message"),
+    path("messagerie/pieces/<int:pk>/", messagerie.piece, name="messagerie-piece"),
     path("messagerie/annuaire/", messagerie.annuaire, name="messagerie-annuaire"),
     path("poles/", effectifs.creer_pole, name="poles"),
     path("poles/<slug:code>/", effectifs.pole, name="pole"),

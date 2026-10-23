@@ -13,6 +13,7 @@ from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from .taches import en_arriere_plan
 from .communication import ETAPE_DRH, NATURES, PERIMETRES, URGENCES
 from .communications import _interdit
 from .import_agents import ImportInvalide, _date, _jusqu_a_entete, _lire_feuille, _norm, _texte, _vide, _Valeur
@@ -367,6 +368,7 @@ def modele_import(request):
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 @parser_classes([MultiPartParser, FormParser])
+@en_arriere_plan("Import des communications")
 def importer_communications(request):
     refus = _interdit(request.user, "saisie")
     if refus:

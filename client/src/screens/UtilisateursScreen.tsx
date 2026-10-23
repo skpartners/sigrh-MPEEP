@@ -56,12 +56,20 @@ function precisionsDuRole(roles: AnnuaireUtilisateurs["roles"], role: string): R
   return roles.find((item) => item.role === role)?.precisions ?? {};
 }
 
-function posteDuCompte(role: string): "agent" | "responsable" {
-  return role === "Agent" ? "agent" : "responsable";
+type Poste = "agent" | "secretaire" | "responsable";
+
+/** Rôles sans responsabilité : ils relèvent du premier responsable de leur structure. */
+const ROLE_SECRETAIRE = "Secrétaire";
+
+function posteDuCompte(role: string): Poste {
+  if (role === "Agent") return "agent";
+  if (role === ROLE_SECRETAIRE) return "secretaire";
+  return "responsable";
 }
 
-function roleDuPoste(poste: "agent" | "responsable", structure: AnnuaireUtilisateurs["structures"][number]): string {
+function roleDuPoste(poste: Poste, structure: AnnuaireUtilisateurs["structures"][number]): string {
   if (poste === "agent") return "Agent";
+  if (poste === "secretaire") return ROLE_SECRETAIRE;
   if (structure.niveau === "service") return "Chef de service";
   if (structure.niveau === "sous-direction") return "Sous directeur";
   if (structure.niveau === "direction-generale") return "Directeur général";
@@ -70,7 +78,7 @@ function roleDuPoste(poste: "agent" | "responsable", structure: AnnuaireUtilisat
 }
 
 function responsableDe(comptes: CompteUtilisateur[], structure: string, sauf = ""): CompteUtilisateur | undefined {
-  return comptes.find((compte) => compte.actif && compte.structure === structure && compte.role !== "Agent" && compte.matricule !== sauf);
+  return comptes.find((compte) => compte.actif && compte.structure === structure && compte.role !== "Agent" && compte.role !== ROLE_SECRETAIRE && compte.matricule !== sauf);
 }
 
 function referentDe(comptes: CompteUtilisateur[], structure: string, sauf = ""): CompteUtilisateur | undefined {
@@ -79,12 +87,12 @@ function referentDe(comptes: CompteUtilisateur[], structure: string, sauf = ""):
 }
 
 function chefAttendu(
-  poste: "agent" | "responsable",
+  poste: Poste,
   structure: AnnuaireUtilisateurs["structures"][number],
   comptes: CompteUtilisateur[],
   sauf = "",
 ): CompteUtilisateur | undefined {
-  if (poste === "agent") return referentDe(comptes, structure.code, sauf);
+  if (poste !== "responsable") return referentDe(comptes, structure.code, sauf);
   if (structure.parent) return referentDe(comptes, structure.parent, sauf);
   return undefined;
 }
@@ -188,6 +196,8 @@ export function UtilisateursScreen() {
       }
       void client.refetchQueries({ queryKey: ["utilisateurs"] });
     },
+    // Même en cas d'erreur, on relit l'annuaire : le serveur a pu enregistrer avant de répondre.
+    onSettled: () => client.invalidateQueries({ queryKey: ["utilisateurs"] }),
   });
 
   function supprimer(compte: CompteUtilisateur) {
@@ -255,7 +265,7 @@ export function UtilisateursScreen() {
     : undefined;
   const alerteOuverte = edition ? courant.utilisateurs.find((compte) => compte.matricule === edition)?.alerte ?? "" : "";
 
-  function retenir(structure: AnnuaireUtilisateurs["structures"][number], posteChoisi: "agent" | "responsable") {
+  function retenir(structure: AnnuaireUtilisateurs["structures"][number], posteChoisi: Poste) {
     if (!formulaire) return;
     const role = roleDuPoste(posteChoisi, structure);
     setFormulaire({
@@ -395,7 +405,7 @@ export function UtilisateursScreen() {
               setEcart("Choisissez une structure du ministère.");
               return;
             }
-            if (poste === "agent" && !chef) {
+            if (poste !== "responsable" && !chef) {
               setEcart("Désignez d'abord le premier responsable de cette structure.");
               return;
             }
@@ -498,21 +508,22 @@ export function UtilisateursScreen() {
                 disabled={!structureChoisie}
                 value={structureChoisie ? poste : ""}
                 onChange={(event) => {
-                  if (structureChoisie) retenir(structureChoisie, event.target.value === "responsable" ? "responsable" : "agent");
+                  if (structureChoisie) retenir(structureChoisie, event.target.value === "responsable" ? "responsable" : event.target.value === "secretaire" ? "secretaire" : "agent");
                 }}
               >
                 <option value="" disabled>Choisir une structure…</option>
                 <option value="responsable" disabled={Boolean(responsableDejaNomme)}>Premier responsable</option>
                 <option value="agent">Agent</option>
+                {data.roles.some((item) => item.role === ROLE_SECRETAIRE) ? <option value="secretaire">Secrétaire</option> : null}
               </Select>
               {structureChoisie ? (
                 <span className="block font-body-sm text-body-sm text-on-surface-variant">
                   Habilitations du rôle « {formulaire.role} ».
-                  {responsableDejaNomme && poste === "agent" ? ` ${responsableDejaNomme.nom_complet} est déjà le premier responsable.` : ""}
+                  {responsableDejaNomme && poste !== "responsable" ? ` ${responsableDejaNomme.nom_complet} est déjà le premier responsable.` : ""}
                 </span>
               ) : null}
             </label>
-            {structureChoisie && poste === "agent" && !chef ? (
+            {structureChoisie && poste !== "responsable" && !chef ? (
               <p className="sm:col-span-2 font-body-sm text-body-sm text-on-surface-variant">Désignez d'abord le premier responsable de cette structure.</p>
             ) : null}
             {structureChoisie && poste === "responsable" && structureChoisie.parent && structureChoisie.niveau !== "direction-generale" && !chef && formulaire.interimaire !== structureChoisie.parent ? (
@@ -525,9 +536,9 @@ export function UtilisateursScreen() {
                   <option value={chef.matricule}>{chef.nom_complet} — {chef.role}</option>
                 </Select>
                 <span className="block font-body-sm text-body-sm text-on-surface-variant">
-                  {chef.interimaire === (poste === "agent" ? structureChoisie.code : structureChoisie.parent)
+                  {chef.interimaire === (poste !== "responsable" ? structureChoisie.code : structureChoisie.parent)
                     ? "Intérimaire qui assure pleinement les fonctions de ce poste."
-                    : poste === "agent"
+                    : poste !== "responsable"
                       ? "Premier responsable de la structure choisie."
                     : chef.role === "Ministre"
                       ? "Le ministre, au sommet de la chaîne hiérarchique."

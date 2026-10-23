@@ -13,6 +13,7 @@ from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
+from .taches import en_arriere_plan
 from .models import Organisme, ParametresMinistere
 from .utilisateurs import RANG, acces_menu
 
@@ -74,6 +75,28 @@ def identite_ministre() -> dict:
     if objet is None:
         return {"civilite": "", "nom": ""}
     return {"civilite": objet.civilite, "nom": objet.nom}
+
+
+def _signataire_de(matricule: str) -> dict:
+    from .models import Agent
+
+    agent = Agent.objects.filter(matricule=matricule).first() if matricule else None
+    if agent is None:
+        return {"matricule": matricule, "trouve": False, "nom": "", "prenoms": "", "titre": "", "fonction": ""}
+    return {
+        "matricule": agent.matricule,
+        "trouve": True,
+        "nom": agent.nom,
+        "prenoms": agent.prenoms,
+        "titre": agent.emploi or agent.fonction or agent.corps,
+        "fonction": agent.fonction,
+    }
+
+
+def signataire_documents() -> dict:
+    """Agent désigné dans les paramètres pour signer les documents finaux (certificats, attestations)."""
+    objet = _parametres()
+    return _signataire_de(objet.signataire_matricule if objet else "")
 
 
 def _droit(user) -> str:
@@ -177,6 +200,7 @@ def _ligne(user) -> dict:
         "delais": delais(),
         "couleurs": couleurs(),
         "connexion": _connexion(),
+        "signataire": signataire_documents(),
         **identite_ministre(),
     }
 
@@ -236,6 +260,27 @@ def enregistrer_identite_ministre(request):
     objet.civilite = civilite
     objet.nom = nom
     objet.save(update_fields=["civilite", "nom"])
+    return Response(_ligne(request.user))
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def chercher_signataire(request):
+    """Agent rattaché à un matricule, pour afficher son nom avant d'enregistrer."""
+    return Response(_signataire_de(str(request.query_params.get("matricule") or "").strip()))
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def enregistrer_signataire(request):
+    if not _peut_modifier(request.user):
+        return Response({"detail": "Cette action est hors de votre habilitation."}, status=403)
+    matricule = str(request.data.get("matricule") or "").strip()
+    if matricule and not _signataire_de(matricule)["trouve"]:
+        return Response({"detail": "Aucun agent ne porte ce matricule."}, status=400)
+    objet, _cree = ParametresMinistere.objects.get_or_create(pk=1)
+    objet.signataire_matricule = matricule
+    objet.save(update_fields=["signataire_matricule"])
     return Response(_ligne(request.user))
 
 
@@ -444,6 +489,7 @@ def modele_emplois(request):
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 @parser_classes([MultiPartParser, FormParser])
+@en_arriere_plan("Import des emplois")
 def importer_emplois(request):
     """Charge les emplois et les grades reconnus par la Fonction publique."""
     from .import_structures import ImportInvalide, importer_emplois as charger
@@ -478,6 +524,7 @@ def modele_effectif(request):
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 @parser_classes([MultiPartParser, FormParser])
+@en_arriere_plan("Import de l'effectif")
 def importer_effectif(request):
     """Charge l'effectif en un bloc : agents, rattachements et comptes de connexion (matricule@2026)."""
     from .import_agents import ImportInvalide

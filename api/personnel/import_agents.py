@@ -9,6 +9,7 @@ from xml.etree import ElementTree
 from django.contrib.auth.models import User
 from django.db import transaction
 
+from .taches import progresser
 from .models import Agent, Organisme
 from .present import situation_saisie
 from .saisie import enregistrer_situation
@@ -128,7 +129,8 @@ def importer(contenu: bytes, user: User) -> dict:
         )
 
     with transaction.atomic():
-        for numero, agent, saisie in plans:
+        for rang, (numero, agent, saisie) in enumerate(plans, start=1):
+            progresser(rang * 100 // max(len(plans), 1), f"Agent {rang} sur {len(plans)}")
             erreur = enregistrer_situation(agent, saisie)
             if erreur:
                 erreurs.append({"ligne": numero, "message": erreur})

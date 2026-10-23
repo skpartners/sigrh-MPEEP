@@ -40,6 +40,15 @@ export function DemandesConges({ agent }: { agent: Dossier }) {
           <Solde libelle="Droits annuels acquis" valeur={pluriel(conges.acquis, "jour")} />
           <Solde libelle="Jours consommés" valeur={pluriel(conges.consommes, "jour")} />
         </dl>
+        {conges.droits.length ? (
+          <ul className="mt-3 flex flex-wrap gap-2" aria-label="Droits de congé annuel par exercice">
+            {conges.droits.map((droit) => (
+              <li key={droit.annee} className="rounded-full bg-surface-container-low px-3 py-1 font-label-sm text-label-sm text-on-surface-variant">
+                Exercice {droit.annee} : {pluriel(droit.restant, "jour")} restant{droit.restant > 1 ? "s" : ""} sur {droit.dus}
+              </li>
+            ))}
+          </ul>
+        ) : null}
       </section>
 
       <section className="space-y-4" aria-labelledby="titre-demandes-conges">

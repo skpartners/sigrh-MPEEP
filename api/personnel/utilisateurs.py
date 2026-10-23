@@ -1,5 +1,7 @@
 """Comptes habilités à se connecter au SIGRH."""
 
+import contextvars
+
 from django.contrib.auth.models import User
 from django.utils import timezone
 from rest_framework.decorators import api_view, permission_classes
@@ -8,6 +10,7 @@ from rest_framework.response import Response
 
 from .effectifs import _ligne_structure
 from .models import EntiteTutelle, ModuleHabilitation, Organisme, Profil, RoleMatrice
+from .roles import ROLE_SECRETAIRE, ROLES_SIMPLES
 
 NIVEAUX = ("refus", "lecture", "saisie", "validation")
 RANG = {niveau: index for index, niveau in enumerate(NIVEAUX)}
@@ -49,8 +52,26 @@ def _ligne(user: User, courant: User) -> dict:
     }
 
 
+# Mémo d'une requête : la liste des comptes recalcule les mêmes rôles, modules et responsables pour chaque ligne.
+# Hors de cette portée (une requête ordinaire, un test), rien n'est retenu : les données ne sont jamais périmées.
+_MEMO: contextvars.ContextVar[dict | None] = contextvars.ContextVar("memo_utilisateurs", default=None)
+
+
+def _retenu(cle, fabrique):
+    memo = _MEMO.get()
+    if memo is None:
+        return fabrique()
+    if cle not in memo:
+        memo[cle] = fabrique()
+    return memo[cle]
+
+
 def _modules() -> list[ModuleHabilitation]:
-    return list(ModuleHabilitation.objects.prefetch_related("fonctions"))
+    return _retenu("modules", lambda: list(ModuleHabilitation.objects.prefetch_related("fonctions")))
+
+
+def _roles_matrice() -> dict[str, RoleMatrice]:
+    return _retenu("roles", lambda: {item.role: item for item in RoleMatrice.objects.all()})
 
 
 def _aligner(droits, taille: int, remplissage: str = "refus") -> list[str]:
@@ -61,12 +82,12 @@ def _aligner(droits, taille: int, remplissage: str = "refus") -> list[str]:
 
 
 def _defaut_role(role: str, taille: int) -> list[str]:
-    item = RoleMatrice.objects.filter(role=role).first()
+    item = _roles_matrice().get(role)
     return _aligner(item.droits if item else [], taille)
 
 
 def _precisions_role(role: str) -> dict[str, str]:
-    item = RoleMatrice.objects.filter(role=role).first()
+    item = _roles_matrice().get(role)
     if item is None:
         return {}
     return {str(cle): valeur for cle, valeur in (item.precisions or {}).items() if valeur in RANG}
@@ -178,7 +199,8 @@ def perimetre_matricules(user: User) -> set[str] | None:
     profil = getattr(user, "profil", None)
     if profil is not None:
         racines = []
-        if profil.structure_id and profil.role != "Agent":
+        # La secrétaire suit les agents de sa structure, sans en être la responsable.
+        if profil.structure_id and (profil.role not in ROLES_SIMPLES or profil.role == ROLE_SECRETAIRE):
             racines.append(profil.structure)
         if profil.interim_id:
             racines.append(profil.interim)
@@ -213,11 +235,11 @@ def _alerte_hierarchie(profil: Profil) -> str:
     structure = profil.structure
     if structure is None:
         return "Ce compte n'est rattaché à aucune structure."
-    if profil.role != "Agent" and profil.role != _role_responsable(structure):
+    if profil.role not in ROLES_SIMPLES and profil.role != _role_responsable(structure):
         return "Le rôle ne correspond pas au niveau de cette structure."
     identifiant = profil.user.username
     superieur = profil.superieur
-    if profil.role == "Agent":
+    if profil.role in ROLES_SIMPLES:
         responsable = _referent(structure, identifiant)
         if responsable is None:
             return "Cette structure n'a pas encore de premier responsable."
@@ -246,7 +268,7 @@ def _alerte_hierarchie(profil: Profil) -> str:
 def _poste_couvert(profil: Profil):
     """Structure parente sans titulaire, dont ce responsable n'assure les fonctions que dans sa compétence."""
     structure = profil.structure
-    if structure is None or profil.role == "Agent" or profil.superieur_id or not structure.parent_id:
+    if structure is None or profil.role in ROLES_SIMPLES or profil.superieur_id or not structure.parent_id:
         return None
     parent = structure.parent
     if parent.niveau == "ministere":
@@ -277,11 +299,11 @@ def _constater_interim(user: User, structure, grantor: User) -> None:
     if structure is None:
         return
     profil = user.profil
-    if profil.role != "Agent":
+    if profil.role not in ROLES_SIMPLES:
         Publication.objects.filter(perimetre_detail__startswith=f"interim:{structure.code}:").exclude(
             statut=Publication.Statut.CLOTURE,
         ).update(statut=Publication.Statut.CLOTURE)
-    parent = structure.parent if profil.role != "Agent" and not profil.superieur_id else None
+    parent = structure.parent if profil.role not in ROLES_SIMPLES and not profil.superieur_id else None
     if parent is None or parent.niveau == "ministere" or profil.interim_id == parent.pk or _referent(parent) is not None:
         return
     marque = f"interim:{parent.code}:{user.username}"[:200]
@@ -328,15 +350,23 @@ def _constater_interim(user: User, structure, grantor: User) -> None:
 
 
 def _responsable(structure, sauf: str = ""):
+    return _retenu(("responsable", structure.pk, sauf), lambda: _chercher_responsable(structure, sauf))
+
+
+def _chercher_responsable(structure, sauf: str):
     comptes = User.objects.filter(
         is_active=True, profil__structure=structure, profil__administrateur=False,
-    ).exclude(profil__role="Agent").select_related("profil", "profil__structure", "profil__structure__pole")
+    ).exclude(profil__role__in=ROLES_SIMPLES).select_related("profil", "profil__structure", "profil__structure__pole")
     if sauf:
         comptes = comptes.exclude(username=sauf)
     return comptes.order_by("pk").first()
 
 
 def _interimaire(structure, sauf: str = ""):
+    return _retenu(("interimaire", structure.pk, sauf), lambda: _chercher_interimaire(structure, sauf))
+
+
+def _chercher_interimaire(structure, sauf: str):
     comptes = User.objects.filter(is_active=True, profil__interim=structure, profil__administrateur=False).select_related("profil")
     if sauf:
         comptes = comptes.exclude(username=sauf)
@@ -520,9 +550,9 @@ def _valider(data, creation: bool, grantor: User) -> tuple[dict | None, Response
     if structure is None:
         return None, Response({"detail": "Choisissez une structure du ministère."}, status=400)
     role_responsable = _role_responsable(structure)
-    if role != "Agent" and role != role_responsable:
+    if role not in ROLES_SIMPLES and role != role_responsable:
         return None, Response({"detail": "Le rôle ne correspond pas au niveau de cette structure."}, status=400)
-    if role == "Agent":
+    if role in ROLES_SIMPLES:
         responsable = _referent(structure, matricule)
         if responsable is None:
             return None, Response({"detail": "Désignez d'abord le premier responsable de cette structure."}, status=400)
@@ -579,7 +609,7 @@ def _valider(data, creation: bool, grantor: User) -> tuple[dict | None, Response
         poste_interim = EntiteTutelle.objects.filter(code=code_interim).first()
         if poste_interim is None:
             return None, Response({"detail": "Le poste d'intérim est inconnu."}, status=400)
-        if role != "Agent" and poste_interim.pk == structure.pk:
+        if role not in ROLES_SIMPLES and poste_interim.pk == structure.pk:
             return None, Response({"detail": "Le premier responsable n'est pas l'intérimaire de son propre poste."}, status=400)
         deja = _interimaire(poste_interim, matricule)
         if deja is not None:
@@ -604,45 +634,58 @@ def _valider(data, creation: bool, grantor: User) -> tuple[dict | None, Response
     }, None
 
 
+def _annuaire(request):
+    """Liste des comptes, rôles, structures et droits de l'utilisateur (une seule portée de mémo)."""
+    from .parametres import quorum_presence
+    from .rattachement import seuils_effectifs
+
+    seuils = seuils_effectifs(quorum_presence())
+    comptes = User.objects.filter(profil__isnull=False, profil__administrateur=False).select_related(
+        "profil", "profil__organisme", "profil__structure", "profil__structure__pole",
+        "profil__structure__parent", "profil__superieur", "profil__interim",
+    ).order_by("last_name", "first_name")
+    identifiants = perimetre_ids(request.user)
+    if identifiants is not None:
+        comptes = comptes.filter(pk__in=identifiants)
+    return Response({
+        "utilisateurs": [_ligne(user, request.user) for user in comptes],
+        "modules": [
+            {
+                "libelle": module.libelle,
+                "fonctions": [{"id": fonction.pk, "libelle": fonction.libelle} for fonction in module.fonctions.all()],
+            }
+            for module in _modules()
+        ],
+        "mes_droits": _effectives(request.user.profil) if hasattr(request.user, "profil") else [],
+        "mes_precisions": _precisions_resolues(request.user.profil) if hasattr(request.user, "profil") else {},
+        "roles": [
+            {
+                "role": item.role,
+                "description": item.description,
+                "superieurs": item.superieurs or [],
+                "droits": _defaut_role(item.role, ModuleHabilitation.objects.count()),
+                "precisions": _precisions_role(item.role),
+            }
+            for item in RoleMatrice.objects.all()
+        ],
+        "structures": [
+            _ligne_structure(item, seuils)
+            for item in EntiteTutelle.objects.select_related("pole", "parent")
+        ],
+        "organismes": [{"code": item.code, "nom": item.nom, "sigle": item.sigle} for item in Organisme.objects.all()],
+        "administrateur": est_administrateur(request.user),
+    })
+
+
 @api_view(["GET", "POST"])
 @permission_classes([IsAuthenticated])
 def utilisateurs(request):
     if request.method == "GET":
-        comptes = User.objects.filter(profil__isnull=False, profil__administrateur=False).select_related(
-            "profil", "profil__organisme", "profil__structure", "profil__structure__pole",
-            "profil__structure__parent", "profil__superieur", "profil__interim",
-        ).order_by("last_name", "first_name")
-        identifiants = perimetre_ids(request.user)
-        if identifiants is not None:
-            comptes = comptes.filter(pk__in=identifiants)
-        return Response({
-            "utilisateurs": [_ligne(user, request.user) for user in comptes],
-            "modules": [
-                {
-                    "libelle": module.libelle,
-                    "fonctions": [{"id": fonction.pk, "libelle": fonction.libelle} for fonction in module.fonctions.all()],
-                }
-                for module in _modules()
-            ],
-            "mes_droits": _effectives(request.user.profil) if hasattr(request.user, "profil") else [],
-            "mes_precisions": _precisions_resolues(request.user.profil) if hasattr(request.user, "profil") else {},
-            "roles": [
-                {
-                    "role": item.role,
-                    "description": item.description,
-                    "superieurs": item.superieurs or [],
-                    "droits": _defaut_role(item.role, ModuleHabilitation.objects.count()),
-                    "precisions": _precisions_role(item.role),
-                }
-                for item in RoleMatrice.objects.all()
-            ],
-            "structures": [
-                _ligne_structure(item)
-                for item in EntiteTutelle.objects.select_related("pole", "parent")
-            ],
-            "organismes": [{"code": item.code, "nom": item.nom, "sigle": item.sigle} for item in Organisme.objects.all()],
-            "administrateur": est_administrateur(request.user),
-        })
+        jeton = _MEMO.set({})
+        try:
+            return _annuaire(request)
+        finally:
+            _MEMO.reset(jeton)
 
     saisie, erreur = _valider(request.data, creation=True, grantor=request.user)
     if erreur:

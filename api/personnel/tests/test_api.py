@@ -2844,6 +2844,28 @@ def _jeton(api, matricule: str) -> dict:
     return {"HTTP_AUTHORIZATION": f"Token {login.json()['token']}"}
 
 
+def _secretaire(api) -> dict:
+    """Compte au rôle « Secrétaire », rattaché à la structure du DRH."""
+    from django.contrib.auth.models import User
+    from personnel.models import Profil
+
+    modele = User.objects.get(username="DRH-2018-044")
+    compte = User.objects.create_user("SEC-TEST", password="Sigrh-Dev-2026", first_name="Awa", last_name="Kone")
+    Profil.objects.create(user=compte, fonction="Secrétaire de direction", role="Secrétaire", organisme=modele.profil.organisme, structure=modele.profil.structure)
+    # Le secrétariat suit les agents de sa structure : l'agent des tests y est rattaché.
+    from personnel.models import Agent
+
+    Agent.objects.filter(matricule="394812H").update(service="", sous_direction="", direction="", structure=modele.profil.structure.nom)
+    return _jeton(api, "SEC-TEST")
+
+
+def _verser_signe(api, secretaire: dict, reference: str):
+    from django.core.files.uploadedfile import SimpleUploadedFile
+
+    fichier = SimpleUploadedFile("signe.pdf", b"%PDF-1.4 signe", content_type="application/pdf")
+    return api.post(f"/api/v1/secretariat/{reference}/signe/verser/", {"fichier": fichier}, format="multipart", **secretaire)
+
+
 def test_demande_acte_parcours_complet(api):
     from datetime import date, timedelta
 
@@ -2878,8 +2900,12 @@ def test_demande_acte_parcours_complet(api):
     final = api.post(f"/api/v1/demandes-actes/{reference}/decision/", {"sens": "valider"}, format="json", **drh)
     assert final.status_code == 403
 
+    # Validée de bout en bout, la demande attend le document signé : rien à télécharger avant que le secrétariat le verse.
+    assert api.get(f"/api/v1/demandes-actes/{reference}/document/", **agent).status_code == 409
+    secretaire = _secretaire(api)
+    assert _verser_signe(api, secretaire, reference).status_code == 200
     pdf = api.get(f"/api/v1/demandes-actes/{reference}/document/", **agent)
-    assert pdf.status_code == 200 and pdf["Content-Type"] == "application/pdf"
+    assert pdf.status_code == 200 and b"".join(pdf.streaming_content).startswith(b"%PDF")
 
     # Refus motivé : la demande est close, sans acte.
     autre = api.post(depot, {"type": "permission", "motif": "Mariage", "debut": demain.isoformat(), "fin": demain.isoformat()}, format="json", **agent)
@@ -2919,8 +2945,7 @@ def test_permission_delivree_inscrite_aux_absences_et_quota(api):
     assert dossier["conges"]["autorisations_restantes"] == dossier["conges"]["autorisations"] - sum(
         item["jours"] for item in dossier["absences"] if "autorisation" in item["nature"].lower() and item["debut"][:4] == str(date.today().year)
     )
-    pdf = api.get(f"/api/v1/demandes-actes/{reference}/document/", **agent)
-    assert pdf.status_code == 200 and pdf.content.startswith(b"%PDF")
+    assert api.get(f"/api/v1/demandes-actes/{reference}/document/", **agent).status_code == 409
 
 
 def test_modification_du_dossier_reservee_a_l_agent_et_aux_responsables(api):
@@ -2988,7 +3013,7 @@ def test_actes_configurables_et_circuit_par_defaut_ou_attribue(api):
     types = api.get("/api/v1/demandes-actes/", **agent).json()["types"]
     assert [item["libelle"] for item in types][:2] == ["Attestation de travail", "Attestation de présence au poste"]
     configuration = api.get("/api/v1/circuits/configuration/", **drh).json()
-    assert len(configuration["elements"]["actes"]) == 5
+    assert len(configuration["elements"]["actes"]) == 6
 
     # Un nouvel acte se crée dans la configuration ; il apparaît aussitôt dans le choix de l'agent.
     cree = api.post("/api/v1/circuits/actes/", {"libelle": "Certificat de scolarité", "destinataire": True, "justificatif": "Joindre le livret"}, format="json", **drh)
@@ -3023,13 +3048,16 @@ def test_actes_configurables_et_circuit_par_defaut_ou_attribue(api):
     assert demande["etape"].startswith("Étape 2 : Directeur")
     decision = api.post(f"/api/v1/demandes-actes/{demande['reference']}/decision/", {"sens": "valider"}, format="json", **drh)
     assert decision.status_code == 200
-    assert api.get(f"/api/v1/demandes-actes/{demande['reference']}/document/", **agent).status_code == 200
+    assert api.get(f"/api/v1/demandes-actes/{demande['reference']}/document/", **agent).status_code == 409
 
     # Un acte aux demandes en cours ne se retire pas ; une fois traitées, si.
     assert api.delete(f"/api/v1/circuits/actes/{acte['id']}/", **drh).status_code == 409
     ref = next(item for item in defaut["demandes"] if item["type_acte"] == acte["code"])["reference"]
     for _ in range(2):
         api.post(f"/api/v1/demandes-actes/{ref}/decision/", {"sens": "valider"}, format="json", **drh)
+    # Validée, la demande attend encore le document signé : elle reste en cours jusqu'à son versement.
+    assert api.delete(f"/api/v1/circuits/actes/{acte['id']}/", **drh).status_code == 409
+    assert _verser_signe(api, _secretaire(api), ref).status_code == 200
     assert api.delete(f"/api/v1/circuits/actes/{acte['id']}/", **drh).status_code == 200
     assert acte["code"] not in [item["code"] for item in api.get("/api/v1/demandes-actes/", **agent).json()["types"]]
 
@@ -3638,3 +3666,261 @@ def test_la_communication_n_invente_aucune_donnee_en_production(api):
         api.get(route, **auth)
     assert not Publication.objects.exists()
     assert not ConsultationFlash.objects.exists()
+
+
+def test_secretariat_suit_imprime_et_verse_le_document_signe(api):
+    from django.core.files.uploadedfile import SimpleUploadedFile
+
+    from personnel.models import Notification
+
+    agent = _jeton(api, "394812H")
+    drh = _jeton(api, "DRH-2018-044")
+    secretaire = _secretaire(api)
+    depot = "/api/v1/agents/394812H/actes-demandes/"
+
+    # Le secrétariat est fermé à l'agent, même pour sa propre demande.
+    assert api.get("/api/v1/secretariat/", **agent).status_code == 403
+
+    reponse = api.post(depot, {"type": "attestation-travail", "motif": "Dossier de visa"}, format="json", **agent)
+    reference = next(item for item in reponse.json()["demandes"] if item["categorie"] == "acte")["reference"]
+    ligne = next(item for item in api.get("/api/v1/secretariat/", **secretaire).json()["demandes"] if item["reference"] == reference)
+    assert ligne["statut"] == "circuit" and ligne["fait"] == 0 and ligne["total"] == 2 and ligne["imprimable"] is False
+
+    # Rien à imprimer ni à verser tant que la chaîne n'est pas complète.
+    assert _verser_signe(api, secretaire, reference).status_code == 409
+    api.post(f"/api/v1/demandes-actes/{reference}/decision/", {"sens": "valider"}, format="json", **drh)
+    ligne = next(item for item in api.get("/api/v1/secretariat/", **secretaire).json()["demandes"] if item["reference"] == reference)
+    assert ligne["statut"] == "circuit" and ligne["fait"] == 1
+    api.post(f"/api/v1/demandes-actes/{reference}/decision/", {"sens": "valider"}, format="json", **drh)
+    ligne = next(item for item in api.get("/api/v1/secretariat/", **secretaire).json()["demandes"] if item["reference"] == reference)
+    assert ligne["statut"] == "a_signer" and ligne["etape"].startswith("Validée")
+    assert ligne["document"]["agent"]["matricule"] == "394812H" and ligne["document"]["conge"] is None
+    assert Notification.objects.filter(destinataire__username="SEC-TEST", titre__startswith="Document à imprimer").exists()
+    assert api.get(f"/api/v1/secretariat/{reference}/signe/", **secretaire).status_code == 409
+
+    # Le document signé est contrôlé, puis l'intéressé est prévenu et peut le télécharger ; pas les autres.
+    texte = SimpleUploadedFile("signe.exe", b"x", content_type="application/octet-stream")
+    assert api.post(f"/api/v1/secretariat/{reference}/signe/verser/", {"fichier": texte}, format="multipart", **secretaire).status_code == 400
+    assert api.post(f"/api/v1/secretariat/{reference}/signe/verser/", {}, format="multipart", **secretaire).status_code == 400
+    assert api.post(f"/api/v1/secretariat/{reference}/signe/verser/", {"fichier": SimpleUploadedFile("signe.pdf", b"%PDF-1.4 signe")}, format="multipart", **agent).status_code == 403
+    verse = _verser_signe(api, secretaire, reference)
+    assert verse.status_code == 200 and verse.json()["statut"] == "signe" and verse.json()["signe_par"] == "Awa Kone"
+    assert Notification.objects.filter(destinataire__username="394812H", titre="Votre document signé est disponible", message__contains="passez prendre").exists()
+
+    dossier = api.get("/api/v1/agents/394812H/", **agent).json()
+    demande = next(item for item in dossier["demandes"] if item["reference"] == reference)
+    assert demande["document_signe"] is True and demande["etape"].startswith("Clôturée : acte délivré")
+    telechargement = api.get(f"/api/v1/secretariat/{reference}/signe/", **agent)
+    assert telechargement.status_code == 200 and b"".join(telechargement.streaming_content).startswith(b"%PDF")
+    assert api.get(f"/api/v1/secretariat/{reference}/signe/", **_jeton(api, "349812K")).status_code == 403
+
+
+def test_secretariat_reserve_a_l_administrateur_et_aux_secretaires_rattachees(api):
+    from django.contrib.auth.models import User
+
+    secretaire = _secretaire(api)
+    assert api.get("/api/v1/secretariat/", **secretaire).status_code == 200
+    assert api.get("/api/v1/me/", **secretaire).json()["secretariat"] is True
+    assert api.get("/api/v1/me/", **_jeton(api, "394812H")).json()["secretariat"] is False
+
+    # Sans structure de rattachement, une secrétaire n'entre pas dans l'espace.
+    compte = User.objects.get(username="SEC-TEST")
+    compte.profil.structure = None
+    compte.profil.save(update_fields=["structure"])
+    assert api.get("/api/v1/secretariat/", **secretaire).status_code == 403
+    assert api.get("/api/v1/me/", **secretaire).json()["secretariat"] is False
+
+
+def test_droits_de_conge_par_exercice_le_plus_ancien_se_consomme_d_abord(api):
+    from personnel.droits_conges import consommer, detail, exercice_a_attribuer
+    from personnel.import_droits_conges import _jours
+    from personnel.models import Agent, DroitConge
+
+    assert [_jours("-"), _jours(None), _jours(30.0), _jours("15"), _jours("EPUISE")] == [0, 0, 30, 15, 0]
+    agent = Agent.objects.get(matricule="394812H")
+    DroitConge.objects.create(agent=agent, annee=2024, jours_dus=15)
+    DroitConge.objects.create(agent=agent, annee=2025, jours_dus=30)
+    assert exercice_a_attribuer(agent) == 2024
+    consommer(agent, 20)
+    assert [(item["annee"], item["restant"]) for item in detail(agent)] == [(2024, 0), (2025, 25)]
+    assert exercice_a_attribuer(agent) == 2025
+    dossier = api.get("/api/v1/agents/394812H/", **_jeton(api, "394812H")).json()
+    assert dossier["conges"]["exercice"] == 2025 and [item["annee"] for item in dossier["conges"]["droits"]] == [2024, 2025]
+
+
+def test_secretariat_previsualisation_pour_la_secretaire_impression_libre_pour_l_admin(api):
+    from django.contrib.auth.models import User
+    from personnel.models import Profil
+
+    agent = _jeton(api, "394812H")
+    secretaire = _secretaire(api)
+    modele = User.objects.get(username="DRH-2018-044")
+    admin = User.objects.create_user("ADMIN-TEST", password="Sigrh-Dev-2026", first_name="Admin", last_name="Test")
+    Profil.objects.create(user=admin, fonction="Administrateur", role="Administrateur", organisme=modele.profil.organisme, administrateur=True)
+    jeton_admin = _jeton(api, "ADMIN-TEST")
+
+    reponse = api.post("/api/v1/agents/394812H/actes-demandes/", {"type": "attestation-travail", "motif": "Dossier de visa"}, format="json", **agent)
+    reference = next(item for item in reponse.json()["demandes"] if item["categorie"] == "acte")["reference"]
+
+    # Circuit en cours : la secrétaire prévisualise sans pouvoir imprimer, l'administrateur imprime.
+    ligne = next(item for item in api.get("/api/v1/secretariat/", **secretaire).json()["demandes"] if item["reference"] == reference)
+    assert ligne["statut"] == "circuit" and ligne["imprimable"] is False and ligne["document"]["agent"]["matricule"] == "394812H"
+    ligne = next(item for item in api.get("/api/v1/secretariat/", **jeton_admin).json()["demandes"] if item["reference"] == reference)
+    assert ligne["statut"] == "circuit" and ligne["imprimable"] is True and ligne["document"] is not None
+    # Le document signé ne se verse, lui, qu'une fois la chaîne complète : pas de raccourci pour l'administrateur.
+    assert _verser_signe(api, jeton_admin, reference).status_code == 409
+
+
+def test_creation_d_une_secretaire_rattachee_a_une_structure(api):
+    auth = _auth(api)
+    chef = {"matricule": "USR-2026-C1", "nom": "Bamba", "prenoms": "Awa", "fonction": "Cheffe de service", "role": "Chef de service", "structure": "sgpte", "superieur": "", "mot_de_passe": "Sigrh-Dev-2026", "confirmation": "Sigrh-Dev-2026"}
+    assert api.post("/api/v1/utilisateurs/", chef, format="json", **auth).status_code == 201
+    secretaire = {**chef, "matricule": "USR-2026-S1", "nom": "Kone", "fonction": "Secrétaire de service", "role": "Secrétaire", "superieur": "USR-2026-C1"}
+    cree = api.post("/api/v1/utilisateurs/", secretaire, format="json", **auth)
+    assert cree.status_code == 201 and cree.json()["role"] == "Secrétaire" and cree.json()["alerte"] == ""
+    # Elle relève du premier responsable : son supérieur ne peut pas être un autre.
+    autre = {**secretaire, "matricule": "USR-2026-S2", "superieur": "DRH-2018-044"}
+    assert api.post("/api/v1/utilisateurs/", autre, format="json", **auth).status_code == 400
+    # Elle n'est pas un second responsable : le service garde son chef, et une seconde secrétaire est possible.
+    seconde = {**secretaire, "matricule": "USR-2026-S3", "nom": "Diallo"}
+    assert api.post("/api/v1/utilisateurs/", seconde, format="json", **auth).status_code == 201
+
+
+def test_tache_celery_des_echeances_et_planificateur(api):
+    from config.celery import app
+    from personnel.tasks import surveiller_echeances
+
+    # La tâche exécute la même surveillance que la boucle interne, et beat la planifie toutes les six heures.
+    assert isinstance(surveiller_echeances.run(), int)
+    assert app.conf.beat_schedule["surveiller-echeances"]["task"] == "personnel.surveiller_echeances"
+    assert "personnel.surveiller_echeances" in app.tasks
+
+
+def test_traitements_longs_confies_a_celery_et_suivis_par_celui_qui_les_lance(api, settings, monkeypatch):
+    from django.core.files.uploadedfile import SimpleUploadedFile
+
+    from personnel import taches
+
+    drh = _jeton(api, "DRH-2018-044")
+    agent = _jeton(api, "394812H")
+    # Sans worker, la vue répond comme avant, dans la requête.
+    direct = api.get("/api/v1/avancements/export/", **drh)
+    assert direct.status_code == 200 and direct["Content-Type"] == "application/pdf"
+
+    # Avec un worker (ici exécuté sur place), la requête devient une tâche de fond.
+    settings.CELERY_BROKER_URL = "memory://"
+    settings.CELERY_TASK_ALWAYS_EAGER = True
+    monkeypatch.setattr(taches, "worker_disponible", lambda: True)
+    lancee = api.get("/api/v1/avancements/export/", **drh)
+    assert lancee.status_code == 202
+    identifiant = lancee.json()["tache"]
+    suivi = api.get(f"/api/v1/taches/{identifiant}/", **drh).json()
+    assert suivi["statut"] == "terminee" and suivi["progression"] == 100 and suivi["fichier"] is True and suivi["code"] == 200
+    fichier = api.get(f"/api/v1/taches/{identifiant}/fichier/", **drh)
+    assert fichier.status_code == 200 and b"".join(fichier.streaming_content).startswith(b"%PDF")
+    # Seul celui qui l'a lancée la voit.
+    assert api.get(f"/api/v1/taches/{identifiant}/", **agent).status_code == 404
+    assert api.get(f"/api/v1/taches/{identifiant}/fichier/", **agent).status_code == 404
+    assert identifiant in [item["id"] for item in api.get("/api/v1/taches/", **drh).json()["taches"]]
+
+    # Un import refusé par la vue devient une tâche en échec, avec le message de la vue et le code HTTP d'origine.
+    invalide = SimpleUploadedFile("agents.xlsx", b"pas un classeur", content_type="application/octet-stream")
+    import_lance = api.post("/api/v1/agents/import/", {"fichier": invalide}, format="multipart", **drh)
+    assert import_lance.status_code == 202
+    echec = api.get(f"/api/v1/taches/{import_lance.json()['tache']}/", **drh).json()
+    assert echec["statut"] == "echec" and echec["code"] == 400 and echec["resultat"]["detail"]
+
+    # Le suivi garde son résultat un jour, puis la purge retire la tâche et son fichier.
+    from datetime import timedelta
+
+    from django.utils import timezone
+
+    from personnel.models import TacheFond
+
+    TacheFond.objects.filter(pk=identifiant).update(cree_le=timezone.now() - timedelta(hours=25))
+    assert taches.purger_taches() == 1
+    assert not TacheFond.objects.filter(pk=identifiant).exists()
+
+
+def test_messagerie_medias_accuses_reponses_groupes_et_purge_de_48_heures(api, settings, tmp_path):
+    from datetime import timedelta
+
+    from django.contrib.auth.models import User
+    from django.core.files.uploadedfile import SimpleUploadedFile
+    from django.utils import timezone
+
+    from personnel import messagerie
+    from personnel.models import PieceMessage
+
+    settings.MEDIA_ROOT = tmp_path
+    alice, bob, chloe = _jeton(api, "394812H"), _jeton(api, "DRH-2018-044"), _jeton(api, "349812K")
+    bob_id = User.objects.get(username="DRH-2018-044").id
+    ouverte = api.post("/api/v1/messagerie/conversations/", {"destinataire": bob_id}, format="json", **alice)
+    assert ouverte.status_code == 201
+    conversation = ouverte.json()["id"]
+    url = f"/api/v1/messagerie/conversations/{conversation}/messages/"
+
+    # Une photo et un document accompagnent un message ; un exécutable est refusé.
+    from io import BytesIO
+
+    from PIL import Image
+
+    tampon = BytesIO()
+    Image.new("RGB", (900, 600), "teal").save(tampon, format="PNG")
+    photo = SimpleUploadedFile("photo.png", tampon.getvalue(), content_type="image/png")
+    note = SimpleUploadedFile("note.pdf", b"%PDF-1.4 note", content_type="application/pdf")
+    interdit = SimpleUploadedFile("virus.exe", b"MZ", content_type="application/octet-stream")
+    assert api.post(url, {"texte": "x", "fichiers": [interdit]}, format="multipart", **alice).status_code == 400
+    envoye = api.post(url, {"texte": "Voici le dossier", "fichiers": [photo, note]}, format="multipart", **alice)
+    assert envoye.status_code == 201
+    corps = envoye.json()
+    assert [piece["categorie"] for piece in corps["pieces"]] == ["image", "document"] and corps["pieces"][0]["apercu"] is True
+    assert corps["statut"] == "envoye"
+
+    # Le destinataire charge la conversation : « reçu », puis il l'ouvre : « lu ».
+    lecture = api.get(url, **bob).json()
+    def message(jeton, identifiant):
+        return next(item for item in api.get(url, **jeton).json()["messages"] if item["id"] == identifiant)
+
+    assert next(item for item in lecture["messages"] if item["id"] == corps["id"])["pieces"][1]["nom"] == "note.pdf"
+    assert message(alice, corps["id"])["statut"] == "recu"
+    assert api.post(f"/api/v1/messagerie/conversations/{conversation}/lu/", **bob).status_code == 200
+    assert message(alice, corps["id"])["statut"] == "lu"
+
+    # Les médias ne s'ouvrent que pour les participants ; la vignette est une image allégée.
+    piece_id = corps["pieces"][0]["id"]
+    assert api.get(f"/api/v1/messagerie/pieces/{piece_id}/", **chloe).status_code == 404
+    vignette = api.get(f"/api/v1/messagerie/pieces/{piece_id}/?apercu=1", **bob)
+    assert vignette.status_code == 200 and vignette["Content-Type"] == "image/jpeg"
+
+    # Réponse citée, puis suppression pour tous : le texte et les médias disparaissent.
+    reponse = api.post(url, {"texte": "Bien reçu", "reponse_a": corps["id"]}, format="json", **bob).json()
+    assert reponse["reponse_a"]["id"] == corps["id"] and reponse["reponse_a"]["extrait"] == "Voici le dossier"
+    assert api.delete(f"/api/v1/messagerie/messages/{corps['id']}/", **bob).status_code == 404
+    assert api.delete(f"/api/v1/messagerie/messages/{corps['id']}/", **alice).status_code == 200
+    efface = message(bob, corps["id"])
+    assert efface["supprime"] is True and efface["texte"] == "" and efface["pieces"] == []
+    assert api.get(f"/api/v1/messagerie/pieces/{piece_id}/", **bob).status_code == 410
+
+    # Les médias d'un message se purgent au bout de 48 h ; le texte reste, le média est marqué expiré.
+    nouveau = api.post(url, {"texte": "Une note vocale", "fichiers": [SimpleUploadedFile("voix.webm", b"audio", content_type="audio/webm")]}, format="multipart", **alice).json()
+    element = PieceMessage.objects.get(pk=nouveau["pieces"][0]["id"])
+    chemin = element.fichier.path
+    assert messagerie.purger_medias() == 0
+    PieceMessage.objects.filter(pk=element.pk).update(expire_le=timezone.now() - timedelta(minutes=1))
+    assert messagerie.purger_medias() == 1
+    element.refresh_from_db()
+    assert element.expiree and not element.fichier
+    import os
+
+    assert not os.path.exists(chemin)
+    apres = [m for m in api.get(url, **bob).json()["messages"] if m["id"] == nouveau["id"]][0]
+    assert apres["texte"] == "Une note vocale" and apres["pieces"][0]["expiree"] is True
+    assert api.get(f"/api/v1/messagerie/pieces/{element.pk}/", **bob).status_code == 410
+
+    # Un groupe réunit au moins trois personnes et porte un nom.
+    ids = [User.objects.get(username=m).id for m in ("DRH-2018-044", "349812K")]
+    assert api.post("/api/v1/messagerie/conversations/", {"sujet": "", "participants": ids}, format="json", **alice).status_code == 400
+    assert api.post("/api/v1/messagerie/conversations/", {"sujet": "Équipe", "participants": ids[:1]}, format="json", **alice).status_code == 400
+    groupe = api.post("/api/v1/messagerie/conversations/", {"sujet": "Équipe", "participants": ids}, format="json", **alice)
+    assert groupe.status_code == 201 and groupe.json()["groupe"] is True and groupe.json()["titre"] == "Équipe"

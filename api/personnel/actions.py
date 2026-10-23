@@ -16,6 +16,7 @@ from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from .taches import en_arriere_plan
 from .parametres import delai_visa_acte_jours, libelle_echeance_visa_acte
 from .models import (
     Acte,
@@ -245,6 +246,7 @@ def generer_tableau(request):
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
+@en_arriere_plan("Tableau d'avancement")
 def exporter_tableau(_request):
     """PDF du tableau d'avancement de l'exercice, tel qu'il est arrêté."""
     from .rapports.documents import rendre_tableau_avancement

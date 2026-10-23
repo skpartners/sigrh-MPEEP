@@ -14,6 +14,7 @@ from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from .taches import en_arriere_plan
 from .demo_ecrans import jours_ouvres
 from .models import Absence, Agent, BlocEcran, Notification, Organisme, PieceJointe
 from .present import agent_brief
@@ -92,6 +93,7 @@ def autorisations(request):
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
+@en_arriere_plan("Rapport d'assiduité")
 def exporter_assiduite(request):
     """PDF du mois en cours : présentéisme et autorisations qui le traversent."""
     from calendar import monthrange

@@ -1,10 +1,14 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { apiBaseUrl, getToken } from "../api/client";
+import { VERIFIER_VERSION } from "./versionApp";
 
 export type EvenementTempsReel =
   | { type: "message.nouveau"; conversation_id: number; message_id: number; auteur_id: number; auteur_matricule: string; auteur: string; extrait: string }
   | { type: "messagerie.lu"; conversation_id: number }
+  | { type: "messagerie.recu"; conversation_id: number }
+  | { type: "messagerie.saisie"; conversation_id: number; auteur_id: number; auteur: string }
+  | { type: "tache.maj"; id: string; statut: string }
   | { type: "notification.nouvelle"; id: number; titre: string; urgente: boolean }
   | { type: "habilitation.changee" }
   | { type: "registre.change" };
@@ -13,9 +17,11 @@ type TempsReelApi = {
   /** Vrai quand le WebSocket est authentifié : le rafraîchissement périodique peut s'espacer. */
   connecte: boolean;
   abonner: (ecouteur: (evenement: EvenementTempsReel) => void) => () => void;
+  /** Envoie un message au serveur (« écrit… ») ; sans effet tant que la connexion n'est pas établie. */
+  envoyer: (donnees: Record<string, unknown>) => void;
 };
 
-const TempsReelContext = createContext<TempsReelApi>({ connecte: false, abonner: () => () => undefined });
+const TempsReelContext = createContext<TempsReelApi>({ connecte: false, abonner: () => () => undefined, envoyer: () => undefined });
 
 export function useTempsReel(): TempsReelApi {
   return useContext(TempsReelContext);
@@ -29,14 +35,17 @@ export function useIntervalle(sansTempsReelMs: number): number {
 const PING_MS = 25_000;
 const DELAI_MAX_MS = 30_000;
 const FERMETURE_NON_AUTHENTIFIE = 4401;
-const RAFRAICHISSEMENT_MS = 200;
+// Chaque écriture dans un registre prévient toutes les sessions : un délai variable étale leurs relectures
+// au lieu de les faire arriver ensemble sur le serveur (effet de troupeau).
+const RAFRAICHISSEMENT_MIN_MS = 400;
+const RAFRAICHISSEMENT_ETALE_MS = 1_600;
 let rafraichissement = 0;
 
 function planifierRafraichissement(client: { invalidateQueries: () => Promise<unknown> }) {
   window.clearTimeout(rafraichissement);
   rafraichissement = window.setTimeout(() => {
     void client.invalidateQueries();
-  }, RAFRAICHISSEMENT_MS);
+  }, RAFRAICHISSEMENT_MIN_MS + Math.random() * RAFRAICHISSEMENT_ETALE_MS);
 }
 
 function adresse(): string {
@@ -56,6 +65,10 @@ export function TempsReelProvider({ children, actif }: { children: ReactNode; ac
   const client = useQueryClient();
   const [connecte, setConnecte] = useState(false);
   const ecouteurs = useRef(new Set<(evenement: EvenementTempsReel) => void>());
+  const prise = useRef<WebSocket | null>(null);
+  const envoyer = useCallback((donnees: Record<string, unknown>) => {
+    if (prise.current?.readyState === WebSocket.OPEN) prise.current.send(JSON.stringify(donnees));
+  }, []);
 
   const abonner = useCallback((ecouteur: (evenement: EvenementTempsReel) => void) => {
     ecouteurs.current.add(ecouteur);
@@ -74,7 +87,7 @@ export function TempsReelProvider({ children, actif }: { children: ReactNode; ac
     let dejaConnecte = false;
 
     function traiter(evenement: EvenementTempsReel) {
-      if (evenement.type === "message.nouveau" || evenement.type === "messagerie.lu") {
+      if (evenement.type === "message.nouveau" || evenement.type === "messagerie.lu" || evenement.type === "messagerie.recu") {
         void client.invalidateQueries({ queryKey: ["messagerie"] });
       } else if (
         evenement.type === "notification.nouvelle"
@@ -90,6 +103,7 @@ export function TempsReelProvider({ children, actif }: { children: ReactNode; ac
       const jeton = getToken();
       if (!jeton || arrete) return;
       socket = new WebSocket(adresse());
+      prise.current = socket;
       socket.onopen = () => socket?.send(JSON.stringify({ type: "auth", token: jeton }));
       socket.onmessage = (message) => {
         let donnees: { type?: string };
@@ -102,7 +116,11 @@ export function TempsReelProvider({ children, actif }: { children: ReactNode; ac
           setConnecte(true);
           delai = 1_000;
           // Après une coupure, des événements ont pu être manqués : on resynchronise tout.
-          if (dejaConnecte) void client.invalidateQueries();
+          // Le serveur a pu être redéployé pendant la coupure : on vérifie aussi la version publiée.
+          if (dejaConnecte) {
+            void client.invalidateQueries();
+            window.dispatchEvent(new Event(VERIFIER_VERSION));
+          }
           dejaConnecte = true;
           ping = window.setInterval(() => socket?.readyState === WebSocket.OPEN && socket.send(JSON.stringify({ type: "ping" })), PING_MS);
         } else if (donnees.type && donnees.type !== "pong") {
@@ -135,5 +153,5 @@ export function TempsReelProvider({ children, actif }: { children: ReactNode; ac
     return () => window.clearInterval(secours);
   }, [actif, connecte, client]);
 
-  return <TempsReelContext.Provider value={{ connecte, abonner }}>{children}</TempsReelContext.Provider>;
+  return <TempsReelContext.Provider value={{ connecte, abonner, envoyer }}>{children}</TempsReelContext.Provider>;
 }

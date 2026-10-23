@@ -1,5 +1,5 @@
-import type { ReactNode } from "react";
-import { mediaUrl, telecharger } from "../../api/client";
+import { useState, type ReactNode } from "react";
+import { ApiError, mediaUrl, telecharger } from "../../api/client";
 import type { Dossier } from "../../api/types";
 import { useFeedback } from "../../ui/Feedback";
 import { Icone } from "../../ui/Icone";
@@ -101,6 +101,46 @@ export function CircuitDemande({ demande, clos = false, suite }: { demande: Dema
         ))}
       </div>
       {suite}
+      <DocumentSigne demande={demande} />
+    </div>
+  );
+}
+
+/** Document final d'un congé ou d'un acte : en cours de signature, puis disponible une fois versé par le secrétariat. */
+export function DocumentSigne({ demande }: { demande: Demande }) {
+  const [erreur, setErreur] = useState("");
+  if (demande.categorie !== "conge" && demande.categorie !== "acte") return null;
+  if (!demande.document_signe) {
+    const enSignature = demande.categorie === "acte" ? demande.etape.startsWith("Validée") : demande.etape.startsWith("Clôturée : congé accordé");
+    if (!enSignature) return null;
+    return (
+      <p role="status" className="flex items-start gap-2 rounded-lg bg-surface-container-low p-3 font-body-sm text-body-sm text-on-surface-variant">
+        <Icone nom="draw" className="text-lg text-primary" />
+        Toutes les validations sont obtenues : le document part à la signature. Vous serez prévenu dès qu'il sera disponible.
+      </p>
+    );
+  }
+  async function telechargerSigne() {
+    setErreur("");
+    try {
+      await telecharger(`/api/v1/secretariat/${encodeURIComponent(demande.reference)}/signe/`, `${demande.reference}-signe.pdf`);
+    } catch (cause) {
+      setErreur(cause instanceof ApiError ? cause.message : "Le document n'a pas pu être téléchargé.");
+    }
+  }
+  return (
+    <div role="status" className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-primary-fixed/60 p-4">
+      <p className="flex items-start gap-2 font-body-md text-body-md text-on-surface">
+        <Icone nom="task_alt" className="text-xl text-primary" />
+        <span>
+          <strong>Votre document signé est disponible.</strong> Merci de passer prendre l'original auprès du secrétariat.
+          {demande.signe_le ? ` Versé le ${dateFr(demande.signe_le)}.` : ""}
+        </span>
+      </p>
+      <button type="button" onClick={() => void telechargerSigne()} className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 font-label-md text-on-primary">
+        <Icone nom="download" />Voir le document signé
+      </button>
+      {erreur ? <p role="alert" className="basis-full text-sm text-error">{erreur}</p> : null}
     </div>
   );
 }

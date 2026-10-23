@@ -5,6 +5,7 @@ import type { Dossier } from "../../api/types";
 import { useFeedback } from "../../ui/Feedback";
 import { BOUTON_PRIMAIRE, BOUTON_SECONDAIRE, Modale } from "../../ui/Modale";
 import { Pagination, usePagination } from "../../ui/Pagination";
+import { ApercuCertificat } from "./CertificatCessation";
 import { CircuitDemande, absenceEnCours, demandeClose, jour, periode, pluriel, useDocumentAgent, type Absence } from "./commun";
 import { Icone } from "../../ui/Icone";
 import { Select } from "../../ui/Select";
@@ -418,6 +419,9 @@ function LigneAbsence({ absence }: { absence: Absence }) {
 
 // --- Formulaire de demande ------------------------------------------------------------------
 
+/** Jours de congé annuel qu'on peut prendre au titre d'un seul exercice. */
+const PLAFOND_EXERCICE = 30;
+
 type Saisie = { type: string; debut: string; fin: string; interim: string; observations: string };
 
 const CHAMP = "w-full h-11 px-3 bg-surface-container-low text-on-surface font-body-md text-body-md rounded focus:outline-none focus:ring-1 focus:ring-primary";
@@ -524,6 +528,10 @@ export function FormulaireConge({ agent, onClose }: { agent: Dossier; onClose: (
     }
     if (jours <= 0) {
       feedback.toast("Période invalide", "La reprise doit suivre le début et compter au moins un jour décompté.", "info");
+      return;
+    }
+    if (annuel && jours > PLAFOND_EXERCICE) {
+      feedback.toast("Plus de 30 jours", `On ne prend pas plus de ${PLAFOND_EXERCICE} jours au titre d'un seul exercice : déposez une demande par exercice.`, "info");
       return;
     }
     setEnCours(true);
@@ -670,7 +678,7 @@ export function FormulaireConge({ agent, onClose }: { agent: Dossier; onClose: (
           </div>
           <div className="text-right" aria-live="polite">
             <span className="font-headline-sm text-headline-sm text-primary font-bold">{pluriel(jours, "jour")}</span>
-            {annuel ? <span className="block font-label-sm text-label-sm text-on-surface-variant">Nouveau solde prévu : {String(solde).padStart(2, "0")}j</span> : null}
+            {annuel ? <span className={`block font-label-sm text-label-sm ${jours > PLAFOND_EXERCICE ? "text-error font-bold" : "text-on-surface-variant"}`}>{jours > PLAFOND_EXERCICE ? `Plafond : ${PLAFOND_EXERCICE} jours par exercice` : `Nouveau solde prévu : ${String(solde).padStart(2, "0")}j`}</span> : null}
           </div>
         </div>
         <label className="block space-y-1.5">
@@ -694,6 +702,20 @@ export function FormulaireConge({ agent, onClose }: { agent: Dossier; onClose: (
             onChange={champ("observations")}
           />
         </label>
+        <ApercuCertificat
+          entree={{
+            agent,
+            type: saisie.type,
+            libelle: [...agent.types_conges.flatMap((item) => (item.enfants.length ? item.enfants : [item])), ...agent.types_absences].find((item) => item.code === saisie.type)?.libelle,
+            debut: saisie.debut,
+            fin: saisie.fin,
+            jours,
+            annuel,
+            exercice: agent.conges.exercice,
+            rang: Math.max(arretees.findIndex((item) => item.debut === saisie.debut), 0),
+            periodes: arretees.length,
+          }}
+        />
       </div>
     </Modale>
   );

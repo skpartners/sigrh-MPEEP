@@ -1,3 +1,5 @@
+import uuid
+
 from django.contrib.auth.models import User
 from django.db import models
 from django.utils import timezone
@@ -262,6 +264,12 @@ class Demande(models.Model):
     fin = models.DateField(null=True, blank=True)
     destinataire = models.CharField(max_length=160, blank=True)
     justificatif = models.FileField(upload_to="justificatifs/%Y/%m", blank=True)
+    # Document final signé physiquement, joint par le secrétariat une fois toutes les validations obtenues.
+    document_signe = models.FileField(upload_to="documents-signes/%Y/%m", blank=True)
+    signe_le = models.DateField(null=True, blank=True)
+    signe_par = models.CharField(max_length=120, blank=True)
+    # Congé annuel : exercice dont relèvent les jours accordés (le plus ancien exercice qui comptait encore des jours).
+    exercice = models.PositiveSmallIntegerField(null=True, blank=True)
 
     class Meta:
         ordering = ["-depose_le"]
@@ -998,6 +1006,8 @@ class Participation(models.Model):
     conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE, related_name="participations")
     utilisateur = models.ForeignKey(User, on_delete=models.CASCADE, related_name="participations")
     lu_jusqu_a = models.DateTimeField(null=True, blank=True)
+    # Le client de ce participant a reçu les messages jusqu'ici (double coche grise).
+    recu_jusqu_a = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         unique_together = [("conversation", "utilisateur")]
@@ -1006,11 +1016,39 @@ class Participation(models.Model):
 class Message(models.Model):
     conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE, related_name="messages")
     auteur = models.ForeignKey(User, on_delete=models.CASCADE, related_name="messages_envoyes")
-    texte = models.TextField(max_length=2000)
+    texte = models.TextField(max_length=2000, blank=True)
     envoye_le = models.DateTimeField()
+    # Message cité en réponse, et suppression « pour tous » (le texte et les médias sont alors effacés).
+    reponse_a = models.ForeignKey("self", null=True, blank=True, on_delete=models.SET_NULL, related_name="reponses")
+    supprime = models.BooleanField(default=False)
 
     class Meta:
         ordering = ["envoye_le", "id"]
+        indexes = [models.Index(fields=["conversation", "envoye_le"])]
+
+
+class PieceMessage(models.Model):
+    """Média joint à un message. Le fichier ne se garde que 48 h : ensuite il est supprimé, la ligne reste pour l'indiquer."""
+
+    class Categorie(models.TextChoices):
+        IMAGE = "image", "Image"
+        AUDIO = "audio", "Audio"
+        VIDEO = "video", "Vidéo"
+        DOCUMENT = "document", "Document"
+
+    message = models.ForeignKey(Message, on_delete=models.CASCADE, related_name="pieces")
+    fichier = models.FileField(upload_to="messagerie/%Y/%m/%d", blank=True)
+    apercu = models.FileField(upload_to="messagerie/apercus/%Y/%m/%d", blank=True)
+    nom = models.CharField(max_length=200)
+    type_contenu = models.CharField(max_length=120)
+    taille = models.PositiveIntegerField(default=0)
+    categorie = models.CharField(max_length=10, choices=Categorie.choices)
+    expire_le = models.DateTimeField()
+    expiree = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ["id"]
+        indexes = [models.Index(fields=["expiree", "expire_le"])]
 
 
 # --- Dotation et expression des besoins --------------------------------------
@@ -1839,6 +1877,7 @@ class ParametresMinistere(models.Model):
     delai_validation_hierarchie_jours = models.PositiveSmallIntegerField(default=3)
     couleur_principale = models.CharField(max_length=7, default="#042F32")
     couleur_accent = models.CharField(max_length=7, default="#D6FFCB")
+    signataire_matricule = models.CharField(max_length=32, blank=True, help_text="Matricule de l'agent qui signe les documents finaux")
 
     class Meta:
         verbose_name = "paramètres du ministère"
@@ -1963,3 +2002,58 @@ class AdhesionJuridique(models.Model):
     class Meta:
         ordering = ["accepte_le"]
         constraints = [models.UniqueConstraint(fields=["user", "document", "version"], name="adhesion_unique")]
+
+
+PLAFOND_EXERCICE = 30
+
+
+class DroitConge(models.Model):
+    """Jours de congé annuel dus à un agent au titre d'un exercice ; le plus ancien se consomme en premier."""
+
+    agent = models.ForeignKey(Agent, on_delete=models.CASCADE, related_name="droits_conges")
+    annee = models.PositiveSmallIntegerField()
+    jours_dus = models.PositiveSmallIntegerField(default=0)
+    jours_pris = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        ordering = ["annee"]
+        constraints = [models.UniqueConstraint(fields=["agent", "annee"], name="droit_conge_agent_annee")]
+        verbose_name = "droit de congé annuel"
+
+    @property
+    def restant(self) -> int:
+        # On ne prend jamais plus de PLAFOND_EXERCICE jours au titre d'un seul exercice.
+        return max(min(self.jours_dus, PLAFOND_EXERCICE) - self.jours_pris, 0)
+
+
+class TacheFond(models.Model):
+    """Traitement long confié à Celery : import, export ou génération. Seul celui qui l'a lancé la suit et en retire le résultat."""
+
+    class Statut(models.TextChoices):
+        ATTENTE = "attente", "En attente"
+        EN_COURS = "en_cours", "En cours"
+        TERMINEE = "terminee", "Terminée"
+        ECHEC = "echec", "Échec"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    utilisateur = models.ForeignKey(User, on_delete=models.CASCADE, related_name="taches_fond")
+    libelle = models.CharField(max_length=160)
+    statut = models.CharField(max_length=12, choices=Statut.choices, default=Statut.ATTENTE)
+    progression = models.PositiveSmallIntegerField(default=0)
+    message = models.CharField(max_length=240, blank=True)
+    # Ce que la vue a répondu : code HTTP et corps JSON (ou fichier produit).
+    code_http = models.PositiveSmallIntegerField(default=0)
+    resultat = models.JSONField(null=True, blank=True)
+    fichier = models.FileField(upload_to="taches/%Y/%m", blank=True)
+    nom_fichier = models.CharField(max_length=200, blank=True)
+    type_contenu = models.CharField(max_length=120, blank=True)
+    # De quoi rejouer la requête dans le worker.
+    vue = models.CharField(max_length=200)
+    requete = models.JSONField(default=dict)
+    cree_le = models.DateTimeField(auto_now_add=True)
+    termine_le = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-cree_le"]
+        indexes = [models.Index(fields=["utilisateur", "-cree_le"])]
+        verbose_name = "tâche de fond"

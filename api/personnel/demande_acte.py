@@ -23,6 +23,8 @@ from .signatures import copie_signature
 
 CATEGORIE = "acte"
 DUREE_MAX_JOURS = 30
+# Actes dont la période dépasse le plafond des absences (l'allaitement s'étend sur quinze mois).
+SANS_PLAFOND = {"autorisation-horaire-allaitement"}
 
 ROLES_CHEF = {"Chef de service", "Sous directeur", "Directeur", "Directeur général"}
 ROLES_DRH = {"Directeur", "Directeur général"}
@@ -38,7 +40,8 @@ LIVRAISON = ("Acte délivré", "Délivrance de l'acte à l'agent")
 # Dernière étape d'un congé : le papier est versé une fois les visas apposés ; ce n'est pas un visa.
 PAPIER_CONGE = "Scan versé"
 SANS_VISA = {LIVRAISON[0], PAPIER_CONGE}
-CLOTURE_OK = ("Clôturée : acte délivré", "Acte disponible au téléchargement")
+A_SIGNER = ("Validée : à signer", "Secrétariat : impression et signature")
+CLOTURE_OK = ("Clôturée : acte délivré", "Original à retirer au secrétariat")
 CLOTURE_CONGE = ("Clôturée : congé accordé", "Congé accordé")
 CLOTURE_REFUS = ("Clôturée : demande refusée", "Voir le motif du refus")
 
@@ -101,7 +104,7 @@ def deposer(agent: Agent, payload: dict, justificatif=None) -> str | None:
             return "La date de fin précède la date de début."
         if debut < timezone.localdate():
             return "La date de début ne peut pas être dans le passé."
-        if (fin - debut).days + 1 > DUREE_MAX_JOURS:
+        if acte.code not in SANS_PLAFOND and (fin - debut).days + 1 > DUREE_MAX_JOURS:
             return f"Une absence ne peut pas dépasser {DUREE_MAX_JOURS} jours."
     erreur_fichier = _controler_justificatif(justificatif)
     if erreur_fichier:
@@ -287,12 +290,9 @@ def decider(demande: Demande, acteur, sens: str, motif: str) -> str | None:
             elif suivant is None:
                 delivre = True
                 _inscrire_absence(demande, aujourd_hui, motif)
-                VisaDemande.objects.filter(demande=demande, instance=LIVRAISON[0]).update(
-                    avis="Délivré", titulaire="Direction des Ressources Humaines", fonction="Délivrance à l'agent",
-                    date=aujourd_hui, commentaire="L'acte est disponible au téléchargement.",
-                )
-                demande.etape, demande.responsable = CLOTURE_OK
-                demande.echeance = "Terminée"
+                # Toutes les validations sont obtenues : le secrétariat imprime, fait signer, puis verse le document signé.
+                demande.etape, demande.responsable = A_SIGNER
+                demande.echeance = "Signature en cours"
             else:
                 demande.etape = f"Étape {suivant.ordre} : {suivant.instance}"
                 demande.responsable = suivant.fonction or "Avis attendu"
@@ -312,6 +312,12 @@ def _accorder_conge(demande: Demande, aujourd_hui: date) -> None:
     trouve = re.search(r"\((\d+) j", demande.nature)
     if trouve and "annuel" in demande.nature.lower():
         Agent.objects.filter(pk=demande.agent_id).update(conges_consommes=F("conges_consommes") + int(trouve.group(1)))
+        from .droits_conges import consommer, exercice_a_attribuer
+
+        # L'exercice dont relève ce congé est figé au moment de l'accord : le certificat le reprendra.
+        demande.exercice = exercice_a_attribuer(demande.agent)
+        demande.save(update_fields=["exercice"])
+        consommer(demande.agent, int(trouve.group(1)))
 
 
 def _prevenir(demande: Demande, delivre: bool, refuse: bool, motif: str) -> None:
@@ -319,6 +325,8 @@ def _prevenir(demande: Demande, delivre: bool, refuse: bool, motif: str) -> None
     if not (delivre or refuse):
         _prevenir_suivants(demande)
         return
+    if delivre and demande.categorie != "mutation":
+        prevenir_secretariat(demande)
     compte = User.objects.filter(username=demande.agent.matricule).first()
     if compte is None:
         return
@@ -329,7 +337,7 @@ def _prevenir(demande: Demande, delivre: bool, refuse: bool, motif: str) -> None
         titre, message = (
             ("Votre congé est accordé", f"{demande.nature} : toutes les validations sont obtenues.")
             if conge
-            else ("Votre acte est disponible", f"{demande.nature} : vous pouvez le télécharger.")
+            else ("Votre demande est validée", f"{demande.nature} : toutes les validations sont obtenues, le document part à la signature.")
         )
     else:
         titre, message = ("Demande de congé refusée" if conge else "Demande d'acte refusée"), f"{demande.nature} : {motif}"[:280]
@@ -337,6 +345,17 @@ def _prevenir(demande: Demande, delivre: bool, refuse: bool, motif: str) -> None
         destinataire=compte, categorie="demande", titre=titre, message=message,
         lien="/app/agents?onglet=demandes", creee_le=timezone.now(),
     )
+
+
+def prevenir_secretariat(demande: Demande) -> None:
+    """Prévient le secrétariat qu'un document validé de bout en bout attend d'être imprimé."""
+    from .secretariat import comptes_secretariat
+
+    for compte in comptes_secretariat(demande.agent.matricule):
+        Notification.objects.create(
+            destinataire=compte, categorie="demande", titre="Document à imprimer et à faire signer",
+            message=f"{demande.agent.nom_complet} · {demande.nature}."[:280], lien="/app/secretariat", creee_le=timezone.now(),
+        )
 
 
 def delivree(demande: Demande) -> bool:

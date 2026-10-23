@@ -10,6 +10,8 @@ import { StatistiquesScreen } from "./screens/StatistiquesScreen";
 import { CommunicationScreen } from "./screens/CommunicationScreen";
 import { SondageScreen } from "./screens/SondageScreen";
 import { ParametresScreen } from "./screens/ParametresScreen";
+import { ImpressionScreen } from "./screens/secretariat/ImpressionScreen";
+import { SecretariatScreen } from "./screens/secretariat/SecretariatScreen";
 import { StructuresScreen } from "./screens/StructuresScreen";
 import { UtilisateursScreen } from "./screens/UtilisateursScreen";
 import { AideScreen } from "./screens/AideScreen";
@@ -30,6 +32,7 @@ import { CouleursApplication } from "./ui/Couleurs";
 import { FeedbackProvider } from "./ui/Feedback";
 import { EtiquettesTableaux } from "./ui/EtiquettesTableaux";
 import { PageMotion, TopProgress } from "./ui/Motion";
+import { NouvelleVersion } from "./ui/NouvelleVersion";
 import { TempsReelProvider } from "./ui/TempsReel";
 import { AgentScreen } from "./screens/AgentScreen";
 import { BilanCarriereScreen } from "./screens/grh/BilanCarriereScreen";
@@ -51,6 +54,7 @@ export function App() {
         <FeedbackProvider>
           <EtiquettesTableaux />
           <TopProgress />
+          <NouvelleVersion />
           <SessionApplicative>
           <PublicMotion>
             <Routes>
@@ -93,6 +97,8 @@ export function App() {
               <Route path="/app/utilisateurs" element={<RequireAuth><UtilisateursScreen /></RequireAuth>} />
               <Route path="/app/structures" element={<RequireAuth><StructuresScreen /></RequireAuth>} />
               <Route path="/app/parametres" element={<RequireAuth><ParametresScreen /></RequireAuth>} />
+              <Route path="/app/secretariat" element={<RequireAuth><SecretariatScreen /></RequireAuth>} />
+              <Route path="/app/secretariat/imprimer/:reference" element={<RequireAuth><ImpressionScreen /></RequireAuth>} />
               <Route path="/app/communication" element={<RequireAuth><CommunicationScreen /></RequireAuth>} />
               <Route path="/app/sondage" element={<RequireAuth><SondageScreen /></RequireAuth>} />
               <Route path="/app/aide" element={<RequireAuth><AideScreen /></RequireAuth>} />

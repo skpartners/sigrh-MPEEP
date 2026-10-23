@@ -87,6 +87,10 @@ export type SessionUser = {
   organisme: string;
   organisme_sigle: string;
   signature_url: string;
+  /** Éléments du numéro de courrier : hiérarchie de la structure de l'utilisateur et ses initiales. */
+  reference_courrier?: { structures: string[]; initiales: string };
+  /** Accès à l'espace secrétariat : l'administrateur et les secrétaires, rattachées à une structure. */
+  secretariat?: boolean;
   photo_url: string;
   administrateur?: boolean;
   adhesion_complete?: boolean;
@@ -283,6 +287,10 @@ export type Dossier = AgentBrief & {
     report: number;
     autorisations: number;
     autorisations_restantes: number;
+    /** Jours dus, pris et restants par exercice ; le plus ancien se consomme en premier. */
+    droits: { annee: number; dus: number; pris: number; restant: number }[];
+    /** Exercice dont relèvera le prochain congé annuel. */
+    exercice: number | null;
   };
   types_conges: { code: string; libelle: string; enfants: { code: string; libelle: string }[] }[];
   types_absences: { code: string; libelle: string }[];
@@ -391,6 +399,9 @@ export type Dossier = AgentBrief & {
     fin: string;
     destinataire: string;
     justificatif_url: string;
+    /** Document final signé, versé par le secrétariat : l'intéressé peut le télécharger. */
+    document_signe: boolean;
+    signe_le: string;
     visas: {
       ordre: number;
       instance: string;
@@ -553,12 +564,29 @@ export type Personne = {
   organisme: string;
 };
 
+export type PieceMessage = {
+  id: number;
+  nom: string;
+  type: string;
+  categorie: "image" | "audio" | "video" | "document";
+  taille: number;
+  /** Le fichier ne se garde que 48 h : passé ce délai il est supprimé. */
+  expiree: boolean;
+  expire_le: string;
+  apercu: boolean;
+};
+
 export type MessageItem = {
   id: number;
   texte: string;
   envoye_le: string;
   auteur: Personne;
   de_moi: boolean;
+  supprime?: boolean;
+  pieces?: PieceMessage[];
+  reponse_a?: { id: number; auteur: string; extrait: string } | null;
+  /** Coches des messages envoyés : envoyé, reçu par chaque destinataire, lu par chacun. */
+  statut?: "envoye" | "recu" | "lu";
   /** Côté client seulement : message optimiste en cours d'envoi. */
   envoi?: boolean;
 };
@@ -568,7 +596,8 @@ export type ConversationItem = {
   titre: string;
   groupe: boolean;
   interlocuteurs: Personne[];
-  dernier_message: MessageItem | null;
+  dernier_message: { id: number; texte: string; envoye_le: string; de_moi: boolean; auteur: Personne } | null;
+  en_ligne?: boolean;
   non_lus: number;
   mise_a_jour: string;
 };

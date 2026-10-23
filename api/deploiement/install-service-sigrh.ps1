@@ -9,6 +9,9 @@ $python = "C:\Users\SORO\Documents\SIGRH-MPEEP\api\.venv\Scripts\python.exe"
 $app = "C:\Users\SORO\Documents\SIGRH-MPEEP\api"
 $client = "C:\Users\SORO\Documents\SIGRH-MPEEP\client"
 $journal = Join-Path $app "logs\sigrh-service.log"
+# Processus uvicorn : chacun traite une requête à la fois (Django exécute ses vues sur un fil par processus). Le temps réel,
+# le cache et les tâches passent par Redis, ce qui permet d'en lancer plusieurs. À ajuster au nombre de cœurs et d'utilisateurs.
+$processus = 6
 
 New-Item -ItemType Directory -Force -Path (Split-Path $journal) | Out-Null
 
@@ -40,9 +43,9 @@ if ($existant) {
     & $nssm remove SIGRH confirm
 }
 
-& $nssm install SIGRH $python "manage.py" "runserver" "127.0.0.1:8081" "--noreload"
+& $nssm install SIGRH $python "-m" "uvicorn" "config.asgi:application" "--host" "127.0.0.1" "--port" "8081" "--workers" "$processus" "--timeout-keep-alive" "30" "--no-access-log"
 & $nssm set SIGRH AppDirectory $app
-& $nssm set SIGRH AppEnvironmentExtra "SIGRH_ENV_FILE=$app\.env"
+& $nssm set SIGRH AppEnvironmentExtra "SIGRH_ENV_FILE=$app\.env" "SIGRH_SERVEUR=1" "PYTHONUTF8=1"
 & $nssm set SIGRH DisplayName "SIGRH"
 & $nssm set SIGRH Description "SIGRH sous /sigrh, origine du tunnel sk-partners.consulting"
 & $nssm set SIGRH Start SERVICE_AUTO_START

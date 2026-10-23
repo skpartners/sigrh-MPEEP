@@ -16,8 +16,10 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from .taches import en_arriere_plan
 from .effectifs import _reference
 from .models import CampagneBesoin, EmploiReferentiel, EntiteTutelle, FicheBesoin, Notification, Profil
+from .roles import ROLES_SIMPLES
 from .rattachement import structures_reglables
 
 PLAFOND_AGENTS = 500
@@ -32,7 +34,7 @@ def _structures_du_responsable(user) -> list[EntiteTutelle]:
     if profil is not None and profil.administrateur:
         # Le compte administrateur tient toutes les structures : il peut exprimer un besoin pour n'importe laquelle.
         return list(EntiteTutelle.objects.exclude(niveau=EntiteTutelle.Niveau.MINISTERE).order_by("ordre", "nom"))
-    if profil is None or profil.role == "Agent":
+    if profil is None or profil.role in ROLES_SIMPLES:
         return []
     retenues: dict[int, EntiteTutelle] = {}
     for structure in (profil.structure, profil.interim):
@@ -49,7 +51,7 @@ def _est_pilote(user) -> bool:
 def _responsables() -> dict[int, User]:
     """Un responsable par structure : le titulaire d'abord, à défaut l'intérimaire."""
     resultat: dict[int, User] = {}
-    profils = Profil.objects.select_related("user", "structure", "interim").exclude(role="Agent")
+    profils = Profil.objects.select_related("user", "structure", "interim").exclude(role__in=ROLES_SIMPLES)
     for profil in profils:
         if profil.structure_id and profil.structure_id not in resultat:
             resultat[profil.structure_id] = profil.user
@@ -448,6 +450,7 @@ def fiche(request, reference: str):
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
+@en_arriere_plan("Export des besoins")
 def exporter(request):
     """Plan des besoins en PDF, dans le périmètre de la personne connectée."""
     from .rapports.documents import rendre_plan_besoins

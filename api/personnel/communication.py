@@ -11,6 +11,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from .taches import en_arriere_plan
 from .communications import _interdit
 from .models import Agent, ConsultationFlash, LecturePublication, Notification, Publication, ReponseSondage
 
@@ -542,6 +543,7 @@ def relancer(request, pk: int):
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
+@en_arriere_plan("Export des communications")
 def exporter(request):
     refus = _interdit(request.user, "lecture")
     if refus:
@@ -625,6 +627,7 @@ def repondre_sondage(request):
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
+@en_arriere_plan("Rapport de consultation")
 def exporter_consultation(request):
     refus = _interdit(request.user, "lecture")
     if refus:

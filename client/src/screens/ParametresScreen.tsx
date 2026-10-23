@@ -19,6 +19,7 @@ import { CarteEffectif } from "./EffectifCarte";
 import { CarteEmplois, CarteLogo } from "./ParametresReferentiel";
 import { Icone } from "../ui/Icone";
 import { Select } from "../ui/Select";
+import type { Signataire } from "../ui/DocumentOfficiel";
 
 type Parametres = {
   photo_url: string;
@@ -35,6 +36,7 @@ type Parametres = {
     quorum_presence_pourcent?: number;
   };
   couleurs: Couleurs;
+  signataire?: Signataire;
 };
 
 const PAGE = "w-full px-4 sm:px-6 lg:px-8 py-6 mx-auto flex-1 space-y-6";
@@ -429,6 +431,8 @@ export function ParametresScreen() {
           )}
         </section>
 
+        <SectionSignataire peutModifier={Boolean(data?.peut_modifier)} pret={Boolean(data)} enregistre={data?.signataire?.matricule ?? ""} />
+
         <SectionCouleurs peutModifier={Boolean(data?.peut_modifier)} pret={Boolean(data)} />
       </div>
     </AppChrome>
@@ -577,6 +581,81 @@ function SectionCouleurs({ peutModifier, pret }: { peutModifier: boolean; pret: 
         ) : pret ? (
           <p className="font-body-sm text-body-sm text-on-surface-variant">La modification est réservée aux comptes habilités à saisir ces paramètres.</p>
         ) : null}
+      </form>
+    </section>
+  );
+}
+
+function SectionSignataire({ peutModifier, pret, enregistre }: { peutModifier: boolean; pret: boolean; enregistre: string }) {
+  const client = useQueryClient();
+  const feedback = useFeedback();
+  const [matricule, setMatricule] = useState("");
+  const [erreur, setErreur] = useState("");
+  const [enCours, setEnCours] = useState(false);
+  const saisi = matricule.trim();
+  const rattache = useQuery({
+    queryKey: ["signataire", saisi],
+    queryFn: () => api<Signataire>(`/api/v1/parametres/signataire/chercher/?matricule=${encodeURIComponent(saisi)}`),
+    enabled: saisi.length > 0,
+  });
+
+  useEffect(() => {
+    setMatricule(enregistre);
+  }, [enregistre]);
+
+  async function enregistrer() {
+    setEnCours(true);
+    setErreur("");
+    try {
+      const reponse = await feedback.run(
+        "Enregistrement du signataire…",
+        () => api<Parametres>("/api/v1/parametres/signataire/", { method: "POST", body: JSON.stringify({ matricule: saisi }) }),
+        { success: { title: "Signataire enregistré", message: "Son nom figure désormais sur les documents finaux." } },
+      );
+      client.setQueryData(["parametres"], reponse);
+    } catch (cause) {
+      setErreur(cause instanceof ApiError ? cause.message : "Le signataire n'a pas pu être enregistré.");
+    } finally {
+      setEnCours(false);
+    }
+  }
+
+  const agent = rattache.data;
+  return (
+    <section className="motion-rise rounded-xl border border-hairline bg-surface-container-lowest p-6" aria-labelledby="titre-signataire">
+      <h2 id="titre-signataire" className="font-headline-sm text-headline-sm text-on-surface">Signataire des documents finaux</h2>
+      <form
+        className="mt-6 flex flex-wrap items-end gap-4"
+        onSubmit={(event) => {
+          event.preventDefault();
+          void enregistrer();
+        }}
+      >
+        <label className="block space-y-1.5">
+          <span className="font-label-sm text-label-sm text-on-surface-variant">Matricule du signataire</span>
+          <input
+            className={`${CHAMP} w-48 font-code-num uppercase`}
+            value={matricule}
+            maxLength={32}
+            spellCheck={false}
+            autoComplete="off"
+            disabled={enCours || !pret || !peutModifier}
+            onChange={(event) => setMatricule(event.target.value)}
+          />
+        </label>
+        {peutModifier ? (
+          <button type="submit" className={BOUTON_PRIMAIRE} disabled={enCours || !pret || matricule.trim() === enregistre || (saisi !== "" && !agent?.trouve)}>
+            Enregistrer
+          </button>
+        ) : null}
+        <p className="basis-full font-body-sm text-body-sm text-on-surface-variant" aria-live="polite">
+          {saisi === ""
+            ? "Indiquez le matricule de l'agent qui signe les certificats et attestations : son nom et son emploi sont repris automatiquement."
+            : agent?.trouve
+              ? `Rattaché à : ${agent.nom} ${agent.prenoms} — ${agent.titre || "emploi non renseigné"}`
+              : rattache.isFetching ? "Recherche…" : "Aucun agent ne porte ce matricule."}
+        </p>
+        {erreur ? <p className="basis-full font-body-sm text-body-sm text-error" role="alert">{erreur}</p> : null}
       </form>
     </section>
   );

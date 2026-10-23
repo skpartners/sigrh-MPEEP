@@ -180,6 +180,9 @@ def demarrer_si_serveur() -> None:
     global _fil
     if _fil is not None or "pytest" in sys.modules:
         return
+    # Celery beat planifie la surveillance quand un broker est configuré : la boucle interne ferait doublon.
+    if os.environ.get("CELERY_BROKER_URL", "").strip():
+        return
     if os.environ.get("RUN_MAIN") != "true" and "--noreload" not in sys.argv:
         return
     _fil = threading.Thread(target=_boucle, name="echeances-conges", daemon=True)

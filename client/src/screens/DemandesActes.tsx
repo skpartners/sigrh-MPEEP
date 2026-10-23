@@ -5,6 +5,8 @@ import type { Dossier, SessionUser } from "../api/types";
 import { dateCourte } from "../ui/format";
 import { Icone } from "../ui/Icone";
 import { ApercuFichier, telechargerFichier } from "../ui/ApercuFichier";
+import { DocumentSigne } from "./dossier-onglets/commun";
+import { ApercuActe } from "./dossier-onglets/ModelesActes";
 import { BOUTON_PRIMAIRE, BOUTON_SECONDAIRE, Modale } from "../ui/Modale";
 import { Select } from "../ui/Select";
 
@@ -63,6 +65,7 @@ function aujourdhui(): string {
 
 function statut(demande: Demande): { libelle: string; ton: string } {
   if (demande.etape.startsWith("Clôturée : acte délivré")) return { libelle: "Acte délivré", ton: "bg-primary/10 text-primary" };
+  if (demande.etape.startsWith("Validée")) return { libelle: "En cours de signature", ton: "bg-tertiary-fixed text-on-tertiary-fixed-variant" };
   if (demande.etape.startsWith("Clôturée")) return { libelle: "Refusée", ton: "bg-error-container text-on-error-container" };
   return { libelle: "En cours", ton: "bg-secondary-fixed text-on-secondary-fixed" };
 }
@@ -206,6 +209,11 @@ function FormulaireDemande({ agent, types }: { agent: Dossier; types: TypeActe[]
           <Icone nom="send" />{depot.isPending ? "Transmission…" : "Transmettre la demande"}
         </button>
       </form>
+      {code ? (
+        <div className="mx-auto mt-8 w-full max-w-[44rem]">
+          <ApercuActe agent={agent} code={code} debut={debut} fin={fin} />
+        </div>
+      ) : null}
     </section>
   );
 }
@@ -254,7 +262,8 @@ function CarteDemande({ demande }: { demande: Demande }) {
         ))}
       </ol>
       {refus ? <p role="note" className="rounded-lg bg-error-container text-on-error-container p-3 text-sm">Motif du refus : {refus.commentaire}</p> : null}
-      {etat.libelle === "Acte délivré" ? (
+      <DocumentSigne demande={demande} />
+      {etat.libelle === "Acte délivré" && !demande.document_signe ? (
         <button type="button" onClick={() => void telechargerActe()} className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 font-label-md text-on-primary">
           <Icone nom="download" />Télécharger l’acte (PDF)
         </button>

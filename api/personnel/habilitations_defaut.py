@@ -90,3 +90,36 @@ def appliquer(Role=RoleMatrice, Fonction=FonctionHabilitation, Compte=Profil, Ut
             precisions[str(pk)] = "validation"
     profil.precisions = precisions
     profil.save(update_fields=["precisions"])
+
+
+MODULE_SECRETARIAT = "Carrières & Actes"
+FONCTION_SECRETARIAT = "Secrétariat"
+ROLE_SECRETAIRE = "Secrétaire"
+
+
+def appliquer_secretariat(Module, Fonction, Role) -> None:
+    """Fonction « Secrétariat » : fermée à tous les rôles, ouverte au rôle « Secrétaire » (calqué sur l'agent)."""
+    module = Module.objects.filter(libelle=MODULE_SECRETARIAT).first()
+    if module is None:
+        return
+    dernier = Fonction.objects.filter(module=module).order_by("-ordre").values_list("ordre", flat=True).first() or 0
+    fonction, _cree = Fonction.objects.get_or_create(module=module, libelle=FONCTION_SECRETARIAT, defaults={"ordre": dernier + 1})
+    for role in Role.objects.exclude(role=ROLE_SECRETAIRE):
+        precisions = dict(role.precisions or {})
+        precisions.setdefault(str(fonction.pk), "refus")
+        role.precisions = precisions
+        role.save(update_fields=["precisions"])
+    modele = Role.objects.filter(role="Agent").first()
+    if modele is not None and not Role.objects.filter(role=ROLE_SECRETAIRE).exists():
+        ordre = (Role.objects.order_by("-ordre").values_list("ordre", flat=True).first() or 0) + 1
+        precisions = dict(modele.precisions or {})
+        precisions[str(fonction.pk)] = "saisie"
+        Role.objects.create(
+            ordre=ordre,
+            role=ROLE_SECRETAIRE,
+            description="Imprime les demandes validées, les fait signer et verse le document signé",
+            icone="assignment_ind",
+            droits=list(modele.droits),
+            superieurs=list(modele.superieurs),
+            precisions=precisions,
+        )

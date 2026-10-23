@@ -10,6 +10,7 @@ import re
 import unicodedata
 
 from .models import Agent, EntiteTutelle
+from .roles import ROLES_SIMPLES
 
 
 def normaliser(texte: str) -> str:
@@ -22,7 +23,7 @@ def normaliser(texte: str) -> str:
 def structures_par_nom() -> dict:
     """Les structures des paramètres (hors ministère), indexées par nom normalisé."""
     par_nom: dict = {}
-    for entite in EntiteTutelle.objects.exclude(niveau="ministere"):
+    for entite in EntiteTutelle.objects.exclude(niveau="ministere").select_related("pole", "parent"):
         par_nom.setdefault(normaliser(entite.nom), entite)
     return par_nom
 
@@ -85,7 +86,7 @@ def structures_reglables(user) -> set[int] | None:
     profil = getattr(user, "profil", None)
     racines = []
     if profil is not None:
-        if profil.structure_id and profil.role != "Agent":
+        if profil.structure_id and profil.role not in ROLES_SIMPLES:
             racines.append(profil.structure)
         if profil.interim_id:
             racines.append(profil.interim)

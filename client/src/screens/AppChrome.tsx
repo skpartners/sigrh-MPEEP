@@ -15,6 +15,7 @@ import { CommunicationBouton } from "./CommunicationBouton";
 import { MessagerieBouton } from "./Messagerie";
 import { NotificationBell } from "./NotificationBell";
 import { Icone } from "../ui/Icone";
+import { IndicateurTaches } from "../ui/IndicateurTaches";
 import { destinationModule, lienActif, libellePage, menuAutorise, menuCourant, moduleAutorise, NAV, pageHorsHabilitation, repliHabilitation, sousMenus, type LienNav } from "./navigation";
 import { MarqueSigrh } from "../ui/MarqueSigrh";
 
@@ -161,6 +162,7 @@ export function AppChrome({ children, sansSidebar = false, actions }: { children
           </div>
           <div className="outils flex items-center gap-0.5 sm:gap-2 shrink-0" role="toolbar" aria-label="Outils de l'application">
             {menuAutorise(me.data?.acces, { module: "Statistiques & RBAC", fonction: "Communication" }) ? <CommunicationBouton /> : null}
+            <IndicateurTaches />
             <MessagerieBouton />
             <NotificationBell />
             <Link
@@ -400,6 +402,8 @@ function ProfileMenu({ user }: { user: SessionUser | undefined }) {
   const ref = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const feedback = useFeedback();
+  // Espace réservé à l'administrateur et aux secrétaires : le serveur en décide.
+  const secretariat = Boolean(user?.secretariat);
 
   useEffect(() => {
     if (!open) return;
@@ -512,6 +516,18 @@ function ProfileMenu({ user }: { user: SessionUser | undefined }) {
             Ma connexion
             <span className="ml-auto font-body-sm text-body-sm text-on-surface-variant">Mot de passe</span>
           </button>
+          {secretariat ? (
+            <Link
+              role="menuitem"
+              to="/app/secretariat"
+              className="w-full flex items-center gap-2 px-3 py-2 rounded text-left font-label-lg text-label-lg text-on-surface hover:bg-surface-container-high border-b border-hairline mb-1"
+              onClick={() => setOpen(false)}
+            >
+              <Icone nom="assignment_ind" className="text-lg leading-none text-primary shrink-0" />
+              Secrétariat
+              <span className="ml-auto font-body-sm text-body-sm text-on-surface-variant">Demandes et signatures</span>
+            </Link>
+          ) : null}
           {user?.administrateur ? (
             <Link
               role="menuitem"

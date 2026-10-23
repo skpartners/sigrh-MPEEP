@@ -1,11 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEvent, type ReactNode } from "react";
-import { api } from "../api/client";
+import { api, televerser } from "../api/client";
 import type { ConversationItem, Conversations, Fil, MessageItem, Personne, SessionUser } from "../api/types";
 import { useFeedback } from "../ui/Feedback";
 import { reducedMotion } from "../ui/Motion";
 import { useIntervalle, useTempsReel } from "../ui/TempsReel";
 import { Icone } from "../ui/Icone";
+import { Coches, EnregistreurVocal, PieceBulle, taille } from "./MessagerieMedias";
 
 const CLE_LISTE = ["messagerie"];
 const cleFil = (id: number) => ["messagerie", "fil", id];
@@ -392,11 +393,14 @@ function VueListe({ onOuvrir, onNouveau }: { onOuvrir: (id: number) => void; onN
   );
 }
 
-// --- Vue : nouveau message ---------------------------------------------------
+// --- Vue : nouveau message ou nouveau groupe ----------------------------------
 
 function VueNouveau({ onRetour, onOuvrir }: { onRetour: () => void; onOuvrir: (id: number) => void }) {
   const [saisie, setSaisie] = useState("");
   const [terme, setTerme] = useState("");
+  const [groupe, setGroupe] = useState(false);
+  const [choisis, setChoisis] = useState<Personne[]>([]);
+  const [sujet, setSujet] = useState("");
   const champ = useRef<HTMLInputElement>(null);
   const client = useQueryClient();
   const feedback = useFeedback();
@@ -419,10 +423,65 @@ function VueNouveau({ onRetour, onOuvrir }: { onRetour: () => void; onOuvrir: (i
     },
     onError: (erreur) => feedback.toast("Conversation impossible", erreur instanceof Error ? erreur.message : undefined, "error"),
   });
+  const creerGroupe = useMutation({
+    mutationFn: () =>
+      api<ConversationItem>("/api/v1/messagerie/conversations/", { method: "POST", body: JSON.stringify({ sujet: sujet.trim(), participants: choisis.map((personne) => personne.id) }) }),
+    onSuccess: (conversation) => {
+      void client.invalidateQueries({ queryKey: CLE_LISTE });
+      onOuvrir(conversation.id);
+    },
+    onError: (erreur) => feedback.toast("Groupe non créé", erreur instanceof Error ? erreur.message : undefined, "error"),
+  });
+
+  function basculer(personne: Personne) {
+    setChoisis((actuels) => (actuels.some((item) => item.id === personne.id) ? actuels.filter((item) => item.id !== personne.id) : [...actuels, personne]));
+  }
 
   return (
     <>
-      <EnTete titre="Nouveau message" sousTitre="Choisissez un collègue" onRetour={onRetour} />
+      <EnTete
+        titre={groupe ? "Nouveau groupe" : "Nouveau message"}
+        sousTitre={groupe ? "Nommez le groupe et choisissez au moins deux collègues" : "Choisissez un collègue"}
+        onRetour={onRetour}
+        action={
+          <button
+            type="button"
+            onClick={() => setGroupe((valeur) => !valeur)}
+            aria-pressed={groupe}
+            className={`flex items-center gap-1.5 rounded px-3 py-1.5 font-label-md text-label-md ${groupe ? "bg-primary text-on-primary" : "bg-surface-container-high text-on-surface hover:bg-surface-container-highest"}`}
+          >
+            <Icone nom="group_add" className="text-base" />
+            Groupe
+          </button>
+        }
+      />
+      {groupe ? (
+        <div className="shrink-0 space-y-2 px-3 pt-3">
+          <label className="block">
+            <span className="sr-only">Nom du groupe</span>
+            <input
+              type="text"
+              value={sujet}
+              maxLength={160}
+              onChange={(event) => setSujet(event.target.value)}
+              placeholder="Nom du groupe"
+              className="h-9 w-full rounded bg-surface-container-low px-3 font-body-sm text-body-sm text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:ring-2 focus:ring-primary"
+            />
+          </label>
+          {choisis.length ? (
+            <ul className="flex flex-wrap gap-1.5" aria-label="Membres du groupe">
+              {choisis.map((personne) => (
+                <li key={personne.id} className="flex items-center gap-1 rounded-full bg-primary-fixed py-0.5 pl-2.5 pr-1 font-label-sm text-label-sm text-on-primary-fixed">
+                  {personne.nom_complet}
+                  <button type="button" aria-label={`Retirer ${personne.nom_complet}`} onClick={() => basculer(personne)} className="rounded-full p-0.5 hover:bg-black/10">
+                    <Icone nom="close" className="text-sm" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </div>
+      ) : null}
       <label className="block px-3 pt-3 shrink-0">
         <span className="sr-only">Rechercher un collègue</span>
         <input
@@ -439,42 +498,73 @@ function VueNouveau({ onRetour, onOuvrir }: { onRetour: () => void; onOuvrir: (i
         {annuaire.data?.length === 0 ? (
           <li className="px-4 py-6 text-center font-body-sm text-body-sm text-on-surface-variant">Aucun collègue ne correspond à « {terme} ».</li>
         ) : null}
-        {annuaire.data?.map((personne) => (
-          <li key={personne.id}>
-            <button
-              type="button"
-              disabled={ouvrir.isPending}
-              onClick={() => ouvrir.mutate(personne.id)}
-              className="w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-surface-container-low disabled:opacity-60"
-            >
-              <span className="w-10 h-10 rounded-full bg-primary-fixed text-on-primary-fixed flex items-center justify-center shrink-0 font-label-md text-label-md font-bold" aria-hidden="true">
-                {personne.initiales}
-              </span>
-              <span className="min-w-0">
-                <span className="block truncate font-label-lg text-label-lg text-on-surface">{personne.nom_complet}</span>
-                <span className="block truncate font-body-sm text-body-sm text-on-surface-variant">
-                  {personne.fonction} · {personne.organisme}
+        {annuaire.data?.map((personne) => {
+          const retenu = choisis.some((item) => item.id === personne.id);
+          return (
+            <li key={personne.id}>
+              <button
+                type="button"
+                disabled={ouvrir.isPending}
+                aria-pressed={groupe ? retenu : undefined}
+                onClick={() => (groupe ? basculer(personne) : ouvrir.mutate(personne.id))}
+                className="w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-surface-container-low disabled:opacity-60"
+              >
+                <span className="w-10 h-10 rounded-full bg-primary-fixed text-on-primary-fixed flex items-center justify-center shrink-0 font-label-md text-label-md font-bold" aria-hidden="true">
+                  {retenu ? <Icone nom="check" className="text-xl" /> : personne.initiales}
                 </span>
-              </span>
-            </button>
-          </li>
-        ))}
+                <span className="min-w-0">
+                  <span className="block truncate font-label-lg text-label-lg text-on-surface">{personne.nom_complet}</span>
+                  <span className="block truncate font-body-sm text-body-sm text-on-surface-variant">
+                    {personne.fonction} · {personne.organisme}
+                  </span>
+                </span>
+              </button>
+            </li>
+          );
+        })}
       </ul>
+      {groupe ? (
+        <div className="shrink-0 border-t border-hairline p-2.5">
+          <button
+            type="button"
+            disabled={creerGroupe.isPending || choisis.length < 2 || !sujet.trim()}
+            onClick={() => creerGroupe.mutate()}
+            className="w-full rounded-lg bg-primary px-4 py-2.5 font-label-md text-label-md font-semibold text-on-primary hover:bg-primary-container disabled:bg-surface-container-high disabled:text-on-surface-variant"
+          >
+            Créer le groupe ({choisis.length + 1} personnes)
+          </button>
+        </div>
+      ) : null}
     </>
   );
 }
 
 // --- Vue : fil de discussion -------------------------------------------------
 
+const PIECES_MAX = 5;
+const TAILLE_MAX_PIECE = 15 * 1024 * 1024;
+const ACCEPTE = ".jpg,.jpeg,.png,.webp,.gif,.heic,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.odt,.ods,.txt,.csv,.zip,.mp3,.m4a,.ogg,.wav,.webm,.opus,.aac,.mp4,.mov,.mkv";
+const SAISIE_ENVOI_MS = 2_500;
+const SAISIE_AFFICHEE_MS = 4_000;
+
 function VueFil({ id, onRetour }: { id: number; onRetour: () => void }) {
   const intervalleFil = useIntervalle(5_000);
   const client = useQueryClient();
   const feedback = useFeedback();
+  const { abonner, envoyer: envoyerTempsReel } = useTempsReel();
   const [texte, setTexte] = useState("");
+  const [pieces, setPieces] = useState<File[]>([]);
+  const [progression, setProgression] = useState<number | null>(null);
+  const [reponse, setReponse] = useState<MessageItem | null>(null);
+  const [ecrit, setEcrit] = useState("");
+  const [aSupprimer, setASupprimer] = useState<number | null>(null);
+  const [survol, setSurvol] = useState(false);
   const zone = useRef<HTMLTextAreaElement>(null);
   const defilement = useRef<HTMLOListElement>(null);
+  const choixFichier = useRef<HTMLInputElement>(null);
   const premierRendu = useRef(true);
   const vus = useRef<Set<number> | null>(null);
+  const derniereSaisie = useRef(0);
   const moi = client.getQueryData<SessionUser>(["me"]);
 
   const fil = useQuery({
@@ -501,6 +591,21 @@ function VueFil({ id, onRetour }: { id: number; onRetour: () => void }) {
 
   useEffect(() => zone.current?.focus(), []);
 
+  // « X écrit… » : l'indication disparaît seule si rien de neuf n'arrive.
+  useEffect(() => {
+    let minuteur = 0;
+    const desabonner = abonner((evenement) => {
+      if (evenement.type !== "messagerie.saisie" || evenement.conversation_id !== id) return;
+      setEcrit(evenement.auteur);
+      window.clearTimeout(minuteur);
+      minuteur = window.setTimeout(() => setEcrit(""), SAISIE_AFFICHEE_MS);
+    });
+    return () => {
+      desabonner();
+      window.clearTimeout(minuteur);
+    };
+  }, [abonner, id]);
+
   // Toujours afficher le dernier message : direct à l'ouverture, en douceur ensuite.
   useLayoutEffect(() => {
     const liste = defilement.current;
@@ -512,10 +617,37 @@ function VueFil({ id, onRetour }: { id: number; onRetour: () => void }) {
   // Les bulles présentes à l'ouverture ne s'animent pas ; seules les nouvelles arrivent en douceur.
   if (vus.current === null && fil.data) vus.current = new Set(messages.map((m) => m.id));
 
+  function ajouter(fichiers: File[]) {
+    const acceptes: File[] = [];
+    for (const fichier of fichiers) {
+      if (fichier.size > TAILLE_MAX_PIECE) {
+        feedback.toast("Fichier trop lourd", `« ${fichier.name} » dépasse 15 Mo.`, "error");
+        continue;
+      }
+      acceptes.push(fichier);
+    }
+    setPieces((actuelles) => {
+      const suite = [...actuelles, ...acceptes];
+      if (suite.length > PIECES_MAX) feedback.toast("Trop de fichiers", `Un message porte ${PIECES_MAX} fichiers au plus.`, "info");
+      return suite.slice(0, PIECES_MAX);
+    });
+  }
+
   const envoyer = useMutation({
-    mutationFn: (contenu: string) =>
-      api<MessageItem>(`/api/v1/messagerie/conversations/${id}/messages/`, { method: "POST", body: JSON.stringify({ texte: contenu }) }),
-    onMutate: async (contenu) => {
+    mutationFn: async ({ contenu, fichiers, cite }: { contenu: string; fichiers: File[]; cite: MessageItem | null }) => {
+      const adresse = `/api/v1/messagerie/conversations/${id}/messages/`;
+      if (fichiers.length === 0) {
+        return api<MessageItem>(adresse, { method: "POST", body: JSON.stringify({ texte: contenu, reponse_a: cite?.id ?? null }) });
+      }
+      const formulaire = new FormData();
+      formulaire.set("texte", contenu);
+      if (cite) formulaire.set("reponse_a", String(cite.id));
+      fichiers.forEach((fichier) => formulaire.append("fichiers", fichier, fichier.name));
+      setProgression(0);
+      return televerser<MessageItem>(adresse, formulaire, setProgression);
+    },
+    onMutate: async ({ contenu, fichiers, cite }) => {
+      if (fichiers.length > 0) return { avant: undefined };
       await client.cancelQueries({ queryKey: cleFil(id) });
       const avant = client.getQueryData<Fil>(cleFil(id));
       const provisoire: MessageItem = {
@@ -524,30 +656,47 @@ function VueFil({ id, onRetour }: { id: number; onRetour: () => void }) {
         envoye_le: new Date().toISOString(),
         de_moi: true,
         envoi: true,
+        reponse_a: cite ? { id: cite.id, auteur: cite.auteur.nom_complet, extrait: cite.texte.slice(0, 140) } : null,
         auteur: { id: 0, matricule: moi?.matricule ?? "", nom_complet: moi?.nom_complet ?? "Vous", initiales: "", fonction: moi?.fonction ?? "", organisme: moi?.organisme_sigle ?? "" },
       };
       client.setQueryData<Fil | undefined>(cleFil(id), (donnees) => donnees && { ...donnees, messages: [...donnees.messages, provisoire] });
-      return { avant, contenu };
+      return { avant };
     },
-    onError: (erreur, _contenu, contexte) => {
+    onError: (erreur, variables, contexte) => {
       if (contexte?.avant) client.setQueryData(cleFil(id), contexte.avant);
-      if (contexte) setTexte(contexte.contenu); // le texte n'est jamais perdu
+      // Ni le texte ni les fichiers ne sont perdus.
+      setTexte(variables.contenu);
+      setPieces(variables.fichiers);
+      setReponse(variables.cite);
       feedback.toast("Message non envoyé", erreur instanceof Error ? erreur.message : undefined, "error");
     },
     // Le message confirmé remplace le provisoire sans rejouer l'animation d'arrivée.
     onSuccess: (message) => vus.current?.add(message.id),
     onSettled: () => {
+      setProgression(null);
       void client.invalidateQueries({ queryKey: cleFil(id) });
       void client.invalidateQueries({ queryKey: CLE_LISTE, exact: true });
     },
   });
 
+  const supprimer = useMutation({
+    mutationFn: (message: number) => api(`/api/v1/messagerie/messages/${message}/`, { method: "DELETE" }),
+    onSettled: () => {
+      setASupprimer(null);
+      void client.invalidateQueries({ queryKey: cleFil(id) });
+      void client.invalidateQueries({ queryKey: CLE_LISTE, exact: true });
+    },
+    onError: (erreur) => feedback.toast("Suppression impossible", erreur instanceof Error ? erreur.message : undefined, "error"),
+  });
+
   function soumettre(event?: FormEvent) {
     event?.preventDefault();
     const contenu = texte.trim();
-    if (!contenu || contenu.length > LONGUEUR_MAX) return;
+    if ((!contenu && pieces.length === 0) || contenu.length > LONGUEUR_MAX || envoyer.isPending) return;
+    envoyer.mutate({ contenu, fichiers: pieces, cite: reponse });
     setTexte("");
-    envoyer.mutate(contenu);
+    setPieces([]);
+    setReponse(null);
     zone.current?.focus();
   }
 
@@ -555,6 +704,15 @@ function VueFil({ id, onRetour }: { id: number; onRetour: () => void }) {
     if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
       event.preventDefault();
       soumettre();
+    }
+  }
+
+  function saisie(valeur: string) {
+    setTexte(valeur);
+    const maintenant = Date.now();
+    if (valeur && maintenant - derniereSaisie.current > SAISIE_ENVOI_MS) {
+      derniereSaisie.current = maintenant;
+      envoyerTempsReel({ type: "saisie", conversation_id: id });
     }
   }
 
@@ -566,14 +724,31 @@ function VueFil({ id, onRetour }: { id: number; onRetour: () => void }) {
     champ.style.height = `${Math.min(champ.scrollHeight, 120)}px`;
   }, [texte]);
 
-  const sousTitre = conversation
-    ? conversation.groupe
-      ? conversation.interlocuteurs.map((p) => p.nom_complet).join(", ")
-      : [conversation.interlocuteurs[0]?.fonction, conversation.interlocuteurs[0]?.organisme].filter(Boolean).join(" · ")
-    : undefined;
+  const sousTitre = ecrit
+    ? `${ecrit} écrit…`
+    : conversation
+      ? conversation.groupe
+        ? conversation.interlocuteurs.map((p) => p.nom_complet).join(", ")
+        : conversation.en_ligne
+          ? "En ligne"
+          : [conversation.interlocuteurs[0]?.fonction, conversation.interlocuteurs[0]?.organisme].filter(Boolean).join(" · ")
+      : undefined;
+  const envoiEnCours = envoyer.isPending && progression !== null;
 
   return (
-    <>
+    <div
+      className={`flex min-h-0 flex-1 flex-col ${survol ? "ring-2 ring-inset ring-primary" : ""}`}
+      onDragOver={(event) => {
+        event.preventDefault();
+        setSurvol(true);
+      }}
+      onDragLeave={() => setSurvol(false)}
+      onDrop={(event) => {
+        event.preventDefault();
+        setSurvol(false);
+        ajouter(Array.from(event.dataTransfer.files));
+      }}
+    >
       <EnTete
         titre={conversation?.titre ?? "Conversation"}
         sousTitre={sousTitre}
@@ -598,8 +773,9 @@ function VueFil({ id, onRetour }: { id: number; onRetour: () => void }) {
           const nouveauJour = !precedent || !memeJour(new Date(precedent.envoye_le), new Date(message.envoye_le));
           const memeAuteur = precedent && !nouveauJour && precedent.auteur.matricule === message.auteur.matricule;
           const anime = vus.current !== null && !vus.current.has(message.id);
+          const supprimable = message.de_moi && !message.supprime && !message.envoi && Date.now() - new Date(message.envoye_le).getTime() < 48 * 3_600_000;
           return (
-            <li key={message.id} className="list-none">
+            <li key={message.id} className="list-none group">
               {nouveauJour ? (
                 <p className="text-center my-3">
                   <span className="px-2.5 py-0.5 rounded-full bg-surface-container font-label-sm text-label-sm text-on-surface-variant first-letter:uppercase inline-block">
@@ -611,22 +787,109 @@ function VueFil({ id, onRetour }: { id: number; onRetour: () => void }) {
                 {conversation?.groupe && !message.de_moi && !memeAuteur ? (
                   <span className="px-1 mb-0.5 font-label-sm text-label-sm text-primary font-semibold">{message.auteur.nom_complet}</span>
                 ) : null}
-                <p
-                  className={`max-w-[85%] px-3 py-2 rounded-2xl font-body-md text-body-md whitespace-pre-wrap break-words ${
-                    message.de_moi ? "bg-primary-container text-on-primary rounded-br-md" : "bg-surface-container-lowest text-on-surface border border-hairline rounded-bl-md"
-                  } ${message.envoi ? "opacity-70" : ""}`}
-                >
-                  {message.texte}
-                </p>
-                <span className="px-1 mt-0.5 font-label-sm text-label-sm text-on-surface-variant">
+                <div className={`flex max-w-[88%] items-end gap-1 ${message.de_moi ? "flex-row-reverse" : ""}`}>
+                  <div
+                    className={`min-w-0 space-y-1.5 px-3 py-2 rounded-2xl font-body-md text-body-md break-words ${
+                      message.de_moi ? "bg-primary-container text-on-primary rounded-br-md" : "bg-surface-container-lowest text-on-surface border border-hairline rounded-bl-md"
+                    } ${message.envoi ? "opacity-70" : ""}`}
+                  >
+                    {message.reponse_a ? (
+                      <div className={`rounded-lg border-l-4 px-2 py-1 ${message.de_moi ? "border-on-primary/60 bg-white/15" : "border-primary bg-surface-container"}`}>
+                        <span className="block font-label-sm text-label-sm font-bold">{message.reponse_a.auteur}</span>
+                        <span className="block truncate font-body-sm text-body-sm opacity-90">{message.reponse_a.extrait || "Pièce jointe"}</span>
+                      </div>
+                    ) : null}
+                    {message.supprime ? (
+                      <p className="flex items-center gap-1.5 italic opacity-80">
+                        <Icone nom="block" className="text-base" />Ce message a été supprimé
+                      </p>
+                    ) : (
+                      <>
+                        {message.pieces?.map((piece) => (
+                          <PieceBulle key={piece.id} piece={piece} surMoi={message.de_moi} />
+                        ))}
+                        {message.texte ? <p className="whitespace-pre-wrap">{message.texte}</p> : null}
+                      </>
+                    )}
+                  </div>
+                  {!message.supprime && !message.envoi ? (
+                    <span className="flex shrink-0 gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
+                      <button type="button" aria-label="Répondre" title="Répondre" onClick={() => { setReponse(message); zone.current?.focus(); }} className="rounded-full p-1.5 text-on-surface-variant hover:bg-surface-container-high">
+                        <Icone nom="reply" className="text-base" />
+                      </button>
+                      {supprimable ? (
+                        aSupprimer === message.id ? (
+                          <button type="button" onClick={() => supprimer.mutate(message.id)} disabled={supprimer.isPending} className="rounded-full bg-error px-2 py-1 font-label-sm text-label-sm font-bold text-on-error">
+                            Supprimer pour tous ?
+                          </button>
+                        ) : (
+                          <button type="button" aria-label="Supprimer pour tous" title="Supprimer pour tous" onClick={() => setASupprimer(message.id)} className="rounded-full p-1.5 text-on-surface-variant hover:bg-surface-container-high">
+                            <Icone nom="delete" className="text-base" />
+                          </button>
+                        )
+                      ) : null}
+                    </span>
+                  ) : null}
+                </div>
+                <span className="px-1 mt-0.5 flex items-center gap-1 font-label-sm text-label-sm text-on-surface-variant">
                   {message.envoi ? "Envoi…" : new Date(message.envoye_le).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
+                  {message.de_moi && !message.envoi && !message.supprime ? <Coches statut={message.statut} /> : null}
                 </span>
               </div>
             </li>
           );
         })}
       </ol>
-      <form onSubmit={soumettre} className="shrink-0 border-t border-hairline p-2.5 flex items-end gap-2 bg-surface-container-lowest">
+      {reponse ? (
+        <div className="flex shrink-0 items-center gap-2 border-t border-hairline bg-surface-container-low px-3 py-1.5">
+          <Icone nom="reply" className="text-lg text-primary" />
+          <span className="min-w-0 flex-1">
+            <span className="block font-label-sm text-label-sm font-bold text-primary">{reponse.de_moi ? "Vous" : reponse.auteur.nom_complet}</span>
+            <span className="block truncate font-body-sm text-body-sm text-on-surface-variant">{reponse.texte || (reponse.pieces?.length ? "Pièce jointe" : "")}</span>
+          </span>
+          <button type="button" aria-label="Annuler la réponse" onClick={() => setReponse(null)} className="rounded-full p-1 text-on-surface-variant hover:bg-surface-container-high">
+            <Icone nom="close" className="text-lg" />
+          </button>
+        </div>
+      ) : null}
+      {pieces.length > 0 ? (
+        <ul className="flex shrink-0 flex-wrap gap-1.5 border-t border-hairline bg-surface-container-low px-3 py-2" aria-label="Fichiers à envoyer">
+          {pieces.map((fichier, rang) => (
+            <li key={`${fichier.name}-${rang}`} className="flex max-w-full items-center gap-1.5 rounded-full bg-surface-container-lowest py-1 pl-2.5 pr-1 font-label-sm text-label-sm text-on-surface">
+              <Icone nom={fichier.type.startsWith("image/") ? "image" : fichier.type.startsWith("audio/") ? "mic" : "description"} className="text-base" />
+              <span className="max-w-40 truncate">{fichier.name}</span>
+              <span className="text-on-surface-variant">{taille(fichier.size)}</span>
+              <button type="button" aria-label={`Retirer ${fichier.name}`} disabled={envoiEnCours} onClick={() => setPieces((actuelles) => actuelles.filter((_, position) => position !== rang))} className="rounded-full p-0.5 hover:bg-surface-container-high">
+                <Icone nom="close" className="text-base" />
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      {envoiEnCours ? (
+        <div className="shrink-0 px-3 pb-1" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progression ?? 0} aria-label="Envoi des fichiers">
+          <div className="h-1 overflow-hidden rounded-full bg-surface-container-high">
+            <div className="h-full rounded-full bg-primary transition-[width]" style={{ width: `${progression}%` }} />
+          </div>
+        </div>
+      ) : null}
+      <form onSubmit={soumettre} className="shrink-0 border-t border-hairline p-2.5 flex items-end gap-1.5 bg-surface-container-lowest">
+        <input
+          ref={choixFichier}
+          type="file"
+          multiple
+          accept={ACCEPTE}
+          className="sr-only"
+          tabIndex={-1}
+          aria-label="Joindre des fichiers"
+          onChange={(event) => {
+            ajouter(Array.from(event.target.files ?? []));
+            event.target.value = "";
+          }}
+        />
+        <button type="button" aria-label="Joindre un fichier" title="Joindre un fichier (photos, documents, 15 Mo au plus)" onClick={() => choixFichier.current?.click()} disabled={envoyer.isPending} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-on-surface-variant hover:bg-surface-container-high disabled:opacity-50">
+          <Icone nom="attach_file" className="text-xl" />
+        </button>
         <label className="flex-1">
           <span className="sr-only">Votre message</span>
           <textarea
@@ -634,8 +897,15 @@ function VueFil({ id, onRetour }: { id: number; onRetour: () => void }) {
             rows={1}
             value={texte}
             maxLength={LONGUEUR_MAX}
-            onChange={(event) => setTexte(event.target.value)}
+            onChange={(event) => saisie(event.target.value)}
             onKeyDown={clavier}
+            onPaste={(event) => {
+              const collees = Array.from(event.clipboardData.files);
+              if (collees.length) {
+                event.preventDefault();
+                ajouter(collees);
+              }
+            }}
             placeholder="Écrire un message…"
             className="block w-full resize-none max-h-[7.5rem] px-3 py-2 rounded-lg bg-surface-container-low font-body-md text-body-md text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:ring-2 focus:ring-primary"
           />
@@ -645,16 +915,20 @@ function VueFil({ id, onRetour }: { id: number; onRetour: () => void }) {
             </span>
           ) : null}
         </label>
-        <button
-          type="submit"
-          disabled={!texte.trim()}
-          aria-label="Envoyer le message"
-          className="w-10 h-10 rounded-full bg-primary text-on-primary hover:bg-primary-container flex items-center justify-center shrink-0 disabled:bg-surface-container-high disabled:text-on-surface-variant"
-        >
-          <Icone nom="send" className="text-xl" />
-        </button>
+        {texte.trim() || pieces.length > 0 ? (
+          <button
+            type="submit"
+            disabled={envoyer.isPending}
+            aria-label="Envoyer le message"
+            className="w-10 h-10 rounded-full bg-primary text-on-primary hover:bg-primary-container flex items-center justify-center shrink-0 disabled:bg-surface-container-high disabled:text-on-surface-variant"
+          >
+            <Icone nom="send" className="text-xl" />
+          </button>
+        ) : (
+          <EnregistreurVocal onFichier={(fichier) => ajouter([fichier])} desactive={envoyer.isPending} />
+        )}
       </form>
-      <p className="sr-only">Entrée pour envoyer, Maj + Entrée pour aller à la ligne.</p>
-    </>
+      <p className="sr-only">Entrée pour envoyer, Maj + Entrée pour aller à la ligne. Les fichiers se gardent 48 heures.</p>
+    </div>
   );
 }

@@ -24,6 +24,12 @@ api: ## API seule, http://127.0.0.1:8101
 front: ## Front seul (Vite), http://127.0.0.1:9100/sigrh/
 	npm --prefix client run dev
 
+celery-worker: ## Worker Celery (tâches planifiées), Redis requis
+	uv --directory api run celery -A config worker -l info --pool=threads --concurrency=4
+
+celery-beat: ## Planificateur Celery beat
+	uv --directory api run celery -A config beat -l info
+
 installer: ## Installe les dépendances de l'API et du front
 	uv --directory api sync
 	npm --prefix client install
@@ -65,4 +71,11 @@ service-etat: ## État du service
 service-journal: ## Suit le journal du service (Ctrl+C pour quitter)
 	@$(POWERSHELL) -Command "Get-Content -Path '$(JOURNAL)' -Tail 50 -Wait"
 
-deploiement: build migrer service-redemarrer ## Build du front, migrations, puis redémarrage du service
+celery-installer: ## (Ré)installe les services SIGRH-Celery et SIGRH-Celery-Beat
+	@$(POWERSHELL) -File api/deploiement/install-services-celery-sigrh.ps1
+
+celery-redemarrer: ## Redémarre le worker et beat (après un changement Python)
+	$(NSSM) restart SIGRH-Celery
+	$(NSSM) restart SIGRH-Celery-Beat
+
+deploiement: build migrer service-redemarrer celery-redemarrer ## Build du front, migrations, puis redémarrage du service et de Celery

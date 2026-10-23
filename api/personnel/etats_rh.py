@@ -14,6 +14,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from .effectifs import FAMILLES
+from .roles import ROLES_SIMPLES
 from .fin_carriere import _anniversaire, age_statutaire
 from .models import Agent, DossierRetraite, EmploiReferentiel, EntiteTutelle, Profil
 from .rattachement import normaliser, structure_de, structures_par_nom
@@ -165,7 +166,7 @@ def _ligne_annee(libelle: str, echeances: list) -> dict:
 def _responsables(visibles: set[str] | None) -> dict:
     """Les agents qui occupent un poste de responsabilité, structure par structure."""
     par_structure: dict[int, dict] = {}
-    for profil in Profil.objects.select_related("user", "structure__pole", "interim__pole").exclude(role="Agent"):
+    for profil in Profil.objects.select_related("user", "structure__pole", "interim__pole").exclude(role__in=ROLES_SIMPLES):
         if visibles is not None and profil.user.username not in visibles:
             continue
         for structure, interim in ((profil.structure, False), (profil.interim, True)):

@@ -27,7 +27,7 @@ class PersonnelConfig(AppConfig):
             lambda **_kw: assurer_administrateur(),
             dispatch_uid="personnel.assurer_administrateur",
         )
-        if os.environ.get("RUN_MAIN") == "true" or "--noreload" in sys.argv:
+        if os.environ.get("RUN_MAIN") == "true" or "--noreload" in sys.argv or os.environ.get("SIGRH_SERVEUR") == "1":
             if "pytest" not in sys.modules:
 
                 def _assurer():

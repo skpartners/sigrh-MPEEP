@@ -21,6 +21,7 @@ from .classeur import habiller
 from .dotation_agents import appliquer_rattachement
 from .import_agents import ImportInvalide, _date as _lire_date, _norm, _texte, _vide
 from .import_structures import _Ligne, _erreur, _feuille, _resume
+from .taches import progresser
 from .models import (
     Agent,
     EmploiReferentiel,
@@ -298,7 +299,8 @@ def importer(contenu: bytes, user: User, remplacer: bool = False) -> dict:
         organisme = _organisme_defaut()
         crees = mis_a_jour = comptes_crees = 0
         utilisateurs: dict[str, User] = {}
-        for plan in plans:
+        for rang, plan in enumerate(plans, start=1):
+            progresser(rang * 100 // max(len(plans), 1), f"Agent {rang} sur {len(plans)}")
             valeurs = {
                 "nom": plan["nom"], "prenoms": plan["prenoms"], "initiales": _initiales(plan["nom"], plan["prenoms"]), "sexe": plan["sexe"],
                 "date_naissance": plan["date_naissance"], "lieu_naissance": plan["lieu_naissance"], "statut_matrimonial": plan["statut_matrimonial"],

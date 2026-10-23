@@ -23,6 +23,29 @@ Les deux serveurs dans un seul terminal (racine du dépôt) :
 
 Le script libère les ports 8101 et 9100, réinstalle les paquets du front, puis démarre l’API et Vite. Ctrl+C arrête les deux. Le build `client/dist` n’est pas produit ici : il sert au service Windows (`api/deploiement/install-service-sigrh.ps1`).
 
+### Tâches de fond, mise à jour et charge
+
+**Redis et Celery.** Les rappels d'échéances de la campagne de congés, la veille des retours et le nettoyage des fichiers tournent avec Celery, sur le Redis du poste (bases 2 à 4, hors de celles des autres projets). `CELERY_BROKER_URL`, `CHANNEL_LAYERS_REDIS_URL` et `CACHE_REDIS_URL` se règlent dans `api/.env`. Sans `CELERY_BROKER_URL`, le serveur garde sa boucle interne et les traitements longs se font dans la requête.
+
+- Production : `make celery-installer` installe les services Windows `SIGRH-Celery` (worker, 4 fils) et `SIGRH-Celery-Beat` (planificateur), console administrateur ; `make deploiement` les redémarre avec le service.
+- Développement : `make celery-worker` et `make celery-beat`.
+
+**Traitements longs.** Les imports et les exports lourds (PDF, classeurs, archives) sont confiés à un worker quand il en répond un : la vue répond 202, le front attend la fin tout seul et affiche l'avancement dans l'indicateur de l'en-tête, visible seulement de celui qui l'a lancé. Pour confier une vue à Celery, la décorer avec `@en_arriere_plan("Libellé")` (`api/personnel/taches.py`) ; elle peut annoncer son avancement avec `progresser(pourcentage, message)`. Les résultats se gardent 24 h.
+
+**Nouvelle version.** Le front compare le build qu'il a chargé à celui que le serveur publie (au retour sur l'onglet, au retour du réseau, après une coupure du temps réel et toutes les cinq minutes) et propose d'actualiser, sans rien interrompre.
+
+**Messagerie.** Photos, documents, notes vocales et vidéos se joignent aux messages (15 Mo et 5 fichiers au plus). Pour ne pas saturer le disque, **le fichier n'est gardé que 48 h** : une tâche planifiée (toutes les 30 minutes) le supprime, le message indique que le média a expiré, et le texte reste.
+
+**Charge.** Le service `SIGRH` tourne sous uvicorn avec 6 processus (variable `$processus` de `install-service-sigrh.ps1`) : Django exécute ses vues sur un fil par processus, donc chaque processus traite une requête à la fois. Le temps réel, le cache et les tâches passent par Redis pour que les processus restent d'accord. Le front compilé est servi par WhiteNoise, compressé (brotli) et mis en cache un an. SQLite est réglée pour plusieurs processus (mode WAL). Au-delà d'une cinquantaine d'utilisateurs actifs en même temps, passer à PostgreSQL.
+
+**Passer à PostgreSQL.**
+
+1. Créer la base et son rôle : `CREATE ROLE sigrh LOGIN PASSWORD '…'; CREATE DATABASE sigrh OWNER sigrh ENCODING 'UTF8';`
+2. Sauvegarder `api/db.sqlite3` (avec ses fichiers `-wal` et `-shm`), puis exporter les données : `uv run python manage.py dumpdata --natural-foreign --natural-primary -e contenttypes -e auth.permission -e sessions --indent 1 -o donnees.json`
+3. Dans `api/.env` : `SIGRH_DB_ENGINE=postgres`, `SIGRH_DB_NAME`, `SIGRH_DB_USER`, `SIGRH_DB_PASSWORD`, `SIGRH_DB_HOST`, `SIGRH_DB_PORT`.
+4. `uv run python manage.py migrate`, puis `uv run python manage.py loaddata donnees.json`.
+5. Redémarrer `SIGRH`, `SIGRH-Celery` et `SIGRH-Celery-Beat`.
+
 Premier lancement (dépendances et base), une fois :
 
 ```powershell

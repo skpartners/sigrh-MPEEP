@@ -13,6 +13,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from .taches import en_arriere_plan
 from .models import Absence, Agent, CampagnePlanConge, MouvementPlanConge, Notification, PlanConge, Profil, Publication, RepriseConge
 
 LIEN = "/app/carrieres/conges"
@@ -433,6 +434,7 @@ def tableau(request):
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
+@en_arriere_plan("État des congés")
 def exporter(_request):
     """PDF de l'état des congés : soldes, campagne et plans arrêtés ou en cours."""
     from .rapports.documents import rendre_etat_conges

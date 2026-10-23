@@ -11,16 +11,17 @@ Protocole (JSON) :
 
 import asyncio
 
-from asgiref.sync import async_to_sync
+from asgiref.sync import async_to_sync, sync_to_async
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from channels.layers import get_channel_layer
+from django.core.cache import cache
 from django.db import transaction
 from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
 from rest_framework.authtoken.models import Token
 
-from .messagerie import personne
+from .messagerie import PRESENCE_S, cle_presence, personne
 from .models import (
     Absence,
     Acte,
@@ -111,6 +112,12 @@ def _pousser_changement() -> None:
 
 
 @database_sync_to_async
+def _autres_participants(conversation_id: int, user_id: int) -> list[int]:
+    ids = list(Participation.objects.filter(conversation_id=conversation_id).values_list("utilisateur_id", flat=True))
+    return [identifiant for identifiant in ids if identifiant != user_id] if user_id in ids else []
+
+
+@database_sync_to_async
 def _utilisateur_du_jeton(cle: str):
     try:
         return Token.objects.select_related("user").get(key=cle).user
@@ -139,9 +146,31 @@ class TempsReelConsumer(AsyncJsonWebsocketConsumer):
             self.delai.cancel()
             await self.channel_layer.group_add(groupe(user.id), self.channel_name)
             await self.channel_layer.group_add(GROUPE_SESSIONS, self.channel_name)
+            await self._presence()
             await self.send_json({"type": "pret"})
         elif contenu.get("type") == "ping":
+            await self._presence()
             await self.send_json({"type": "pong"})
+        elif contenu.get("type") == "saisie" and self.user is not None:
+            await self._annoncer_saisie(contenu.get("conversation_id"))
+
+    async def _presence(self):
+        """« En ligne » : une clé de cache qui expire vite, renouvelée à chaque ping du client."""
+        await sync_to_async(cache.set)(cle_presence(self.user.id), 1, PRESENCE_S)
+
+    async def _annoncer_saisie(self, conversation_id):
+        """Prévient les autres participants que l'utilisateur écrit, sans rien enregistrer."""
+        try:
+            conversation_id = int(conversation_id)
+        except (TypeError, ValueError):
+            return
+        autres = await _autres_participants(conversation_id, self.user.id)
+        auteur = personne(self.user)["nom_complet"]
+        for identifiant in autres:
+            await self.channel_layer.group_send(
+                groupe(identifiant),
+                {"type": "evenement", "donnees": {"type": "messagerie.saisie", "conversation_id": conversation_id, "auteur_id": self.user.id, "auteur": auteur}},
+            )
 
     async def disconnect(self, code):
         if getattr(self, "delai", None):
@@ -172,7 +201,7 @@ def _message_cree(sender, instance: Message, created: bool, **kwargs):
             "auteur_id": auteur.id,
             "auteur_matricule": auteur.username,
             "auteur": personne(auteur)["nom_complet"],
-            "extrait": instance.texte[:120],
+            "extrait": instance.texte[:120] or "Pièce jointe",
         },
     )
 
