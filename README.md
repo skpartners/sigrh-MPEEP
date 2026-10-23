@@ -36,7 +36,7 @@ Le script libère les ports 8101 et 9100, réinstalle les paquets du front, puis
 
 **Messagerie.** Photos, documents, notes vocales et vidéos se joignent aux messages (15 Mo et 5 fichiers au plus). Pour ne pas saturer le disque, **le fichier n'est gardé que 48 h** : une tâche planifiée (toutes les 30 minutes) le supprime, le message indique que le média a expiré, et le texte reste.
 
-**Charge.** Le service `SIGRH` tourne sous uvicorn avec 6 processus (variable `$processus` de `install-service-sigrh.ps1`) : Django exécute ses vues sur un fil par processus, donc chaque processus traite une requête à la fois. Le temps réel, le cache et les tâches passent par Redis pour que les processus restent d'accord. Le front compilé est servi par WhiteNoise, compressé (brotli) et mis en cache un an. SQLite est réglée pour plusieurs processus (mode WAL). Au-delà d'une cinquantaine d'utilisateurs actifs en même temps, passer à PostgreSQL.
+**Charge.** Le service `SIGRH` tourne sous uvicorn avec 6 processus (variable `$processus` de `install-service-sigrh.ps1`), chaque requête s'exécutant dans son propre fil. Le temps réel, le cache et les tâches passent par Redis pour que les processus restent d'accord. Le front compilé est servi par WhiteNoise, compressé (brotli) et mis en cache un an. La base est **PostgreSQL** (rôle et base `sigrh`, réglés par `SIGRH_DB_*` dans `api/.env`) ; chaque processus garde au plus `SIGRH_DB_POOL_MAX` connexions (8 par défaut), car le serveur PostgreSQL est partagé avec d'autres projets. Sans `SIGRH_DB_ENGINE`, SQLite en mode WAL reste utilisable (développement).
 
 **Passer à PostgreSQL.**
 

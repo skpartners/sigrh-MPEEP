@@ -136,9 +136,11 @@ if _env("SIGRH_DB_ENGINE").lower() in {"postgres", "postgresql"}:
             "PASSWORD": _env("SIGRH_DB_PASSWORD"),
             "HOST": _env("SIGRH_DB_HOST", "127.0.0.1"),
             "PORT": _env("SIGRH_DB_PORT", "5432"),
-            # Connexions réutilisées d'une requête à l'autre, et vérifiées avant emploi.
-            "CONN_MAX_AGE": 120,
-            "CONN_HEALTH_CHECKS": True,
+            # Chaque requête s'exécute dans son propre fil, donc avec sa propre connexion : sans réserve de connexions, des
+            # dizaines de requêtes simultanées épuisent le serveur PostgreSQL, qui sert aussi d'autres projets. Chaque processus
+            # garde donc au plus SIGRH_DB_POOL_MAX connexions, et les requêtes en trop patientent au lieu d'échouer.
+            "CONN_MAX_AGE": 0,
+            "OPTIONS": {"pool": {"min_size": 2, "max_size": int(_env("SIGRH_DB_POOL_MAX", "8")), "timeout": 20}},
         }
     }
 else:
