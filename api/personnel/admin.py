@@ -26,7 +26,6 @@ from .models import (
     ActionAccompagnement,
     DistinctionCarriere,
     DossierRetraite,
-    PosteSensible,
     TypeActe,
     TypeFormation,
     PublicFormation,
@@ -78,7 +77,6 @@ admin.site.register(PilotageFinCarriere)
 admin.site.register(ActionAccompagnement)
 admin.site.register(DistinctionCarriere)
 admin.site.register(DossierRetraite)
-admin.site.register(PosteSensible)
 admin.site.register(TypeActe)
 admin.site.register(TypeFormation)
 admin.site.register(PublicFormation)

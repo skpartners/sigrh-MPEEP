@@ -43,21 +43,28 @@ class _Invalide(Exception):
         self.message = message
 
 
-def enregistrer_situation(agent: Agent, data) -> str | None:
-    """Applique la saisie. Retourne un message d'erreur, ou None si l'agent est enregistré."""
+def enregistrer_situation(agent: Agent, data, *, position_libre: bool = False) -> str | None:
+    """Applique la saisie. Retourne un message d'erreur, ou None si l'agent est enregistré.
+
+    La position suit les dates du jour : le formulaire du dossier ne la fixe pas. Seul le chargement groupé de l'effectif
+    (`position_libre`) l'écrit, pour poser la situation de départ des agents."""
     if not isinstance(data, dict):
         return "Le corps de la requête est invalide."
     try:
-        return _appliquer(agent, data)
+        return _appliquer(agent, data, position_libre=position_libre)
     except _Invalide as exc:
         return exc.message
 
 
-def _appliquer(agent: Agent, data: dict) -> None:
+def _appliquer(agent: Agent, data: dict, *, position_libre: bool = False) -> None:
     code = _texte(data, "organisme")
     organisme = Organisme.objects.filter(code=code).first()
     if organisme is None:
         raise _Invalide("La structure choisie est inconnue.")
+    # La position est automatique (elle suit les dates du jour) : elle n'est jamais saisie ici. L'échelon n'est plus demandé par le formulaire.
+    data = {**data, "echelon": _texte(data, "echelon") or agent.echelon or "—"}
+    if not position_libre:
+        data["situation"] = agent.situation or "En activité"
 
     valeurs: dict[str, str] = {}
     for champ, taille in {**TEXTES, **OBLIGATOIRES, "categorie": 40}.items():

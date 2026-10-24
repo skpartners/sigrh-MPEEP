@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { ApiError, api } from "../../api/client";
+import { ApiError, api, telecharger } from "../../api/client";
+import { useFeedback } from "../../ui/Feedback";
 import type { AgentBrief, Dossier } from "../../api/types";
 import { BOUTON_PRIMAIRE, BOUTON_SECONDAIRE, Modale } from "../../ui/Modale";
 import { Skeleton } from "../../ui/Motion";
@@ -10,37 +11,24 @@ import { SituationModal } from "../SituationModal";
 import { ParcoursModal } from "./ParcoursModal";
 import { PositionsModal } from "./PositionsModal";
 import { Icone } from "../../ui/Icone";
+import { positionAffichee } from "../../ui/situation";
 
 const PAGE = "w-full px-4 sm:px-6 lg:px-8 py-6 mx-auto flex-1 space-y-6";
 const TAILLE = 8;
 
 type Famille = "activite" | "detachement" | "disponibilite" | "hors";
 
+/** Les seuls indicateurs de l'écran : l'effectif, puis chaque position, avec son export Excel. */
 const POSITIONS: {
-  id: Famille;
+  id: Famille | "toutes";
   libelle: string;
+  detail: string;
   icone: string;
 }[] = [
-  {
-    id: "activite",
-    libelle: "Effectif en activité normale",
-    icone: "group_work",
-  },
-  {
-    id: "detachement",
-    libelle: "Détachements et mises à disposition",
-    icone: "domain_add",
-  },
-  {
-    id: "disponibilite",
-    libelle: "Disponibilités",
-    icone: "event_busy",
-  },
-  {
-    id: "hors",
-    libelle: "Positions hors-cadre",
-    icone: "workspace_premium",
-  },
+  { id: "toutes", libelle: "Effectif du personnel", detail: "Tous les agents du périmètre", icone: "groups" },
+  { id: "activite", libelle: "En activité", detail: "Position d'activité normale", icone: "group_work" },
+  { id: "detachement", libelle: "En détachement", detail: "Détachements et mises à disposition", icone: "domain_add" },
+  { id: "disponibilite", libelle: "En disponibilité", detail: "Disponibilités", icone: "event_busy" },
 ];
 
 /** Bouton d'action en icône : même gabarit pour tous, léger soulèvement au survol. */
@@ -60,6 +48,10 @@ function tonPart(part: number): { texte: string; barre: string; icone: string } 
   return { texte: "text-on-surface-variant", barre: "bg-outline", icone: "text-outline" };
 }
 
+/**
+ * Position statutaire d'un agent. Détachement, mise à disposition, disponibilité et hors-cadre sont des positions à part ;
+ * tout le reste est l'activité : présence au poste, formation, congé annuel, congé de paternité, de maternité ou de maladie.
+ */
 function famille(situation: string): Famille {
   const s = situation.toLowerCase();
   if (s.includes("détach") || s.includes("detach") || s.includes("disposition")) return "detachement";
@@ -75,18 +67,30 @@ export function SituationScreen() {
   const [matricule, setMatricule] = useState<string | null>(null);
   const [positionDe, setPositionDe] = useState<{ matricule: string; nom: string } | null>(null);
   const [parcours, setParcours] = useState<{ matricule: string; nom: string } | null>(null);
+  const feedback = useFeedback();
   const agents = useQuery({ queryKey: ["agents", ""], queryFn: () => api<AgentBrief[]>("/api/v1/agents/") });
+
+  async function exporter(id: Famille | "toutes", libelle: string) {
+    try {
+      await feedback.run(`Export Excel : ${libelle}…`, () => telecharger(`/api/v1/situation/export/?position=${id}`, `situation-${id}.xlsx`), {
+        success: { title: "Export prêt", message: `${libelle} : le classeur Excel est téléchargé.` },
+        error: "L'export Excel n'a pas abouti.",
+      });
+    } catch {
+      /* le message d'erreur est déjà affiché */
+    }
+  }
   const tous = agents.data ?? [];
   const comptes = useMemo(() => {
     const base = { activite: 0, detachement: 0, disponibilite: 0, hors: 0 };
     for (const agent of tous) base[famille(agent.situation)] += 1;
-    return base;
+    return { ...base, toutes: tous.length };
   }, [tous]);
   // Positions arrivant à terme prochainement, par famille.
   const proches = useMemo(() => {
     const base = { activite: 0, detachement: 0, disponibilite: 0, hors: 0 };
     for (const agent of tous) if (agent.echeance_proche) base[famille(agent.situation)] += 1;
-    return base;
+    return { ...base, toutes: base.detachement + base.disponibilite + base.hors };
   }, [tous]);
   const visibles = useMemo(() => {
     const q = filtre.trim().toLowerCase();
@@ -138,41 +142,52 @@ export function SituationScreen() {
           {POSITIONS.map((item) => {
             const nombre = comptes[item.id];
             const part = tous.length === 0 ? 0 : Math.round((nombre / tous.length) * 100);
-            const ton = tonPart(part);
+            const ton = tonPart(item.id === "toutes" ? 100 : part);
             return (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => {
-                  setPosition(position === item.id ? "toutes" : item.id);
-                  setPage(1);
-                }}
-                className={`bg-surface-container-lowest p-5 rounded-xl text-left ${position === item.id ? "ring-2 ring-primary" : ""}`}
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <p className="font-label-md text-label-md uppercase tracking-wider text-on-surface-variant font-semibold">{item.libelle}</p>
-                    <p className="font-headline-xl text-headline-xl text-on-surface font-bold tracking-tight mt-1">{agents.isPending ? "—" : nombre}</p>
+              <div key={item.id} className={`flex flex-col bg-surface-container-lowest rounded-xl ${position === item.id ? "ring-2 ring-primary" : ""}`}>
+                <button
+                  type="button"
+                  aria-pressed={position === item.id}
+                  onClick={() => {
+                    setPosition(position === item.id || item.id === "toutes" ? "toutes" : item.id);
+                    setPage(1);
+                  }}
+                  className="flex-1 rounded-t-xl p-5 text-left"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="font-label-md text-label-md uppercase tracking-wider text-on-surface-variant font-semibold">{item.libelle}</p>
+                      <p className="font-headline-xl text-headline-xl text-on-surface font-bold tracking-tight mt-1">{agents.isPending ? "—" : nombre}</p>
+                    </div>
+                    <span className={`w-12 h-12 rounded-xl bg-surface-container-low flex items-center justify-center shrink-0 ${ton.icone}`}>
+                      <Icone nom={item.icone} className="text-2xl" />
+                    </span>
                   </div>
-                  <span className={`w-12 h-12 rounded-xl bg-surface-container-low flex items-center justify-center shrink-0 ${ton.icone}`}>
-                    <Icone nom={item.icone} className="text-2xl" />
-                  </span>
-                </div>
-                <p className="mt-3 flex items-center justify-between gap-2 font-label-sm text-label-sm">
-                  <span className={`font-semibold ${ton.texte}`}>{part}% du registre</span>
-                  {item.id === "activite" ? null : (
-                    proches[item.id] ? (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-error px-2.5 py-0.5 font-bold text-on-error shadow-sm">
-                        <Icone nom="alarm" className="text-sm" />
-                        {proches[item.id]} échéance{proches[item.id] > 1 ? "s" : ""} proche{proches[item.id] > 1 ? "s" : ""}
-                      </span>
-                    ) : <span className="text-on-surface-variant">Aucune échéance proche</span>
-                  )}
-                </p>
-                <div className="w-full bg-surface-container-high h-1.5 mt-1.5 rounded-full overflow-hidden">
-                  <div className={`motion-fill h-full rounded-full ${ton.barre}`} style={{ width: `${part}%` }} />
-                </div>
-              </button>
+                  <p className="mt-3 flex items-center justify-between gap-2 font-label-sm text-label-sm">
+                    <span className={`font-semibold ${ton.texte}`}>{item.id === "toutes" ? item.detail : `${part}% du registre`}</span>
+                    {item.id === "activite" || item.id === "toutes" ? null : (
+                      proches[item.id] ? (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-error px-2.5 py-0.5 font-bold text-on-error shadow-sm">
+                          <Icone nom="alarm" className="text-sm" />
+                          {proches[item.id]} échéance{proches[item.id] > 1 ? "s" : ""} proche{proches[item.id] > 1 ? "s" : ""}
+                        </span>
+                      ) : <span className="text-on-surface-variant">Aucune échéance proche</span>
+                    )}
+                  </p>
+                  <div className="w-full bg-surface-container-high h-1.5 mt-1.5 rounded-full overflow-hidden">
+                    <div className={`motion-fill h-full rounded-full ${ton.barre}`} style={{ width: `${item.id === "toutes" ? 100 : part}%` }} />
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void exporter(item.id, item.libelle)}
+                  disabled={agents.isPending || nombre === 0}
+                  title={nombre === 0 ? "Aucun agent à exporter" : `Exporter « ${item.libelle} » au format Excel`}
+                  className="flex items-center justify-center gap-2 rounded-b-xl border-t border-hairline px-5 py-2.5 font-label-md text-label-md font-semibold text-primary transition-colors hover:bg-primary-fixed/50 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <Icone nom="download" className="text-lg" />Exporter (Excel)
+                </button>
+              </div>
             );
           })}
         </div>
@@ -204,7 +219,7 @@ export function SituationScreen() {
                   <tr>
                     <th className="py-3 px-4">Agent</th>
                     <th className="py-3 px-4 w-56">Position</th>
-                    <th className="py-3 px-4 w-32 text-right"><span className="sr-only">Actions</span></th>
+                    <th className="py-3 px-4 w-44 text-right"><span className="sr-only">Actions</span></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -229,8 +244,11 @@ export function SituationScreen() {
                       <td className="py-3 px-4">
                         <span className={`inline-flex items-center gap-1 px-2 py-0.5 font-label-sm text-label-sm rounded font-bold ${TON_POSITION[famille(agent.situation)].fond}`}>
                           <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${TON_POSITION[famille(agent.situation)].pastille}`} aria-hidden="true" />
-                          {agent.situation}
+                          {famille(agent.situation) === "activite" ? "En activité" : agent.situation}
                         </span>
+                        {positionAffichee(agent).detail ? (
+                          <span className="mt-1 block font-label-sm text-label-sm text-on-surface-variant">{positionAffichee(agent).detail}</span>
+                        ) : null}
                         {agent.echeance ? (
                           <span className={`mt-1 inline-flex items-center gap-1 rounded px-2 py-0.5 font-label-sm text-label-sm ${agent.echeance_proche ? "bg-error font-bold text-on-error" : "bg-surface-container text-on-surface-variant"}`}>
                             {agent.echeance_proche ? <Icone nom="alarm" className="text-sm" /> : null}
@@ -238,8 +256,8 @@ export function SituationScreen() {
                           </span>
                         ) : null}
                       </td>
-                      <td className="py-3 px-4 text-right">
-                        <div className="inline-flex items-center gap-1.5">
+                      <td className="py-3 px-4">
+                        <div className="flex flex-nowrap items-center justify-end gap-1.5">
                           <button
                             type="button"
                             title="Positions : détachement, disponibilité, mise à disposition…"

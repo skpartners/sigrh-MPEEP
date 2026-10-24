@@ -9,6 +9,7 @@ Les codes de champs et de mesures viennent du catalogue. Les modalités (un corp
 une structure, un statut) sont lues dans la base au moment du calcul.
 """
 
+import re
 import json
 from dataclasses import dataclass, field
 from datetime import date
@@ -61,7 +62,7 @@ AGREGATS = ("nombre", "somme", "moyenne", "min", "max")
 AFFICHAGES = ("valeur", "pct_total", "pct_ligne", "pct_colonne")
 FORMES = (
     "barre", "horizontale", "empilee", "empilee-horizontale", "pourcentage",
-    "ligne", "aire", "points", "entonnoir", "secteur", "anneau",
+    "ligne", "aire", "points", "entonnoir", "secteur", "anneau", "pyramide",
 )
 
 
@@ -140,9 +141,14 @@ CHAMPS_AGENT: tuple[Champ, ...] = (
     _c("situation", "Situation", "situation"),
     _c("type_agent", "Type d'agent", "type_agent"),
     _c("mode_recrutement", "Mode de recrutement", "mode_recrutement"),
+    _c("programme", "Programme", "direction", calcul="programme"),
     _c("structure", "Structure", "structure"),
     _c("direction", "Direction", "direction"),
+    _c("sous_direction", "Sous-direction", "sous_direction"),
     _c("service", "Service", "service"),
+    _c("categorie_statutaire", "Catégorie (d'après le grade)", "grade", calcul="categorie_statutaire"),
+    _c("famille_emploi", "Famille d'emploi", "emploi", calcul="famille_emploi"),
+    _c("tranche_age_detail", "Tranche d'âge (détaillée)", "date_naissance", calcul="tranche_detail"),
     _c("emploi", "Emploi", "emploi"),
     _c("fonction", "Fonction", "fonction"),
     _c("localisation", "Localisation", "localisation"),
@@ -334,7 +340,7 @@ SOURCES: tuple[Source, ...] = (
         (
             _c("avis", "Avis", "avis", _choix(ProcedureDisciplinaire.Avis.choices)),
             _c("degre", "Degré", "degre"),
-            _c("grief", "Grief", "grief"),
+            _c("grief", "Faute", "grief"),
             _c("annee", "Année de saisine", "saisine", calcul="annee"),
         ),
     ),
@@ -750,6 +756,14 @@ def _expression_champ(champ: Champ, prefixe: str = "", ref: str = "pk", periodes
         return ExtractYear(chemin)
     if champ.calcul == "tranche_age":
         return _tranche(chemin)
+    if champ.calcul == "tranche_detail":
+        return _tranche_detail(chemin)
+    if champ.calcul == "categorie_statutaire":
+        return _categorie_statutaire(chemin)
+    if champ.calcul == "programme":
+        return _programme(chemin)
+    if champ.calcul == "famille_emploi":
+        return _famille_emploi(chemin)
     return F(chemin)
 
 
@@ -782,6 +796,75 @@ def _tranche(chemin: str):
         default=Value("Plus de 55 ans"),
         output_field=CharField(),
     )
+
+
+TRANCHES_DETAIL = ("Moins de 25 ans", "25 à 34 ans", "35 à 44 ans", "45 à 54 ans", "55 à 59 ans", "60 ans et plus", "Non renseigné")
+
+
+def _tranche_detail(chemin: str):
+    """Tranches d'âge de dix ans, avec les 55-59 ans et les 60 ans et plus à part : celles de l'état du personnel."""
+    jour = timezone.localdate()
+    return Case(
+        When(**{f"{chemin}__isnull": True}, then=Value("Non renseigné")),
+        When(**{f"{chemin}__gt": _il_y_a(25, jour)}, then=Value(TRANCHES_DETAIL[0])),
+        When(**{f"{chemin}__gt": _il_y_a(35, jour)}, then=Value(TRANCHES_DETAIL[1])),
+        When(**{f"{chemin}__gt": _il_y_a(45, jour)}, then=Value(TRANCHES_DETAIL[2])),
+        When(**{f"{chemin}__gt": _il_y_a(55, jour)}, then=Value(TRANCHES_DETAIL[3])),
+        When(**{f"{chemin}__gt": _il_y_a(60, jour)}, then=Value(TRANCHES_DETAIL[4])),
+        default=Value(TRANCHES_DETAIL[5]),
+        output_field=CharField(),
+    )
+
+
+def _categorie_statutaire(chemin: str):
+    """Catégorie A, B, C ou D d'après la première lettre du grade (A3, B1…)."""
+    cas = [When(**{f"{chemin}__istartswith": lettre}, then=Value(f"Catégorie {lettre}")) for lettre in "ABCD"]
+    return Case(
+        When(**{f"{chemin}__isnull": True}, then=Value("Non renseigné")),
+        When(**{chemin: ""}, then=Value("Non renseigné")),
+        *cas,
+        default=Value("Non classé"),
+        output_field=CharField(),
+    )
+
+
+def _valeurs_distinctes(modele, champ: str) -> list[str]:
+    return [valeur for valeur in modele.objects.order_by().values_list(champ, flat=True).distinct() if valeur]
+
+
+def _cas_depuis(table: dict[str, str], chemin: str, defaut: str):
+    """Case(When(champ = valeur → libellé)) à partir d'une table valeur → libellé."""
+    if not table:
+        return Value(defaut, output_field=CharField())
+    return Case(*[When(**{chemin: valeur}, then=Value(libelle)) for valeur, libelle in table.items()], default=Value(defaut), output_field=CharField())
+
+
+def _programme(chemin: str):
+    """Programme de l'agent : celui de sa direction (à défaut de sa structure), d'après l'organigramme des paramètres."""
+    from .rattachement import normaliser, structures_par_nom
+
+    par_nom = structures_par_nom()
+    autre = chemin[: -len("direction")] + "structure" if chemin.endswith("direction") else chemin
+    directions = {valeur: par_nom[normaliser(valeur)].pole.nom for valeur in _valeurs_distinctes(Agent, "direction") if normaliser(valeur) in par_nom}
+    structures = {valeur: par_nom[normaliser(valeur)].pole.nom for valeur in _valeurs_distinctes(Agent, "structure") if normaliser(valeur) in par_nom}
+    return Case(
+        *[When(**{chemin: valeur}, then=Value(libelle)) for valeur, libelle in directions.items()],
+        *[When(**{autre: valeur}, then=Value(libelle)) for valeur, libelle in structures.items()],
+        default=Value("Hors programme"),
+        output_field=CharField(),
+    )
+
+
+def _famille_emploi(chemin: str):
+    """Famille de l'emploi de l'agent, d'après la nomenclature des emplois ; « Famille non classée » à défaut."""
+    from .models import EmploiReferentiel
+    from .nomenclature import FAMILLES
+    from .rattachement import normaliser
+
+    familles = dict(FAMILLES)
+    connus = {normaliser(emploi.libelle): familles.get(emploi.famille, "Famille non classée") for emploi in EmploiReferentiel.objects.only("libelle", "famille")}
+    table = {valeur: connus[normaliser(valeur)] for valeur in _valeurs_distinctes(Agent, "emploi") if normaliser(valeur) in connus}
+    return _cas_depuis(table, chemin, "Famille non classée")
 
 
 def _il_y_a(annees: int, jour: date) -> date:
@@ -893,6 +976,11 @@ def valider_configuration(configuration) -> dict:
             "legende": graphique.get("legende", True) is not False,
             "inverser": graphique.get("inverser") is True,
             "titre": _texte(graphique.get("titre"))[:160],
+            # Couleurs choisies (hexadécimales, 24 au plus) ; vide : la palette de l'application.
+            "couleurs": [c for c in (_texte(item).upper() for item in (graphique.get("couleurs") if isinstance(graphique.get("couleurs"), list) else [])[:24]) if re.fullmatch(r"#[0-9A-F]{6}", c)],
+            # Profondeur de la hiérarchie des lignes : niveau affiché (0 : premier niveau ; vide : comme le tableau) et chemin du forage.
+            "niveau": graphique.get("niveau") if isinstance(graphique.get("niveau"), int) and not isinstance(graphique.get("niveau"), bool) and 0 <= graphique.get("niveau") <= 12 else None,
+            "focus": [str(item)[:240] for item in (graphique.get("focus") if isinstance(graphique.get("focus"), list) else [])[:12]],
         },
         "nom_auto": configuration.get("nom_auto") is True,
     }

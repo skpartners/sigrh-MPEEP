@@ -2,6 +2,7 @@ import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { ApiError, api } from "../../api/client";
 import { ChoixForme, Toile } from "../../ui/Graphique";
+import { paletteGraphique, useCouleurs } from "../../ui/Couleurs";
 import { Icone } from "../../ui/Icone";
 import { BOUTON_PRIMAIRE, BOUTON_SECONDAIRE, Modale } from "../../ui/Modale";
 import { useFeedback } from "../../ui/Feedback";
@@ -104,7 +105,7 @@ const MODELES: Modele[] = [
   },
 ];
 
-export function TableauCroise({ feuille, catalogue, onChange, onEnregistrer, onDupliquer, onSupprimer, enregistrement }: {
+export function TableauCroise({ feuille, catalogue, onChange, onEnregistrer, onDupliquer, onSupprimer, enregistrement, integre = false }: {
   feuille: FeuilleTcd;
   catalogue: Catalogue | undefined;
   onChange: (modifier: (feuille: FeuilleTcd) => FeuilleTcd) => void;
@@ -112,6 +113,8 @@ export function TableauCroise({ feuille, catalogue, onChange, onEnregistrer, onD
   onDupliquer: () => void;
   onSupprimer: () => void;
   enregistrement: boolean;
+  /** Éditeur intégré à un état composé : l'enregistrement, la copie et la suppression appartiennent à l'état. */
+  integre?: boolean;
 }) {
   const feedback = useFeedback();
   const [volet, setVolet] = useState(false);
@@ -287,6 +290,7 @@ export function TableauCroise({ feuille, catalogue, onChange, onEnregistrer, onD
           onEnregistrer={onEnregistrer}
           onDupliquer={onDupliquer}
           onSupprimer={onSupprimer}
+          integre={integre}
           onExporter={() => {
             if (!cube) return;
             exporterClasseurTcd([{ nom: feuille.nom, config, cube, source }]);
@@ -491,7 +495,7 @@ function Modeles({ onChoisir }: { onChoisir: (modele: Modele) => void }) {
   );
 }
 
-function BarreOutils({ feuille, catalogue, enCours, enregistrement, onNom, onNomAuto, onSource, source, refus, onFermerRefus, onCroiser, onDecroiser, onPeriode, onActualiser, onEnregistrer, onDupliquer, onSupprimer, onExporter, onVolet, modifier, resultat }: {
+function BarreOutils({ integre, feuille, catalogue, enCours, enregistrement, onNom, onNomAuto, onSource, source, refus, onFermerRefus, onCroiser, onDecroiser, onPeriode, onActualiser, onEnregistrer, onDupliquer, onSupprimer, onExporter, onVolet, modifier, resultat }: {
   feuille: FeuilleTcd;
   catalogue: Catalogue | undefined;
   onNomAuto: () => void;
@@ -503,6 +507,7 @@ function BarreOutils({ feuille, catalogue, enCours, enregistrement, onNom, onNom
   onPeriode: (code: string) => void;
   enCours: boolean;
   enregistrement: boolean;
+  integre: boolean;
   onNom: (nom: string) => void;
   onSource: (code: string) => void;
   onActualiser: () => void;
@@ -579,10 +584,12 @@ function BarreOutils({ feuille, catalogue, enCours, enregistrement, onNom, onNom
         </div>
       )}
       <div className="flex flex-wrap items-center gap-2">
-        <button type="button" className={BOUTON_PRIMAIRE} onClick={onEnregistrer} disabled={enregistrement || (!feuille.modifiee && feuille.id !== null)}>
-          <Icone nom="save" className="text-lg" />
-          {feuille.id !== null && !feuille.mien ? "Enregistrer une copie" : "Enregistrer"}
-        </button>
+        {!integre && (
+          <button type="button" className={BOUTON_PRIMAIRE} onClick={onEnregistrer} disabled={enregistrement || (!feuille.modifiee && feuille.id !== null)}>
+            <Icone nom="save" className="text-lg" />
+            {feuille.id !== null && !feuille.mien ? "Enregistrer une copie" : "Enregistrer"}
+          </button>
+        )}
         <button type="button" className={BOUTON_SECONDAIRE} onClick={onActualiser} disabled={enCours}>
           <Icone nom="refresh" className={`text-lg${enCours ? " motion-spin" : ""}`} />
           Actualiser
@@ -642,7 +649,7 @@ function BarreOutils({ feuille, catalogue, enCours, enregistrement, onNom, onNom
           <Icone nom="format_list_bulleted" className="text-lg" />
           Champs
         </button>
-        <div className="ml-auto flex items-center gap-2">
+        <div className={`ml-auto flex items-center gap-2${integre ? " hidden" : ""}`}>
           <button type="button" className={BOUTON_SECONDAIRE} onClick={onDupliquer}>
             <Icone nom="content_copy" className="text-lg" />
             Dupliquer
@@ -707,6 +714,14 @@ function Deroulant({ libelle, icone, children }: { libelle: string; icone: strin
   );
 }
 
+/** Jeux de couleurs prêts à l'emploi, tous distinguables d'un coup d'œil (et par les daltoniens pour le premier). */
+const PALETTES = [
+  { nom: "Contrastée", couleurs: ["#2563EB", "#F59E0B", "#16A34A", "#DC2626", "#9333EA", "#0891B2", "#DB2777", "#65A30D"] },
+  { nom: "Sobre", couleurs: ["#0F766E", "#B45309", "#1D4ED8", "#9F1239", "#4D7C0F", "#6D28D9", "#0369A1", "#A16207"] },
+  { nom: "Pastel", couleurs: ["#93C5FD", "#FCD34D", "#86EFAC", "#FCA5A5", "#C4B5FD", "#67E8F9", "#F9A8D4", "#BEF264"] },
+  { nom: "Tons chauds", couleurs: ["#7F1D1D", "#B91C1C", "#EA580C", "#F59E0B", "#FACC15", "#A16207", "#78350F", "#FB923C"] },
+];
+
 function PanneauGraphique({ feuille, resultat, source, modifier }: {
   feuille: FeuilleTcd;
   resultat: ResultatTcd;
@@ -714,9 +729,33 @@ function PanneauGraphique({ feuille, resultat, source, modifier }: {
   modifier: (transformer: (config: ConfigTcd) => ConfigTcd | null) => void;
 }) {
   const reglages = feuille.config.graphique;
-  const { series } = useMemo(() => seriesGraphique(resultat, feuille.config, source), [resultat, feuille.config, source]);
+  const { series, categories, cles, profondeur, forage } = useMemo(() => seriesGraphique(resultat, feuille.config, source), [resultat, feuille.config, source]);
   const circulaire = reglages.forme === "secteur" || reglages.forme === "anneau" || reglages.forme === "entonnoir";
   const regler = (partiel: Partial<ConfigTcd["graphique"]>) => modifier((courante) => ({ ...courante, graphique: { ...courante.graphique, ...partiel } }));
+  // Hiérarchie des lignes : chaque champ de ligne est un niveau, du plus général au plus fin (ministère → … → service).
+  const niveaux = feuille.config.lignes.map((code) => source?.champs.find((champ) => champ.code === code)?.libelle ?? code);
+  const focus = forage ? reglages.focus.slice(0, profondeur - 1) : [];
+  const niveauAffiche = forage ? Math.min(Math.max(reglages.niveau ?? focus.length, focus.length), profondeur - 1) : 0;
+  const descendre = (libelle: string) => {
+    if (!forage || niveauAffiche >= profondeur - 1) return;
+    const rang = categories.indexOf(libelle);
+    const cle = cles[rang];
+    const ligne = resultat.lignes.find((item) => item.noeud.cle === cle);
+    if (!ligne || !ligne.groupe) return;
+    regler({ focus: ligne.noeud.chemin, niveau: ligne.noeud.chemin.length });
+  };
+  const remonter = (jusqua: number) => regler({ focus: focus.slice(0, jusqua), niveau: jusqua });
+  // Éléments colorés : les catégories d'un secteur, sinon les séries ; leur couleur actuelle vient du choix, puis de la palette.
+  const elements = (circulaire ? categories : series.map((serie) => serie.nom)).slice(0, 24);
+  const theme = useCouleurs();
+  const palette = paletteGraphique(theme);
+  const couleurDe = (rang: number) => reglages.couleurs[rang] ?? palette[rang % palette.length];
+  const [couleursOuvertes, setCouleursOuvertes] = useState(false);
+  const colorier = (rang: number, valeur: string) => {
+    const base = elements.map((_, i) => couleurDe(i));
+    base[rang] = valeur.toUpperCase();
+    regler({ couleurs: base });
+  };
   const bascule = (actif: boolean) => `inline-flex size-9 items-center justify-center rounded border ${actif ? "border-2 border-primary bg-primary/10 text-primary" : "border-outline-variant bg-surface-container-lowest text-on-surface-variant"} hover:bg-surface-container-low`;
   const titre = reglages.titre || feuille.nom;
   return (
@@ -728,6 +767,21 @@ function PanneauGraphique({ feuille, resultat, source, modifier }: {
         </label>
         <div className="flex flex-wrap items-center gap-1">
           <ChoixForme forme={reglages.forme} onChange={(forme) => regler({ forme })} />
+          {/* Bouton bien visible : libellé, aperçu des couleurs en cours, état ouvert/fermé. */}
+          <button
+            type="button"
+            aria-expanded={couleursOuvertes}
+            aria-controls="panneau-couleurs"
+            title="Choisir les couleurs du graphique"
+            className={`inline-flex h-9 items-center gap-2 rounded-lg border-2 px-3 font-label-md text-label-md font-semibold transition-colors ${couleursOuvertes ? "border-primary bg-primary text-on-primary" : "border-primary bg-primary/10 text-primary hover:bg-primary/20"}`}
+            onClick={() => setCouleursOuvertes((ouvert) => !ouvert)}
+          >
+            <Icone nom="palette" className="text-lg" />
+            Couleurs
+            <span className="flex overflow-hidden rounded border border-white/60" aria-hidden="true">
+              {[0, 1, 2].map((rang) => <span key={rang} className="h-4 w-3" style={{ backgroundColor: couleurDe(rang) }} />)}
+            </span>
+          </button>
           <button type="button" className={bascule(reglages.etiquettes)} aria-pressed={reglages.etiquettes} title="Étiquettes de données" aria-label="Étiquettes de données" onClick={() => regler({ etiquettes: !reglages.etiquettes })}>
             <Icone nom="label" />
           </button>
@@ -742,11 +796,79 @@ function PanneauGraphique({ feuille, resultat, source, modifier }: {
           </button>
         </div>
       </div>
+
+      {/* Profondeur : on descend dans la hiérarchie des lignes, un niveau à la fois, comme dans Power BI. */}
+      {forage ? (
+        <div className="mt-4 flex flex-wrap items-center gap-2 rounded-lg bg-surface-container-low px-3 py-2">
+          <Icone nom="account_tree" className="text-lg text-primary" />
+          <nav aria-label="Chemin du forage" className="flex flex-wrap items-center gap-1 font-label-md text-label-md">
+            <button type="button" className={`rounded px-2 py-1 ${focus.length === 0 ? "bg-primary text-on-primary font-bold" : "text-primary hover:bg-surface-container"}`} onClick={() => remonter(0)}>
+              {niveaux[0]}
+            </button>
+            {focus.map((morceau, rang) => (
+              <span key={`${morceau}-${rang}`} className="flex items-center gap-1">
+                <Icone nom="chevron_right" className="text-base text-on-surface-variant" />
+                <button type="button" className={`rounded px-2 py-1 ${rang === focus.length - 1 ? "bg-primary text-on-primary font-bold" : "text-primary hover:bg-surface-container"}`} onClick={() => remonter(rang + 1)}>
+                  {morceau}
+                </button>
+              </span>
+            ))}
+          </nav>
+          <span className="ml-auto flex flex-wrap items-center gap-2">
+            <label className="flex items-center gap-1.5 font-label-sm text-label-sm text-on-surface-variant">
+              Niveau affiché
+              <Select aria-label="Niveau de la hiérarchie" className="h-8 rounded border border-outline-variant bg-surface-container-lowest px-2 font-body-sm text-body-sm text-on-surface" value={String(niveauAffiche)} onChange={(event) => regler({ niveau: Number(event.target.value) })}>
+                {niveaux.map((nom, rang) => <option key={nom + rang} value={rang} disabled={rang < focus.length}>{rang + 1}. {nom}</option>)}
+              </Select>
+            </label>
+            <button type="button" className="inline-flex h-8 items-center gap-1 rounded border border-outline-variant px-2.5 font-label-sm text-label-sm text-on-surface hover:bg-surface-container disabled:opacity-40" disabled={focus.length === 0} onClick={() => remonter(focus.length - 1)}>
+              <Icone nom="arrow_upward" className="text-base" />Remonter
+            </button>
+          </span>
+          <p className="basis-full font-body-sm text-body-sm text-on-surface-variant">
+            {niveauAffiche < profondeur - 1 ? "Cliquez sur une barre ou une part pour descendre au niveau suivant." : "Dernier niveau de la hiérarchie."}
+          </p>
+        </div>
+      ) : null}
+
+      {/* Couleurs : une par série (ou par part), à choisir librement. */}
+      {couleursOuvertes ? (
+      <div id="panneau-couleurs" className="mt-3 rounded-lg border-2 border-primary/40 bg-primary/5 px-4 py-3">
+        <p className="flex items-center gap-2 font-label-md text-label-md font-semibold text-on-surface">
+          <Icone nom="palette" className="text-lg text-primary" />Couleurs du graphique
+          {reglages.couleurs.length ? <span className="rounded-full bg-primary-fixed px-2 py-0.5 font-label-sm text-label-sm text-on-primary-fixed">personnalisées</span> : null}
+        </p>
+        <div className="mt-3 space-y-3">
+          <ul className="flex flex-wrap gap-2">
+            {elements.map((nom, rang) => (
+              <li key={`${nom}-${rang}`}>
+                <label className="flex items-center gap-2 rounded-lg border border-hairline bg-surface-container-lowest px-2 py-1.5 font-body-sm text-body-sm text-on-surface">
+                  <input type="color" aria-label={`Couleur de ${nom}`} value={couleurDe(rang)} onChange={(event) => colorier(rang, event.target.value)} className="h-7 w-9 cursor-pointer rounded border-0 bg-transparent p-0" />
+                  <span className="max-w-48 truncate">{nom}</span>
+                </label>
+              </li>
+            ))}
+          </ul>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="font-label-sm text-label-sm text-on-surface-variant">Jeux de couleurs</span>
+            {PALETTES.map((jeu) => (
+              <button key={jeu.nom} type="button" title={jeu.nom} aria-label={`Appliquer le jeu ${jeu.nom}`} className="flex overflow-hidden rounded border border-outline-variant hover:ring-2 hover:ring-primary" onClick={() => regler({ couleurs: jeu.couleurs })}>
+                {jeu.couleurs.slice(0, 6).map((couleur) => <span key={couleur} className="h-6 w-4" style={{ backgroundColor: couleur }} />)}
+              </button>
+            ))}
+            <button type="button" className="ml-auto inline-flex items-center gap-1 rounded px-2 py-1 font-label-sm text-label-sm text-primary hover:bg-surface-container disabled:opacity-40" disabled={reglages.couleurs.length === 0} onClick={() => regler({ couleurs: [] })}>
+              <Icone nom="restart_alt" className="text-base" />Couleurs de l'application
+            </button>
+          </div>
+        </div>
+      </div>
+      ) : null}
+
       <h3 className="mt-4 text-center font-label-md text-label-md text-on-surface">{titre}</h3>
       {circulaire && series.length > 1 && (
         <p className="mt-1 text-center font-body-sm text-body-sm text-on-surface-variant">Ce graphique montre la série « {series[series.length - 1]?.nom} ». Intervertissez lignes et colonnes pour changer de série.</p>
       )}
-      <Toile forme={reglages.forme} series={series} etiquettes={reglages.etiquettes} legende={reglages.legende} hauteur={360} titre={titre} />
+      <Toile forme={reglages.forme} series={series} etiquettes={reglages.etiquettes} legende={reglages.legende} hauteur={360} titre={titre} couleurs={reglages.couleurs} onSelection={forage && niveauAffiche < profondeur - 1 ? descendre : undefined} />
     </section>
   );
 }

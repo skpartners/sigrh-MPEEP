@@ -50,7 +50,7 @@ def test_modele_structures_decrit_les_feuilles(api):
     assert "modele-structures.xlsx" in modele["Content-Disposition"]
     with zipfile.ZipFile(io.BytesIO(modele.content)) as archive:
         classeur = archive.read("xl/workbook.xml").decode()
-    assert "Pôles" in classeur and "Structures" in classeur and "Grades" in classeur and "Emplois" in classeur
+    assert "Programmes" in classeur and "Structures" in classeur and "Grades" in classeur and "Emplois" in classeur
     vide = api.post("/api/v1/structures/import/", {"fichier": _fichier(modele.content)}, **auth)
     assert vide.status_code == 400
     assert "aucune donnée" in vide.json()["detail"]

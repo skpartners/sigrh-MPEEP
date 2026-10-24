@@ -3,7 +3,7 @@
 from datetime import date
 
 from .fin_carriere import _age, assurer_admissions
-from .models import Agent, Demande, DossierRetraite, LigneAvancement, Mutation, PosteSensible
+from .models import Agent, Demande, DossierRetraite, LigneAvancement, Mutation
 from .visibilite import agents_visibles
 
 TRANCHES = (
@@ -37,7 +37,6 @@ def resume(user, aujourd_hui: date) -> dict:
 
     dossiers = list(agents_visibles(DossierRetraite.objects.select_related("agent"), user, "agent__matricule"))
     cadres = sum(1 for item in dossiers if (item.agent.grade or "").startswith("A"))
-    postes = PosteSensible.objects.filter(titulaire__in=[item.agent for item in dossiers]).count()
 
     pyramide = []
     for libelle, bas, haut in TRANCHES:
@@ -58,10 +57,8 @@ def resume(user, aujourd_hui: date) -> dict:
         "pyramide": pyramide,
         "departs": {
             "nombre": len(dossiers),
-            "postes_direction": postes,
             "detail": (
-                "Départs à la limite d'âge dans les douze prochains mois"
-                + (f", dont {postes} poste{'s' if postes > 1 else ''} sensible{'s' if postes > 1 else ''} avec relève à préparer." if postes else ".")
+                "Départs à la limite d'âge dans les douze prochains mois."
                 if dossiers else "Aucun départ à la limite d'âge dans les douze prochains mois."
             ),
         },

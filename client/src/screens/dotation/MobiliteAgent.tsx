@@ -1,3 +1,4 @@
+import { FilVisas } from "../../ui/FilVisas";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { api } from "../../api/client";
@@ -45,10 +46,6 @@ function tonMutation(s: Mutation["statut"]) {
   return s === "accordee" ? "ok" : s === "refusee" ? "refus" : "attente";
 }
 
-function tonVisa(avis: string) {
-  return /favorable|d[ée]pos|accord/i.test(avis) ? "ok" : /refus|sans suite/i.test(avis) ? "refus" : "attente";
-}
-
 /** Une demande de mutation et son circuit de validation, visa par visa. */
 function LigneMutation({ m, equipe }: { m: Mutation; equipe: boolean }) {
   return (
@@ -70,15 +67,7 @@ function LigneMutation({ m, equipe }: { m: Mutation; equipe: boolean }) {
           {m.statut === "en_cours" ? <span className="block mt-1 text-on-surface-variant">{m.etape}</span> : null}
         </span>
       </div>
-      <ol className="flex flex-wrap gap-2" aria-label={`Circuit de la demande ${m.reference}`}>
-        {m.visas.map((v) => (
-          <li key={v.ordre} className="rounded-lg bg-surface-container-low px-3 py-2 font-label-sm text-label-sm">
-            <span className="block font-semibold text-on-surface">{v.ordre}. {v.instance}</span>
-            <Pastille ton={tonVisa(v.avis)}>{v.avis}</Pastille>
-            {v.titulaire ? <span className="block mt-1 text-on-surface-variant">{v.titulaire}{v.date ? ` · ${dateCourte(v.date)}` : ""}</span> : null}
-          </li>
-        ))}
-      </ol>
+      <FilVisas visas={m.visas} enCours={m.statut === "en_cours"} libelle={`Circuit de la demande ${m.reference}`} />
     </li>
   );
 }

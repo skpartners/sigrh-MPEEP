@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { CadreApercu, FeuilleOfficielle, type AgentDocument, MISE_EN_PAGE_COURANTE, POINTS, complete, date, designation, enServiceA, fonctionSignataire, g, iso, nombre, ou, sansAnnee, useSignataire, veille, type Morceau, type Signataire } from "../../ui/DocumentOfficiel";
+import { CadreApercu, FeuilleOfficielle, type AgentDocument, MISE_EN_PAGE_COURANTE, POINTS, complete, date, designation, directionAgent, enCasseEmploi, enServiceA, fonctionSignataire, g, iso, nombre, ou, sansAnnee, useSignataire, veille, type Morceau, type Signataire } from "../../ui/DocumentOfficiel";
 
 /** Modèles du certificat de cessation de service (exemplaires de la DAAF) selon le congé demandé. */
 export type ModeleCessation = "annuel" | "tranche" | "maternite" | "paternite" | "autre";
@@ -17,8 +17,10 @@ export type EntreeCertificat = {
   /** Rang de la période parmi celles arrêtées par la campagne, et leur nombre. */
   rang: number;
   periodes: number;
-  /** Exercice dont relève le congé annuel : le plus ancien qui compte encore des jours ; à défaut, N-1 (jamais N). */
+  /** Exercice dont relève le congé annuel : N-1, ou le reliquat plus ancien que l'agent a choisi (jamais N). */
   exercice?: number | null;
+  /** Exercices qui donnent droit à un congé : seuls ceux-là sont proposés. */
+  exercices?: number[];
   /** Libellé du congé choisi, repris par la formule générale quand le ministère n'a pas d'exemplaire. */
   libelle?: string;
   /** Signataire des documents : sa fonction ouvre les certificats de maternité et de paternité. */
@@ -45,8 +47,8 @@ export function corpsCertificat(entree: EntreeCertificat): { modele: ModeleCessa
   const jours = dates && entree.jours > 0 ? String(entree.jours) : POINTS;
   const { civilite, feminin, nom } = designation(agent);
   const interesse = feminin ? "l'intéressée" : "l'intéressé";
-  const emploi = ou(agent.situation_saisie.emploi || agent.grade);
-  const service = enServiceA(agent.structure);
+  const emploi = ou(enCasseEmploi(agent.situation_saisie.emploi || agent.grade));
+  const service = enServiceA(directionAgent(agent));
   const matricule = `matricule ${ou(agent.matricule)}`;
   const cessation = dates ? complete(veille(debut)) : POINTS;
   const dernier = dates ? complete(veille(fin)) : POINTS;
@@ -66,7 +68,7 @@ export function corpsCertificat(entree: EntreeCertificat): { modele: ModeleCessa
         [
           `Le ${fonctionSignataire(entree.signataire ?? null)} soussigné, certifie que `,
           g(`${civilite} ${nom}`),
-          `, ${matricule}, ${emploi}, ${service}, bénéficiaire d'un congé de maternité de ${semaines > 0 ? nombre(semaines) : POINTS} semaines, ${passe ? "a cessé" : "cessera"} le service `,
+          `, Matricule ${ou(agent.matricule)}, ${emploi}, ${service}, bénéficiaire d'un congé de maternité de ${semaines > 0 ? nombre(semaines) : POINTS} semaines, ${passe ? "a cessé" : "cessera"} le service `,
           g(`le ${cessation}`),
           ".",
         ],
@@ -90,7 +92,7 @@ export function corpsCertificat(entree: EntreeCertificat): { modele: ModeleCessa
           g(`${du} au ${dernier}`),
           " inclus.",
         ],
-        reprise,
+        [`A l'issue de son congé, ${interesse} reprendra le service à son poste habituel `, g(`le ${reprise_le}`), `, à ${HEURE_REPRISE}.`],
         cloture,
       ],
     };
@@ -168,10 +170,10 @@ export function FeuilleCertificat({ entree: saisie, impression = false }: { entr
   );
 }
 
-/** Exercices proposables pour un congé annuel : N-1, N-2, et celui que les droits de l'agent désignent. */
-export function ChoixExercice({ debut, auto, valeur, onChange, classe }: { debut: string; auto?: number | null; valeur?: number | null; onChange: (exercice: number) => void; classe: string }) {
+/** Exercices proposables pour un congé annuel : N-1 toujours (c'est l'exercice par défaut), puis un exercice plus ancien seulement s'il reste des jours. */
+export function ChoixExercice({ debut, auto, exercices, valeur, onChange, classe }: { debut: string; auto?: number | null; exercices?: number[]; valeur?: number | null; onChange: (exercice: number) => void; classe: string }) {
   const annee = Number(debut.slice(0, 4) || new Date().getFullYear());
-  const propositions = [...new Set([annee - 1, annee - 2, ...(auto ? [auto] : [])])].sort((a, b) => b - a);
+  const propositions = [...new Set([annee - 1, ...(exercices ?? []), ...(auto ? [auto] : [])])].sort((a, b) => b - a);
   return (
     <label className="flex items-center gap-2 font-label-sm text-label-sm font-normal text-on-surface-variant">
       Au titre de
@@ -179,8 +181,7 @@ export function ChoixExercice({ debut, auto, valeur, onChange, classe }: { debut
         {propositions.map((exercice) => (
           <option key={exercice} value={exercice}>
             {exercice}
-            {exercice === annee - 1 ? " (N-1)" : exercice === annee - 2 ? " (N-2)" : ""}
-            {exercice === auto ? " · selon les droits" : ""}
+            {exercice === annee - 1 ? " · congés" : exercice < annee - 1 ? " · reliquat" : ""}
           </option>
         ))}
       </select>
@@ -189,9 +190,10 @@ export function ChoixExercice({ debut, auto, valeur, onChange, classe }: { debut
 }
 
 /** Aperçu du certificat tel qu'il sera délivré, mis à jour pendant la saisie de la demande. */
-export function ApercuCertificat({ entree: saisie }: { entree: EntreeCertificat }) {
+export function ApercuCertificat({ entree: saisie, onExercice }: { entree: EntreeCertificat; onExercice?: (exercice: number) => void }) {
   const [choix, setChoix] = useState<number | null>(null);
-  const entree = { ...saisie, exercice: choix ?? saisie.exercice ?? null };
+  // Piloté par le formulaire quand il fournit `onExercice` : l'exercice choisi y fixe aussi la règle des dates.
+  const entree = { ...saisie, exercice: onExercice ? saisie.exercice ?? null : choix ?? saisie.exercice ?? null };
   return (
     <CadreApercu
       id="titre-apercu-certificat"
@@ -199,7 +201,7 @@ export function ApercuCertificat({ entree: saisie }: { entree: EntreeCertificat 
       reglage={
         entree.annuel ? (
           <span className="ml-auto">
-            <ChoixExercice debut={entree.debut} auto={saisie.exercice} valeur={choix} onChange={setChoix} classe="h-8 rounded border border-outline-variant bg-surface-container-lowest px-2" />
+            <ChoixExercice debut={entree.debut} auto={saisie.exercice} exercices={saisie.exercices} valeur={entree.exercice} onChange={onExercice ?? setChoix} classe="h-8 rounded border border-outline-variant bg-surface-container-lowest px-2" />
           </span>
         ) : null
       }

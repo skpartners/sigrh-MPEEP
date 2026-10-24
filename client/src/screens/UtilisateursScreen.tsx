@@ -56,20 +56,24 @@ function precisionsDuRole(roles: AnnuaireUtilisateurs["roles"], role: string): R
   return roles.find((item) => item.role === role)?.precisions ?? {};
 }
 
-type Poste = "agent" | "secretaire" | "responsable";
+type Poste = "agent" | "secretaire" | "gestionnaire" | "responsable";
 
 /** Rôles sans responsabilité : ils relèvent du premier responsable de leur structure. */
 const ROLE_SECRETAIRE = "Secrétaire";
+/** Point focal RH d'une structure, qui exprime ses besoins en agents : une structure peut en avoir plusieurs. */
+const ROLE_GESTIONNAIRE_RH = "Gestionnaire RH";
 
 function posteDuCompte(role: string): Poste {
   if (role === "Agent") return "agent";
   if (role === ROLE_SECRETAIRE) return "secretaire";
+  if (role === ROLE_GESTIONNAIRE_RH) return "gestionnaire";
   return "responsable";
 }
 
 function roleDuPoste(poste: Poste, structure: AnnuaireUtilisateurs["structures"][number]): string {
   if (poste === "agent") return "Agent";
   if (poste === "secretaire") return ROLE_SECRETAIRE;
+  if (poste === "gestionnaire") return ROLE_GESTIONNAIRE_RH;
   if (structure.niveau === "service") return "Chef de service";
   if (structure.niveau === "sous-direction") return "Sous directeur";
   if (structure.niveau === "direction-generale") return "Directeur général";
@@ -78,7 +82,7 @@ function roleDuPoste(poste: Poste, structure: AnnuaireUtilisateurs["structures"]
 }
 
 function responsableDe(comptes: CompteUtilisateur[], structure: string, sauf = ""): CompteUtilisateur | undefined {
-  return comptes.find((compte) => compte.actif && compte.structure === structure && compte.role !== "Agent" && compte.role !== ROLE_SECRETAIRE && compte.matricule !== sauf);
+  return comptes.find((compte) => compte.actif && compte.structure === structure && compte.role !== "Agent" && compte.role !== ROLE_SECRETAIRE && compte.role !== ROLE_GESTIONNAIRE_RH && compte.matricule !== sauf);
 }
 
 function referentDe(comptes: CompteUtilisateur[], structure: string, sauf = ""): CompteUtilisateur | undefined {
@@ -338,7 +342,7 @@ export function UtilisateursScreen() {
                   const code = compte.pole || "";
                   const precedent = index > 0 ? (page[index - 1].pole || "") : null;
                   const entete = code !== precedent;
-                  const libelle = code ? (compte.pole_libelle || code) : "Sans pôle";
+                  const libelle = code ? (compte.pole_libelle || code) : "Sans programme";
                   const effectif = ordonnes.filter((item) => (item.pole || "") === code).length;
                   return (
                     <Fragment key={compte.matricule}>
@@ -456,7 +460,7 @@ export function UtilisateursScreen() {
             ) : null}
             {alerteOuverte ? <p className="sm:col-span-2 font-body-sm text-body-sm text-error">{alerteOuverte}</p> : null}
             <label className="block space-y-1">
-              <span className="font-label-sm text-label-sm text-on-surface-variant">Pôle</span>
+              <span className="font-label-sm text-label-sm text-on-surface-variant">Programme</span>
               <Select
                 className={CHAMP}
                 required
@@ -508,13 +512,14 @@ export function UtilisateursScreen() {
                 disabled={!structureChoisie}
                 value={structureChoisie ? poste : ""}
                 onChange={(event) => {
-                  if (structureChoisie) retenir(structureChoisie, event.target.value === "responsable" ? "responsable" : event.target.value === "secretaire" ? "secretaire" : "agent");
+                  if (structureChoisie) retenir(structureChoisie, event.target.value === "responsable" ? "responsable" : event.target.value === "secretaire" ? "secretaire" : event.target.value === "gestionnaire" ? "gestionnaire" : "agent");
                 }}
               >
                 <option value="" disabled>Choisir une structure…</option>
                 <option value="responsable" disabled={Boolean(responsableDejaNomme)}>Premier responsable</option>
                 <option value="agent">Agent</option>
                 {data.roles.some((item) => item.role === ROLE_SECRETAIRE) ? <option value="secretaire">Secrétaire</option> : null}
+                {data.roles.some((item) => item.role === ROLE_GESTIONNAIRE_RH) ? <option value="gestionnaire">Gestionnaire RH (point focal)</option> : null}
               </Select>
               {structureChoisie ? (
                 <span className="block font-body-sm text-body-sm text-on-surface-variant">

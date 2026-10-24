@@ -1,15 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { ApiError, api, telecharger } from "../../api/client";
 import type { AgentBrief } from "../../api/types";
 import { useFeedback } from "../../ui/Feedback";
 import { BOUTON_PRIMAIRE, BOUTON_SECONDAIRE, Modale } from "../../ui/Modale";
 import { Skeleton } from "../../ui/Motion";
-import { Pagination, usePagination } from "../../ui/Pagination";
 import { AppChrome } from "../AppChrome";
-import { PlanificationConges } from "./PlanificationConges";
+import { GestionCampagnes } from "./GestionCampagnes";
+import { QuorumMensuel, type EtatQuorum } from "./QuorumMensuel";
+import { SuiviConges, type ElementSuivi } from "./SuiviConges";
 import { Icone } from "../../ui/Icone";
-import { Select } from "../../ui/Select";
 
 type Instruction = "pret_signature" | "approbation_auto" | "remplacement" | "conflit_quorum" | "signe" | "rejete" | "decale";
 type DemandeConge = {
@@ -32,6 +32,9 @@ type Registre = {
   volume: { effectifs: number; acquis: number; consommes: number; reliquats: number; alertes_reliquat: number };
   campagne: { exercice: number; statut: string; statut_libelle: string; delai: string } | null;
   presence: { taux: number | null; seuil: number };
+  quorum: EtatQuorum;
+  /** Ce que les agents ont déposé depuis leur espace : demandes de congé et dates de la campagne, avec leur circuit. */
+  suivi: ElementSuivi[];
   trimestres: { titre: string; departs: number; texte: string; etat: string; ton: Ton }[];
   mensuel: number[];
   quorums_non_rattaches: number;
@@ -44,17 +47,6 @@ type Action = "signer" | "rejeter" | "decaler";
 
 const MOIS_COURTS = ["Jan", "Fév", "Mar", "Avr", "Mai", "Jun", "Jul", "Aoû", "Sep", "Oct", "Nov", "Déc"];
 const MOIS = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."];
-const FILTRE = "w-full h-9 px-2.5 bg-surface-container-lowest text-on-surface font-body-sm text-body-sm rounded focus:outline-none focus:ring-1 focus:ring-primary";
-const PASTILLE: Record<Instruction, string> = {
-  pret_signature: "bg-primary-fixed text-on-primary-fixed",
-  approbation_auto: "bg-surface-container-high text-on-surface",
-  remplacement: "bg-primary-fixed text-on-primary-fixed",
-  conflit_quorum: "bg-secondary-fixed text-on-secondary-fixed",
-  signe: "bg-primary text-on-primary",
-  rejete: "bg-error-container text-on-error-container",
-  decale: "bg-secondary-fixed text-on-secondary-fixed",
-};
-
 function nombre(valeur: number): string {
   return valeur.toLocaleString("fr-FR");
 }
@@ -64,31 +56,13 @@ function jour(iso: string): string {
   return `${String(jourMois).padStart(2, "0")} ${MOIS[mois - 1]} ${annee}`;
 }
 
-function duree(demande: DemandeConge): string {
-  if (/maternit/i.test(demande.nature) && demande.jours >= 28) return `${Math.round(demande.jours / 7)} semaines`;
-  return `${demande.jours} jour${demande.jours > 1 ? "s" : ""}`;
-}
-
 /** Congés : soldes de l'exercice, présence, quorums et arbitrage des demandes. */
 export function CongesScreen() {
   const feedback = useFeedback();
   const registre = useQuery({ queryKey: ["carrieres-conges"], queryFn: () => api<Registre>("/api/v1/carrieres/conges/") });
-  const [entite, setEntite] = useState("");
-  const [nature, setNature] = useState("");
-  const [instruction, setInstruction] = useState("");
   const [action, setAction] = useState<{ demande: DemandeConge; action: Action } | null>(null);
   const donnees = registre.data;
   const demandes = donnees?.demandes ?? [];
-  const filtrees = useMemo(
-    () =>
-      demandes.filter(
-        (item) => (!entite || item.structure === entite) && (!nature || item.nature === nature) && (!instruction || item.instruction === instruction),
-      ),
-    [demandes, entite, nature, instruction],
-  );
-  const pageDemandes = usePagination(filtrees, `${entite}|${nature}|${instruction}`);
-  const entites = [...new Set(demandes.map((item) => item.structure))].sort();
-  const natures = [...new Set(demandes.map((item) => item.nature))].sort();
   const volume = donnees?.volume;
   const partConsommee = volume && volume.acquis ? Math.round((volume.consommes / volume.acquis) * 1000) / 10 : 0;
   const seuil = donnees?.presence.seuil;
@@ -132,7 +106,7 @@ export function CongesScreen() {
             </div>
           </section>
 
-          <PlanificationConges />
+          <GestionCampagnes />
 
           {/* Ruban de campagne */}
           <div className="p-3 bg-surface-container-lowest rounded-lg shadow-sm flex flex-wrap items-center justify-between gap-4">
@@ -198,6 +172,8 @@ export function CongesScreen() {
               <Barre part={presence ?? 0} couleur="bg-primary" />
             </Carte>
           </div>
+
+          <QuorumMensuel quorum={donnees?.quorum} />
 
           {/* Radar annuel des congés */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -273,79 +249,14 @@ export function CongesScreen() {
           </div>
 
           {/* Registre d'arbitrage */}
-          <div className="p-5 bg-surface-container-lowest rounded-lg shadow-sm space-y-4">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-2">
-              <div>
-                <h2 className="font-headline-sm text-headline-sm text-on-surface">Registre d'arbitrage & visa des demandes de congé</h2>
-              </div>
-              <span className="font-code-num text-code-num font-bold text-primary px-2 py-0.5 bg-surface-container rounded whitespace-nowrap">
-                {donnees ? `${donnees.en_attente} dossier${donnees.en_attente > 1 ? "s" : ""} en attente d'arbitrage` : "…"}
-              </span>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3 bg-surface-container-low rounded">
-              <label className="block">
-                <span className="block font-label-sm text-label-sm text-on-surface font-semibold mb-1">Structure</span>
-                <Select className={FILTRE} value={entite} onChange={(event) => setEntite(event.target.value)}>
-                  <option value="">Toutes les structures</option>
-                  {entites.map((sigle) => (
-                    <option key={sigle} value={sigle}>{sigle}</option>
-                  ))}
-                </Select>
-              </label>
-              <label className="block">
-                <span className="block font-label-sm text-label-sm text-on-surface font-semibold mb-1">Type de congé</span>
-                <Select className={FILTRE} value={nature} onChange={(event) => setNature(event.target.value)}>
-                  <option value="">Tous les régimes de congé</option>
-                  {natures.map((item) => (
-                    <option key={item} value={item}>{item}</option>
-                  ))}
-                </Select>
-              </label>
-              <label className="block">
-                <span className="block font-label-sm text-label-sm text-on-surface font-semibold mb-1">Statut d'instruction</span>
-                <Select className={FILTRE} value={instruction} onChange={(event) => setInstruction(event.target.value)}>
-                  <option value="">Tous les statuts</option>
-                  {(donnees?.instructions ?? []).map((item) => (
-                    <option key={item.code} value={item.code}>{item.libelle}</option>
-                  ))}
-                </Select>
-              </label>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left font-body-sm text-body-sm">
-                <thead>
-                  <tr className="bg-surface-container-low text-on-surface-variant font-label-md text-label-md">
-                    <th className="py-3 px-4">Agent & structure</th>
-                    <th className="py-3 px-3">Type & période</th>
-                    <th className="py-3 px-3">Durée</th>
-                    <th className="py-3 px-3">Continuité / intérim</th>
-                    <th className="py-3 px-3" data-min="">Statut d'instruction</th>
-                    <th className="py-3 px-4 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {registre.isPending ? (
-                    <tr>
-                      <td colSpan={6} className="py-4 px-4">
-                        <Skeleton className="h-10 w-full" />
-                      </td>
-                    </tr>
-                  ) : registre.isError ? (
-                    <tr>
-                      <td colSpan={6} className="py-6 px-4 text-error">Le registre des congés n'a pas pu être chargé.</td>
-                    </tr>
-                  ) : filtrees.length === 0 ? (
-                    <tr>
-                      <td colSpan={6} className="py-6 px-4 text-on-surface-variant">Aucune demande ne correspond à ces filtres.</td>
-                    </tr>
-                  ) : (
-                    pageDemandes.visibles.map((demande) => <LigneConge key={demande.id} demande={demande} onAction={(choix) => setAction({ demande, action: choix })} />)
-                  )}
-                </tbody>
-              </table>
-            </div>
-            <Pagination page={pageDemandes.page} pages={pageDemandes.pages} total={pageDemandes.total} aller={pageDemandes.aller} libelle="demande" />
-          </div>
+          <SuiviConges
+            suivi={donnees?.suivi ?? []}
+            arbitrage={demandes}
+            enAttente={donnees?.en_attente ?? 0}
+            chargement={registre.isPending}
+            erreur={registre.isError}
+            onAction={(demande, choix) => setAction({ demande: demande as DemandeConge, action: choix })}
+          />
 
         </div>
       </div>
@@ -373,74 +284,6 @@ function Barre({ part, couleur }: { part: number; couleur: string }) {
     <div className="mt-3 h-1.5 w-full bg-surface-container-high rounded-full overflow-hidden">
       <div className={`motion-fill h-full ${couleur} rounded-full`} style={{ width: `${Math.min(part, 100)}%` }} />
     </div>
-  );
-}
-
-function LigneConge({ demande, onAction }: { demande: DemandeConge; onAction: (action: Action) => void }) {
-  const conflit = demande.instruction === "conflit_quorum";
-  const close = ["signe", "rejete", "decale", "approbation_auto"].includes(demande.instruction);
-  return (
-    <tr className={`hover:bg-surface-container-low/60 transition-colors ${conflit ? "bg-secondary-fixed/10" : ""}`}>
-      <td className="py-3.5 px-4">
-        <div className="flex items-center gap-3">
-          <div className={`w-9 h-9 rounded-full flex items-center justify-center font-label-md text-label-md font-bold shrink-0 ${conflit ? "bg-secondary-fixed text-on-secondary-fixed" : "bg-surface-container text-primary"}`}>
-            {demande.agent.initiales}
-          </div>
-          <div>
-            <div className="font-label-md text-label-md font-bold text-on-surface">{demande.agent.nom_complet}</div>
-            <div className="font-body-sm text-body-sm text-on-surface-variant">
-              {demande.agent.fonction || demande.agent.corps} • <strong className="text-on-surface">{demande.structure}</strong>
-            </div>
-          </div>
-        </div>
-      </td>
-      <td className="py-3.5 px-3">
-        <div className={`font-label-md text-label-md ${conflit ? "text-secondary font-bold" : "text-on-surface"}`}>{demande.nature}</div>
-        <div className="font-code-num text-code-num text-on-surface-variant">
-          {jour(demande.debut)} → {jour(demande.fin)}
-        </div>
-      </td>
-      <td className="py-3.5 px-3 font-code-num text-code-num font-bold text-on-surface whitespace-nowrap">{duree(demande)}</td>
-      <td className="py-3.5 px-3">
-        <div className={`flex items-center gap-1.5 font-label-sm text-label-sm ${conflit ? "text-secondary font-medium" : "text-on-surface"}`}>
-          <Icone nom={conflit ? "warning" : "person_check"} className={`text-sm ${conflit ? "" : "text-primary"}`} />
-          <span>{demande.interim}</span>
-        </div>
-        <span className={`font-label-sm text-label-sm ${conflit ? "text-secondary" : "text-primary font-medium"}`}>{demande.interim_detail}</span>
-      </td>
-      <td className="py-3.5 px-3">
-        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded font-label-sm text-label-sm font-semibold ${PASTILLE[demande.instruction]}`}>
-          <span className="w-1.5 h-1.5 rounded-full bg-current opacity-70" />
-          {demande.instruction_libelle}
-        </span>
-        {demande.motif ? <p className="mt-1 text-xs text-on-surface-variant max-w-[13.75rem]">Motif : {demande.motif}</p> : null}
-      </td>
-      <td className="py-3.5 px-4 text-right">
-        {close ? (
-          <span className="font-label-sm text-label-sm text-on-surface-variant inline-flex items-center gap-1">
-            <Icone nom={demande.instruction === "approbation_auto" ? "mark_email_read" : "task_alt"} className="text-sm text-primary" />
-            {demande.instruction === "approbation_auto" ? "Notification émise" : "Arbitrée"}
-          </span>
-        ) : (
-          <div className="flex items-center justify-end gap-2">
-            {conflit ? (
-              <button className="px-2.5 py-1.5 rounded bg-secondary text-on-secondary hover:bg-secondary/90 font-label-sm text-label-sm font-bold transition-colors flex items-center gap-1" type="button" onClick={() => onAction("decaler")}>
-                <Icone nom="event_repeat" className="text-sm" />
-                <span>Avis défavorable / décaler</span>
-              </button>
-            ) : (
-              <button className="px-2.5 py-1.5 rounded bg-primary text-on-primary hover:bg-primary/90 font-label-sm text-label-sm font-semibold transition-colors flex items-center gap-1" type="button" onClick={() => onAction("signer")}>
-                <Icone nom="draw" className="text-sm" />
-                <span>{demande.instruction === "remplacement" ? "Signer l'arrêté" : "Signer"}</span>
-              </button>
-            )}
-            <button className="p-1.5 rounded hover:bg-surface-container-high text-on-surface-variant transition-colors" title="Rejeter la demande" aria-label={`Rejeter la demande de ${demande.agent.nom_complet}`} type="button" onClick={() => onAction("rejeter")}>
-              <Icone nom="close" className="text-base" />
-            </button>
-          </div>
-        )}
-      </td>
-    </tr>
   );
 }
 

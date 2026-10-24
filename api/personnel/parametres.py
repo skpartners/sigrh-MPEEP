@@ -79,10 +79,11 @@ def identite_ministre() -> dict:
 
 def _signataire_de(matricule: str) -> dict:
     from .models import Agent
+    from .normalisation import nom_complet_structure
 
     agent = Agent.objects.filter(matricule=matricule).first() if matricule else None
     if agent is None:
-        return {"matricule": matricule, "trouve": False, "nom": "", "prenoms": "", "titre": "", "fonction": ""}
+        return {"matricule": matricule, "trouve": False, "nom": "", "prenoms": "", "titre": "", "fonction": "", "direction": ""}
     return {
         "matricule": agent.matricule,
         "trouve": True,
@@ -90,6 +91,7 @@ def _signataire_de(matricule: str) -> dict:
         "prenoms": agent.prenoms,
         "titre": agent.emploi or agent.fonction or agent.corps,
         "fonction": agent.fonction,
+        "direction": nom_complet_structure(agent.direction or agent.structure),
     }
 
 
@@ -153,12 +155,43 @@ def delai_validation_hierarchie_jours() -> int:
 QUORUM_PRESENCE_DEFAUT = 65
 
 
+def moyenne_quorums_structures() -> tuple[int | None, int]:
+    """Moyenne des quorums que les responsables ont définis dans leurs structures, et nombre de structures qui en ont défini un."""
+    from django.db.models import Avg, Count
+
+    from .models import EntiteTutelle
+
+    agregat = EntiteTutelle.objects.filter(quorum_presence_pourcent__isnull=False).aggregate(moyenne=Avg("quorum_presence_pourcent"), n=Count("id"))
+    moyenne = agregat["moyenne"]
+    return (int(round(moyenne)) if moyenne is not None else None), agregat["n"]
+
+
 def quorum_presence() -> int:
-    """Taux minimal de présence d'une structure, en pourcentage."""
+    """Taux minimal de présence d'une structure, en pourcentage.
+
+    Par défaut, la moyenne des quorums définis par les responsables dans leurs structures ; sans quorum de structure, ou si l'équipe RH
+    a fixé le sien, la valeur du ministère."""
     objet = _parametres()
-    if objet is None or not objet.quorum_presence_pourcent:
-        return QUORUM_PRESENCE_DEFAUT
-    return objet.quorum_presence_pourcent
+    enregistre = objet.quorum_presence_pourcent if objet is not None and objet.quorum_presence_pourcent else QUORUM_PRESENCE_DEFAUT
+    if objet is None or objet.quorum_automatique:
+        moyenne, _n = moyenne_quorums_structures()
+        if moyenne:
+            return moyenne
+    return enregistre
+
+
+def etat_quorum() -> dict:
+    """Le quorum du ministère, d'où il vient, et la moyenne des structures."""
+    objet = _parametres()
+    moyenne, definies = moyenne_quorums_structures()
+    automatique = objet is None or objet.quorum_automatique
+    return {
+        "valeur": quorum_presence(),
+        "automatique": automatique and moyenne is not None,
+        "moyenne_structures": moyenne,
+        "structures_definies": definies,
+        "valeur_fixee": objet.quorum_presence_pourcent if objet is not None else QUORUM_PRESENCE_DEFAUT,
+    }
 
 
 def delais() -> dict:
@@ -395,7 +428,8 @@ def enregistrer_delais(request):
         if not 1 <= quorum <= 100:
             return Response({"detail": "Le quorum de présence est un pourcentage entre 1 et 100."}, status=400)
         objet.quorum_presence_pourcent = quorum
-        champs.append("quorum_presence_pourcent")
+        objet.quorum_automatique = False
+        champs.extend(["quorum_presence_pourcent", "quorum_automatique"])
     objet.save(update_fields=champs)
     return Response(_ligne(request.user))
 

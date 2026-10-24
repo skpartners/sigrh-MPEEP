@@ -1,12 +1,14 @@
+import { FilVisas } from "../ui/FilVisas";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState, type FormEvent } from "react";
+import { useFeedback } from "../ui/Feedback";
+import { useState } from "react";
 import { ApiError, api, telecharger } from "../api/client";
 import type { Dossier, SessionUser } from "../api/types";
 import { dateCourte } from "../ui/format";
 import { Icone } from "../ui/Icone";
 import { ApercuFichier, telechargerFichier } from "../ui/ApercuFichier";
 import { DocumentSigne } from "./dossier-onglets/commun";
-import { ApercuActe } from "./dossier-onglets/ModelesActes";
+import { ApercuActe, aModeleActe } from "./dossier-onglets/ModelesActes";
 import { BOUTON_PRIMAIRE, BOUTON_SECONDAIRE, Modale } from "../ui/Modale";
 import { Select } from "../ui/Select";
 
@@ -33,7 +35,7 @@ function entreesListe(types: TypeActe[]): EntreeListe[] {
   return entrees;
 }
 
-type TypeActe = { code: string; parent: string; groupe: string; libelle: string; icone: string; periode: boolean; destinataire: boolean; justificatif: string; circuit: string[] };
+type TypeActe = { code: string; parent: string; groupe: string; libelle: string; icone: string; periode: boolean; destinataire: boolean; justificatif: string; justificatif_obligatoire: boolean; circuit: string[] };
 type ATraiter = {
   reference: string;
   nature: string;
@@ -50,15 +52,6 @@ type ATraiter = {
 type Catalogue = { types: TypeActe[]; a_traiter: ATraiter[] };
 
 const CHAMP = "w-full rounded-lg border border-outline-variant bg-surface-container-lowest px-3 py-2 text-on-surface";
-const AVIS_TON: Record<string, string> = {
-  Déposée: "bg-primary/10 text-primary",
-  Favorable: "bg-primary/10 text-primary",
-  Délivré: "bg-primary/10 text-primary",
-  "En attente": "bg-surface-container text-on-surface-variant",
-  Refusée: "bg-error-container text-on-error-container",
-  "Sans suite": "bg-surface-container text-on-surface-variant",
-};
-
 function aujourdhui(): string {
   return new Date().toISOString().slice(0, 10);
 }
@@ -83,10 +76,21 @@ export function DemandesActes({ agent }: { agent: Dossier }) {
   const demandes = agent.demandes.filter((item) => item.categorie === "acte");
   const types = catalogue.data?.types ?? [];
   const aTraiter = catalogue.data?.a_traiter ?? [];
+  const [formulaire, setFormulaire] = useState(false);
 
   return (
     <div className="space-y-6">
-      {estMoi ? <FormulaireDemande agent={agent} types={types} /> : null}
+      {estMoi ? (
+        <section className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-hairline bg-surface-container-lowest p-6" aria-labelledby="titre-nouvelle-demande">
+          <h2 id="titre-nouvelle-demande" className="flex items-center gap-2 font-headline-sm text-headline-sm font-bold text-on-surface">
+            <Icone nom="description" className="text-xl text-primary" />Demande d’actes administratifs
+          </h2>
+          <button type="button" onClick={() => setFormulaire(true)} className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 font-label-md text-on-primary">
+            <Icone nom="add" />Nouvelle demande
+          </button>
+        </section>
+      ) : null}
+      {formulaire ? <FormulaireDemande agent={agent} types={types} onClose={() => setFormulaire(false)} /> : null}
       {aTraiter.length ? <DemandesAViser demandes={aTraiter} /> : null}
       <section className="bg-surface-container-lowest rounded-xl border border-hairline p-6" aria-labelledby="titre-mes-demandes">
         <h2 id="titre-mes-demandes" className="font-headline-sm text-headline-sm text-on-surface font-bold mb-4 flex items-center gap-2">
@@ -101,41 +105,57 @@ export function DemandesActes({ agent }: { agent: Dossier }) {
   );
 }
 
-function FormulaireDemande({ agent, types }: { agent: Dossier; types: TypeActe[] }) {
+/** Fenêtre de demande d'un acte : saisie, aperçu du document, puis transmission au circuit. */
+function FormulaireDemande({ agent, types, onClose }: { agent: Dossier; types: TypeActe[]; onClose: () => void }) {
   const client = useQueryClient();
   const [code, setCode] = useState("");
   const [motif, setMotif] = useState("");
   const [debut, setDebut] = useState("");
   const [fin, setFin] = useState("");
-  const [destinataire, setDestinataire] = useState("");
   const [justificatif, setJustificatif] = useState<File | null>(null);
   const [erreurFichier, setErreurFichier] = useState("");
   const [champFichier, setChampFichier] = useState(0);
   const type = types.find((item) => item.code === code);
 
-  const depot = useMutation({
-    mutationFn: () => {
+  const feedback = useFeedback();
+  const [enCours, setEnCours] = useState(false);
+  const [erreurServeur, setErreurServeur] = useState("");
+
+  /** Transmet la demande sous l'indicateur d'attente, puis recharge le dossier et ramène l'agent à sa liste. */
+  async function transmettre() {
+    setEnCours(true);
+    setErreurServeur("");
+    try {
       const corps = new FormData();
       corps.set("type", code);
       corps.set("motif", motif);
       corps.set("debut", debut);
       corps.set("fin", fin);
-      corps.set("destinataire", destinataire);
       if (justificatif) corps.set("justificatif", justificatif);
-      return api<Dossier>(`/api/v1/agents/${encodeURIComponent(agent.matricule)}/actes-demandes/`, { method: "POST", body: corps });
-    },
-    onSuccess: (dossier) => {
+      const dossier = await feedback.run(
+        "Transmission de la demande…",
+        () => api<Dossier>(`/api/v1/agents/${encodeURIComponent(agent.matricule)}/actes-demandes/`, { method: "POST", body: corps }),
+        { success: { title: "Demande transmise", message: "Elle est entrée dans le circuit, au visa de votre chef de service." }, error: "La demande n’a pas été transmise." },
+      );
       client.setQueryData(["agent", agent.matricule], dossier);
+      void client.invalidateQueries({ queryKey: ["agent", agent.matricule] });
+      void client.invalidateQueries({ queryKey: ["demandes-actes"] });
       setCode("");
       setMotif("");
       setDebut("");
       setFin("");
-      setDestinataire("");
       setJustificatif(null);
       setChampFichier((cle) => cle + 1);
-    },
-  });
-  const erreur = erreurFichier || (depot.error instanceof ApiError ? depot.error.message : depot.isError ? "La demande n’a pas pu être transmise." : "");
+      onClose();
+      // La fenêtre se ferme : la nouvelle demande figure en tête de « Mes demandes d'actes », où l'on amène l'agent.
+      window.setTimeout(() => document.getElementById("titre-mes-demandes")?.scrollIntoView({ behavior: "smooth", block: "start" }), 120);
+    } catch (cause) {
+      setErreurServeur(cause instanceof ApiError ? cause.message : "La demande n’a pas pu être transmise.");
+    } finally {
+      setEnCours(false);
+    }
+  }
+  const erreur = erreurFichier || erreurServeur;
 
   function choisirJustificatif(choisi: File | null) {
     setErreurFichier("");
@@ -148,17 +168,42 @@ function FormulaireDemande({ agent, types }: { agent: Dossier; types: TypeActe[]
     setJustificatif(choisi);
   }
 
-  function envoyer(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    depot.mutate();
-  }
+  // Pourquoi « Transmettre la demande » est désactivé ; vide quand la demande est complète.
+  const raison = enCours
+    ? "Transmission en cours."
+    : !code
+      ? "Choisissez d’abord l’acte demandé."
+      : type?.periode && (!debut || !fin)
+        ? "Indiquez la date de début et la date de fin."
+        : !motif.trim()
+          ? "Précisez le motif de votre demande."
+          : type?.justificatif_obligatoire && !justificatif
+            ? "Joignez le justificatif : il est obligatoire pour cet acte."
+            : "";
 
   return (
-    <section className="bg-surface-container-lowest rounded-xl border border-hairline p-6" aria-labelledby="titre-nouvelle-demande">
-      <h2 id="titre-nouvelle-demande" className="font-headline-sm text-headline-sm text-on-surface font-bold mb-1 flex items-center gap-2">
-        <Icone nom="description" className="text-primary text-xl" />Demande d’actes administratifs
-      </h2>
-      <form onSubmit={envoyer} className="space-y-5 max-w-3xl">
+    <Modale
+      titre="Demande d’actes administratifs"
+      sousTitre="Choisissez l’acte, relisez le document, puis transmettez."
+      icone="description"
+      taille="xl"
+      onClose={onClose}
+      onSubmit={() => { if (!raison) void transmettre(); }}
+      enCours={enCours}
+      erreur={erreur || undefined}
+      pied={
+        <>
+          {raison && !enCours && code ? <span id="raison-transmission" className="mr-auto font-body-sm text-body-sm text-on-surface-variant">{raison}</span> : null}
+          <button type="button" className={BOUTON_SECONDAIRE} onClick={onClose} disabled={enCours}>Annuler</button>
+          <span title={raison || undefined} className={raison ? "cursor-not-allowed" : undefined}>
+            <button type="submit" disabled={Boolean(raison)} aria-describedby={raison ? "raison-transmission" : undefined} className={BOUTON_PRIMAIRE}>
+              <Icone nom={enCours ? "progress_activity" : "send"} className={`text-lg ${enCours ? "motion-spin" : ""}`} />{enCours ? "Transmission…" : "Transmettre la demande"}
+            </button>
+          </span>
+        </>
+      }
+    >
+      <div className="space-y-5">
         <div>
           <label htmlFor="type-demande" className="block font-label-md text-on-surface mb-2">Acte demandé</label>
           <Select id="type-demande" value={code} onChange={(e) => setCode(e.target.value)} required className={CHAMP}>
@@ -171,7 +216,6 @@ function FormulaireDemande({ agent, types }: { agent: Dossier; types: TypeActe[]
               </optgroup>
             ))}
           </Select>
-          {type ? <p className="mt-1 text-sm text-on-surface-variant">Visas : {type.circuit.join(" → ")}.</p> : null}
         </div>
         {type?.periode ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -185,36 +229,34 @@ function FormulaireDemande({ agent, types }: { agent: Dossier; types: TypeActe[]
             </div>
           </div>
         ) : null}
-        {type?.destinataire ? (
-          <div>
-            <label htmlFor="destinataire-demande" className="block font-label-md text-on-surface mb-2">À l’attention de (facultatif)</label>
-            <input id="destinataire-demande" value={destinataire} onChange={(e) => setDestinataire(e.target.value)} maxLength={160} placeholder="Organisme ou personne destinataire de l’attestation" className={CHAMP} />
-          </div>
-        ) : null}
         <div>
           <label htmlFor="motif-demande" className="block font-label-md text-on-surface mb-2">Motif / précisions</label>
           <textarea id="motif-demande" rows={4} value={motif} onChange={(e) => setMotif(e.target.value)} required maxLength={600} placeholder="Précisez l’objet de votre demande…" className={CHAMP} />
         </div>
         {type ? (
           <div>
-            <label htmlFor="justificatif-demande" className="block font-label-md text-on-surface mb-2">Justificatif</label>
-            <input key={champFichier} id="justificatif-demande" type="file" accept=".pdf,.png,.jpg,.jpeg,.webp" onChange={(e) => choisirJustificatif(e.target.files?.[0] ?? null)}
+            <label htmlFor="justificatif-demande" className="block font-label-md text-on-surface mb-2">
+              Justificatif <span className={type.justificatif_obligatoire ? "text-error" : "font-normal text-on-surface-variant"}>{type.justificatif_obligatoire ? "(obligatoire)" : "(facultatif)"}</span>
+            </label>
+            <input key={champFichier} id="justificatif-demande" type="file" required={type.justificatif_obligatoire} accept=".pdf,.png,.jpg,.jpeg,.webp" onChange={(e) => choisirJustificatif(e.target.files?.[0] ?? null)}
               className="block w-full text-sm text-on-surface file:mr-4 file:rounded-lg file:border-0 file:bg-primary file:px-4 file:py-2 file:text-on-primary" />
-            <p className="mt-1 text-sm text-on-surface-variant">{type.justificatif} PDF, PNG, JPG ou WEBP, 5 Mo au plus.</p>
           </div>
         ) : null}
-        {erreur ? <p role="alert" className="text-sm text-error">{erreur}</p> : null}
-        {depot.isSuccess ? <p role="status" className="rounded-lg bg-surface-container-low p-4 text-sm text-on-surface">Votre demande a été transmise à votre chef de service.</p> : null}
-        <button type="submit" disabled={depot.isPending || !code} className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 font-label-md text-on-primary disabled:opacity-60">
-          <Icone nom="send" />{depot.isPending ? "Transmission…" : "Transmettre la demande"}
-        </button>
-      </form>
-      {code ? (
-        <div className="mx-auto mt-8 w-full max-w-[44rem]">
+        {/* Le document se relit en bas de la fenêtre, juste avant de transmettre. */}
+      {code && aModeleActe(code) ? (
+        <div className="mx-auto mt-2 w-full max-w-[44rem]">
           <ApercuActe agent={agent} code={code} debut={debut} fin={fin} />
         </div>
       ) : null}
-    </section>
+      {code && !aModeleActe(code) ? (
+        <p role="status" className="mx-auto mt-2 flex w-full max-w-[44rem] items-start gap-2 rounded-lg border border-error bg-error-container p-4 text-sm font-medium text-on-error-container">
+          <Icone nom="error" className="text-xl text-error" />
+          <span>Le modèle de document de cet acte n’est pas encore disponible : aucun aperçu ne peut être affiché. Votre demande suit son circuit normalement, et le document sera établi dès que le ministère aura fourni son exemplaire.</span>
+        </p>
+      ) : null}
+
+      </div>
+    </Modale>
   );
 }
 
@@ -250,17 +292,7 @@ function CarteDemande({ demande }: { demande: Demande }) {
       {demande.motif ? <p className="font-body-sm text-on-surface-variant">Motif : {demande.motif}</p> : null}
       {demande.destinataire ? <p className="font-body-sm text-on-surface-variant">À l’attention de : {demande.destinataire}</p> : null}
       {demande.justificatif_url ? <LienJustificatif chemin={demande.justificatif_url} nom={`Justificatif ${demande.reference}`} onApercu={() => setApercu(true)} /> : null}
-      <ol className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2" aria-label="Circuit de la demande">
-        {demande.visas.map((visa) => (
-          <li key={visa.ordre} className="rounded-lg bg-surface-container-low p-3 space-y-1">
-            <div className="flex items-center justify-between gap-2">
-              <span className="font-label-sm text-label-sm font-bold text-on-surface">{visa.instance}</span>
-              <span className={`px-1.5 py-0.5 rounded font-label-sm text-label-sm font-bold ${AVIS_TON[visa.avis] ?? "bg-surface-container text-on-surface-variant"}`}>{visa.avis}</span>
-            </div>
-            {visa.titulaire ? <p className="font-body-sm text-body-sm text-on-surface-variant">{visa.titulaire}{visa.date ? ` · ${dateCourte(visa.date)}` : ""}</p> : null}
-          </li>
-        ))}
-      </ol>
+      <FilVisas visas={demande.visas} enCours={etat.libelle === "En cours"} libelle={`Circuit de la demande ${demande.reference}`} />
       {refus ? <p role="note" className="rounded-lg bg-error-container text-on-error-container p-3 text-sm">Motif du refus : {refus.commentaire}</p> : null}
       <DocumentSigne demande={demande} />
       {etat.libelle === "Acte délivré" && !demande.document_signe ? (

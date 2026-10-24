@@ -225,6 +225,8 @@ CELERY_TASK_IGNORE_RESULT = True
 CELERY_BEAT_SCHEDULE = {
     # Toutes les six heures, comme la boucle interne qu'il remplace.
     "surveiller-echeances": {"task": "personnel.surveiller_echeances", "schedule": 6 * 3600},
+    # Les positions suivent les dates du jour (début et fin d'un détachement, d'une disponibilité, d'une formation) : relevé toutes les 30 minutes.
+    "synchroniser-positions": {"task": "personnel.synchroniser_positions", "schedule": 1800},
     # Résultats de tâches de fond et fichiers de la messagerie : jamais conservés au-delà de leur durée.
     "purger-taches": {"task": "personnel.purger_taches", "schedule": 3600},
     "purger-medias": {"task": "personnel.purger_medias", "schedule": 1800},

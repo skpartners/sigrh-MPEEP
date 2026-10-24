@@ -17,6 +17,7 @@ from .models import (
     Acte,
     Agent,
     AlerteReleve,
+    DossierRetraite,
     BranchePlafond,
     Demande,
     DemandeDotation,
@@ -135,6 +136,16 @@ def _sigle_structure(structure) -> str:
     return "".join(mot[0] for mot in mots if mot and mot.lower() not in MOTS_VIDES).upper()
 
 
+def _sigle_libelle(libelle: str) -> str:
+    """Sigle d'une structure connue par son seul libellé : le libellé s'il en est déjà un, sinon les initiales de ses mots."""
+    texte = (libelle or "").strip()
+    if not texte or texte.upper() == "NULL":
+        return ""
+    if " " not in texte and len(texte) <= 6:
+        return texte.upper()
+    return "".join(mot[0] for mot in re.split(r"[\s'’\-]+", texte) if mot and mot.lower() not in MOTS_VIDES).upper()
+
+
 def _reference_courrier(user) -> dict:
     """Éléments du numéro de courrier : sigle du ministère, hiérarchie de la structure de l'imprimeur, ses initiales."""
     chaine = []
@@ -143,8 +154,19 @@ def _reference_courrier(user) -> dict:
         if structure.niveau in NIVEAUX_COURRIER and structure.code != "cabinet":
             chaine.insert(0, _sigle_structure(structure))
         structure = structure.parent
+    if not chaine:
+        # Compte sans structure de rattachement (administrateur…) : le numéro suit la direction, la sous-direction et le service de sa fiche agent.
+        agent = Agent.objects.filter(matricule=user.username).only("direction", "sous_direction", "service").first()
+        if agent is not None:
+            chaine = [sigle for sigle in (_sigle_libelle(agent.direction), _sigle_libelle(agent.sous_direction), _sigle_libelle(agent.service)) if sigle]
     initiales = "".join(mot[0] for mot in f"{user.last_name} {user.first_name}".split() if mot).lower()
     return {"structures": chaine, "initiales": initiales}
+
+def _est_drh_utilisateur(user) -> bool:
+    from .planification import _est_drh
+
+    return _est_drh(user)
+
 
 def _me(user, request) -> dict:
     profil = user.profil
@@ -165,6 +187,7 @@ def _me(user, request) -> dict:
         "administrateur": bool(profil.administrateur),
         "adhesion_complete": adhesion_complete(user),
         "reference_courrier": _reference_courrier(user),
+        "drh": _est_drh_utilisateur(user),
         "secretariat": peut_secretariat(user),
         "acces": acces_menu(profil),
     }
@@ -522,11 +545,13 @@ def modifier_profil(request, matricule: str):
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
+@parser_classes([JSONParser, MultiPartParser, FormParser])
 def ajouter_enfant(request, matricule: str):
     """Déclare un enfant à charge sur le dossier de l'agent."""
     from datetime import date
 
     from .models import Enfant
+    from .pieces import verser_acte_naissance_enfant
 
     agent = get_object_or_404(Agent, matricule=matricule)
     if not _peut_gerer_dossier(request.user, agent):
@@ -549,14 +574,22 @@ def ajouter_enfant(request, matricule: str):
             return Response({"detail": "La date de naissance n'est pas valide."}, status=400)
         if naissance > date.today():
             return Response({"detail": "La date de naissance ne peut pas être dans le futur."}, status=400)
-    Enfant.objects.create(
-        agent=agent,
-        nom=nom,
-        prenoms=prenoms,
-        sexe=sexe,
-        date_naissance=naissance,
-        lieu_naissance=(donnees.get("lieu_naissance") or "").strip()[:160],
-    )
+    fichier = request.FILES.get("fichier")
+    if fichier is None:
+        return Response({"detail": "Joignez l'acte de naissance de l'enfant."}, status=400)
+    with transaction.atomic():
+        piece, erreur = verser_acte_naissance_enfant(agent, fichier, f"{prenoms} {nom}"[:80])
+        if erreur:
+            return Response({"detail": erreur}, status=400)
+        Enfant.objects.create(
+            agent=agent,
+            nom=nom,
+            prenoms=prenoms,
+            sexe=sexe,
+            date_naissance=naissance,
+            lieu_naissance=(donnees.get("lieu_naissance") or "").strip()[:160],
+            acte_naissance=piece,
+        )
     return Response(_detail(agent, request.user), status=201)
 
 
@@ -606,6 +639,8 @@ def ajouter_diplome(request, matricule: str):
         piece, erreur = _justificatif_diplome(request, agent, libelle or dict(Diplome.NIVEAUX)[niveau])
         if erreur:
             return Response({"detail": erreur}, status=400)
+        if piece is None:
+            return Response({"detail": "Joignez le diplôme (fichier ou document déjà versé)."}, status=400)
         Diplome.objects.create(
             agent=agent,
             niveau_etude=niveau,
@@ -629,7 +664,7 @@ def justificatif_diplome(request, matricule: str, pk: int):
         return _refus_dossier()
     diplome = get_object_or_404(Diplome, pk=pk, agent=agent)
     if request.method == "DELETE":
-        diplome.piece = None
+        return Response({"detail": "Le diplôme est obligatoire : joignez un autre fichier pour le remplacer."}, status=400)
     else:
         with transaction.atomic():
             piece, erreur = _justificatif_diplome(request, agent, diplome.libelle or diplome.get_niveau_etude_display())
@@ -935,8 +970,8 @@ def _activite() -> list[dict]:
         {
             "cle": "fin",
             "libelle": "Fin de carrière",
-            "valeur": _n(AlerteReleve.objects.count()),
-            "detail": "postes clés à relever",
+            "valeur": _n(DossierRetraite.objects.count()),
+            "detail": "dossiers de départ à la retraite",
             "icone": "elderly",
             "lien": "/app/carrieres/fin-de-carriere",
         },
@@ -1036,7 +1071,60 @@ def agents(request):
             matricule__icontains=query
         )
     echeances = echeances_en_cours()
-    return Response([{**agent_brief(agent), **echeances.get(agent.matricule, {})} for agent in rows.distinct()])
+    from .positions import details_activite
+
+    liste = list(rows.distinct())
+    details = details_activite(liste)
+    return Response([{**agent_brief(agent), "situation_detail": details.get(agent.matricule, ""), **echeances.get(agent.matricule, {})} for agent in liste])
+
+
+POSITIONS_EXPORT = {
+    "toutes": "Effectif du personnel",
+    "activite": "Personnel en activité",
+    "detachement": "Personnel en détachement ou mis à disposition",
+    "disponibilite": "Personnel en disponibilité",
+}
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def exporter_situation(request):
+    """Classeur Excel des agents d'une position (ou de tout l'effectif), dans le périmètre de la personne connectée."""
+    from .classeur import habiller
+    from .positions import details_activite, echeances_en_cours, famille_position, synchroniser_tous
+
+    position = str(request.query_params.get("position") or "toutes")
+    if position not in POSITIONS_EXPORT:
+        return Response({"detail": "Choisissez une position à exporter."}, status=400)
+    synchroniser_tous()
+    rows = Agent.objects.select_related("organisme").order_by("nom", "prenoms")
+    matricules = perimetre_matricules(request.user)
+    if matricules is not None:
+        rows = rows.filter(matricule__in=matricules)
+    echeances = echeances_en_cours()
+    details = details_activite(rows)
+    lignes = [["Matricule", "Nom et prénoms", "Structure", "Organisme", "Corps", "Grade", "Position", "Situation du moment", "Fin de la position", "Jours restants"]]
+    for agent in rows:
+        if position != "toutes" and famille_position(agent.situation) != position:
+            continue
+        terme = echeances.get(agent.matricule, {})
+        lignes.append([
+            agent.matricule, agent.nom_complet, agent.structure, agent.organisme.nom, agent.corps, agent.grade,
+            # En activité couvre la présence au poste, la formation et les congés : la position reste « En activité », la situation du moment est donnée à part.
+            "En activité" if famille_position(agent.situation) == "activite" else agent.situation,
+            details.get(agent.matricule, ""),
+            terme.get("echeance", ""), terme.get("echeance_jours", ""),
+        ])
+    titre = POSITIONS_EXPORT[position]
+    contenu = habiller([{
+        "nom": "Agents", "titre": f"SIGRH  ·  {titre}",
+        "sous_titre": f"{len(lignes) - 1} agent{'s' if len(lignes) > 2 else ''} · export du {timezone.localdate().strftime('%d/%m/%Y')}",
+        "notice": "Situation administrative : positions statutaires des agents de votre périmètre.",
+        "lignes": lignes, "paysage": True,
+    }])
+    reponse = HttpResponse(contenu, content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    reponse["Content-Disposition"] = f'attachment; filename="situation-{position}-{timezone.localdate().isoformat()}.xlsx"'
+    return reponse
 
 
 @api_view(["GET"])
@@ -1165,6 +1253,24 @@ def deposer_conge(request, matricule: str):
     if erreur:
         return Response({"detail": erreur}, status=400)
     return Response(_detail(agent, request.user), status=201)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def remettre_droit_conge_a_zero(request, matricule: str, annee: int):
+    """Le DRH annule ce qui reste d'un reliquat de congé annuel (exercice antérieur à N-1)."""
+    from . import droits_conges
+    from .planification import _est_drh
+
+    if not _est_drh(request.user):
+        return Response({"detail": "Seul le DRH peut annuler un reliquat de congé."}, status=403)
+    agent = get_object_or_404(Agent.objects.select_related("organisme"), matricule=matricule)
+    if not _peut_gerer_dossier(request.user, agent):
+        return _refus_dossier()
+    _retires, erreur = droits_conges.remettre_a_zero(agent, annee, request.user.get_full_name() or request.user.username)
+    if erreur:
+        return Response({"detail": erreur}, status=400)
+    return Response(_detail(agent, request.user))
 
 
 @api_view(["POST"])

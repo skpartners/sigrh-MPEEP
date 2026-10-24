@@ -343,9 +343,9 @@ const MODULES: ModuleAide[] = [
     icone: "gavel",
     titre: "Procédures disciplinaires",
     chemin: "/app/carrieres/procedures-disciplinaires",
-    resume: "L'instruction devant la commission, du grief jusqu'à la sanction ou au classement.",
+    resume: "L'instruction devant la commission, de la faute reprochée jusqu'à la sanction ou au classement.",
     fait: [
-      "Il conduit une procédure disciplinaire, du grief notifié à l'agent jusqu'à la décision de la commission.",
+      "Il conduit une procédure disciplinaire, de la faute notifiée à l'agent jusqu'à la décision de la commission.",
       "Il sert à convoquer, à recueillir la réponse et les avis, puis à prononcer une sanction ou à classer sans suite.",
     ],
     cas: [
@@ -354,16 +354,16 @@ const MODULES: ModuleAide[] = [
     ],
     circuit: [
       "La procédure s'ouvre en instruction, puis la recevabilité est examinée.",
-      "La convocation notifie les griefs. La procédure attend la réponse de l'agent, puis le visa du rapporteur.",
+      "La convocation notifie les fautes reprochées. La procédure attend la réponse de l'agent, puis le visa du rapporteur.",
       "La commission délibère. La procédure se termine par une sanction prononcée ou un classement sans suite.",
     ],
     obligations: [
-      "Le contradictoire est obligatoire : la convocation notifie les griefs et le délai de réponse.",
+      "Le contradictoire est obligatoire : la convocation notifie les fautes reprochées et le délai de réponse.",
       "Le degré encouru va de 1 à 3. Une sanction du premier degré s'efface après trois ans sans récidive.",
       "La convocation est signée par le DRH, ou par l'intérimaire si la signature du titulaire n'est pas lisible.",
     ],
     fonctionnement: [
-      "Une procédure porte la référence, l'agent, le grief, le degré, le rapporteur et le stade.",
+      "Une procédure porte la référence, l'agent, la faute, le degré, le rapporteur et le stade.",
       "Les stades suivent l'instruction, la recevabilité, l'attente de réponse, le visa du rapporteur, le délibéré, la sanction ou le classement sans suite.",
       "La convocation PDF rappelle l'identité, le dossier d'instruction et le délai.",
     ],
@@ -375,10 +375,10 @@ const MODULES: ModuleAide[] = [
     ],
     exports: [
       "Générer la convocation, depuis la ligne du registre ou le dossier d'instruction, produit convocation-{référence}.pdf.",
-      "La convocation rappelle l'identité, les griefs, le dossier d'instruction et le délai de réponse.",
+      "La convocation rappelle l'identité, les fautes reprochées, le dossier d'instruction et le délai de réponse.",
     ],
     marche: [
-      "Ouvrez la procédure et vérifiez le grief et le degré.",
+      "Ouvrez la procédure et vérifiez la faute et le degré.",
       "Émettez la convocation et attendez la réponse dans le délai.",
       "Recueillez le visa du rapporteur, puis délibérez.",
     ],
@@ -765,9 +765,9 @@ const MODULES: ModuleAide[] = [
     icone: "account_tree",
     titre: "Structures du ministère",
     chemin: "/app/structures",
-    resume: "L'organigramme, les pôles, les grades et le référentiel des emplois.",
+    resume: "L'organigramme, les programmes, les grades et le référentiel des emplois.",
     fait: [
-      "Il décrit l'organigramme du ministère : les pôles, les directions, les services, les grades et les emplois de référence.",
+      "Il décrit l'organigramme du ministère : les programmes, les directions, les services, les grades et les emplois de référence.",
       "Il sert de socle aux comptes, aux affectations et aux fiches de besoin : sans structure, le reste ne se rattache pas.",
     ],
     cas: [
@@ -775,7 +775,7 @@ const MODULES: ModuleAide[] = [
       "Vous ajoutez un emploi au référentiel pour la nomenclature. Il n'apparaît dans la liste des postes de la dotation que lorsqu'un agent le tient déjà.",
     ],
     circuit: [
-      "La création d'un pôle, d'une structure, d'un grade ou d'un emploi est immédiate.",
+      "La création d'un programme, d'une structure, d'un grade ou d'un emploi est immédiate.",
       "Il n'y a pas de visa. Une structure qui porte encore des comptes ou des demandes ne se retire pas.",
     ],
     obligations: [
@@ -784,21 +784,21 @@ const MODULES: ModuleAide[] = [
       "Le référentiel des emplois sert la nomenclature. La liste des postes de la dotation, elle, vient des emplois déjà tenus par les agents.",
     ],
     fonctionnement: [
-      "Les pôles regroupent les structures. Chaque structure a un code, un nom, un niveau et un parent.",
+      "Les programmes regroupent les structures. Chaque structure a un code, un nom, un niveau et un parent.",
       "Les grades portent la catégorie et l'état en vigueur.",
       "Les emplois du référentiel sont classés par famille et par grade.",
     ],
     fonctionnalites: [
-      "Créer et modifier un pôle ou une structure.",
+      "Créer et modifier un programme ou une structure.",
       "Tenir les grades et les emplois.",
-      "Filtrer l'organigramme par pôle.",
+      "Filtrer l'organigramme par programme.",
     ],
     exports: [
       "Télécharger le modèle prépare modele-structures.xlsx, le classeur vierge pour importer des structures.",
       "L'organigramme, les grades et les emplois ne s'exportent pas en l'état.",
     ],
     marche: [
-      "Créez le pôle, puis les directions, puis les services.",
+      "Créez le programme, puis les directions, puis les services.",
       "Rattachez ensuite les comptes dans Gestion des utilisateurs.",
     ],
   },
@@ -1191,7 +1191,7 @@ const VOLETS: Record<string, Volet[]> = {
     { id: "recrutement-reaffectation", titre: "Réaffectation après concours", texte: "L'agent change d'emploi après un concours professionnel.", cas: "Le concours est publié. Vous réaffectez l'agent sur le nouvel emploi, toujours choisi parmi les intitulés déjà tenus." },
   ],
   structures: [
-    { id: "structures-organigramme", titre: "Organigramme", texte: "Les pôles, puis les directions, sous-directions et services, chacun avec son parent.", cas: "Une sous-direction est créée. Vous l'ajoutez sous sa direction avant d'y rattacher des comptes." },
+    { id: "structures-organigramme", titre: "Organigramme", texte: "Les programmes, puis les directions, sous-directions et services, chacun avec son parent.", cas: "Une sous-direction est créée. Vous l'ajoutez sous sa direction avant d'y rattacher des comptes." },
     { id: "structures-grades", titre: "Grades", texte: "La catégorie et l'état en vigueur de chaque grade. La limite d'âge des grades A4 à A7 s'appuie sur cette liste.", cas: "Un grade n'est plus attribué. Vous le laissez au référentiel et vous le marquez hors vigueur, sans effacer les dossiers qui le portent." },
     { id: "structures-emplois", titre: "Emplois", texte: "Le référentiel classé par famille et par grade. Il sert la nomenclature. La dotation, elle, ne propose que les emplois déjà tenus par des agents.", cas: "Vous créez l'emploi « auditeur » dans le référentiel. Il n'entre dans la liste des postes de Recrutement que le jour où un agent le tient." },
   ],

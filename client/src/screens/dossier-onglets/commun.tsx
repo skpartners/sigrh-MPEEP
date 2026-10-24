@@ -1,5 +1,6 @@
+import { FilVisas } from "../../ui/FilVisas";
 import { useState, type ReactNode } from "react";
-import { ApiError, mediaUrl, telecharger } from "../../api/client";
+import { ApiError, telecharger } from "../../api/client";
 import type { Dossier } from "../../api/types";
 import { useFeedback } from "../../ui/Feedback";
 import { Icone } from "../../ui/Icone";
@@ -95,11 +96,16 @@ export function CircuitDemande({ demande, clos = false, suite }: { demande: Dema
           </span>
         </div>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-3 pt-2">
-        {demande.visas.map((visa) => (
-          <CarteEtape key={visa.ordre} visa={visa} courant={courant} />
-        ))}
-      </div>
+      <FilVisas
+        visas={demande.visas.map((visa) => ({
+          ...visa,
+          etat: /refus|sans suite/i.test(visa.avis) ? "refus" : visa.ordre < courant ? "ok" : "attente",
+        }))}
+        enCours={!clos}
+        ordreActuel={clos ? null : courant}
+        libelleActuel="En cours"
+        libelle={`Circuit de la demande ${demande.reference}`}
+      />
       {suite}
       <DocumentSigne demande={demande} />
     </div>
@@ -141,35 +147,6 @@ export function DocumentSigne({ demande }: { demande: Demande }) {
         <Icone nom="download" />Voir le document signé
       </button>
       {erreur ? <p role="alert" className="basis-full text-sm text-error">{erreur}</p> : null}
-    </div>
-  );
-}
-
-function CarteEtape({ visa, courant }: { visa: Demande["visas"][number]; courant: number }) {
-  const passe = visa.ordre < courant;
-  const encours = visa.ordre === courant;
-  const fond = encours ? "bg-secondary-fixed/30" : passe ? "bg-surface-container-low" : "bg-surface-container-low opacity-70";
-  const badge = encours ? "bg-secondary-container text-on-secondary-container" : passe ? "bg-primary text-on-primary" : "bg-surface-container-high text-on-surface-variant";
-  const couleur = encours ? "text-secondary" : passe ? "text-primary" : "text-on-surface-variant";
-  return (
-    <div className={`p-3.5 rounded-lg ${fond} flex flex-col justify-between space-y-3`}>
-      <div className="flex items-center justify-between">
-        <span className={`font-code-num text-code-num px-2 py-0.5 rounded ${badge} font-bold`}>
-          {encours ? `Étape ${visa.ordre} • En cours` : `Étape ${visa.ordre}`}
-        </span>
-        <Icone nom={encours ? "sync" : passe ? "check_circle" : "radio_button_unchecked"} className={`${couleur} text-lg${encours ? " animate-spin" : ""}`} />
-      </div>
-      <div>
-        <p className="font-label-md text-label-md text-on-surface font-bold">{visa.instance}</p>
-        <p className="font-body-sm text-body-sm text-on-surface-variant">{visa.titulaire || visa.avis}</p>
-        <p className={`font-label-sm text-label-sm ${couleur} font-semibold mt-1`}>{visa.date ? dateFr(visa.date) : "En attente de transmission"}</p>
-        {visa.signature_url ? (
-          <div className="mt-2 flex h-12 items-center justify-center rounded bg-white px-2">
-            <img src={mediaUrl(visa.signature_url)} alt={`Signature de ${visa.titulaire || visa.instance}`} className="max-h-10 max-w-full object-contain" />
-          </div>
-        ) : null}
-      </div>
-      <span className="font-label-sm text-label-sm text-on-surface-variant">{visa.fonction || visa.avis}</span>
     </div>
   );
 }

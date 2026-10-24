@@ -1,4 +1,4 @@
-"""Import groupé des pôles, structures, grades et emplois du ministère."""
+"""Import groupé des programmes (anciens pôles), structures, grades et emplois du ministère."""
 
 import zipfile
 from xml.etree import ElementTree
@@ -27,7 +27,7 @@ NON = {"non", "n", "no", "faux", "false", "0"}
 POLES = (("nom", "Nom", ()),)
 STRUCTURES = (
     ("nom", "Nom", ("structure",)),
-    ("pole", "Pôle", ("pole",)),
+    ("pole", "Programme", ("pole", "programme")),
     ("niveau", "Niveau", ()),
     ("rattachement", "Rattachement", ("parent",)),
 )
@@ -49,11 +49,11 @@ def modele() -> bytes:
     for code, libelle in FAMILLES:
         familles.append([code, libelle])
     return habiller([
-        {"nom": "Pôles", "titre": "SIGRH  ·  Pôles ministériels", "sous_titre": "Une ligne crée un pôle, ou met à jour un pôle déjà nommé.", "notice": "Le nom est l'identifiant. Ne le renommez pas dans l'en-tête.", "lignes": [["Nom"]], "saisies": 12},
-        {"nom": "Structures", "titre": "SIGRH  ·  Structures", "sous_titre": "Direction générale, direction centrale, sous-direction ou service.", "notice": "Le pôle et le rattachement se saisissent par leur nom exact. Une cellule vide conserve la valeur enregistrée.", "lignes": [["Nom", "Pôle", "Niveau", "Rattachement"]], "saisies": 20},
+        {"nom": "Programmes", "titre": "SIGRH  ·  Programmes du ministère", "sous_titre": "Une ligne crée un programme, ou met à jour un programme déjà nommé.", "notice": "Le nom est l'identifiant. Ne le renommez pas dans l'en-tête.", "lignes": [["Nom"]], "saisies": 12},
+        {"nom": "Structures", "titre": "SIGRH  ·  Structures", "sous_titre": "Direction générale, direction centrale, sous-direction ou service.", "notice": "Le programme et le rattachement se saisissent par leur nom exact. Une cellule vide conserve la valeur enregistrée.", "lignes": [["Nom", "Programme", "Niveau", "Rattachement"]], "saisies": 20},
         {"nom": "Grades", "titre": "SIGRH  ·  Grades", "sous_titre": "Référentiel indiciaire.", "notice": "La catégorie est A, B, C ou D. En vigueur : oui ou non.", "lignes": [["Code", "Catégorie", "Définition", "En vigueur"]], "saisies": 16, "onglet": "FF0A5E3A"},
         {"nom": "Emplois", "titre": "SIGRH  ·  Emplois", "sous_titre": "Emplois classés par famille et par grade.", "notice": "La famille se saisit par son code ou son libellé (feuille Familles). Le grade est son code, par exemple A4.", "lignes": [["Nom", "Famille", "Grade"]], "saisies": 20, "onglet": "FF0A5E3A"},
-        {"nom": "Consignes", "titre": "Mode d'emploi", "sous_titre": "Quatre feuilles sont lues : Pôles, Structures, Grades et Emplois.", "notice": "Une ligne crée un élément ou met à jour un élément déjà nommé. Une cellule vide conserve la valeur enregistrée. Le pôle, le rattachement, la famille et le grade se saisissent par leur nom ou leur code. Si une ligne est incorrecte, aucune modification n'est enregistrée.", "lignes": _consignes()[_consignes().index(["Feuille", "Colonne", "Exemple"]):], "onglet": "FF0B1C30"},
+        {"nom": "Consignes", "titre": "Mode d'emploi", "sous_titre": "Quatre feuilles sont lues : Programmes, Structures, Grades et Emplois.", "notice": "Une ligne crée un élément ou met à jour un élément déjà nommé. Une cellule vide conserve la valeur enregistrée. Le programme, le rattachement, la famille et le grade se saisissent par leur nom ou leur code. Si une ligne est incorrecte, aucune modification n'est enregistrée.", "lignes": _consignes()[_consignes().index(["Feuille", "Colonne", "Exemple"]):], "onglet": "FF0B1C30"},
         {"nom": "Familles", "titre": "Familles d'emplois", "sous_titre": "Aide à la saisie. Cette feuille n'est pas importée.", "notice": "Recopiez le code ou le libellé dans la colonne Famille.", "lignes": familles, "onglet": "FF9E4300"},
     ])
 
@@ -62,7 +62,8 @@ def importer(contenu: bytes) -> dict:
     if len(contenu) > TAILLE_MAX:
         raise ImportInvalide("Le classeur dépasse 5 Mo.")
     try:
-        poles = _feuille(contenu, "Pôles", POLES)
+        # L'ancienne feuille « Pôles » reste lue : un classeur déjà préparé n'est pas à refaire.
+        poles = _feuille(contenu, "Programmes", POLES) or _feuille(contenu, "Pôles", POLES)
         structures = _feuille(contenu, "Structures", STRUCTURES)
         grades = _feuille(contenu, "Grades", GRADES)
         emplois = _feuille(contenu, "Emplois", EMPLOIS)
@@ -151,18 +152,18 @@ def _poles(lignes, connus, erreurs):
     nouveaux = []
     for numero, valeurs in lignes:
         try:
-            nom = _obligatoire(valeurs.get("nom"), "Le nom du pôle", numero)
+            nom = _obligatoire(valeurs.get("nom"), "Le nom du programme", numero)
             if len(nom) > 180:
-                raise _Ligne(numero, "Le nom du pôle dépasse 180 caractères.")
+                raise _Ligne(numero, "Le nom du programme dépasse 180 caractères.")
             cle = _norm(nom)
             if cle in vus:
-                raise _Ligne(numero, f"Le pôle « {nom} » est déjà présent dans le classeur.")
+                raise _Ligne(numero, f"Le programme « {nom} » est déjà présent dans le classeur.")
             vus.add(cle)
             if cle not in par_nom and not any(_norm(item.code) == cle for item in connus):
                 nouveaux.append(nom)
                 par_nom[cle] = nom
         except _Ligne as exc:
-            erreurs.append(_erreur("Pôles", exc))
+            erreurs.append(_erreur("Programmes", exc))
     return nouveaux, erreurs
 
 
@@ -186,7 +187,7 @@ def _structures(lignes, connues, poles, nouveaux_poles, erreurs):
             if not _vide(brute):
                 pole = _resoudre_pole(_texte(brute), poles, nouveaux_poles, numero)
             elif actuelle is None:
-                raise _Ligne(numero, "Le pôle est obligatoire pour une nouvelle structure.")
+                raise _Ligne(numero, "Le programme est obligatoire pour une nouvelle structure.")
             niveau = _niveau_saisi(valeurs.get("niveau"), numero) if not _vide(valeurs.get("niveau")) else ""
             rattachement = "" if _vide(valeurs.get("rattachement")) else _texte(valeurs.get("rattachement"))
             if rattachement and _norm(rattachement) not in par_nom and _norm(rattachement) not in noms_feuille:
@@ -377,7 +378,7 @@ def _resoudre_pole(texte: str, poles, nouveaux, numero: int) -> str:
     for nom in nouveaux:
         if _norm(nom) == cle:
             return nom
-    raise _Ligne(numero, f"Le pôle « {texte} » est inconnu. Utilisez son nom exact, ou ajoutez-le sur la feuille Pôles.")
+    raise _Ligne(numero, f"Le programme « {texte} » est inconnu. Utilisez son nom exact, ou ajoutez-le sur la feuille Programmes.")
 
 
 def _pole_enregistre(nom: str) -> PoleMinisteriel:
@@ -385,7 +386,7 @@ def _pole_enregistre(nom: str) -> PoleMinisteriel:
     for item in PoleMinisteriel.objects.all():
         if _norm(item.nom) == cle or _norm(item.code) == cle:
             return item
-    raise ImportInvalide(f"Le pôle « {nom} » est introuvable.")
+    raise ImportInvalide(f"Le programme « {nom} » est introuvable.")
 
 
 def _structure_enregistree(nom: str) -> EntiteTutelle:
@@ -409,7 +410,7 @@ def _verifier_rattachement(item: EntiteTutelle) -> None:
     if parent is None:
         return
     if parent.pole_id != item.pole_id:
-        raise ImportInvalide(f"« {item.nom} » et « {parent.nom} » n'appartiennent pas au même pôle.")
+        raise ImportInvalide(f"« {item.nom} » et « {parent.nom} » n'appartiennent pas au même programme.")
     if item.niveau == "direction-centrale" and parent.niveau != "direction-generale":
         raise ImportInvalide(f"« {item.nom} » se rattache à une direction générale.")
     if item.niveau == "sous-direction" and parent.niveau != "direction-centrale":
@@ -483,7 +484,7 @@ def _maj(structures, grades, emplois) -> int:
 
 def _bilan(poles, structures, grades, emplois) -> str:
     ajouts = [
-        _compte(len(poles), "pôle ajouté", "pôles ajoutés"),
+        _compte(len(poles), "programme ajouté", "programmes ajoutés"),
         _compte(sum(item["action"] == "creer" for item in structures), "structure ajoutée", "structures ajoutées"),
         _compte(sum(item["action"] == "creer" for item in grades), "grade ajouté", "grades ajoutés"),
         _compte(sum(item["action"] == "creer" for item in emplois), "emploi ajouté", "emplois ajoutés"),
@@ -520,10 +521,10 @@ def _joindre(morceaux: list[str]) -> str:
 def _consignes() -> list[list]:
     return [
         ["Mode d'emploi"],
-        ["Quatre feuilles sont lues : Pôles, Structures, Grades et Emplois. Les autres sont des aides."],
+        ["Quatre feuilles sont lues : Programmes, Structures, Grades et Emplois. Les autres sont des aides."],
         ["Une ligne crée un élément. S'il existe déjà, les colonnes renseignées le mettent à jour."],
         ["Une cellule vide, sur une ligne déjà connue, conserve la valeur enregistrée."],
-        ["Le pôle d'une structure se saisit par son nom exact ou son code. Un pôle nouveau se déclare sur la feuille Pôles."],
+        ["Le programme d'une structure se saisit par son nom exact ou son code. Un programme nouveau se déclare sur la feuille Programmes."],
         ["Le niveau est direction générale, direction centrale, sous-direction ou service. Vide, il est déduit du nom. Une cellule prend le rang de direction centrale."],
         ["Le rattachement est la direction générale d'une direction centrale, la direction centrale d'une sous-direction, la sous-direction d'un service. Une direction générale n'en a pas."],
         ["La catégorie d'un grade est A, B, C ou D. En vigueur : oui ou non."],
@@ -533,9 +534,9 @@ def _consignes() -> list[list]:
         ["Si une ligne est incorrecte, aucune modification n'est enregistrée."],
         [],
         ["Feuille", "Colonne", "Exemple"],
-        ["Pôles", "Nom", "Pôle de la transformation"],
+        ["Programmes", "Nom", "Programme de la transformation"],
         ["Structures", "Nom", "Cellule du suivi des réformes"],
-        ["Structures", "Pôle", "DGPE"],
+        ["Structures", "Programme", "DGPE"],
         ["Structures", "Niveau", "direction centrale"],
         ["Structures", "Rattachement", "Direction Générale du Portefeuille de l'État"],
         ["Grades", "Code", "Z9"],

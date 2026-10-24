@@ -4,6 +4,7 @@ import { ApiError, api } from "../../api/client";
 import { useFeedback } from "../../ui/Feedback";
 import { BOUTON_PRIMAIRE, BOUTON_SECONDAIRE, Modale } from "../../ui/Modale";
 import { Pagination, usePagination } from "../../ui/Pagination";
+import { Icone } from "../../ui/Icone";
 import { CalendrierAnnuel, PERIODES_VIDES, resumePeriodes, totalJours, type Collegue, type Periodes } from "../../ui/CalendrierAnnuel";
 
 type Mouvement = { auteur: string; action: string; motif: string; debut: string | null; fin: string | null; debut2?: string | null; fin2?: string | null; quand: string };
@@ -34,6 +35,8 @@ type Limite = { niveau: string; libelle: string; date: string };
 type Campagne = {
   id: number;
   exercice: number;
+  /** Arrêté publié, ou clôturée par l'équipe RH. */
+  cloturee?: boolean;
   statut: string;
   statut_libelle: string;
   phase: string;
@@ -158,6 +161,22 @@ export function PlanificationConges({ personnel = false }: { personnel?: boolean
 
   if (page.isLoading) return null;
   if (!donnees) return null;
+  // Dans l'espace de l'agent, la planification n'existe que pendant une campagne : elle disparaît dès qu'elle est clôturée
+  // (arrêté publié) et n'apparaît pas tant qu'aucune n'est lancée. Ses dates arrêtées restent proposées dans sa demande de congé.
+  // L'équipe RH et le DRH, eux, gardent la campagne et son arrêté.
+  if (personnel && (!donnees.campagne || donnees.campagne.statut === "publiee" || donnees.campagne.cloturee)) return null;
+  // Pourquoi « Valider mes congés » est désactivé ; vide quand le bouton est actif.
+  const droitMoi = donnees.droit_moi;
+  const joursChoisis = totalJours(periodes);
+  const raisonValidation = deposer.isPending
+    ? "Envoi de vos dates en cours."
+    : !debut || !fin
+      ? "Choisissez d'abord vos dates sur le calendrier : cliquez sur le premier jour, puis sur le dernier."
+      : droitMoi && joursChoisis < droitMoi
+        ? `Il reste ${droitMoi - joursChoisis} jour${droitMoi - joursChoisis > 1 ? "s" : ""} à placer : vos congés doivent couvrir exactement vos ${droitMoi} jours de droit (en deux temps si besoin).`
+        : droitMoi && joursChoisis > droitMoi
+          ? `Vous dépassez votre droit de ${joursChoisis - droitMoi} jour${joursChoisis - droitMoi > 1 ? "s" : ""} : réduisez vos périodes à ${droitMoi} jours au total.`
+          : "";
   const moi = donnees.plans.find((plan) => plan.moi);
   // Dans son espace, l'agent ne voit la campagne que si elle le concerne.
   if (personnel && (!campagne || (campagne.statut === "publiee" && !moi))) return null;
@@ -196,10 +215,24 @@ export function PlanificationConges({ personnel = false }: { personnel?: boolean
 
       {campagne?.formulaire ? (
         <div className="space-y-3">
-          <p className="font-label-md text-label-md text-on-surface">Choisissez le premier jour, puis le dernier. Vous pouvez prendre vos congés en deux temps.</p>
-          <CalendrierAnnuel annee={campagne.exercice} valeur={periodes} onChange={setPeriodes} droit={donnees.droit_moi} collegues={donnees.collegues} />
+          {/* Plié par défaut : le calendrier est grand, on ne l'ouvre que pour choisir ses dates. */}
+          <details className="group rounded-xl border border-hairline p-3">
+            <summary className="flex cursor-pointer flex-wrap items-center gap-2 font-label-lg text-label-lg font-bold text-on-surface">
+              <Icone nom="expand_more" className="text-xl transition-transform group-open:rotate-180" />
+              Calendrier de la campagne {campagne.exercice} · choisir mes dates
+              <span className="font-body-sm text-body-sm font-normal text-on-surface-variant">{resumePeriodes(periodes) || "Aucune période choisie"}</span>
+            </summary>
+            <div className="mt-3 space-y-3">
+              <p className="font-label-md text-label-md text-on-surface">Choisissez le premier jour, puis le dernier. Vous pouvez prendre vos congés en deux temps.</p>
+              <CalendrierAnnuel annee={campagne.exercice} valeur={periodes} onChange={setPeriodes} droit={donnees.droit_moi} collegues={donnees.collegues} />
+            </div>
+          </details>
           <div className="flex flex-wrap items-center justify-end gap-3">
-            <button type="button" className={BOUTON_PRIMAIRE} disabled={!debut || !fin || (Boolean(donnees.droit_moi) && totalJours(periodes) !== donnees.droit_moi) || deposer.isPending} onClick={() => deposer.mutate()}>Valider mes congés</button>
+            {/* L'infobulle est portée par l'enveloppe : un bouton désactivé ne reçoit pas le survol. */}
+            <span title={raisonValidation} className={raisonValidation ? "cursor-not-allowed" : undefined}>
+              <button type="button" className={BOUTON_PRIMAIRE} disabled={Boolean(raisonValidation)} aria-describedby={raisonValidation ? "raison-validation" : undefined} onClick={() => deposer.mutate()}>Valider mes congés</button>
+            </span>
+            {raisonValidation ? <span id="raison-validation" className="sr-only">{raisonValidation}</span> : null}
           </div>
         </div>
       ) : null}

@@ -1,3 +1,4 @@
+import { FilVisas } from "../../ui/FilVisas";
 import type { ReactNode } from "react";
 import type { Dossier } from "../../api/types";
 import { Pagination, usePagination } from "../../ui/Pagination";
@@ -178,18 +179,27 @@ export function OngletNotations({ agent }: { agent: Dossier }) {
           {/* Circuit de validation */}
           <div className="bg-surface-container-lowest rounded-xl shadow-sm p-6">
             <h2 className="font-headline-sm text-headline-sm text-on-surface pb-4">Circuit de validation</h2>
-            <ol className="space-y-4">
-              <Etape numero={1} titre="Avis du supérieur hiérarchique direct (N+1)" etat="Signé" texte={`« ${courante.appreciation} »`} signataire={`${courante.evaluateur}, ${courante.fonction_evaluateur}`} />
-              <Etape numero={2} titre="Visa du directeur des ressources humaines" etat={courante.vise_le ? "Visa apposé" : "En attente"} texte={courante.avis_drh || "Le visa du DRH n'est pas encore apposé."} quand={courante.vise_le ? `Visé le ${horodatage(courante.vise_le)}` : ""} />
-              <Etape
-                numero={3}
-                titre="Notification à l'agent noté"
-                etat={courante.notifiee_le ? "Notifiée" : "À notifier"}
-                texte={courante.observation_agent ? `Observation de l'agent : « ${courante.observation_agent} »` : "L'agent n'a pas encore porté d'observation."}
-                signataire={agent.nom_complet}
-                quand={courante.notifiee_le ? `Notifiée le ${horodatage(courante.notifiee_le)}` : ""}
-              />
-            </ol>
+            <FilVisas
+              libelle="Circuit de validation de la notation"
+              enCours={!courante.notifiee_le}
+              libelleActuel="En cours"
+              visas={[
+                {
+                  ordre: 1, instance: "Avis du supérieur hiérarchique direct (N+1)", avis: "Signé", etat: "ok",
+                  titulaire: `${courante.evaluateur}, ${courante.fonction_evaluateur}`, date: "", detail: `« ${courante.appreciation} »`,
+                },
+                {
+                  ordre: 2, instance: "Visa du directeur des ressources humaines", avis: courante.vise_le ? "Visa apposé" : "En attente", etat: courante.vise_le ? "ok" : "attente",
+                  titulaire: "", date: "",
+                  detail: <>{courante.avis_drh || "Le visa du DRH n'est pas encore apposé."}{courante.vise_le ? <span className="block font-code-num">Visé le {horodatage(courante.vise_le)}</span> : null}</>,
+                },
+                {
+                  ordre: 3, instance: "Notification à l'agent noté", avis: courante.notifiee_le ? "Notifiée" : "À notifier", etat: courante.notifiee_le ? "ok" : "attente",
+                  titulaire: agent.nom_complet, date: "",
+                  detail: <>{courante.observation_agent ? `Observation de l'agent : « ${courante.observation_agent} »` : "L'agent n'a pas encore porté d'observation."}{courante.notifiee_le ? <span className="block font-code-num">Notifiée le {horodatage(courante.notifiee_le)}</span> : null}</>,
+                },
+              ]}
+            />
           </div>
         </div>
 
@@ -271,26 +281,3 @@ function Carte({ titre, badge, badgeTon, children }: { titre: string; badge: str
   );
 }
 
-function Etape({ numero, titre, etat, texte, signataire, quand }: { numero: number; titre: string; etat: string; texte: string; signataire?: string; quand?: string }) {
-  return (
-    <li className="bg-surface-container-low rounded-lg p-4 space-y-2">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <span className="font-label-lg text-label-lg text-on-surface font-semibold">
-          {numero}. {titre}
-        </span>
-        <span className="px-2 py-0.5 rounded bg-primary-fixed text-on-primary-fixed font-label-sm text-label-sm font-bold">{etat}</span>
-      </div>
-      <p className="font-body-sm text-body-sm text-on-surface-variant">{texte}</p>
-      <div className="flex flex-wrap items-center justify-between gap-2 font-label-sm text-label-sm text-on-surface-variant">
-        {signataire ? (
-          <span>
-            Signataire : <strong className="text-on-surface">{signataire}</strong>
-          </span>
-        ) : (
-          <span />
-        )}
-        {quand ? <span className="font-code-num">{quand}</span> : null}
-      </div>
-    </li>
-  );
-}

@@ -432,6 +432,7 @@ class ActeDemandable(models.Model):
     periode = models.BooleanField(default=False, help_text="L'agent indique une date de début et une date de fin.")
     destinataire = models.BooleanField(default=False, help_text="L'agent peut préciser à qui l'acte est destiné.")
     justificatif = models.CharField(max_length=200, blank=True, help_text="Conseil affiché pour le justificatif à joindre.")
+    justificatif_obligatoire = models.BooleanField(default=False, help_text="La demande n'est pas recevable sans justificatif.")
     ordre = models.PositiveSmallIntegerField(default=0)
     parent = models.ForeignKey("self", null=True, blank=True, on_delete=models.PROTECT, related_name="enfants")
     libelle_groupe = models.CharField(max_length=160, blank=True, help_text="Titre du groupe dans la liste des actes, quand la rubrique en a ; sinon son libellé")
@@ -827,6 +828,8 @@ class Enfant(models.Model):
     sexe = models.CharField(max_length=1, choices=[("H", "Garçon"), ("F", "Fille")])
     date_naissance = models.DateField(null=True, blank=True)
     lieu_naissance = models.CharField(max_length=160, blank=True)
+    # Acte de naissance versé au dossier personnel numérique (rubrique « Actes d'état civil »).
+    acte_naissance = models.ForeignKey("PieceJointe", null=True, blank=True, on_delete=models.SET_NULL, related_name="enfants_acte")
 
     class Meta:
         ordering = ["date_naissance", "id"]
@@ -973,7 +976,7 @@ class Notification(models.Model):
     class Categorie(models.TextChoices):
         VISA = "visa", "Visa à apposer"
         DEMANDE = "demande", "Demande en circuit"
-        RELEVE = "releve", "Relève des postes clés"
+        RELEVE = "releve", "Avis et mouvements"
         DOSSIER = "dossier", "Dossier agent"
         SYSTEME = "systeme", "Système"
 
@@ -1372,22 +1375,25 @@ class ProcedureDisciplinaire(models.Model):
     saisine = models.DateField()
     grief = models.CharField(max_length=160)
     description = models.TextField()
-    degre = models.PositiveSmallIntegerField(default=1, help_text="Degré de sanction encouru (1 à 3)")
+    degre = models.PositiveSmallIntegerField(default=1, help_text="Degré de sanction encouru (1 ou 2) ; 0 : non-lieu")
     rapporteur = models.CharField(max_length=120, blank=True)
     stade = models.CharField(max_length=120)
     stade_detail = models.CharField(max_length=160, blank=True)
     avis = models.CharField(max_length=20, choices=Avis.choices, default=Avis.INSTRUCTION)
 
     class Phase(models.TextChoices):
-        DEMANDE_EXPLICATION = "demande_explication", "Demande d'explication"
-        INSTRUCTION_CONSEIL = "instruction_conseil", "Instruction devant le conseil de discipline"
-        DECISION_EXECUTION = "decision_execution", "Décision et exécution"
+        INSTRUCTION = "instruction", "Instruction"
+        AUDIENCE = "audience", "Audience"
+        DECISION = "decision", "Décision"
 
-    phase = models.CharField(max_length=20, choices=Phase.choices, default=Phase.DEMANDE_EXPLICATION)
+    phase = models.CharField(max_length=20, choices=Phase.choices, default=Phase.INSTRUCTION)
     sanction_nature = models.CharField(max_length=20, blank=True, help_text="Nature de la sanction prononcée (décision et exécution)")
     decision = models.CharField(max_length=240, blank=True)
     date_decision = models.DateField(null=True, blank=True)
     executee_le = models.DateField(null=True, blank=True)
+    # Durée de la sanction, en jours, quand elle en a une (exclusion temporaire…) ; réintégration quand elle prend fin.
+    duree_jours = models.PositiveSmallIntegerField(null=True, blank=True)
+    reintegre_le = models.DateField(null=True, blank=True)
 
     class Meta:
         ordering = ["saisine", "reference"]
@@ -1441,10 +1447,9 @@ class DossierRetraite(models.Model):
     """Dossier de départ à la retraite instruit par la sous-direction des carrières."""
 
     class Statut(models.TextChoices):
-        QUITTANCE = "quittance", "Quittance de fin de gestion"
-        ARRETE = "arrete", "Arrêté signé"
-        TRANSMIS = "transmis", "Transmis à la CGRAE"
-        NOTIFIE = "notifie", "CGRAE notifiée"
+        NOTIFIE = "notifie", "Agent notifié"
+        RECEPTION = "reception", "Réception des dossiers"
+        TRANSMIS = "transmis", "Transmission à la CGRAE"
 
     agent = models.OneToOneField(Agent, on_delete=models.CASCADE, related_name="dossier_retraite")
     motif = models.ForeignKey(TypeFinCarriere, null=True, blank=True, on_delete=models.PROTECT, related_name="dossiers")
@@ -1453,7 +1458,7 @@ class DossierRetraite(models.Model):
     date_cessation = models.DateField(null=True, blank=True, help_text="Date d'effet des cessations saisies (démission, décès…).")
     decret = models.CharField(max_length=80, blank=True, help_text="Référence du décret présidentiel qui reporte la retraite.")
     date_decret = models.DateField(null=True, blank=True)
-    statut = models.CharField(max_length=20, choices=Statut.choices, default=Statut.QUITTANCE)
+    statut = models.CharField(max_length=20, choices=Statut.choices, default=Statut.NOTIFIE)
     statut_detail = models.CharField(max_length=160, blank=True)
 
     class Meta:
@@ -1550,6 +1555,28 @@ class CompositionStatistique(models.Model):
         ordering = ["-modifiee_le", "-id"]
         verbose_name = "composition statistique"
         verbose_name_plural = "compositions statistiques"
+
+    def __str__(self) -> str:
+        return self.nom
+
+
+class EtatStatistique(models.Model):
+    """État composé : plusieurs graphiques, chacun avec son tableau et ses points à retenir, suivis d'une synthèse.
+
+    La configuration porte le titre, les blocs (tableau croisé, titre, commentaires) et leur ordre.
+    """
+
+    nom = models.CharField(max_length=160)
+    auteur = models.ForeignKey(User, on_delete=models.CASCADE, related_name="etats_statistiques")
+    modele = models.SlugField(max_length=40, blank=True, help_text="Composition prête dont l'état est parti (état du personnel…).")
+    configuration = models.JSONField(default=dict, blank=True)
+    creee_le = models.DateTimeField(auto_now_add=True)
+    modifiee_le = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-modifiee_le", "-id"]
+        verbose_name = "état statistique composé"
+        verbose_name_plural = "états statistiques composés"
 
     def __str__(self) -> str:
         return self.nom
@@ -1748,6 +1775,8 @@ class CampagnePlanConge(models.Model):
         User, null=True, blank=True, on_delete=models.SET_NULL, related_name="campagnes_conges_accordees",
     )
     creee_le = models.DateTimeField(auto_now_add=True)
+    # Clôture anticipée par l'équipe RH : la campagne n'est plus proposée aux agents, sans attendre l'arrêté.
+    cloturee_le = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         ordering = ["-exercice"]
@@ -1873,6 +1902,8 @@ class ParametresMinistere(models.Model):
     admin_matricule = models.CharField(max_length=150, blank=True)
     inactivite_minutes = models.PositiveSmallIntegerField(default=15)
     quorum_presence_pourcent = models.PositiveSmallIntegerField(default=65)
+    # Vrai : le quorum du ministère est la moyenne de ceux que les responsables ont définis dans leurs structures (65 % faute d'en trouver).
+    quorum_automatique = models.BooleanField(default=True)
     delai_visa_acte_jours = models.PositiveSmallIntegerField(default=2)
     delai_validation_hierarchie_jours = models.PositiveSmallIntegerField(default=3)
     couleur_principale = models.CharField(max_length=7, default="#042F32")
@@ -1964,6 +1995,7 @@ class PositionAdministrative(models.Model):
         MISE_A_DISPOSITION = "mise_a_disposition", "Mise à disposition"
         DISPONIBILITE = "disponibilite", "Disponibilité"
         HORS_CADRE = "hors_cadre", "Position hors-cadre"
+        EXCLUSION = "exclusion", "Exclusion temporaire"
 
     # Libellé porté par la situation de l'agent tant que la période est en cours.
     SITUATIONS = {
@@ -1971,9 +2003,12 @@ class PositionAdministrative(models.Model):
         "mise_a_disposition": "Mis à disposition",
         "disponibilite": "En disponibilité",
         "hors_cadre": "Position hors-cadre",
+        "exclusion": "Exclu temporairement",
     }
 
     agent = models.ForeignKey(Agent, on_delete=models.CASCADE, related_name="positions")
+    # Exclusion temporaire prononcée par une procédure disciplinaire : la position suit la décision.
+    procedure = models.ForeignKey("ProcedureDisciplinaire", null=True, blank=True, on_delete=models.CASCADE, related_name="positions")
     type = models.CharField(max_length=20, choices=Type.choices)
     structure_accueil = models.CharField(max_length=200, blank=True, help_text="Administration, société ou institution d'accueil")
     motif = models.CharField(max_length=200, blank=True)
@@ -2014,6 +2049,9 @@ class DroitConge(models.Model):
     annee = models.PositiveSmallIntegerField()
     jours_dus = models.PositiveSmallIntegerField(default=0)
     jours_pris = models.PositiveSmallIntegerField(default=0)
+    # Reliquat annulé par le DRH : date et auteur de la remise à zéro.
+    remis_a_zero_le = models.DateField(null=True, blank=True)
+    remis_a_zero_par = models.CharField(max_length=160, blank=True)
 
     class Meta:
         ordering = ["annee"]

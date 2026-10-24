@@ -22,7 +22,7 @@ export function rangerStructures(entites: EntiteTutelle[]): { item: EntiteTutell
   return resultat;
 }
 
-/** Regroupe les structures par pôle, en respectant direction puis structures rattachées. */
+/** Regroupe les structures par programme, en respectant direction puis structures rattachées. */
 export function optionsEntites(entites: EntiteTutelle[]): ReactNode {
   const poles: { code: string; libelle: string }[] = [];
   for (const item of entites) {

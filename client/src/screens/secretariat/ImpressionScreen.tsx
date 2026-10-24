@@ -26,7 +26,7 @@ export function ImpressionScreen() {
           <Icone nom="print" className="text-lg" />Imprimer / Enregistrer en PDF
         </button>
         {ligne?.categorie === "conge" && document?.conge?.annuel ? (
-          <ChoixExercice debut={ligne.debut} auto={document.conge.exercice} valeur={choix} onChange={setChoix} classe="h-9 rounded border border-outline-variant bg-surface-container-lowest px-2" />
+          <ChoixExercice debut={ligne.debut} auto={document.conge.exercice} exercices={document.conge.exercices} valeur={choix} onChange={setChoix} classe="h-9 rounded border border-outline-variant bg-surface-container-lowest px-2" />
         ) : null}
         {ligne ? <span className="font-body-sm text-body-sm text-on-surface-variant">{ligne.nature} · {ligne.agent.nom_complet}</span> : null}
         {ligne && !ligne.imprimable ? (

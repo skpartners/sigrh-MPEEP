@@ -1,6 +1,7 @@
 from pathlib import Path
 from datetime import date
 
+from .normalisation import nom_complet_structure
 from .pieces import CATALOGUE_DOCUMENTS
 from .models import (
     Absence,
@@ -180,10 +181,30 @@ def famille(agent: Agent) -> dict:
                 "sexe": enfant.get_sexe_display(),
                 "date_naissance": enfant.date_naissance.isoformat() if enfant.date_naissance else "",
                 "lieu_naissance": enfant.lieu_naissance,
+                "acte_naissance": (
+                    {"id": enfant.acte_naissance.id, "intitule": enfant.acte_naissance.intitule, "fichier_url": enfant.acte_naissance.fichier.url if enfant.acte_naissance.fichier else ""}
+                    if enfant.acte_naissance_id
+                    else None
+                ),
             }
             for enfant in agent.enfants.all()
         ],
     }
+
+
+def _detail_activite(agent: Agent) -> str:
+    # Import différé : positions dépend de ce module.
+    from .positions import details_activite
+
+    return details_activite([agent]).get(agent.matricule, "")
+
+
+def _position_detaillee(agent: Agent) -> str:
+    """« En activité · Présence au poste » : la position, et ce que l'agent fait aujourd'hui quand il est en activité."""
+    from .positions import famille_position
+
+    detail = _detail_activite(agent)
+    return f"En activité · {detail}" if detail and famille_position(agent.situation) == "activite" else agent.situation
 
 
 def situation_administrative(agent: Agent) -> list[dict]:
@@ -214,7 +235,7 @@ def situation_administrative(agent: Agent) -> list[dict]:
             "libelle": "Date de prise de service dans la fonction",
             "valeur": agent.prise_service_fonction.isoformat() if agent.prise_service_fonction else "",
         },
-        {"libelle": "Positions", "valeur": agent.situation},
+        {"libelle": "Positions", "valeur": _position_detaillee(agent)},
     ]
 
 
@@ -490,8 +511,10 @@ def agent_detail(agent: Agent) -> dict:
     payload = agent_brief(agent)
     payload.update(
         {
+            "situation_detail": _detail_activite(agent),
             "anciennete": agent.anciennete,
             "prise_service": agent.prise_service,
+            "direction_complete": nom_complet_structure(agent.direction or agent.structure),
             "situation_administrative": situation_administrative(agent),
             "situation_saisie": situation_saisie(agent),
             "parcours": parcours_agent(agent),

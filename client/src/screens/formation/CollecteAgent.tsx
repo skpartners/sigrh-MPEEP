@@ -19,10 +19,16 @@ function obstacle(module: Module, dejaCandidat: boolean): string | null {
   return null;
 }
 
+/** Un module est ouvert tant que ses inscriptions ne sont pas closes et qu'il reste des places. */
+function moduleOuvert(module: Module): boolean {
+  return !(module.inscriptions_fin && module.inscriptions_fin < new Date().toISOString().slice(0, 10)) && module.places_restantes > 0;
+}
+
 /** Collecte des besoins et inscriptions ouvertes, dans l'espace profil de l'agent. */
 export function CollecteAgent({ agent }: { agent: Dossier }) {
   const collecte = agent.collecte_formation;
-  const sessions = agent.sessions_formations ?? [];
+  // Seuls les modules ouverts s'affichent : la section « Modules ouverts aux inscriptions » disparaît quand il n'y en a aucun.
+  const sessions = (agent.sessions_formations ?? []).filter(moduleOuvert);
   const feedback = useFeedback();
   const client = useQueryClient();
   const [lignes, setLignes] = useState<string[]>([""]);
@@ -36,6 +42,9 @@ export function CollecteAgent({ agent }: { agent: Dossier }) {
   const enAttente = Boolean(collecte?.ouverte && !collecte.repondu);
   // Deux volets : les modules ouverts aux inscriptions, et la collecte des besoins lancée par l'équipe RH.
   const [volet, setVolet] = useState<"inscriptions" | "collecte">(enAttente ? "collecte" : "inscriptions");
+  // Une collecte clôturée (ou absente) quitte l'espace de l'agent, comme une campagne de congés close : seules les inscriptions restent.
+  const collecteVisible = Boolean(collecte?.ouverte);
+  const voletActif = collecteVisible ? volet : "inscriptions";
 
   async function envoyer(ras: boolean) {
     const besoins = ras ? [] : lignes.map((intitule) => intitule.trim()).filter(Boolean).map((intitule) => ({ intitule }));
@@ -61,26 +70,26 @@ export function CollecteAgent({ agent }: { agent: Dossier }) {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap gap-1 rounded-xl border border-hairline bg-surface-container-lowest p-1" role="tablist" aria-label="Volets de la formation">
+      {collecteVisible ? <div className="flex flex-wrap gap-1 rounded-xl border border-hairline bg-surface-container-lowest p-1" role="tablist" aria-label="Volets de la formation">
         {([
-          ["inscriptions", "how_to_reg", "Formations ouvertes aux inscriptions", false],
+          ["inscriptions", "how_to_reg", "Mes formations", false],
           ["collecte", "campaign", "Collecte des besoins de formation", enAttente],
         ] as const).map(([cle, icone, libelle, alerte]) => (
           <button
             key={cle}
             type="button"
             role="tab"
-            aria-selected={volet === cle}
+            aria-selected={voletActif === cle}
             onClick={() => setVolet(cle)}
-            className={`inline-flex items-center gap-2 rounded-lg px-4 py-2.5 font-label-md text-label-md transition-colors ${volet === cle ? "bg-primary text-on-primary font-semibold" : "text-on-surface-variant hover:bg-surface-container-low"}`}
+            className={`inline-flex items-center gap-2 rounded-lg px-4 py-2.5 font-label-md text-label-md transition-colors ${voletActif === cle ? "bg-primary text-on-primary font-semibold" : "text-on-surface-variant hover:bg-surface-container-low"}`}
           >
             <Icone nom={icone} className="text-lg" />{libelle}
             {alerte ? <span className="h-2 w-2 rounded-full bg-secondary-container" role="img" aria-label="Réponse attendue" /> : null}
           </button>
         ))}
-      </div>
+      </div> : null}
 
-      {volet === "collecte" ? (
+      {voletActif === "collecte" ? (
         <section className="rounded-xl border border-hairline bg-surface-container-lowest p-5 space-y-4" aria-labelledby="titre-collecte">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
@@ -170,11 +179,10 @@ export function CollecteAgent({ agent }: { agent: Dossier }) {
         </div>
       </section>
 
+      {sessions.length > 0 ? (
       <section className="rounded-xl border border-hairline bg-surface-container-lowest p-5" aria-labelledby="titre-modules">
         <h3 id="titre-modules" className="font-label-lg text-label-lg text-on-surface font-bold">Modules ouverts aux inscriptions</h3>
-        {sessions.length === 0 ? (
-          <p className="mt-3 font-body-sm text-body-sm text-on-surface-variant">Aucun module n'est ouvert pour le moment.</p>
-        ) : (
+        {(
           <ul className="mt-3 grid grid-cols-1 lg:grid-cols-2 gap-4">
             {sessions.map((module) => {
               const dejaCandidat = ouvertes.some((demande) => demande.nature === module.libelle);
@@ -207,6 +215,7 @@ export function CollecteAgent({ agent }: { agent: Dossier }) {
           </ul>
         )}
       </section>
+      ) : null}
 
       <div className="rounded-xl border border-hairline bg-surface-container-lowest p-5">
         <h3 className="font-label-lg text-label-lg text-on-surface font-bold">Parcours de formation</h3>
@@ -235,6 +244,13 @@ export function CollecteAgent({ agent }: { agent: Dossier }) {
       ) : null}
     </div>
   );
+}
+
+/** Ce qui attend l'agent dans l'onglet Formation : la collecte à renseigner, et les modules ouverts où il n'a pas encore postulé. */
+export function compteFormation(agent: Dossier): number {
+  const candidatures = agent.demandes.filter((item) => item.categorie === "formation" && !demandeClose(item));
+  const modules = (agent.sessions_formations ?? []).filter(moduleOuvert).filter((module) => !candidatures.some((demande) => demande.nature === module.libelle)).length;
+  return (pastilleCollecte(agent) ? 1 : 0) + modules;
 }
 
 export function pastilleCollecte(agent: Dossier): boolean {

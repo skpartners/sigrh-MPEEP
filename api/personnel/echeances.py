@@ -190,11 +190,23 @@ def demarrer_si_serveur() -> None:
 
 
 def _boucle() -> None:
+    """Sans Celery : les positions sont relevées toutes les 30 minutes, les échéances de congés toutes les six heures."""
+    from .discipline import surveiller_reintegrations
+    from .positions import synchroniser_tous
+
     time.sleep(5)
+    tour = 0
     while True:
         try:
             close_old_connections()
-            surveiller()
+            synchroniser_tous()
+            surveiller_reintegrations()
         except Exception:
-            logger.exception("Surveillance des échéances de congés")
-        time.sleep(6 * 3600)
+            logger.exception("Relevé des positions des agents")
+        if tour % 12 == 0:
+            try:
+                surveiller()
+            except Exception:
+                logger.exception("Surveillance des échéances de congés")
+        tour += 1
+        time.sleep(30 * 60)

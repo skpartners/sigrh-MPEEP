@@ -79,7 +79,13 @@ export function DocumentsAgent({ agent, edition = true }: { agent: Dossier; edit
                 return (
                   <li key={type.code} className="px-6 py-4 space-y-3">
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <p className="font-label-md text-label-md font-bold text-on-surface">{type.libelle}</p>
+                      <p className="flex flex-wrap items-center gap-2 font-label-md text-label-md font-bold text-on-surface">
+                        {type.libelle}
+                        <span className={`rounded-full px-2 py-0.5 font-label-sm text-label-sm font-bold ${type.obligatoire ? "bg-error-container text-on-error-container" : type.condition ? "bg-secondary-fixed text-on-secondary-fixed" : "bg-surface-container text-on-surface-variant"}`}>
+                          {type.obligatoire ? "Obligatoire" : type.condition ? "Selon la situation" : "Facultatif"}
+                        </span>
+                        {type.condition ? <span className="font-body-sm text-body-sm font-normal text-on-surface-variant">{type.condition}</span> : null}
+                      </p>
                       {modifiable ? (
                         <button type="button" onClick={() => setDepot({ rubrique: rubrique.code, type: type.code })}
                           className="inline-flex items-center gap-1.5 text-primary font-label-sm text-label-sm underline rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
@@ -214,7 +220,7 @@ function DepotDocument({ agent, initial, onClose }: { agent: Dossier; initial: {
         <label className="block space-y-1.5">
           <span className="block font-label-md text-label-md text-on-surface font-semibold">Type de document <span className="text-error">*</span></span>
           <Select className={CHAMP} value={type} onChange={(event) => setType(event.target.value)} required>
-            {groupe?.types.map((item) => <option key={item.code} value={item.code}>{item.libelle}</option>)}
+            {groupe?.types.map((item) => <option key={item.code} value={item.code}>{item.libelle}{item.obligatoire ? " (obligatoire)" : ""}</option>)}
           </Select>
         </label>
         <label className="block space-y-1.5">

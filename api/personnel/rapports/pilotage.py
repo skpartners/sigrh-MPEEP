@@ -68,10 +68,12 @@ def _corps_chiffre(user) -> dict:
     fonction = profil.fonction if profil is not None else ""
     lecteur = user.get_full_name() or user.username
     effectif = agents.count()
-    actifs = agents.filter(situation="En activité").count()
+    from ..positions import en_activite
+
+    actifs = en_activite(agents).count()
     femmes = agents.filter(sexe="F").count()
     notes = set(Evaluation.objects.filter(agent__in=agents, annee=exercice).values_list("agent_id", flat=True))
-    actifs_ids = set(agents.filter(situation="En activité").values_list("id", flat=True))
+    actifs_ids = set(en_activite(agents).values_list("id", flat=True))
     sans_note = len(actifs_ids - notes)
     horizon = aujourd_hui + timedelta(days=365)
     proches = 0
@@ -205,7 +207,7 @@ def _corps_pilotage(feuille, corps: dict) -> list:
     histoire += _bloc_personnes(
         feuille,
         "Procédures disciplinaires ouvertes",
-        ["Agent", "Grief", "Stade", "Degré"],
+        ["Agent", "Faute", "Stade", "Degré"],
         [
             [item.agent.nom_complet, item.grief, item.stade, str(item.degre)]
             for item in corps["procedures"]

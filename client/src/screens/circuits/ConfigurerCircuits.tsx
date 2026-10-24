@@ -1,3 +1,4 @@
+import { FilVisas } from "../../ui/FilVisas";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useId, useState } from "react";
 import { api } from "../../api/client";
@@ -104,17 +105,12 @@ export function ConfigurerCircuits() {
                       </button>
                     </div>
                   </div>
-                  <ol className="space-y-2">
-                    {circuit.etapes.map((etape) => (
-                      <li key={etape.ordre} className="flex items-center gap-3">
-                        <span className="w-7 h-7 rounded-full bg-primary text-on-primary font-code-num text-code-num flex items-center justify-center font-bold shrink-0">{etape.ordre}</span>
-                        <span>
-                          <span className="font-label-md text-label-md text-on-surface font-bold block">{etape.instance}</span>
-                          {etape.fonction ? <span className="font-body-sm text-body-sm text-on-surface-variant">{etape.fonction}</span> : null}
-                        </span>
-                      </li>
-                    ))}
-                  </ol>
+                  <FilVisas
+                    modele
+                    enCours={false}
+                    libelle="Étapes du circuit"
+                    visas={circuit.etapes.map((etape) => ({ ordre: etape.ordre, instance: etape.instance, avis: "", titulaire: etape.fonction ?? "", date: "" }))}
+                  />
                   <div className="flex flex-wrap gap-2">
                     {circuit.attributions.length === 0 ? (
                       <span className="font-body-sm text-body-sm text-on-surface-variant">Attribué à aucun élément.</span>

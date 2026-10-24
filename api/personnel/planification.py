@@ -14,7 +14,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from .taches import en_arriere_plan
-from .models import Absence, Agent, CampagnePlanConge, MouvementPlanConge, Notification, PlanConge, Profil, Publication, RepriseConge
+from .models import Absence, Agent, CampagnePlanConge, Demande, MouvementPlanConge, Notification, PlanConge, Profil, Publication, RepriseConge
 
 LIEN = "/app/carrieres/conges"
 
@@ -167,7 +167,7 @@ def _dans_le_delai(campagne: CampagnePlanConge, jour):
 
 def _avancer(campagne: CampagnePlanConge) -> None:
     """Ferme le choix des agents. Les dates manquantes restent à fixer par leur responsable."""
-    if campagne.statut != CampagnePlanConge.Statut.OUVERTE or timezone.localdate() <= campagne.limite_agents:
+    if campagne.cloturee_le is not None or campagne.statut != CampagnePlanConge.Statut.OUVERTE or timezone.localdate() <= campagne.limite_agents:
         return
     campagne.statut = CampagnePlanConge.Statut.REMONTEE
     campagne.save(update_fields=["statut"])
@@ -282,6 +282,8 @@ def _reprise(item: RepriseConge, user) -> dict:
 
 
 def _phase(campagne: CampagnePlanConge) -> str:
+    if campagne.cloturee_le is not None:
+        return "cloturee"
     if campagne.statut == CampagnePlanConge.Statut.ACCORD:
         return "accord"
     if campagne.statut == CampagnePlanConge.Statut.PUBLIEE:
@@ -325,24 +327,57 @@ def _limites(campagne: CampagnePlanConge) -> list[dict]:
 
 
 def _collegues(user, campagne: CampagnePlanConge | None) -> list[dict]:
-    """Les congés choisis par les collègues de la même structure, validés ou non : pour ne pas se placer sur leurs périodes."""
+    """Les plages déjà prises par les collègues de la même structure, pour ne pas se placer dessus.
+
+    Ce sont les congés choisis à la campagne (validés ou non), puis les congés demandés ou accordés depuis, hors refus.
+    """
+    from datetime import date, timedelta
+
     agent = Agent.objects.filter(matricule=user.username).first()
-    if campagne is None or agent is None or not agent.structure:
+    if agent is None or not agent.structure:
         return []
     pairs = list(Agent.objects.filter(structure=agent.structure).exclude(matricule=user.username).values_list("matricule", flat=True))
-    return [
-        {
-            "matricule": plan.agent.username,
-            "nom": _nom(plan.agent),
-            "debut": plan.debut.isoformat(),
-            "fin": plan.fin.isoformat(),
-            "debut2": plan.debut2.isoformat() if plan.debut2 else None,
-            "fin2": plan.fin2.isoformat() if plan.fin2 else None,
-            "palier": plan.palier,
-            "palier_libelle": plan.get_palier_display(),
-        }
-        for plan in campagne.plans.filter(agent__username__in=pairs).select_related("agent", "agent__profil")
-    ]
+    collegues: dict[str, dict] = {}
+    if campagne is not None:
+        for plan in campagne.plans.filter(agent__username__in=pairs).select_related("agent", "agent__profil"):
+            collegues[plan.agent.username] = {
+                "matricule": plan.agent.username,
+                "nom": _nom(plan.agent),
+                "debut": plan.debut.isoformat(),
+                "fin": plan.fin.isoformat(),
+                "debut2": plan.debut2.isoformat() if plan.debut2 else None,
+                "fin2": plan.fin2.isoformat() if plan.fin2 else None,
+                "palier": plan.palier,
+                "palier_libelle": plan.get_palier_display(),
+                "autres": [],
+            }
+    debut_annee = date(timezone.localdate().year - 1, 1, 1)
+    demandes = (
+        Demande.objects.filter(agent__matricule__in=pairs, categorie="conge", debut__isnull=False, fin__isnull=False, fin__gte=debut_annee)
+        .exclude(etape__icontains="refus")
+        .select_related("agent")
+        .order_by("debut")
+    )
+    for demande in demandes:
+        dernier = demande.fin - timedelta(days=1)  # `fin` est le jour de reprise
+        entree = collegues.get(demande.agent.matricule)
+        if entree is None:
+            collegues[demande.agent.matricule] = {
+                "matricule": demande.agent.matricule,
+                "nom": demande.agent.nom_complet,
+                "debut": demande.debut.isoformat(),
+                "fin": dernier.isoformat(),
+                "debut2": None,
+                "fin2": None,
+                "palier": "demande",
+                "palier_libelle": "Congé demandé",
+                "autres": [],
+            }
+            continue
+        deja = {(entree["debut"], entree["fin"]), (entree["debut2"], entree["fin2"])} | {(a["debut"], a["fin"]) for a in entree["autres"]}
+        if (demande.debut.isoformat(), dernier.isoformat()) not in deja:
+            entree["autres"].append({"debut": demande.debut.isoformat(), "fin": dernier.isoformat()})
+    return list(collegues.values())
 
 
 def _tableau(user) -> dict:
@@ -377,6 +412,8 @@ def _tableau(user) -> dict:
             "statut": campagne.statut,
             "statut_libelle": campagne.get_statut_display(),
             "phase": phase,
+            # Close : arrêté publié, ou clôturée par l'équipe RH. L'espace de l'agent ne la montre plus.
+            "cloturee": campagne.statut == CampagnePlanConge.Statut.PUBLIEE or campagne.cloturee_le is not None,
             "delai": campagne.delai.isoformat(),
             "limites": _limites(campagne),
             "communique": campagne.communique,
@@ -455,10 +492,14 @@ def exporter(_request):
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def ouvrir(request):
+    return _ouvrir(request)
+
+
+def _ouvrir(request):
     if not (_est_rh(request.user) or _est_drh(request.user)):
         return Response({"detail": "L'équipe RH ouvre la planification, avec l'accord du DRH."}, status=403)
-    if CampagnePlanConge.objects.exclude(statut=CampagnePlanConge.Statut.PUBLIEE).exists():
-        return Response({"detail": "Une planification est déjà en cours."}, status=409)
+    if CampagnePlanConge.objects.exclude(statut=CampagnePlanConge.Statut.PUBLIEE).filter(cloturee_le__isnull=True).exists():
+        return Response({"detail": "Une planification est déjà en cours : clôturez-la ou supprimez-la avant d'en ouvrir une autre."}, status=409)
     bornes = _bornes(request.data)
     if isinstance(bornes, Response):
         return bornes
@@ -774,3 +815,111 @@ def suivre_reprise(request, pk: int):
     if reprise.chez_id:
         _notifier(reprise.chez, "Demande de modification à transmettre", f"{_nom(reprise.plan.agent)} : {reprise.motif}")
     return Response(_tableau(request.user))
+
+
+# --- Gestion des campagnes (équipe RH et DRH) : créer, consulter, modifier, clôturer, supprimer --------------------------
+
+
+def _ligne_campagne(campagne: CampagnePlanConge) -> dict:
+    cloturee = campagne.statut == CampagnePlanConge.Statut.PUBLIEE or campagne.cloturee_le is not None
+    return {
+        "id": campagne.id,
+        "exercice": campagne.exercice,
+        "statut": campagne.statut,
+        "statut_libelle": "Clôturée" if campagne.cloturee_le is not None and campagne.statut != CampagnePlanConge.Statut.PUBLIEE else campagne.get_statut_display(),
+        "phase": _phase(campagne),
+        "cloturee": cloturee,
+        "delai": campagne.delai.isoformat(),
+        "limite_agents": campagne.limite_agents.isoformat(),
+        "limite_hierarchie": campagne.limite_hierarchie.isoformat(),
+        "limite_rh": campagne.limite_rh.isoformat(),
+        "limite_drh": campagne.limite_drh.isoformat(),
+        "communique": campagne.communique,
+        "plans": campagne.plans.count(),
+        "participants": _participants().count(),
+        "creee_le": campagne.creee_le.isoformat(),
+        "cloturee_le": campagne.cloturee_le.isoformat() if campagne.cloturee_le else "",
+    }
+
+
+def _liste_campagnes(user) -> dict:
+    return {
+        "role": "drh" if _est_drh(user) else "rh",
+        "peut_ouvrir": not CampagnePlanConge.objects.exclude(statut=CampagnePlanConge.Statut.PUBLIEE).filter(cloturee_le__isnull=True).exists(),
+        "campagnes": [_ligne_campagne(item) for item in CampagnePlanConge.objects.all()],
+    }
+
+
+def _gestionnaire_campagnes(user) -> Response | None:
+    if not (_est_rh(user) or _est_drh(user)):
+        return Response({"detail": "Seule l'équipe RH gère les campagnes de congés."}, status=403)
+    return None
+
+
+@api_view(["GET", "POST"])
+@permission_classes([IsAuthenticated])
+def campagnes(request):
+    """Liste de toutes les campagnes (GET) ; ouverture d'une nouvelle (POST)."""
+    refus = _gestionnaire_campagnes(request.user)
+    if refus:
+        return refus
+    if request.method == "POST":
+        reponse = _ouvrir(request)
+        if reponse.status_code >= 400:
+            return reponse
+        return Response(_liste_campagnes(request.user), status=201)
+    return Response(_liste_campagnes(request.user))
+
+
+@api_view(["PATCH", "DELETE"])
+@permission_classes([IsAuthenticated])
+def campagne_detail(request, pk: int):
+    """Modifie les échéances et le communiqué d'une campagne (PATCH), ou la supprime avec ses plans (DELETE)."""
+    refus = _gestionnaire_campagnes(request.user)
+    if refus:
+        return refus
+    campagne = get_object_or_404(CampagnePlanConge, pk=pk)
+    if request.method == "DELETE":
+        if campagne.statut == CampagnePlanConge.Statut.PUBLIEE and not _est_drh(request.user):
+            return Response({"detail": "L'arrêté de cette campagne est publié : seul le DRH peut la supprimer."}, status=403)
+        with transaction.atomic():
+            campagne.delete()
+        return Response(_liste_campagnes(request.user))
+    if campagne.statut == CampagnePlanConge.Statut.PUBLIEE or campagne.cloturee_le is not None:
+        return Response({"detail": "Une campagne clôturée ne se modifie plus."}, status=409)
+    donnees = {
+        "delai": request.data.get("delai", campagne.delai), "limite_agents": request.data.get("limite_agents", campagne.limite_agents),
+        "limite_hierarchie": request.data.get("limite_hierarchie", campagne.limite_hierarchie),
+        "limite_rh": request.data.get("limite_rh", campagne.limite_rh), "limite_drh": request.data.get("limite_drh", campagne.limite_drh),
+    }
+    bornes = _bornes(donnees)
+    if isinstance(bornes, Response):
+        return bornes
+    communique = str(request.data.get("communique", campagne.communique) or "").strip()
+    if not communique:
+        return Response({"detail": "Indiquez le texte du communiqué."}, status=400)
+    try:
+        exercice = int(request.data.get("exercice", campagne.exercice))
+    except (TypeError, ValueError):
+        return Response({"detail": "L'exercice est invalide."}, status=400)
+    if CampagnePlanConge.objects.exclude(pk=campagne.pk).filter(exercice=exercice).exists():
+        return Response({"detail": f"L'exercice {exercice} a déjà une planification."}, status=409)
+    campagne.exercice, campagne.delai, campagne.limite_agents, campagne.limite_hierarchie, campagne.limite_rh, campagne.limite_drh = (exercice, *bornes)
+    campagne.communique = communique
+    campagne.save()
+    return Response(_liste_campagnes(request.user))
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def cloturer_campagne(request, pk: int):
+    """Clôture la campagne : elle n'est plus proposée aux agents, et plus aucune date ne s'y ajoute."""
+    refus = _gestionnaire_campagnes(request.user)
+    if refus:
+        return refus
+    campagne = get_object_or_404(CampagnePlanConge, pk=pk)
+    if campagne.cloturee_le is not None or campagne.statut == CampagnePlanConge.Statut.PUBLIEE:
+        return Response({"detail": "Cette campagne est déjà clôturée."}, status=409)
+    campagne.cloturee_le = timezone.now()
+    campagne.save(update_fields=["cloturee_le"])
+    return Response(_liste_campagnes(request.user))

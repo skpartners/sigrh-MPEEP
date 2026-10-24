@@ -26,17 +26,19 @@ def _auth(api) -> dict:
 # --- Absences ------------------------------------------------------------------------------
 
 
-def test_registre_des_absences_et_indicateurs_calcules(api):
+def test_suivi_des_permissions_et_indicateurs_calcules(api):
     auth = _auth(api)
     donnees = api.get("/api/v1/carrieres/absences/", **auth).json()
-    lignes = donnees["autorisations"]
-    assert len(lignes) >= 10
-    assert donnees["indicateurs"]["total"] == len(lignes)
-    assert sum(item["nombre"] for item in donnees["ventilation"]) == len(lignes)
-    assert donnees["indicateurs"]["en_attente"] == sum(1 for item in lignes if item["decision"] == "en_attente")
+    suivi = donnees["suivi"]
+    # Seules les permissions demandées depuis le profil de l'agent : statutaires (permission spéciale) et générales.
+    assert {item["type"] for item in suivi} <= {"permission-speciale", "autorisation"}
+    assert {item["type_libelle"] for item in suivi} <= {"Permission statutaire", "Permission"}
+    indicateurs = donnees["indicateurs"]
+    assert set(indicateurs) == {"accordees", "en_traitement", "validees"}
+    refusees = sum(1 for item in suivi if item["statut"] == "refusee")
+    assert indicateurs["accordees"] + indicateurs["en_traitement"] + indicateurs["validees"] + refusees == len(suivi)
     assert 0 <= donnees["presenteisme"]["taux"] <= 100 and donnees["presenteisme"]["objectif"] > 0
-    # Rattachées aux agents fictifs versés : aucun nom en dur côté écran.
-    assert all(item["agent"]["matricule"] for item in lignes)
+    assert all(item["agent"]["matricule"] for item in suivi)
     rapport = api.get("/api/v1/carrieres/absences/export/", **auth)
     assert rapport.status_code == 200
     assert rapport["Content-Type"] == "application/pdf"
@@ -45,9 +47,12 @@ def test_registre_des_absences_et_indicateurs_calcules(api):
 
 
 def test_decider_une_autorisation_exige_un_motif(api):
+    from personnel.models import Absence
+
     auth = _auth(api)
-    ligne = next(item for item in api.get("/api/v1/carrieres/absences/", **auth).json()["autorisations"] if item["decision"] == "en_attente")
-    route = f"/api/v1/absences/{ligne['id']}/decision/"
+    ligne = Absence.objects.exclude(type_autorisation="").filter(decision="en_attente").first()
+    assert ligne is not None
+    route = f"/api/v1/absences/{ligne.id}/decision/"
     assert api.post(route, {"sens": "valider", "motif": "  "}, format="json", **auth).status_code == 400
     reponse = api.post(route, {"sens": "invalider", "motif": "Pièce illisible."}, format="json", **auth)
     assert reponse.status_code == 200
@@ -55,23 +60,28 @@ def test_decider_une_autorisation_exige_un_motif(api):
     assert api.post(route, {"sens": "valider", "motif": "Revu."}, format="json", **auth).status_code == 409
 
 
-def test_la_demande_d_absence_de_l_agent_arrive_au_registre_a_statuer(api):
+def test_la_permission_demandee_par_l_agent_apparait_au_suivi_avec_son_circuit(api):
+    from datetime import date, timedelta
+
+    from django.core.files.uploadedfile import SimpleUploadedFile
+
     auth = _auth(api)
-    avant = api.get("/api/v1/carrieres/absences/", **auth).json()["indicateurs"]["en_attente"]
-    # L'agent dépose sa demande depuis son profil ; le registre des absences ne se saisit plus à la main.
+    agent = {"HTTP_AUTHORIZATION": api.post("/api/v1/auth/login/", {"matricule": "394812H", "password": "Sigrh-Dev-2026"}, format="json").json()["token"]}
+    agent = {"HTTP_AUTHORIZATION": f"Token {agent['HTTP_AUTHORIZATION']}"}
+    avant = api.get("/api/v1/carrieres/absences/", **auth).json()["indicateurs"]["en_traitement"]
+    lundi = date.today() + timedelta(days=(7 - date.today().weekday()) % 7 or 7)
     depot = api.post(
-        "/api/v1/agents/394812H/conges/demande/",
-        {"type": "evenement-familial", "debut": "2026-10-05", "fin": "2026-10-07", "interim": "Mme SORO Karidja"},
-        format="json",
-        **auth,
+        "/api/v1/agents/394812H/actes-demandes/",
+        {"type": "permission-speciale", "motif": "Décès d'un parent", "debut": lundi.isoformat(), "fin": (lundi + timedelta(days=1)).isoformat(),
+         "justificatif": SimpleUploadedFile("deces.pdf", b"%PDF-1.4 test", content_type="application/pdf")},
+        format="multipart", **agent,
     )
     assert depot.status_code == 201, depot.content
     apres = api.get("/api/v1/carrieres/absences/", **auth).json()
-    assert apres["indicateurs"]["en_attente"] == avant + 1
-    ligne = next(item for item in apres["autorisations"] if item["decision"] == "en_attente" and item["agent"]["matricule"] == "394812H" and item["justificatif"].startswith("Demande "))
-    assert ligne["type"] == "permission-speciale" and ligne["jours"] == 2  # la date de reprise n'est pas décomptée
-    # Le gestionnaire statue depuis le registre.
-    assert api.post(f"/api/v1/absences/{ligne['id']}/decision/", {"sens": "valider", "motif": "Pièce vérifiée."}, format="json", **auth).status_code == 200
+    assert apres["indicateurs"]["en_traitement"] == avant + 1
+    ligne = next(item for item in apres["suivi"] if item["agent"]["matricule"] == "394812H" and item["motif"] == "Décès d'un parent")
+    assert ligne["type"] == "permission-speciale" and ligne["type_libelle"] == "Permission statutaire" and ligne["statut"] == "traitement"
+    assert ligne["visas"], "le circuit de la demande accompagne la ligne"
     # Plus de saisie directe par le gestionnaire.
     assert api.post("/api/v1/carrieres/absences/", {"matricule": "394812H", "type": "autorisation", "debut": "2026-10-05", "fin": "2026-10-06"}, format="json", **auth).status_code == 405
 
@@ -140,7 +150,7 @@ def test_discipline_registre_sessions_et_effacements(api, settings, tmp_path):
     donnees = api.get("/api/v1/carrieres/discipline/", **auth).json()
     assert donnees["indicateurs"]["instruction"] == sum(1 for item in donnees["procedures"] if item["avis"] not in {"sanction", "classee"})
     assert donnees["sessions"] and donnees["effacements"]
-    assert donnees["entete"]["titre"] and len(donnees["echelle"]["degres"]) == 3
+    assert donnees["entete"]["titre"] and [degre["degre"] for degre in donnees["echelle"]["degres"]] == [1, 2]  # deux degrés seulement
     assert donnees["regles"]["delai_jours"] and donnees["amnistie"]["texte"] and donnees["suivi"]["texte"]
     assert all(item["agent"]["matricule"] for item in donnees["procedures"])
     avant = len(donnees["procedures"])
@@ -251,7 +261,11 @@ def test_fin_de_carriere_pyramide_et_dossiers(api):
     assert donnees["dossiers"] and all(ligne["date_limite"] for ligne in donnees["dossiers"])
     assert donnees["indicateurs"]["dossiers"] == len(donnees["dossiers"])
     assert "idr" not in donnees["dossiers"][0] and "pension" not in donnees["dossiers"][0]
-    assert donnees["postes"] and donnees["motifs"]
+    assert "postes" not in donnees and donnees["motifs"]
+    # Quatre indicateurs : départs de l'année, agents notifiés, réception des dossiers, transmission à la CGRAE.
+    assert set(donnees["indicateurs"]) == {"departs_annee", "notifies", "receptions", "transmis", "dossiers"}
+    assert [statut["code"] for statut in donnees["statuts"]] == ["notifie", "reception", "transmis"]
+    assert donnees["indicateurs"]["notifies"] + donnees["indicateurs"]["receptions"] + donnees["indicateurs"]["transmis"] == donnees["indicateurs"]["dossiers"]
     assert donnees["distinctions"] and donnees["accompagnement"]["actions"]
     retraite = next(item for item in donnees["motifs"] if item["automatique"])
     assert retraite["libelle"] == "Admission à la retraite"
@@ -327,3 +341,19 @@ def test_discipline_le_rapporteur_est_facultatif_a_l_ouverture(api):
     assert inconnu.status_code == 400
     soi = api.post("/api/v1/carrieres/discipline/", {"matricule": "394812H", "grief": "Retards", "description": "Faits.", "rapporteur": "394812H"}, format="json", **auth)
     assert soi.status_code == 400
+
+
+def test_la_configuration_du_graphique_conserve_couleurs_et_forage():
+    from personnel.statistiques_dynamiques import valider_configuration
+
+    brut = {
+        "source": "agents", "lignes": ["tranche_age"],
+        "graphique": {"forme": "barre", "couleurs": ["#2563eb", "rouge", "#16A34A", 12], "niveau": 1, "focus": ["DAAF", "SD Budget"]},
+    }
+    propre = valider_configuration(brut)["graphique"]
+    # Les couleurs invalides sont écartées, les valides passent en majuscules ; le niveau et le chemin du forage sont conservés.
+    assert propre["couleurs"] == ["#2563EB", "#16A34A"]
+    assert propre["niveau"] == 1 and propre["focus"] == ["DAAF", "SD Budget"]
+    defaut = valider_configuration({"source": "agents"})["graphique"]
+    assert defaut["couleurs"] == [] and defaut["niveau"] is None and defaut["focus"] == []
+    assert valider_configuration({"source": "agents", "graphique": {"niveau": 99}})["graphique"]["niveau"] is None

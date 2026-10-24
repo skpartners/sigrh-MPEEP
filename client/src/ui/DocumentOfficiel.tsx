@@ -78,9 +78,9 @@ export function nombre(valeur: number): string {
 }
 
 /** Ce que les modèles lisent d'un agent : le dossier complet convient, tout comme l'extrait du secrétariat. */
-export type AgentDocument = Pick<Dossier, "matricule" | "nom" | "prenoms" | "grade" | "structure" | "prise_service"> & {
+export type AgentDocument = Pick<Dossier, "matricule" | "nom" | "prenoms" | "grade" | "structure" | "prise_service" | "direction_complete"> & {
   etat_civil: Pick<Dossier["etat_civil"], "sexe_code" | "statut_matrimonial" | "nom_jeune_fille">;
-  situation_saisie: Pick<Dossier["situation_saisie"], "emploi">;
+  situation_saisie: Pick<Dossier["situation_saisie"], "emploi" | "direction" | "prise_service_ministere">;
 };
 
 // --- Désignations ----------------------------------------------------------------------------------
@@ -112,7 +112,7 @@ export function enServiceA(structure: string): string {
 
 // --- Signataire et numéro de courrier --------------------------------------------------------------
 
-export type Signataire = { matricule: string; trouve: boolean; nom: string; prenoms: string; titre: string; fonction: string };
+export type Signataire = { matricule: string; trouve: boolean; nom: string; prenoms: string; titre: string; fonction: string; direction: string };
 
 /** Agent désigné dans les paramètres système pour signer les documents finaux. */
 export function useSignataire(): Signataire | null {
@@ -126,13 +126,65 @@ export function nomSignataire(signataire: Signataire | null): string {
   return signataire ? `${signataire.nom} ${signataire.prenoms}` : "Signataire";
 }
 
-/** Fonction du signataire telle qu'elle s'écrit dans le texte (« Directeur des Affaires… »), reprise de son dossier. */
+const PETITS_MOTS = new Set(["de", "des", "du", "la", "le", "les", "et", "en", "au", "aux", "à", "d", "l"]);
+const SIGLES = /^(daaf|drh|dgpe|dsi|dsps|dgpn|mpeep)$/i;
+
+/** « ADMINISTRATEUR EN CHEF DES SERVICES FINANCIERS » → « Administrateur en Chef des Services Financiers », comme sur les exemplaires. */
+export function enCasseTitre(texte: string): string {
+  const brut = texte.trim();
+  if (!brut || brut !== brut.toUpperCase()) return brut;
+  return brut
+    .toLowerCase()
+    .split(/\s+/)
+    .map((mot, rang) => {
+      if (SIGLES.test(mot)) return mot.toUpperCase();
+      const apostrophe = mot.match(/^([ldj])(['’])(.+)$/);
+      if (apostrophe) return `${apostrophe[1]}${apostrophe[2]}${apostrophe[3].charAt(0).toUpperCase()}${apostrophe[3].slice(1)}`;
+      if (rang > 0 && PETITS_MOTS.has(mot)) return mot;
+      return mot.charAt(0).toUpperCase() + mot.slice(1);
+    })
+    .join(" ");
+}
+
+/**
+ * Emploi tel que l'écrivent les exemplaires : « Technicien Supérieur de l'Informatique, option Gestion ».
+ * Les données mêlent capitales et minuscules ; chaque mot prend une majuscule initiale, sauf les petits mots et « option ».
+ * Un sigle (« GPE-COFEB ») garde ses capitales quand le reste de l'emploi n'est pas en capitales.
+ */
+export function enCasseEmploi(texte: string): string {
+  const brut = (texte ?? "").trim();
+  if (!brut) return brut;
+  const toutEnCapitales = brut === brut.toUpperCase();
+  return brut
+    .split(/\s+/)
+    .map((mot, rang) => {
+      const bas = mot.toLowerCase();
+      if (rang > 0 && (PETITS_MOTS.has(bas) || bas === "option")) return bas;
+      const sigle = !toutEnCapitales && mot === mot.toUpperCase() && /[A-Z]/.test(mot) && (mot.length <= 4 || mot.includes("-"));
+      if (sigle) return mot;
+      const apostrophe = bas.match(/^([ldj])(['’])(.+)$/);
+      if (apostrophe) return `${apostrophe[1]}${apostrophe[2]}${apostrophe[3].charAt(0).toUpperCase()}${apostrophe[3].slice(1)}`;
+      return bas.split("-").map((partie) => partie.charAt(0).toUpperCase() + partie.slice(1)).join("-");
+    })
+    .join(" ");
+}
+
+/** Direction où l'agent est en service : les exemplaires écrivent « en service à la Direction … », jamais son service. */
+export function directionAgent(agent: AgentDocument): string {
+  return agent.direction_complete?.trim() || agent.situation_saisie.direction?.trim() || agent.structure;
+}
+
+/** Fonction du signataire telle qu'elle s'écrit dans le texte : « Directeur des Affaires… » d'après sa direction, comme sur les exemplaires. */
 export function fonctionSignataire(signataire: Signataire | null): string {
+  const direction = (signataire?.direction ?? "").trim();
+  const generale = direction.match(/^direction\s+g[ée]n[ée]rale\b\s*(.*)$/i);
+  if (generale) return `Directeur Général ${generale[1]}`.trim();
+  const simple = direction.match(/^direction\b\s*(.*)$/i);
+  if (simple) return `Directeur ${simple[1]}`.trim();
   const fonction = (signataire?.fonction ?? "").trim();
   if (!fonction) return "fonction";
-  // Les fonctions sont parfois saisies en capitales : on les remet en phrase, sans toucher aux sigles.
-  if (fonction !== fonction.toUpperCase()) return fonction;
-  return fonction.toLowerCase().replace(/^./, (lettre) => lettre.toUpperCase()).replace(/\b(daaf|drh|dgpe|dsi|dsps|dgpn)\b/gi, (sigle) => sigle.toUpperCase());
+  // Les fonctions sont parfois saisies en capitales : on les remet en casse de titre, sans toucher aux sigles.
+  return enCasseTitre(fonction);
 }
 
 /** Fin du numéro de courrier : sigle du ministère, hiérarchie de la structure de la personne qui imprime, puis ses initiales. */
@@ -267,7 +319,7 @@ export function FeuilleOfficielle({ titre, tailleTitre, avecNumero, paragraphes,
           {signataire ? (
             <>
               <p className="font-bold underline">{nomSignataire(signataire)}</p>
-              <p className="text-[0.75em] leading-tight">{signataire.titre}</p>
+              <p className="text-[0.75em] leading-tight">{enCasseEmploi(signataire.titre)}</p>
             </>
           ) : (
             <p className="font-bold">Signataire</p>

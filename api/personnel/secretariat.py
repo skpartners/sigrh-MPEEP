@@ -64,7 +64,8 @@ def statut(demande: Demande) -> str:
 
 
 def _agent_document(agent) -> dict:
-    from .present import etat_civil
+    from .normalisation import nom_complet_structure
+    from .present import etat_civil, situation_saisie
 
     return {
         "matricule": agent.matricule,
@@ -72,9 +73,10 @@ def _agent_document(agent) -> dict:
         "prenoms": agent.prenoms,
         "grade": agent.grade,
         "structure": agent.structure,
+        "direction_complete": nom_complet_structure(agent.direction or agent.structure),
         "prise_service": agent.prise_service.isoformat() if getattr(agent.prise_service, "isoformat", None) else (agent.prise_service or ""),
         "etat_civil": etat_civil(agent),
-        "situation_saisie": {"emploi": agent.emploi},
+        "situation_saisie": situation_saisie(agent),
     }
 
 
@@ -90,8 +92,16 @@ def _conge(demande: Demande, types: list[TypeConge] | None = None) -> dict:
     rang = next((index for index, (debut, fin) in enumerate(periodes) if debut == demande.debut and fin == demande.fin), 0)
     from .droits_conges import exercice_a_attribuer
 
+    from .models import DroitConge
+
+    exercice = demande.exercice or exercice_a_attribuer(demande.agent)
     return {
-        "exercice": demande.exercice or exercice_a_attribuer(demande.agent),
+        "exercice": exercice,
+        # Seuls les exercices qui donnent droit à un congé : ceux qui comptent des jours, et celui de la demande.
+        "exercices": sorted(
+            {droit.annee for droit in DroitConge.objects.filter(agent=demande.agent) if droit.restant > 0} | ({exercice} if exercice else set()),
+            reverse=True,
+        ),
         "type": type_conge.code if type_conge else "",
         "libelle": libelle,
         "annuel": bool(type_conge and _annuel(type_conge)),

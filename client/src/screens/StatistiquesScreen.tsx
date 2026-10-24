@@ -5,6 +5,7 @@ import { useFeedback } from "../ui/Feedback";
 import { Icone } from "../ui/Icone";
 import { BOUTON_PRIMAIRE } from "../ui/Modale";
 import { AppChrome } from "./AppChrome";
+import { EtatCompose } from "./statistiques/EtatCompose";
 import { exporterClasseurTcd } from "./statistiques/exportTcd";
 import { champsUtilises, configComplete, configVide, nomPropose, sourceEffective, type Catalogue, type ConfigTcd } from "./statistiques/moteur";
 import { chargerCube, cleCube, TableauCroise, type FeuilleTcd } from "./statistiques/TableauCroise";
@@ -15,7 +16,18 @@ const BOUTON_HERO_PRIMAIRE =
 const BOUTON_HERO_SECONDAIRE =
   "inline-flex items-center justify-center gap-2 h-8 px-3 rounded border border-white/35 bg-white/10 text-on-primary font-label-md text-label-md hover:bg-white/20 disabled:opacity-60";
 const CLE_ONGLET = "sigrh_statistiques_onglet";
+const CLE_MODE = "sigrh_statistiques_mode";
 const CLE_LISTE = ["compositions-statistiques"] as const;
+
+type Mode = "etats" | "tableaux";
+
+function lireMode(): Mode {
+  try {
+    return window.localStorage.getItem(CLE_MODE) === "tableaux" ? "tableaux" : "etats";
+  } catch {
+    return "etats";
+  }
+}
 
 type Enregistre = {
   id: number;
@@ -66,11 +78,21 @@ export function StatistiquesScreen() {
   const [brouillons, setBrouillons] = useState<Record<string, FeuilleTcd>>({});
   const [nouvelles, setNouvelles] = useState<FeuilleTcd[]>([]);
   const [active, setActive] = useState(lireOnglet);
+  const [mode, setMode] = useState<Mode>(lireMode);
 
   const serveur = (liste.data ?? []).map(depuisServeur);
   const feuilles = [...serveur.map((feuille) => brouillons[feuille.cle] ?? feuille), ...nouvelles];
   const courante = feuilles.find((feuille) => feuille.cle === active) ?? feuilles[0];
   const modifiees = feuilles.filter((feuille) => feuille.modifiee);
+
+  function choisirMode(suivant: Mode) {
+    setMode(suivant);
+    try {
+      window.localStorage.setItem(CLE_MODE, suivant);
+    } catch {
+      // Sans stockage, la page rouvre sur les états composés.
+    }
+  }
 
   function ouvrir(cle: string) {
     setActive(cle);
@@ -185,19 +207,39 @@ export function StatistiquesScreen() {
   return (
     <AppChrome
       actions={
-        <>
-          <button type="button" className={BOUTON_HERO_SECONDAIRE} disabled={!feuilles.length} onClick={() => void exporterTout()}>
-            <Icone nom="download" className="text-lg" />
-            Exporter le classeur
-          </button>
-          <button type="button" className={BOUTON_HERO_PRIMAIRE} onClick={nouveau}>
-            <Icone nom="add" className="text-lg" />
-            Nouveau tableau
-          </button>
-        </>
+        mode === "tableaux" ? (
+          <>
+            <button type="button" className={BOUTON_HERO_SECONDAIRE} disabled={!feuilles.length} onClick={() => void exporterTout()}>
+              <Icone nom="download" className="text-lg" />
+              Exporter le classeur
+            </button>
+            <button type="button" className={BOUTON_HERO_PRIMAIRE} onClick={nouveau}>
+              <Icone nom="add" className="text-lg" />
+              Nouveau tableau
+            </button>
+          </>
+        ) : undefined
       }
     >
       <div className={PAGE}>
+        <div role="tablist" aria-label="Type de présentation" className="inline-flex rounded-lg border border-outline-variant bg-surface-container-lowest p-1">
+          {([["etats", "dashboard", "États composés"], ["tableaux", "table", "Tableaux croisés"]] as const).map(([code, icone, libelle]) => (
+            <button
+              key={code}
+              type="button"
+              role="tab"
+              aria-selected={mode === code}
+              className={`inline-flex items-center gap-2 rounded px-3 py-1.5 font-label-md text-label-md ${mode === code ? "bg-primary text-on-primary" : "text-on-surface-variant hover:bg-surface-container-low"}`}
+              onClick={() => choisirMode(code)}
+            >
+              <Icone nom={icone} className="text-lg" />
+              {libelle}
+            </button>
+          ))}
+        </div>
+
+        {mode === "etats" ? <EtatCompose catalogue={catalogue.data} /> : (
+        <>
         <nav className="border-b border-hairline" aria-label="Feuilles de statistiques">
           <div role="tablist" aria-label="Feuilles" className="-mb-px flex min-w-0 items-end gap-1 overflow-x-auto">
             {feuilles.map((feuille) => (
@@ -240,6 +282,8 @@ export function StatistiquesScreen() {
             onDupliquer={() => creer(`${courante.nom} (copie)`, { ...structuredClone(courante.config), nom_auto: false })}
             onSupprimer={() => void supprimer(courante)}
           />
+        )}
+        </>
         )}
       </div>
     </AppChrome>

@@ -59,8 +59,10 @@ def _en_formation(agent: Agent, aujourd_hui: date) -> bool:
     )
 
 
-def synchroniser_situation(agent: Agent, aujourd_hui: date | None = None) -> None:
-    """La situation de l'agent suit sa période en cours, puis sa formation en cours ; sans l'une ni l'autre, il redevient « En activité »."""
+def synchroniser_situation(agent: Agent, aujourd_hui: date | None = None) -> bool:
+    """La situation de l'agent suit sa période en cours, puis sa formation en cours ; sans l'une ni l'autre, il redevient « En activité ».
+
+    Tout se décide d'après les dates et le jour d'aujourd'hui. Retourne vrai quand la situation a changé."""
     aujourd_hui = aujourd_hui or timezone.localdate()
     courante = next(
         (p for p in agent.positions.all() if p.date_debut <= aujourd_hui and (p.date_fin is None or p.date_fin >= aujourd_hui)),
@@ -73,10 +75,69 @@ def synchroniser_situation(agent: Agent, aujourd_hui: date | None = None) -> Non
     elif agent.situation in {*PositionAdministrative.SITUATIONS.values(), SITUATION_FORMATION}:
         voulue = SITUATION_NORMALE
     else:
-        return  # Une situation hors position (retraite, décès…) n'est pas touchée.
+        return False  # Une situation hors position (retraite, décès…) n'est pas touchée.
     if agent.situation != voulue:
         agent.situation = voulue
         agent.save(update_fields=["situation"])
+        return True
+    return False
+
+
+def famille_position(situation: str) -> str:
+    """Famille de position d'un agent : détachement, disponibilité, hors-cadre, ou activité.
+
+    L'activité couvre la présence au poste, la formation et les congés (annuel, paternité, maternité, maladie) :
+    tout ce qui n'est ni détachement, ni mise à disposition, ni disponibilité, ni hors-cadre.
+    """
+    texte = (situation or "").lower()
+    if "détach" in texte or "detach" in texte or "disposition" in texte:
+        return "detachement"
+    if "disponib" in texte:
+        return "disponibilite"
+    if "hors" in texte or "exclu" in texte:
+        return "hors"
+    return "activite"
+
+
+def details_activite(agents, aujourd_hui: date | None = None) -> dict[str, str]:
+    """Ce que fait aujourd'hui chaque agent en activité : formation, congé en cours, absence, sinon présence au poste.
+
+    Les agents qui ne sont pas en activité (détachement, disponibilité…) n'ont pas de détail : leur position le dit déjà.
+    Deux requêtes pour tous les agents, quel que soit leur nombre.
+    """
+    import re
+
+    from .models import Absence, Demande
+
+    aujourd_hui = aujourd_hui or timezone.localdate()
+    agents = list(agents)
+    actifs = {agent.id for agent in agents if famille_position(agent.situation) == "activite"}
+    conges: dict[int, str] = {}
+    for demande in Demande.objects.filter(
+        agent_id__in=actifs, categorie="conge", etape__startswith="Clôturée : congé accordé", debut__lte=aujourd_hui, fin__gt=aujourd_hui,
+    ).order_by("debut"):
+        conges.setdefault(demande.agent_id, re.sub(r"\s*\(\d+ j\)\s*$", "", demande.nature))
+    absences: dict[int, str] = {}
+    for absence in (
+        Absence.objects.filter(agent_id__in=actifs, debut__lte=aujourd_hui, fin__gte=aujourd_hui)
+        .exclude(decision="invalidee")
+        .exclude(instruction__in=["rejete", "decale"])
+        .order_by("debut")
+    ):
+        absences.setdefault(absence.agent_id, absence.nature)
+    resultat: dict[str, str] = {}
+    for agent in agents:
+        if agent.id not in actifs:
+            resultat[agent.matricule] = ""
+        elif agent.situation == SITUATION_FORMATION:
+            resultat[agent.matricule] = SITUATION_FORMATION
+        elif agent.id in conges:
+            resultat[agent.matricule] = conges[agent.id]
+        elif agent.id in absences:
+            resultat[agent.matricule] = absences[agent.id]
+        else:
+            resultat[agent.matricule] = "Présence au poste"
+    return resultat
 
 
 HORIZON_ECHEANCE_JOURS = 90
@@ -97,10 +158,18 @@ def echeances_en_cours(aujourd_hui: date | None = None) -> dict[str, dict]:
     return resultat
 
 
-def synchroniser_tous() -> None:
+def synchroniser_tous() -> int:
+    """Remet toutes les situations d'après les dates du jour. Retourne le nombre d'agents dont la situation a changé."""
     concernes = Q(positions__isnull=False) | Q(situation=SITUATION_FORMATION) | Q(demandes__inscription_formation__isnull=False)
-    for agent in Agent.objects.filter(concernes).distinct():
-        synchroniser_situation(agent)
+    return sum(1 for agent in Agent.objects.filter(concernes).distinct() if synchroniser_situation(agent))
+
+
+def en_activite(agents):
+    """Les agents en activité : tout sauf le détachement, la mise à disposition, la disponibilité et le hors-cadre."""
+    return agents.exclude(
+        Q(situation__icontains="détach") | Q(situation__icontains="detach") | Q(situation__icontains="disposition")
+        | Q(situation__icontains="disponib") | Q(situation__icontains="hors") | Q(situation__icontains="exclu")
+    )
 
 
 def fichier_recu(data):

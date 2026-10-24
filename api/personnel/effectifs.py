@@ -36,7 +36,7 @@ OUVERTS = {DemandeDotation.Statut.ARBITRAGE, DemandeDotation.Statut.VISA_CF}
 
 
 def _besoins_par_pole() -> dict[str, int]:
-    """Volume demandé par les structures, regroupé selon le pôle (cabinet, DGPE, DGPN)."""
+    """Volume demandé par les structures, regroupé selon le programme (administration générale, DGPE, DGPN)."""
     campagne = CampagneBesoin.objects.order_by("-exercice").first()
     fiches = FicheBesoin.objects.all()
     if campagne is not None:
@@ -427,10 +427,10 @@ def ajuster_plafond(_request, code: str):
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def creer_passerelle(request):
-    cedant, erreur = _texte(request.data, "cedant", "Le pôle cédant", 180)
+    cedant, erreur = _texte(request.data, "cedant", "Le programme cédant", 180)
     if erreur:
         return Response({"detail": erreur}, status=400)
-    recepteur, erreur = _texte(request.data, "recepteur", "Le pôle récepteur", 180)
+    recepteur, erreur = _texte(request.data, "recepteur", "Le programme récepteur", 180)
     if erreur:
         return Response({"detail": erreur}, status=400)
     profil, erreur = _texte(request.data, "profil", "Le profil", 200)
@@ -677,7 +677,7 @@ def _saisie_structure(data, actuelle=None):
         return None, erreur
     pole = PoleMinisteriel.objects.filter(code=str(data.get("pole") or "").strip()).first()
     if pole is None:
-        return None, "Choisissez un pôle."
+        return None, "Choisissez un programme."
     conflit = EntiteTutelle.objects.filter(nom__iexact=nom)
     if actuelle is not None:
         conflit = conflit.exclude(pk=actuelle.pk)
@@ -705,7 +705,7 @@ def _saisie_structure(data, actuelle=None):
                 return None, "Une direction générale se rattache au ministère."
         else:
             if parent.pole_id != pole.pk:
-                return None, "La structure de rattachement appartient à un autre pôle."
+                return None, "La structure de rattachement appartient à un autre programme."
             if niveau == "direction-centrale" and parent.niveau != "direction-generale":
                 return None, "Une direction centrale se rattache à une direction générale."
             if niveau == "sous-direction" and parent.niveau != "direction-centrale":
@@ -1000,14 +1000,14 @@ def quorum_structure(request, code: str):
 
 
 def _saisie_pole(data, actuel=None):
-    nom, erreur = _texte(data, "nom", "Le nom du pôle", 180)
+    nom, erreur = _texte(data, "nom", "Le nom du programme", 180)
     if erreur:
         return None, erreur
     conflit = PoleMinisteriel.objects.filter(nom__iexact=nom)
     if actuel is not None:
         conflit = conflit.exclude(pk=actuel.pk)
     if conflit.exists():
-        return None, "Ce pôle existe déjà."
+        return None, "Ce programme existe déjà."
     return nom, None
 
 
@@ -1027,11 +1027,11 @@ def creer_pole(request):
 def pole(request, code: str):
     item = PoleMinisteriel.objects.filter(code=code).first()
     if item is None:
-        return Response({"detail": "Pôle introuvable."}, status=404)
+        return Response({"detail": "Programme introuvable."}, status=404)
     if request.method == "DELETE":
         if item.structures.exists():
             return Response(
-                {"detail": "Ce pôle contient encore des structures. Déplacez-les ou supprimez-les avant."},
+                {"detail": "Ce programme contient encore des structures. Déplacez-les ou supprimez-les avant."},
                 status=400,
             )
         item.delete()

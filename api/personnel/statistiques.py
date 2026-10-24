@@ -26,7 +26,6 @@ from .models import (
     InscriptionFormation,
     Passerelle,
     PoleMinisteriel,
-    PosteSensible,
     ProcedureDisciplinaire,
     Profil,
     SanctionDisciplinaire,
@@ -268,13 +267,12 @@ def _comparaison(ids: list[int], annee: int) -> tuple[list[dict], list[int]]:
             Agent.objects.filter(id__in=ids).exclude(prise_service_ministere=None),
             "prise_service_ministere",
         )
-        postes = _compte_annees(PosteSensible.objects.filter(titulaire_id__in=ids), "depart")
     else:
         actes = carriere = absences = jours = demandes = notations = notes = {}
-        sanctions = procedures = inscriptions = prises = postes = {}
+        sanctions = procedures = inscriptions = prises = {}
     annees = _fenetre(
         actes, carriere, absences, jours, demandes, notations, notes,
-        sanctions, procedures, inscriptions, prises, postes, annee=annee,
+        sanctions, procedures, inscriptions, prises, annee=annee,
     )
     series = [
         _serie("actes", "Actes enregistrés", actes, annees, annee),
@@ -288,7 +286,6 @@ def _comparaison(ids: list[int], annee: int) -> tuple[list[dict], list[int]]:
         _serie("procedures", "Procédures disciplinaires", procedures, annees, annee),
         _serie("inscriptions", "Inscriptions en formation", inscriptions, annees, annee),
         _serie("prises_service", "Prises de service au ministère", prises, annees, annee),
-        _serie("postes_sensibles", "Départs de postes sensibles", postes, annees, annee),
     ]
     return series, list(reversed(annees))
 

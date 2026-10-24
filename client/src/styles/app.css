@@ -1358,3 +1358,82 @@ html[data-integre] {
 @media (prefers-reduced-motion: reduce) {
   .motion-indeterminee { animation: none; margin-left: 0; }
 }
+
+/* Circuit de validation animé (FilVisas) : apparition en cascade, trait qui se remplit, coche qui se dessine, anneau qui pulse. */
+.fil-etape {
+  animation: fil-monte 520ms var(--ease-out) both;
+  animation-delay: calc(var(--i, 0) * 110ms);
+}
+@keyframes fil-monte {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+.fil-noeud {
+  animation: fil-pop 560ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  animation-delay: calc(var(--i, 0) * 110ms + 120ms);
+}
+@keyframes fil-pop {
+  from { opacity: 0; transform: scale(0.4); }
+  to { opacity: 1; transform: scale(1); }
+}
+.fil-trace {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: fil-dessin 420ms ease-out both;
+  animation-delay: calc(var(--i, 0) * 110ms + 380ms);
+}
+.fil-trace-2 { animation-delay: calc(var(--i, 0) * 110ms + 520ms); }
+@keyframes fil-dessin {
+  to { stroke-dashoffset: 0; }
+}
+/* Le trait entre deux étapes : vertical sur mobile (de haut en bas), horizontal dès le grand écran (de gauche à droite). */
+.fil-trait {
+  --fil-debut: scaleY(0);
+  transform: var(--fil-debut);
+  transform-origin: top;
+}
+@media (min-width: 1024px) {
+  .fil-trait {
+    --fil-debut: scaleX(0);
+    transform-origin: left;
+  }
+}
+.fil-trait-plein {
+  animation: fil-remplit 650ms var(--ease-out) both;
+  animation-delay: calc(var(--i, 0) * 110ms + 520ms);
+}
+@keyframes fil-remplit {
+  from { transform: var(--fil-debut); }
+  to { transform: scale(1); }
+}
+.fil-progression {
+  transform-origin: left;
+  animation: fil-croit 900ms var(--ease-out) both;
+  animation-delay: 150ms;
+}
+@keyframes fil-croit {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+/* Étape en attente de visa : un anneau qui s'élargit en boucle, et une légère respiration. */
+.fil-actuel {
+  box-shadow: 0 0 0 4px color-mix(in oklab, var(--color-primary) 18%, transparent);
+}
+.fil-actuel::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: 9999px;
+  border: 2px solid var(--color-primary);
+  animation: fil-anneau 2s var(--ease-out) infinite;
+}
+@keyframes fil-anneau {
+  from { transform: scale(1); opacity: 0.7; }
+  to { transform: scale(1.7); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fil-etape, .fil-noeud, .fil-progression { animation: none; opacity: 1; transform: none; }
+  .fil-trace { animation: none; stroke-dashoffset: 0; }
+  .fil-trait-plein { animation: none; transform: scale(1); }
+  .fil-actuel::after { animation: none; opacity: 0; }
+}

@@ -5,6 +5,8 @@ import {
   POINTS,
   aStructure,
   dateLongue,
+  directionAgent,
+  enCasseEmploi,
   dateValide,
   date,
   designation,
@@ -27,7 +29,7 @@ import {
  * des modèles, écrire ici sa rédaction et l'inscrire dans MODELES avec le code de l'acte demandable qui le porte.
  */
 
-type Entree = { agent: AgentDocument; debut: string; fin: string; signataire: Signataire | null };
+export type Entree = { agent: AgentDocument; debut: string; fin: string; signataire: Signataire | null };
 
 type Modele = {
   titre: string;
@@ -40,10 +42,11 @@ type Modele = {
 };
 
 /** Rédaction commune des deux attestations : « Je soussigné … atteste que … ». */
-function attestation(entree: Entree, situation: (structure: string, depuis: string) => Morceau[]): Paragraphe[] {
+function attestation(entree: Entree, situation: (structure: string, depuis: string, feminin: boolean) => Morceau[]): Paragraphe[] {
   const { agent, signataire } = entree;
-  const { civilite, nom } = designation(agent);
-  const depuis = dateValide(agent.prise_service);
+  const { civilite, feminin, nom } = designation(agent);
+  // « depuis le » : la prise de service au ministère ; à défaut, la première prise de service.
+  const depuis = dateValide(agent.situation_saisie.prise_service_ministere) || dateValide(agent.prise_service);
   return [
     {
       interligne: 1.725,
@@ -58,9 +61,9 @@ function attestation(entree: Entree, situation: (structure: string, depuis: stri
         " Matricule ",
         g(ou(agent.matricule)),
         ", ",
-        g(ou(agent.situation_saisie.emploi || agent.grade)),
+        g(ou(enCasseEmploi(agent.situation_saisie.emploi || agent.grade))),
         g(", "),
-        ...situation(agent.structure, depuis ? dateLongue(depuis) : POINTS),
+        ...situation(directionAgent(agent), depuis ? dateLongue(depuis) : POINTS, feminin),
       ],
     },
     { interligne: 1.32, apres: 0.83, morceaux: ["En foi de quoi, la présente attestation lui est délivrée pour servir et valoir ce que de droit."] },
@@ -94,7 +97,7 @@ const MODELES: Record<string, Modele> = {
     mise: MISE_ATTESTATION,
     titreAmpliations: "AMPLIATIONS :",
     ampliations: AMPLIATIONS_ATTESTATION,
-    paragraphes: (entree) => attestation(entree, (structure, depuis) => [`est présent à son poste de travail, ${aStructure(structure)}, depuis le `, g(`${depuis}.`)]),
+    paragraphes: (entree) => attestation(entree, (structure, depuis, feminin) => [`est ${feminin ? "présente" : "présent"} à son poste de travail, ${aStructure(structure)}, depuis le `, g(`${depuis}.`)]),
   },
   "autorisation-horaire-allaitement": {
     titre: "AUTORISATION D'HORAIRE POUR ALLAITEMENT",
@@ -115,8 +118,8 @@ const MODELES: Record<string, Modele> = {
             `, il est accordé à ${civilite.toLowerCase()} `,
             g(`${nom}, Matricule ${ou(agent.matricule)},`),
             " ",
-            g(ou(agent.situation_saisie.emploi || agent.grade)),
-            `, ${enServiceA(agent.structure)}, un temps de repos pour allaitement d'une (01) heure par jour sur une durée de ${mois > 0 ? nombre(mois) : POINTS} mois.`,
+            g(ou(enCasseEmploi(agent.situation_saisie.emploi || agent.grade))),
+            `, ${enServiceA(directionAgent(agent))}, un temps de repos pour allaitement d'une (01) heure par jour sur une durée de ${mois > 0 ? nombre(mois) : POINTS} mois.`,
           ],
         },
         { morceaux: ["Par conséquent, les horaires de service de l'intéressée s'établissent comme suit :"] },
@@ -164,4 +167,10 @@ export function ApercuActe({ agent, code, debut = "", fin = "" }: { agent: Agent
       <FeuilleActe agent={agent} code={code} debut={debut} fin={fin} />
     </CadreApercu>
   );
+}
+
+/** Texte du corps d'un acte, paragraphe par paragraphe : sert à contrôler la rédaction contre les exemplaires. */
+export function corpsActe(code: string, entree: Entree): string[] {
+  const modele = MODELES[code];
+  return modele ? modele.paragraphes(entree).map((paragraphe) => paragraphe.morceaux.map((morceau) => (typeof morceau === "string" ? morceau : morceau.gras)).join("")) : [];
 }

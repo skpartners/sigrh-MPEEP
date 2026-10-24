@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Fragment, useMemo, useState, type CSSProperties } from "react";
+import { Fragment, useEffect, useMemo, useState, type CSSProperties } from "react";
 import { ApiError, api, telecharger } from "../../api/client";
 import type { AgentBrief } from "../../api/types";
 import { useFeedback } from "../../ui/Feedback";
@@ -32,6 +32,13 @@ type Procedure = {
   sanction_libelle: string;
   date_decision: string;
   executee_le: string;
+  /** Durée de la sanction en jours, quand elle en a une. */
+  duree_jours: number | null;
+  reintegre_le: string;
+  /** Exclusion temporaire en cours : réintégration manuelle possible, ou automatique à la date de reprise. */
+  exclusion_en_cours: boolean;
+  reprise_le: string;
+  jours_avant_reprise: number | null;
 };
 type Teinte = "primary" | "secondary" | "error";
 type DegreEchelle = {
@@ -46,7 +53,7 @@ type Registre = {
   registre_texte: { titre?: string; texte?: string };
   calendrier: { titre?: string; texte?: string };
   amnistie: { titre?: string; sous_titre?: string; regle?: string; texte?: string; mention?: string; vide?: string };
-  indicateurs: { instruction: number; dans_les_delais: number; sanctions_premier_degre: number; avertissements: number; blames: number; sessions: number; second_degre: number };
+  indicateurs: { instruction: number; dans_les_delais: number; sanctions_premier_degre: number; avertissements: number; blames: number; sessions: number; second_degre: number; decisions: number; decisions_premier_degre: number; decisions_second_degre: number; non_lieu: number };
   regularite: { taux?: number; detail?: string; controle?: string; visa?: string };
   procedures: Procedure[];
   etats_session: { code: string; libelle: string }[];
@@ -96,7 +103,8 @@ export function DisciplineScreen() {
   const [edition, setEdition] = useState<Procedure | null>(null);
   const donnees = registre.data;
   const indicateurs = donnees?.indicateurs;
-  const degres = donnees?.echelle.degres ?? [];
+  // L'échelle ne compte que deux degrés : le 1er degré et le 2nd (conseil convoqué).
+  const degres = (donnees?.echelle.degres ?? []).filter((degre) => degre.degre <= 2);
   const procedures = donnees?.procedures ?? [];
   const filtrees = useMemo(
     () => procedures.filter((item) => (!entite || item.agent.organisme_sigle === entite) && (!degre || (degre === "1" ? item.degre === 1 : item.degre >= 2))),
@@ -132,17 +140,36 @@ export function DisciplineScreen() {
             </div>
             <div className="flex flex-wrap items-center gap-3 shrink-0">
               <button className="inline-flex items-center gap-2 px-3 py-1.5 rounded bg-primary text-on-primary font-label-md text-label-md font-semibold hover:bg-primary-container transition-colors" type="button" onClick={() => setSaisie(true)}>
-                <Icone nom="add_moderator" className="text-lg" />
-                <span>Saisir une sanction</span>
+                <Icone nom="create_new_folder" className="text-lg" />
+                <span>Ouvrir une procédure</span>
               </button>
             </div>
           </section>
           {/* Indicateurs */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
             <Indicateur index={0} titre="Dossiers en instruction" icone="pending_actions" liseret="bg-secondary-container" teinte="text-secondary" valeur={deuxChiffres(indicateurs?.instruction)} />
-            <Indicateur index={1} titre={`Sanctions du 1er degré (${donnees?.exercice ?? ""})`} icone="assignment_late" liseret="bg-primary" teinte="text-primary" valeur={deuxChiffres(indicateurs?.sanctions_premier_degre)} />
-            <Indicateur index={2} titre="Sessions paritaires à venir" icone="groups" liseret="bg-secondary" teinte="text-secondary" valeur={deuxChiffres(indicateurs?.sessions)} />
-            <Indicateur index={3} titre="Procédures dans les délais" icone="fact_check" liseret="bg-primary-container" teinte="text-primary" valeur={donnees?.regularite.taux != null ? `${donnees.regularite.taux}%` : "—"} valeurCouleur="text-primary" />
+            <div className="lg:col-span-3 bg-surface-container-lowest p-5 rounded-xl shadow-sm relative overflow-hidden motion-card-appear" style={{ "--delay": "80ms" } as CSSProperties}>
+              <div className="absolute top-0 left-0 w-1.5 h-full bg-primary" />
+              <div className="flex items-start justify-between gap-2">
+                <span className="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider font-semibold">Décisions disciplinaires ({donnees?.exercice ?? ""})</span>
+                <span className="w-8 h-8 rounded bg-surface-container-low flex items-center justify-center shrink-0 text-primary"><Icone nom="gavel" className="text-lg" /></span>
+              </div>
+              <div className="mt-3 flex flex-wrap items-end gap-x-8 gap-y-3">
+                <span className="font-code-num text-3xl font-bold text-on-surface">{deuxChiffres(indicateurs?.decisions)}</span>
+                <dl className="flex flex-wrap gap-3">
+                  {([
+                    ["1er degré", indicateurs?.decisions_premier_degre, "bg-secondary-fixed text-on-secondary-fixed"],
+                    ["2nd degré", indicateurs?.decisions_second_degre, "bg-error-container text-on-error-container"],
+                    ["Non-lieu", indicateurs?.non_lieu, "bg-surface-container text-on-surface-variant"],
+                  ] as const).map(([libelle, valeur, ton]) => (
+                    <div key={libelle} className={`rounded-lg px-4 py-2 ${ton}`}>
+                      <dt className="font-label-sm text-label-sm font-semibold">{libelle}</dt>
+                      <dd className="font-code-num text-xl font-bold">{deuxChiffres(valeur)}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </div>
+            </div>
           </div>
           {/* Registre des procédures */}
           <div className="bg-surface-container-lowest rounded-xl shadow-sm flex flex-col overflow-hidden">
@@ -167,7 +194,7 @@ export function DisciplineScreen() {
                 <Select aria-label="Filtrer par degré de sanction" className="px-3 py-2 bg-surface-container-low text-on-surface font-body-sm text-body-sm rounded focus:outline-none" value={degre} onChange={(event) => { setDegre(event.target.value); setPage(1); }}>
                   <option value="">Tous degrés confondus</option>
                   <option value="1">1er degré</option>
-                  <option value="2">2nd degré et plus (conseil convoqué)</option>
+                  <option value="2">2nd degré (conseil convoqué)</option>
                 </Select>
               </div>
             </div>
@@ -177,7 +204,7 @@ export function DisciplineScreen() {
                   <tr className="bg-surface-container-low text-on-surface-variant font-label-md text-label-md tracking-wider uppercase">
                     <th className="py-3 px-6 font-semibold">Procédure</th>
                     <th className="py-3 px-6 font-semibold">Agent</th>
-                    <th className="py-3 px-6 font-semibold">Grief</th>
+                    <th className="py-3 px-6 font-semibold">Faute</th>
                     <th className="py-3 px-6 font-semibold">Phase</th>
                     <th className="py-3 px-6 text-right font-semibold"><span className="sr-only">Actions</span></th>
                   </tr>
@@ -218,7 +245,7 @@ export function DisciplineScreen() {
           </div>
         </div>
       </div>
-      {saisie ? <SaisineCommission agents={donnees?.agents ?? []} degres={degres} onClose={() => setSaisie(false)} /> : null}
+      {saisie ? <SaisineCommission agents={donnees?.agents ?? []} degres={degres} fautes={fautesConnues(procedures)} onClose={() => setSaisie(false)} /> : null}
       {edition && donnees ? <ModifierProcedure procedure={edition} registre={donnees} onClose={() => setEdition(null)} /> : null}
       {dossier ? <DossierInstruction procedure={dossier} onClose={() => setDossier(null)} /> : null}
     </AppChrome>
@@ -244,6 +271,30 @@ function Indicateur({ titre, icone, liseret, teinte, valeur, valeurCouleur = "te
   );
 }
 
+/** Natures de faute déjà utilisées dans le registre, sans doublon : proposées pendant la saisie pour éviter de les retaper. */
+function fautesConnues(procedures: Procedure[]): string[] {
+  const vues = new Map<string, string>();
+  for (const item of procedures) {
+    const faute = item.grief.trim();
+    if (faute && !vues.has(faute.toLowerCase())) vues.set(faute.toLowerCase(), faute);
+  }
+  return [...vues.values()].sort((a, b) => a.localeCompare(b, "fr"));
+}
+
+/** « 1er degré », « 2e degré » ; 0 est le non-lieu. */
+function libelleDegre(degre: number): string {
+  return degre === 0 ? "Non-lieu" : `${degre}${degre === 1 ? "er" : "e"} degré`;
+}
+
+/** Jour de reprise : le lendemain du dernier jour d'une sanction qui court à partir de `debut` pendant `jours` jours. */
+function finSanction(debut: string, jours: string): string {
+  const duree = Number(jours);
+  if (!debut || !Number.isInteger(duree) || duree < 1) return "";
+  const reprise = new Date(`${debut}T00:00:00`);
+  reprise.setDate(reprise.getDate() + duree);
+  return `${reprise.getFullYear()}-${String(reprise.getMonth() + 1).padStart(2, "0")}-${String(reprise.getDate()).padStart(2, "0")}`;
+}
+
 function convocationDe(procedure: Procedure): Promise<void> {
   return telecharger(`${ROUTE}${procedure.id}/convocation/`, `convocation-${procedure.reference}.pdf`);
 }
@@ -252,13 +303,27 @@ function LigneProcedure({ procedure, onOuvrir, onModifier }: { procedure: Proced
   const feedback = useFeedback();
   const client = useQueryClient();
   const supprimer = useMutation({
-    mutationFn: () => api(`${ROUTE}${procedure.id}/`, { method: "DELETE" }),
+    mutationFn: () => feedback.run("Suppression de la procédure…", () => api(`${ROUTE}${procedure.id}/`, { method: "DELETE" }), { success: { title: "Procédure supprimée", message: procedure.reference } }),
     onSuccess: async () => {
       await client.invalidateQueries({ queryKey: ["carrieres-discipline"] });
-      feedback.toast("Procédure supprimée", procedure.reference);
     },
     onError: (erreur) => feedback.toast("Suppression impossible", erreur instanceof ApiError ? erreur.message : undefined, "error"),
   });
+  const reintegrer = useMutation({
+    mutationFn: () => feedback.run(
+      "Réintégration de l'agent…",
+      () => api<Procedure>(`${ROUTE}${procedure.id}/reintegrer/`, { method: "POST" }),
+      { success: { title: "Agent réintégré", message: `${procedure.agent.nom_complet} reprend son poste. L'équipe RH est alertée.` } },
+    ),
+    onSuccess: async () => {
+      await client.invalidateQueries({ queryKey: ["carrieres-discipline"] });
+    },
+    onError: (erreur) => feedback.toast("Réintégration impossible", erreur instanceof ApiError ? erreur.message : undefined, "error"),
+  });
+  async function reintegrerAgent() {
+    const reprise = procedure.reprise_le ? `Elle était prévue le ${dateCourte(procedure.reprise_le)} (réintégration automatique, avec alerte de l'équipe RH).` : "L'exclusion n'a pas de terme : elle ne prend fin que par la réintégration.";
+    if (await feedback.confirm(`Réintégrer ${procedure.agent.nom_complet} maintenant ?`, { message: `${reprise} L'agent reprend son poste aujourd'hui et l'équipe RH en est alertée.`, confirmLabel: "Réintégrer" })) reintegrer.mutate();
+  }
   async function retirer() {
     if (await feedback.confirm(`Supprimer la procédure ${procedure.reference} ?`, { message: "Elle disparaît aussi du profil de l'agent, avec la sanction qu'elle a produite.", confirmLabel: "Supprimer" })) supprimer.mutate();
   }
@@ -277,7 +342,7 @@ function LigneProcedure({ procedure, onOuvrir, onModifier }: { procedure: Proced
       <td className="py-3 px-6 align-top">
         <span className="block text-on-surface">{procedure.grief}</span>
         <span className={`mt-1 inline-block px-2 py-0.5 rounded font-label-sm text-label-sm font-semibold ${procedure.degre >= 2 ? "bg-error-container text-on-error-container" : "bg-secondary-fixed text-on-secondary-fixed"}`}>
-          {procedure.degre}{procedure.degre === 1 ? "er" : "e"} degré
+          {libelleDegre(procedure.degre)}
         </span>
       </td>
       <td className="py-3 px-6 align-top">
@@ -286,6 +351,13 @@ function LigneProcedure({ procedure, onOuvrir, onModifier }: { procedure: Proced
           <Icone nom={ICONE_AVIS[procedure.avis]} className="text-xs" />
           {procedure.avis_libelle}
         </span>
+        {procedure.exclusion_en_cours ? (
+          <span className="mt-1 block font-label-sm text-label-sm font-semibold text-error">
+            Exclu{procedure.reprise_le ? ` · reprise le ${dateCourte(procedure.reprise_le)}${procedure.jours_avant_reprise != null ? ` (J-${procedure.jours_avant_reprise})` : ""}` : " · jusqu'à la réintégration"}
+          </span>
+        ) : procedure.reintegre_le ? (
+          <span className="mt-1 block font-label-sm text-label-sm text-on-surface-variant">Réintégré le {dateCourte(procedure.reintegre_le)}</span>
+        ) : null}
       </td>
       <td className="py-3 px-6 align-top text-right">
         <div className="flex items-center justify-end gap-1">
@@ -298,6 +370,11 @@ function LigneProcedure({ procedure, onOuvrir, onModifier }: { procedure: Proced
           <button className="p-1.5 text-on-surface-variant hover:text-error hover:bg-surface-container rounded transition-colors disabled:opacity-50" title="Supprimer la procédure" aria-label={`Supprimer la procédure ${procedure.reference}`} type="button" disabled={supprimer.isPending} onClick={() => void retirer()}>
             <Icone nom="delete" className="text-lg" />
           </button>
+          {procedure.exclusion_en_cours ? (
+            <button className="p-1.5 text-primary hover:bg-primary-fixed rounded transition-colors" title="Réintégrer l'agent maintenant" aria-label={`Réintégrer ${agent.nom_complet}`} type="button" disabled={reintegrer.isPending} onClick={() => void reintegrerAgent()}>
+              <Icone nom="how_to_reg" className="text-lg" />
+            </button>
+          ) : null}
           <button className="p-1.5 text-on-surface-variant hover:text-primary hover:bg-surface-container rounded transition-colors" title="Générer la convocation" aria-label={`Générer la convocation ${procedure.reference}`} type="button" onClick={() => void feedback.run("Préparation de la convocation…", () => convocationDe(procedure), { success: { title: "Convocation prête", message: procedure.reference }, error: "La convocation n'a pas été générée." })}>
             <Icone nom="mark_email_read" className="text-lg" />
           </button>
@@ -313,16 +390,18 @@ function DossierInstruction({ procedure, onClose }: { procedure: Procedure; onCl
   const faits = [
     ["Agent", `${agent.nom_complet} · ${agent.matricule}`],
     ["Entité", `${agent.organisme_sigle}${agent.fonction ? ` · ${agent.fonction}` : ""}`],
-    ["Grief", procedure.grief],
-    ["Degré", `${procedure.degre}${procedure.degre === 1 ? "er" : "e"} degré`],
+    ["Faute", procedure.grief],
+    ["Degré", libelleDegre(procedure.degre)],
     ["Rapporteur", procedure.rapporteur || "Non désigné"],
     ["Saisine", dateCourte(procedure.saisine)],
     ["Échéance", dateCourte(procedure.echeance)],
-    ["Phase", procedure.stade_detail ? `${procedure.phase_libelle} — ${procedure.stade_detail}` : procedure.phase_libelle],
-    ["Avis", procedure.avis_libelle],
+    ["Phase", procedure.phase_libelle],
     ...(procedure.decision ? [
       ["Décision", `${procedure.decision}${procedure.sanction_libelle ? ` (${procedure.sanction_libelle})` : ""} · ${dateCourte(procedure.date_decision)}`],
       ["Exécution", procedure.executee_le ? dateCourte(procedure.executee_le) : "Non exécutée"],
+      ...(procedure.duree_jours ? [["Durée de la sanction", `${procedure.duree_jours} jour${procedure.duree_jours > 1 ? "s" : ""}`]] : []),
+      ...(procedure.reprise_le ? [["Reprise de poste", dateCourte(procedure.reprise_le)]] : []),
+      ...(procedure.reintegre_le ? [["Réintégré le", dateCourte(procedure.reintegre_le)]] : []),
     ] : []),
   ];
   return (
@@ -361,16 +440,28 @@ function DossierInstruction({ procedure, onClose }: { procedure: Procedure; onCl
 const CHAMP = "w-full h-10 px-3 rounded border border-outline-variant bg-surface-container-lowest text-on-surface font-body-sm text-body-sm focus:outline-none focus:ring-2 focus:ring-primary";
 const LIBELLE = "block font-label-md text-label-md text-on-surface font-semibold mb-1";
 
-/** Saisir une sanction : la procédure s'ouvre en instruction, avec son rapporteur et un délai de 30 jours. */
-function SaisineCommission({ agents, degres, onClose }: { agents: Registre["agents"]; degres: DegreEchelle[]; onClose: () => void }) {
+/** Ouvrir une procédure : le dossier s'ouvre en instruction, avec son rapporteur et un délai de 30 jours. La sanction vient à la décision. */
+function SaisineCommission({ agents, degres, fautes, onClose }: { agents: Registre["agents"]; degres: DegreEchelle[]; fautes: string[]; onClose: () => void }) {
   const client = useQueryClient();
   const feedback = useFeedback();
   const [saisie, setSaisie] = useState({ matricule: "", grief: "", description: "", degre: "1", rapporteur: "" });
+  // Le rapporteur par défaut est l'agent connecté, tant qu'il n'a pas été changé et qu'il n'est pas lui-même mis en cause.
+  const moi = useQuery({ queryKey: ["me"], queryFn: () => api<{ matricule: string }>("/api/v1/me/"), staleTime: Infinity });
+  const [rapporteurChoisi, setRapporteurChoisi] = useState(false);
+  const rapporteurParDefaut = moi.data && agents.some((agent) => agent.matricule === moi.data.matricule) ? moi.data.matricule : "";
+  useEffect(() => {
+    if (!rapporteurChoisi && rapporteurParDefaut && saisie.matricule !== rapporteurParDefaut && saisie.rapporteur !== rapporteurParDefaut) {
+      setSaisie((actuelle) => ({ ...actuelle, rapporteur: rapporteurParDefaut }));
+    }
+  }, [rapporteurChoisi, rapporteurParDefaut, saisie.matricule, saisie.rapporteur]);
   const envoi = useMutation({
-    mutationFn: () => api<Procedure>(ROUTE, { method: "POST", body: JSON.stringify({ ...saisie, degre: Number(saisie.degre) }) }),
+    mutationFn: () => feedback.run(
+      "Ouverture de la procédure…",
+      () => api<Procedure>(ROUTE, { method: "POST", body: JSON.stringify({ ...saisie, degre: Number(saisie.degre) }) }),
+    ),
     onSuccess: async (item) => {
       await client.invalidateQueries({ queryKey: ["carrieres-discipline"] });
-      feedback.toast("Sanction saisie", `${item.reference} · ${item.agent.nom_complet}`);
+      feedback.toast("Procédure ouverte", `${item.reference} · ${item.agent.nom_complet}`);
       onClose();
     },
   });
@@ -385,7 +476,7 @@ function SaisineCommission({ agents, degres, onClose }: { agents: Registre["agen
   };
   return (
     <Modale
-      titre="Saisir une sanction"
+      titre="Ouvrir une procédure"
       sousTitre="La procédure s'ouvre en instruction : l'agent dispose de 30 jours pour le contradictoire."
       icone="add_moderator"
       taille="lg"
@@ -416,8 +507,10 @@ function SaisineCommission({ agents, degres, onClose }: { agents: Registre["agen
           </label>
         </div>
         <label className="block">
-          <span className={LIBELLE}>Nature du grief <span className="text-error">*</span></span>
-          <input className={CHAMP} required maxLength={160} value={saisie.grief} onChange={champ("grief")} placeholder="Ex. : manquement au devoir de réserve" />
+          <span className={LIBELLE}>Nature de la faute statutaire <span className="text-error">*</span></span>
+          <input className={CHAMP} required maxLength={160} list="fautes-existantes" autoComplete="off" value={saisie.grief} onChange={champ("grief")} placeholder="Saisissez, ou choisissez une faute déjà enregistrée" />
+          <datalist id="fautes-existantes">{fautes.map((faute) => <option key={faute} value={faute} />)}</datalist>
+          {fautes.length ? <span className="mt-1 block font-label-sm text-label-sm text-on-surface-variant">{fautes.length} faute{fautes.length > 1 ? "s" : ""} déjà enregistrée{fautes.length > 1 ? "s" : ""} : elle{fautes.length > 1 ? "s" : ""} s’affiche{fautes.length > 1 ? "nt" : ""} pendant la saisie.</span> : null}
         </label>
         <label className="block">
           <span className={LIBELLE}>Faits reprochés <span className="text-error">*</span></span>
@@ -425,7 +518,7 @@ function SaisineCommission({ agents, degres, onClose }: { agents: Registre["agen
         </label>
         <label className="block">
           <span className={LIBELLE}>Rapporteur désigné <span className="font-normal text-on-surface-variant">— facultatif</span></span>
-          <Select className={CHAMP} value={saisie.rapporteur} onChange={champ("rapporteur")}>
+          <Select className={CHAMP} value={saisie.rapporteur} onChange={(event) => { setRapporteurChoisi(true); champ("rapporteur")(event); }}>
             <option value="">Aucun rapporteur désigné pour l'instant</option>
             {rapporteurs.map((agent) => (
               <option key={agent.matricule} value={agent.matricule}>{agent.nom_complet} · {agent.organisme_sigle}</option>
@@ -447,19 +540,19 @@ function ModifierProcedure({ procedure, registre, onClose }: { procedure: Proced
     description: procedure.description,
     degre: String(procedure.degre),
     rapporteur: "",
-    stade_detail: procedure.stade_detail,
-    avis: registre.avis_possibles.some((a) => a.code === procedure.avis) ? procedure.avis : "",
     decision: procedure.decision,
     sanction_nature: procedure.sanction_nature,
     date_decision: procedure.date_decision,
     executee_le: procedure.executee_le,
+    duree_jours: procedure.duree_jours != null ? String(procedure.duree_jours) : "",
   });
-  const decision = saisie.phase === "decision_execution";
+  const decision = saisie.phase === "decision";
+  const nonLieu = saisie.degre === "0";
   const envoi = useMutation({
-    mutationFn: () => api<Procedure>(`${ROUTE}${procedure.id}/`, {
+    mutationFn: () => feedback.run("Enregistrement de la procédure…", () => api<Procedure>(`${ROUTE}${procedure.id}/`, {
       method: "PATCH",
-      body: JSON.stringify({ ...saisie, degre: Number(saisie.degre), rapporteur: saisie.rapporteur || undefined, avis: saisie.avis || undefined }),
-    }),
+      body: JSON.stringify({ ...saisie, degre: Number(saisie.degre), rapporteur: saisie.rapporteur || undefined, duree_jours: nonLieu || !saisie.duree_jours ? null : Number(saisie.duree_jours) }),
+    })),
     onSuccess: async (item) => {
       await client.invalidateQueries({ queryKey: ["carrieres-discipline"] });
       feedback.toast("Procédure mise à jour", `${item.reference} · ${item.phase_libelle}`);
@@ -467,7 +560,7 @@ function ModifierProcedure({ procedure, registre, onClose }: { procedure: Proced
     },
   });
   const champ = (cle: keyof typeof saisie) => (event: { target: { value: string } }) => setSaisie({ ...saisie, [cle]: event.target.value });
-  const degres = registre.echelle.degres ?? [];
+  const degres = (registre.echelle.degres ?? []).filter((degre) => degre.degre <= 2);
   return (
     <Modale
       titre={`Modifier ${procedure.reference}`}
@@ -481,20 +574,24 @@ function ModifierProcedure({ procedure, registre, onClose }: { procedure: Proced
     >
       <div className="space-y-4">
         <label className="block">
-          <span className={LIBELLE}>Phase de la procédure</span>
+          <span className={LIBELLE}>Phase</span>
           <Select className={CHAMP} value={saisie.phase} onChange={champ("phase")}>
             {registre.phases.map((phase) => <option key={phase.code} value={phase.code}>{phase.libelle}</option>)}
           </Select>
         </label>
         {decision ? (
           <div className="space-y-4 rounded-lg bg-surface-container-low p-4">
-            <label className="block">
-              <span className={LIBELLE}>Sanction prononcée</span>
-              <Select className={CHAMP} value={saisie.sanction_nature} onChange={champ("sanction_nature")}>
-                <option value="">Aucune (classement sans suite)</option>
-                {registre.natures_sanction.map((nature) => <option key={nature.code} value={nature.code}>{nature.libelle}</option>)}
-              </Select>
-            </label>
+            {nonLieu ? (
+              <p className="rounded-lg bg-surface-container px-3 py-2 font-body-sm text-body-sm text-on-surface-variant">Non-lieu : la procédure est classée sans sanction.</p>
+            ) : (
+              <label className="block">
+                <span className={LIBELLE}>Sanction prononcée <span className="text-error">*</span></span>
+                <Select className={CHAMP} required value={saisie.sanction_nature} onChange={champ("sanction_nature")}>
+                  <option value="">Choisir la sanction…</option>
+                  {registre.natures_sanction.map((nature) => <option key={nature.code} value={nature.code}>{nature.libelle}</option>)}
+                </Select>
+              </label>
+            )}
             <label className="block">
               <span className={LIBELLE}>Décision <span className="text-error">*</span></span>
               <input className={CHAMP} required maxLength={240} value={saisie.decision} onChange={champ("decision")} placeholder="Ex. : blâme notifié par arrêté n°…" />
@@ -509,25 +606,30 @@ function ModifierProcedure({ procedure, registre, onClose }: { procedure: Proced
                 <input className={CHAMP} type="date" min={saisie.date_decision || undefined} value={saisie.executee_le} onChange={champ("executee_le")} />
               </label>
             </div>
+            {nonLieu ? null : (
+              <label className="block">
+                <span className={LIBELLE}>Durée de la sanction <span className="font-normal text-on-surface-variant">— facultatif</span></span>
+                <div className="flex items-center gap-2">
+                  <input className={`${CHAMP} max-w-40`} type="number" min={1} max={3650} inputMode="numeric" value={saisie.duree_jours} onChange={champ("duree_jours")} placeholder="Ex. : 30" />
+                  <span className="font-body-sm text-body-sm text-on-surface-variant">jours</span>
+                </div>
+                {saisie.sanction_nature === "exclusion" ? (
+                  <span className="mt-1 block font-label-sm text-label-sm text-on-surface-variant">
+                    {finSanction(saisie.executee_le || saisie.date_decision, saisie.duree_jours)
+                      ? `Reprise de poste le ${dateCourte(finSanction(saisie.executee_le || saisie.date_decision, saisie.duree_jours))} : l'agent est alors réintégré automatiquement, et l'équipe RH alertée 7 jours puis 1 jour avant.`
+                      : "Sans durée, l'exclusion dure jusqu'à la réintégration, à faire depuis la liste (bouton « Réintégrer »)."}
+                  </span>
+                ) : null}
+              </label>
+            )}
           </div>
-        ) : (
-          <label className="block">
-            <span className={LIBELLE}>Avis</span>
-            <Select className={CHAMP} value={saisie.avis} onChange={champ("avis")}>
-              <option value="">Selon la phase</option>
-              {registre.avis_possibles.map((avis) => <option key={avis.code} value={avis.code}>{avis.libelle}</option>)}
-            </Select>
-          </label>
-        )}
-        <label className="block">
-          <span className={LIBELLE}>Précision sur l'étape</span>
-          <input className={CHAMP} maxLength={160} value={saisie.stade_detail} onChange={champ("stade_detail")} placeholder="Ex. : réponse attendue avant le…" />
-        </label>
+        ) : null}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <label className="block">
             <span className={LIBELLE}>Degré de sanction encouru</span>
             <Select className={CHAMP} value={saisie.degre} onChange={champ("degre")}>
               {degres.map((degre) => <option key={degre.degre} value={degre.degre}>{degre.option}</option>)}
+              <option value="0">Non-lieu</option>
             </Select>
           </label>
           <label className="block">
@@ -541,8 +643,9 @@ function ModifierProcedure({ procedure, registre, onClose }: { procedure: Proced
           </label>
         </div>
         <label className="block">
-          <span className={LIBELLE}>Nature du grief <span className="text-error">*</span></span>
-          <input className={CHAMP} required maxLength={160} value={saisie.grief} onChange={champ("grief")} />
+          <span className={LIBELLE}>Nature de la faute <span className="text-error">*</span></span>
+          <input className={CHAMP} required maxLength={160} list="fautes-existantes-modif" autoComplete="off" value={saisie.grief} onChange={champ("grief")} />
+          <datalist id="fautes-existantes-modif">{fautesConnues(registre.procedures).map((faute) => <option key={faute} value={faute} />)}</datalist>
         </label>
         <label className="block">
           <span className={LIBELLE}>Faits reprochés <span className="text-error">*</span></span>

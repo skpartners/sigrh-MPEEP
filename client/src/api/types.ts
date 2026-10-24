@@ -39,6 +39,8 @@ export type AgentBrief = {
   organisme: string;
   organisme_sigle: string;
   situation: string;
+  /** Pour un agent en activité : présence au poste, formation, congé ou absence en cours. */
+  situation_detail?: string;
   categorie: string;
   photo_url: string;
   /** Fin de la position en cours (détachement, disponibilité…), quand un terme est fixé. */
@@ -89,6 +91,8 @@ export type SessionUser = {
   signature_url: string;
   /** Éléments du numéro de courrier : hiérarchie de la structure de l'utilisateur et ses initiales. */
   reference_courrier?: { structures: string[]; initiales: string };
+  /** Le DRH (ou l'administrateur) : seul à pouvoir annuler un reliquat de congé. */
+  drh?: boolean;
   /** Accès à l'espace secrétariat : l'administrateur et les secrétaires, rattachées à une structure. */
   secretariat?: boolean;
   photo_url: string;
@@ -219,6 +223,8 @@ export type Dossier = AgentBrief & {
   modifiable?: boolean;
   anciennete: string;
   prise_service: string;
+  /** Direction en toutes lettres : la saisie peut n'en donner que le sigle. */
+  direction_complete?: string;
   situation_administrative: { libelle: string; valeur: string }[];
   etat_civil: {
     nom: string;
@@ -246,7 +252,7 @@ export type Dossier = AgentBrief & {
   };
   famille: {
     conjoint: { nom: string; prenoms: string; telephone: string; courriel: string };
-    enfants: { id: number; nom: string; prenoms: string; sexe: string; date_naissance: string; lieu_naissance: string }[];
+    enfants: { id: number; nom: string; prenoms: string; sexe: string; date_naissance: string; lieu_naissance: string; acte_naissance: { id: number; intitule: string; fichier_url: string } | null }[];
   };
   parcours_academique: {
     diplomes: { id: number; niveau_etude: string; niveau_etude_code: string; libelle: string; domaine_formation: string; piece: { id: number; intitule: string; fichier_url: string } | null }[];
@@ -288,7 +294,7 @@ export type Dossier = AgentBrief & {
     autorisations: number;
     autorisations_restantes: number;
     /** Jours dus, pris et restants par exercice ; le plus ancien se consomme en premier. */
-    droits: { annee: number; dus: number; pris: number; restant: number }[];
+    droits: { annee: number; dus: number; pris: number; restant: number; reliquat: boolean; remis_a_zero_le: string }[];
     /** Exercice dont relèvera le prochain congé annuel. */
     exercice: number | null;
   };
@@ -383,7 +389,7 @@ export type Dossier = AgentBrief & {
     certification: string;
   }[];
   pieces: { id: number; intitule: string; categorie: string; date_depot: string; taille_ko: number; verifiee: boolean; fichier_url: string; date_expiration: string; diplome?: string }[];
-  catalogue_documents: { code: string; libelle: string; types: { code: string; libelle: string }[] }[];
+  catalogue_documents: { code: string; libelle: string; types: { code: string; libelle: string; obligatoire: boolean; condition: string }[] }[];
   demandes: {
     reference: string;
     nature: string;

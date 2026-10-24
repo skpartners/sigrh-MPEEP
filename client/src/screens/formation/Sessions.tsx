@@ -289,7 +289,6 @@ function FormulaireSession({ data, session, preselection = [], onClose }: { data
     cadre: session?.cadre || "ci_ministere",
     libelle: session?.libelle ?? (preselection.length ? data.besoins.find((b) => b.id === preselection[0])?.intitule ?? "" : ""),
     objectif: session?.objectif ?? "",
-    cadre_budgetaire: session?.cadre_budgetaire ?? `Dotation ministérielle, exercice ${data.exercice}`,
     prestataire: session?.prestataire ? String(session.prestataire.id) : "",
     formateur: session?.formateur ?? "",
     lieu: session?.lieu ?? "",
@@ -335,7 +334,6 @@ function FormulaireSession({ data, session, preselection = [], onClose }: { data
         <DateChamp libelle="Date de fin" valeur={f.date_fin} min={f.date_debut || undefined} onChange={maj("date_fin")} />
         <Nombre libelle="Volume horaire" obligatoire valeur={f.heures} onChange={maj("heures")} max={2000} unite="heures" />
         <Nombre libelle="Nombre de places" obligatoire valeur={f.places} onChange={maj("places")} min={1} max={1000} unite="places" />
-        <Texte libelle="Cadre budgétaire" max={160} valeur={f.cadre_budgetaire} onChange={maj("cadre_budgetaire")} />
         <Liste
           libelle="Prestataire"
           valeur={f.prestataire}

@@ -141,33 +141,44 @@ def test_procedure_disciplinaire_suivie_par_l_agent(api):
     }, format="json")
     assert ouverte.status_code == 201, ouverte.content
     pk = ouverte.json()["id"]
-    assert ouverte.json()["phase"] == "demande_explication"
+    assert ouverte.json()["phase"] == "instruction"
 
     agent = _client("318490K")
-    assert agent.get("/api/v1/agents/318490K/").json()["discipline"][0]["phase"] == "demande_explication"
-    assert agent.patch(f"/api/v1/carrieres/discipline/{pk}/", {"phase": "decision_execution"}, format="json").status_code == 403
+    assert agent.get("/api/v1/agents/318490K/").json()["discipline"][0]["phase"] == "instruction"
+    assert agent.patch(f"/api/v1/carrieres/discipline/{pk}/", {"phase": "decision"}, format="json").status_code == 403
 
-    conseil = api.patch(f"/api/v1/carrieres/discipline/{pk}/", {"phase": "instruction_conseil"}, format="json")
-    assert conseil.status_code == 200 and conseil.json()["avis"] == "delibere" and conseil.json()["stade"] == "Instruction devant le conseil de discipline"
+    conseil = api.patch(f"/api/v1/carrieres/discipline/{pk}/", {"phase": "audience"}, format="json")
+    assert conseil.status_code == 200 and conseil.json()["avis"] == "delibere" and conseil.json()["stade"] == "Audience"
     # Une décision exige son contenu et sa date, jamais dans le futur.
-    assert api.patch(f"/api/v1/carrieres/discipline/{pk}/", {"phase": "decision_execution"}, format="json").status_code == 400
-    futur = api.patch(f"/api/v1/carrieres/discipline/{pk}/", {"phase": "decision_execution", "decision": "Blâme", "date_decision": "2999-01-01"}, format="json")
+    assert api.patch(f"/api/v1/carrieres/discipline/{pk}/", {"phase": "decision"}, format="json").status_code == 400
+    futur = api.patch(f"/api/v1/carrieres/discipline/{pk}/", {"phase": "decision", "decision": "Blâme", "date_decision": "2999-01-01"}, format="json")
     assert futur.status_code == 400
 
     from datetime import date
 
-    decision = api.patch(f"/api/v1/carrieres/discipline/{pk}/", {
-        "phase": "decision_execution", "decision": "Blâme notifié", "sanction_nature": "blame", "date_decision": localdate().isoformat(),
-    }, format="json")
-    assert decision.status_code == 200 and decision.json()["avis"] == "sanction"
     from personnel.models import SanctionDisciplinaire
 
+    decision = api.patch(f"/api/v1/carrieres/discipline/{pk}/", {
+        "phase": "decision", "decision": "Blâme notifié", "sanction_nature": "blame", "date_decision": localdate().isoformat(),
+    }, format="json")
+    assert decision.status_code == 200 and decision.json()["avis"] == "sanction"
+    # Une décision sans sanction ni non-lieu est refusée ; le non-lieu (degré 0) classe la procédure sans sanction.
+    sans = api.patch(f"/api/v1/carrieres/discipline/{pk}/", {"phase": "decision", "decision": "Rien", "sanction_nature": "", "date_decision": localdate().isoformat()}, format="json")
+    assert sans.status_code == 400 and "non-lieu" in sans.json()["detail"]
+    ni_audience = api.patch(f"/api/v1/carrieres/discipline/{pk}/", {"phase": "audience", "degre": 0}, format="json")
+    assert ni_audience.status_code == 400 and "phase Décision" in ni_audience.json()["detail"]
+    nonlieu = api.patch(f"/api/v1/carrieres/discipline/{pk}/", {"phase": "decision", "degre": 0, "decision": "Non-lieu prononcé", "date_decision": localdate().isoformat()}, format="json")
+    assert nonlieu.status_code == 200 and nonlieu.json()["avis"] == "classee"
+    assert SanctionDisciplinaire.objects.filter(procedure_id=pk).count() == 0
+    api.patch(f"/api/v1/carrieres/discipline/{pk}/", {
+        "phase": "decision", "degre": 1, "decision": "Blâme notifié", "sanction_nature": "blame", "date_decision": localdate().isoformat(),
+    }, format="json")
     assert SanctionDisciplinaire.objects.filter(procedure_id=pk, nature="blame").count() == 1
     vue = agent.get("/api/v1/agents/318490K/").json()["discipline"][0]
-    assert vue["phase"] == "decision_execution" and vue["sanction_libelle"] == "Blâme" and "rapporteur" not in vue
+    assert vue["phase"] == "decision" and vue["sanction_libelle"] == "Blâme" and "rapporteur" not in vue
 
     # Revenir en arrière retire la sanction du registre.
-    api.patch(f"/api/v1/carrieres/discipline/{pk}/", {"phase": "instruction_conseil"}, format="json")
+    api.patch(f"/api/v1/carrieres/discipline/{pk}/", {"phase": "audience"}, format="json")
     assert SanctionDisciplinaire.objects.filter(procedure_id=pk).count() == 0
 
     assert api.delete(f"/api/v1/carrieres/discipline/{pk}/").status_code == 204
@@ -433,7 +444,7 @@ def test_chaque_utilisateur_ne_voit_que_les_agents_de_sa_supervision(api):
     assert demandes == {"318490K"}
     assert {d["agent"]["matricule"] for d in n2.get("/api/v1/carrieres/conges/").json()["demandes"]} >= {"318490K", "340188P", "402771K"}
     assert {a["matricule"] for a in n1.get("/api/v1/carrieres/discipline/").json()["agents"]} & set(place) == {"318490K"}
-    assert {a["agent"]["matricule"] for a in n1.get("/api/v1/carrieres/absences/").json()["autorisations"]} <= {"318490K"}
+    assert {a["agent"]["matricule"] for a in n1.get("/api/v1/carrieres/absences/").json()["suivi"]} <= {"318490K"}
     assert {a["matricule"] for a in n1.get("/api/v1/carrieres/fin-de-carriere/").json()["agents"]} & set(place) == {"318490K"}
     assert {a["matricule"] for a in n1.get("/api/v1/action-sociale/").json()["agents"]} & set(place) == {"318490K"}
     assert n1.get("/api/v1/grh/bilan-carriere/").json()["effectifs"]["total"] < api.get("/api/v1/grh/bilan-carriere/").json()["effectifs"]["total"]
@@ -584,27 +595,28 @@ def test_modifier_le_quorum_depuis_le_tableau_des_quorums(api):
 
 
 def test_demande_d_absence_de_l_agent_de_bout_en_bout(api):
-    """L'agent demande depuis son profil ; le gestionnaire statue dans « Gestion des autorisations d'absences » ; l'agent voit l'issue."""
+    """L'agent demande depuis son profil ; le gestionnaire statue dans le suivi des absences ; l'agent voit l'issue."""
     agent = _client("318490K")
     depot = agent.post(
         "/api/v1/agents/318490K/conges/demande/",
-        {"type": "convenance-personnelle", "debut": "2026-11-02", "fin": "2026-11-05", "interim": "Mme SORO Karidja"},
+        {"type": "evenement-familial", "debut": "2026-11-02", "fin": "2026-11-05", "interim": "Mme SORO Karidja"},
         format="json",
     )
     assert depot.status_code == 201, depot.content
 
     registre = api.get("/api/v1/carrieres/absences/").json()
-    ligne = next(a for a in registre["autorisations"] if a["agent"]["matricule"] == "318490K" and a["decision"] == "en_attente" and a["demande"])
+    ligne = next(a for a in registre["suivi"] if a["agent"]["matricule"] == "318490K" and a["statut"] == "traitement" and a["absence"])
+    absence = ligne["absence"]
     # La structure affichée est celle des paramètres, jamais la société.
     from personnel.models import EntiteTutelle
 
     assert ligne["structure"] in {e.nom for e in EntiteTutelle.objects.all()}
-    assert registre["jours"]["en_attente"] >= ligne["jours"]
-    demande = next(d for d in agent.get("/api/v1/agents/318490K/").json()["demandes"] if d["reference"] == ligne["demande"])
+    assert registre["indicateurs"]["en_traitement"] >= 1
+    demande = next(d for d in agent.get("/api/v1/agents/318490K/").json()["demandes"] if d["reference"] == absence["demande"])
     assert not demande["etape"].startswith("Clôturée")
 
     # Les boutons d'action : le motif est obligatoire, la décision n'est prise qu'une fois.
-    route = f"/api/v1/absences/{ligne['id']}/decision/"
+    route = f"/api/v1/absences/{absence['id']}/decision/"
     assert api.post(route, {"sens": "valider"}, format="json").status_code == 400
     assert api.post(route, {"sens": "inconnu", "motif": "x"}, format="json").status_code == 400
     ok = api.post(route, {"sens": "valider", "motif": "Pièce vérifiée."}, format="json")
@@ -612,16 +624,8 @@ def test_demande_d_absence_de_l_agent_de_bout_en_bout(api):
     assert api.post(route, {"sens": "invalider", "motif": "Revu."}, format="json").status_code == 409
 
     # L'agent voit l'issue de sa demande dans son profil.
-    demande = next(d for d in agent.get("/api/v1/agents/318490K/").json()["demandes"] if d["reference"] == ligne["demande"])
+    demande = next(d for d in agent.get("/api/v1/agents/318490K/").json()["demandes"] if d["reference"] == absence["demande"])
     assert demande["etape"] == "Clôturée : autorisation accordée"
-
-    # Un refus clôture aussi la demande de l'agent.
-    second = agent.post("/api/v1/agents/318490K/conges/demande/", {"type": "mission", "debut": "2026-12-01", "fin": "2026-12-04", "interim": "Mme SORO Karidja"}, format="json")
-    assert second.status_code == 201
-    neuf = next(a for a in api.get("/api/v1/carrieres/absences/").json()["autorisations"] if a["decision"] == "en_attente" and a["agent"]["matricule"] == "318490K")
-    refus = api.post(f"/api/v1/absences/{neuf['id']}/decision/", {"sens": "invalider", "motif": "Hors mission."}, format="json")
-    assert refus.status_code == 200 and refus.json()["decision"] == "invalidee"
-    assert next(d for d in agent.get("/api/v1/agents/318490K/").json()["demandes"] if d["reference"] == neuf["demande"])["etape"] == "Clôturée : autorisation refusée"
 
 
 def test_suivi_des_agents_en_formation_par_position_et_modifiable(api):
@@ -691,3 +695,55 @@ def test_bilan_compte_les_agents_affectes_par_emploi_et_par_categorie(api):
     assert ligne["dote"] == {"fonctionnaires": 1, "contractuels": 1, "total": 2}
     assert ligne["ecart"] == 2 - ligne["catalogue"]["total"]
     assert bilan["totaux"]["dote"]["total"] >= 2
+
+
+def test_exclusion_temporaire_duree_alertes_et_reintegration(api):
+    from datetime import timedelta
+
+    from django.utils.timezone import localdate
+
+    from personnel.discipline import surveiller_reintegrations
+    from personnel.models import Agent, Notification, PositionAdministrative, ProcedureDisciplinaire
+
+    jour = localdate()
+    ouverte = api.post("/api/v1/carrieres/discipline/", {"matricule": "318490K", "grief": "Abandon de poste", "description": "Absent", "degre": 2}, format="json")
+    assert ouverte.status_code == 201, ouverte.content
+    pk = ouverte.json()["id"]
+    route = f"/api/v1/carrieres/discipline/{pk}/"
+    ProcedureDisciplinaire.objects.filter(pk=pk).update(saisine=jour - timedelta(days=30))  # ouverte il y a un mois
+
+    # Une durée trop longue ou invalide est refusée ; une exclusion de 10 jours à partir de la décision est enregistrée.
+    base = {"phase": "decision", "degre": 2, "decision": "Exclusion de 10 jours", "sanction_nature": "exclusion", "date_decision": (jour - timedelta(days=4)).isoformat()}
+    assert api.patch(route, {**base, "duree_jours": 99999}, format="json").status_code == 400
+    decide = api.patch(route, {**base, "duree_jours": 10}, format="json")
+    assert decide.status_code == 200, decide.content
+    corps = decide.json()
+    assert corps["duree_jours"] == 10 and corps["exclusion_en_cours"] is True and corps["jours_avant_reprise"] == 6
+    agent = Agent.objects.get(matricule="318490K")
+    assert agent.situation == "Exclu temporairement"
+    position = PositionAdministrative.objects.get(procedure_id=pk)
+    assert position.date_fin == jour - timedelta(days=4) + timedelta(days=9)
+
+    # À 6 jours de la reprise, l'équipe RH est alertée (une seule fois), l'agent reste exclu.
+    envois = surveiller_reintegrations(jour)
+    assert envois >= 1 and Notification.objects.filter(titre__startswith="Réintégration dans 6 jours").exists()
+    assert surveiller_reintegrations(jour) == 0
+
+    # La veille : alerte urgente. Le jour de la reprise : réintégration automatique et alerte.
+    surveiller_reintegrations(jour + timedelta(days=5))
+    assert Notification.objects.filter(titre__startswith="Réintégration demain", urgente=True).exists()
+    surveiller_reintegrations(jour + timedelta(days=6))
+    item = ProcedureDisciplinaire.objects.get(pk=pk)
+    assert item.reintegre_le == jour + timedelta(days=6)
+    assert Notification.objects.filter(titre__startswith="Agent réintégré").exists()
+
+    # Réintégration manuelle d'une exclusion sans durée : le bouton lève l'exclusion tout de suite.
+    item.positions.all().delete()
+    ProcedureDisciplinaire.objects.filter(pk=pk).update(reintegre_le=None)
+    redecide = api.patch(route, {**base, "date_decision": jour.isoformat(), "duree_jours": None}, format="json")
+    assert redecide.status_code == 200 and redecide.json()["exclusion_en_cours"] is True and redecide.json()["reprise_le"] == ""
+    reintegre = api.post(f"{route}reintegrer/")
+    assert reintegre.status_code == 200 and reintegre.json()["exclusion_en_cours"] is False and reintegre.json()["reintegre_le"] == jour.isoformat()
+    agent.refresh_from_db()
+    assert agent.situation == "En activité"
+    assert api.post(f"{route}reintegrer/").status_code == 409  # plus d'exclusion à lever

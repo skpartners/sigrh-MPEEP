@@ -10,7 +10,7 @@ import { AppChrome } from "../AppChrome";
 import { Icone } from "../../ui/Icone";
 import { Select } from "../../ui/Select";
 
-type Statut = "quittance" | "arrete" | "transmis" | "notifie";
+type Statut = "notifie" | "reception" | "transmis";
 type Dossier = {
   id: number;
   automatique: boolean;
@@ -32,10 +32,9 @@ type Dossier = {
 type Tableau = {
   exercice: number;
   effectif: number;
-  indicateurs: { departs: number; departs_cadres: number; postes: number; binomes: number; dossiers: number; transmis: number; cessations: number };
+  indicateurs: { departs_annee: number; notifies: number; receptions: number; transmis: number; dossiers: number };
   pyramide: { code: string; libelle: string; effectif: number; part: number; hommes: number; femmes: number; cadres: number }[];
   dossiers: Dossier[];
-  postes: { id: number; intitule: string; titulaire: AgentBrief; depart: string; successeur: string; progression: number; commentaire: string }[];
   motifs: { id: number; code: string; libelle: string; automatique: boolean }[];
   statuts: { code: Statut; libelle: string }[];
   agents: { matricule: string; nom_complet: string; organisme_sigle: string }[];
@@ -45,25 +44,28 @@ type Tableau = {
 };
 
 type AgentChoix = Tableau["agents"][number];
-type Poste = Tableau["postes"][number];
 type Motif = Tableau["motifs"][number];
 type Distinction = Tableau["distinctions"][number];
 type ActionRetraite = NonNullable<Tableau["accompagnement"]["actions"]>[number];
 type Panneau =
   | { genre: "dossier"; dossier?: Dossier }
-  | { genre: "poste"; poste?: Poste }
   | { genre: "distinction"; distinction?: Distinction }
   | { genre: "action"; action?: ActionRetraite };
 
 const ROUTE = "/api/v1/carrieres/fin-de-carriere/";
 const ICONE = "p-1.5 rounded text-on-surface-variant hover:text-primary hover:bg-surface-container transition-colors";
 const MOIS = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
-const MOIS_COURTS = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."];
+// Une teinte franche par tranche d'âge, pour les distinguer d'un coup d'œil : rouge (60 ans et plus), orange, bleu, vert.
 const COULEUR_TRANCHE: Record<string, { texte: string; barre: string }> = {
-  "60+": { texte: "text-secondary", barre: "bg-secondary-container" },
-  "55-59": { texte: "text-primary", barre: "bg-primary" },
-  "40-54": { texte: "text-on-surface", barre: "bg-surface-tint" },
-  "-40": { texte: "text-on-surface", barre: "bg-surface-container-highest" },
+  "60+": { texte: "text-[#b91c1c]", barre: "bg-[#dc2626]" },
+  "55-59": { texte: "text-[#b45309]", barre: "bg-[#f59e0b]" },
+  "40-54": { texte: "text-[#1d4ed8]", barre: "bg-[#2563eb]" },
+  "-40": { texte: "text-[#15803d]", barre: "bg-[#16a34a]" },
+};
+const STATUT_TON: Record<Statut, string> = {
+  notifie: "bg-secondary-fixed text-on-secondary-fixed",
+  reception: "bg-primary-fixed text-on-primary-fixed",
+  transmis: "bg-[#16a34a]/15 text-[#166534]",
 };
 
 function dateLongue(iso: string): string {
@@ -71,12 +73,7 @@ function dateLongue(iso: string): string {
   return `${String(jour).padStart(2, "0")} ${MOIS[mois - 1]} ${annee}`;
 }
 
-function moisAnnee(iso: string): string {
-  const [annee, mois] = iso.split("-").map(Number);
-  return `${MOIS_COURTS[mois - 1]} ${annee}`;
-}
-
-/** Fin de carrière : départs, relève des postes sensibles, pyramide des âges et liquidation des droits. */
+/** Fin de carrière : départs à la retraite, pyramide des âges et suivi des dossiers jusqu'à la CGRAE. */
 export function FinCarriereScreen() {
   const tableau = useQuery({ queryKey: ["carrieres-fin-carriere"], queryFn: () => api<Tableau>("/api/v1/carrieres/fin-de-carriere/") });
   const [entite, setEntite] = useState("");
@@ -117,13 +114,13 @@ export function FinCarriereScreen() {
           </section>
           {/* Indicateurs */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Indicateur titre="Départs sous douze mois" icone="event_busy" liseret="bg-primary" teinte="bg-surface-container-low text-primary" valeur={indicateurs ? String(indicateurs.departs) : "—"} unite="agents" gauche="Limite d'âge atteinte" droite={indicateurs ? `dont ${indicateurs.departs_cadres} cadre${indicateurs.departs_cadres > 1 ? "s" : ""} A` : ""} />
-            <Indicateur titre="Postes clés & sensibles" titreCouleur="text-secondary" icone="crisis_alert" liseret="bg-secondary-container" teinte="bg-secondary-fixed text-on-secondary-fixed" valeur={indicateurs ? String(indicateurs.postes) : "—"} valeurCouleur="text-secondary" unite="postes à relever" gauche="Relève à sécuriser" droite={indicateurs ? `${indicateurs.binomes} binôme${indicateurs.binomes > 1 ? "s" : ""} formé${indicateurs.binomes > 1 ? "s" : ""}` : ""} />
-            <Indicateur titre="Dossiers transmis à la CGRAE" icone="task_alt" liseret="bg-tertiary" teinte="bg-surface-container text-tertiary" valeur={indicateurs ? String(indicateurs.transmis) : "—"} unite={indicateurs ? `sur ${indicateurs.dossiers} dossier${indicateurs.dossiers > 1 ? "s" : ""}` : ""} gauche="Instruction achevée" droite={indicateurs && indicateurs.dossiers ? `${Math.round((indicateurs.transmis * 100) / indicateurs.dossiers)} %` : ""} />
-            <Indicateur titre="Cessations saisies" icone="gavel" liseret="bg-primary" teinte="bg-surface-container-low text-primary" valeur={indicateurs ? String(indicateurs.cessations) : "—"} unite="dossiers" gauche="Hors admission à la retraite" droite="" />
+            <Indicateur titre="Départs de l'année en cours" icone="event_busy" liseret="bg-primary" teinte="bg-surface-container-low text-primary" valeur={indicateurs ? String(indicateurs.departs_annee) : "—"} unite="agents" gauche={`Exercice ${donnees?.exercice ?? ""}`} droite={indicateurs ? `${indicateurs.dossiers} dossier${indicateurs.dossiers > 1 ? "s" : ""}` : ""} />
+            <Indicateur titre="Agents notifiés" icone="mark_email_read" liseret="bg-secondary-container" teinte="bg-secondary-fixed text-on-secondary-fixed" valeur={indicateurs ? String(indicateurs.notifies) : "—"} unite="dossiers" gauche="Agent informé de son départ" droite={indicateurs && indicateurs.dossiers ? `${Math.round((indicateurs.notifies * 100) / indicateurs.dossiers)} %` : ""} />
+            <Indicateur titre="Réception des dossiers" icone="inventory_2" liseret="bg-tertiary" teinte="bg-surface-container text-tertiary" valeur={indicateurs ? String(indicateurs.receptions) : "—"} unite="dossiers" gauche="Pièces reçues" droite={indicateurs && indicateurs.dossiers ? `${Math.round((indicateurs.receptions * 100) / indicateurs.dossiers)} %` : ""} />
+            <Indicateur titre="Transmission à la CGRAE" icone="send" liseret="bg-primary" teinte="bg-primary-fixed text-on-primary-fixed" valeur={indicateurs ? String(indicateurs.transmis) : "—"} unite={indicateurs ? `sur ${indicateurs.dossiers} dossier${indicateurs.dossiers > 1 ? "s" : ""}` : ""} gauche="Instruction achevée" droite={indicateurs && indicateurs.dossiers ? `${Math.round((indicateurs.transmis * 100) / indicateurs.dossiers)} %` : ""} />
           </div>
 
-          {/* Pyramide et relève */}
+          {/* Pyramide des âges */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             <div className="lg:col-span-12 bg-surface-container-lowest p-6 rounded shadow-sm flex flex-col justify-between">
               <div className="pb-4">
@@ -145,11 +142,14 @@ export function FinCarriereScreen() {
                               {tranche.effectif} agent{tranche.effectif > 1 ? "s" : ""} • {tranche.part.toLocaleString("fr-FR")} %
                             </span>
                           </div>
-                          <div className="w-full h-3 bg-surface-container rounded-full overflow-hidden flex">
+                          <div className="w-full h-3 bg-surface-container-highest rounded-full overflow-hidden flex">
                             <div className={`motion-fill ${couleur.barre} h-full rounded-full`} style={{ width: `${(tranche.effectif / plusGrande) * 100}%` }} />
                           </div>
                           <div className="flex justify-between text-label-sm font-label-sm text-on-surface-variant mt-1">
-                            <span>Hommes : {tranche.hommes} • Femmes : {tranche.femmes}</span>
+                            <span className="inline-flex items-center gap-3">
+                              <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-[#0891b2]" aria-hidden="true" />Hommes : {tranche.hommes}</span>
+                              <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-[#c026d3]" aria-hidden="true" />Femmes : {tranche.femmes}</span>
+                            </span>
                             <span>Cadres A : {tranche.cadres}</span>
                           </div>
                         </div>
@@ -219,17 +219,18 @@ export function FinCarriereScreen() {
                     <th className="py-3 px-4 font-bold">Société / direction</th>
                     <th className="py-3 px-4 font-bold">Grade & ancienneté</th>
                     <th className="py-3 px-4 font-bold">Date limite / âge</th>
+                    <th className="py-3 px-4 font-bold">Statut</th>
                     <th className="py-3 px-4 font-bold text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-surface-container-low font-body-md text-body-md text-on-surface">
                   {tableau.isPending ? (
                     <tr>
-                      <td colSpan={5} className="py-4 px-6"><Skeleton className="h-10 w-full" /></td>
+                      <td colSpan={6} className="py-4 px-6"><Skeleton className="h-10 w-full" /></td>
                     </tr>
                   ) : filtres.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="py-6 px-6 text-on-surface-variant">{tableau.isError ? "Le registre n'a pas pu être chargé." : "Aucun dossier ne correspond à ces filtres."}</td>
+                      <td colSpan={6} className="py-6 px-6 text-on-surface-variant">{tableau.isError ? "Le registre n'a pas pu être chargé." : "Aucun dossier ne correspond à ces filtres."}</td>
                     </tr>
                   ) : (
                     pageDossiers.visibles.map((dossier) => (
@@ -258,6 +259,10 @@ export function FinCarriereScreen() {
                           ) : (
                             <span className="font-label-sm text-label-sm text-secondary font-bold">{dossier.motif?.libelle}</span>
                           )}
+                        </td>
+                        <td className="py-4 px-4">
+                          <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 font-label-sm text-label-sm font-bold ${STATUT_TON[dossier.statut] ?? "bg-surface-container text-on-surface-variant"}`}>{dossier.statut_libelle}</span>
+                          {dossier.statut_detail ? <span className="mt-1 block font-body-sm text-body-sm text-on-surface-variant">{dossier.statut_detail}</span> : null}
                         </td>
                         <td className="py-4 px-4 text-right">
                           <button className={ICONE} type="button" aria-label={`Modifier le dossier de ${dossier.agent.nom_complet}`} onClick={() => setPanneau({ genre: "dossier", dossier })}><Icone nom="edit" className="text-lg" /></button>
@@ -348,47 +353,6 @@ export function FinCarriereScreen() {
                 </div>
               </div>
             ) : null}
-          <div className="lg:col-span-2 bg-surface-container-lowest p-6 rounded shadow-sm">
-            <div className="flex items-center justify-between gap-2 pb-3">
-              <h2 className="font-headline-sm text-headline-sm text-on-surface">Relève & compétences sensibles</h2>
-              <button className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-primary text-on-primary font-label-sm text-label-sm font-semibold" type="button" onClick={() => setPanneau({ genre: "poste" })}>
-                <Icone nom="add" className="text-sm" />
-                Ajouter
-              </button>
-            </div>
-            <p className="font-body-sm text-body-sm text-on-surface-variant mb-4">Binômes de transmission des compétences avant le départ du titulaire.</p>
-            <div className="space-y-3">
-              {(donnees?.postes ?? []).map((poste) => {
-                const forme = Boolean(poste.successeur);
-                return (
-                  <div key={poste.id} className="p-3 bg-surface-container-low rounded flex items-center justify-between gap-3">
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="font-label-md text-label-md font-bold text-on-surface truncate">{poste.intitule}</span>
-                        <span className={`w-2 h-2 rounded-full shrink-0 ${forme ? "bg-primary" : "bg-secondary"}`} title={forme ? "Binôme formé" : "Successeur à désigner"} />
-                      </div>
-                      <p className="font-body-sm text-body-sm text-on-surface-variant mt-0.5">
-                        Titulaire : <span className="font-semibold text-on-surface">{poste.titulaire.nom_complet}</span> (départ : {moisAnnee(poste.depart)})
-                      </p>
-                      <p className={`font-label-sm text-label-sm mt-1 flex items-center gap-1 ${forme ? "text-primary" : "text-secondary"}`}>
-                        <Icone nom={forme ? "groups" : "warning"} className="text-sm" />
-                        {forme ? `Successeur : ${poste.successeur} (tutorat à ${poste.progression} %)` : poste.commentaire}
-                      </p>
-                    </div>
-                    <div className="flex flex-col items-end gap-1 shrink-0">
-                      <span className={`px-2 py-0.5 rounded font-label-sm text-label-sm font-bold ${forme ? "bg-primary-fixed text-on-primary-fixed" : "bg-secondary-fixed text-on-secondary-fixed"}`}>
-                        {forme ? "Conforme" : "Alerte RH"}
-                      </span>
-                      <span className="flex">
-                        <button className={ICONE} type="button" aria-label={`Modifier ${poste.intitule}`} onClick={() => setPanneau({ genre: "poste", poste })}><Icone nom="edit" className="text-lg" /></button>
-                        <button className={ICONE} type="button" aria-label={`Supprimer ${poste.intitule}`} onClick={() => void retirer(`${ROUTE}postes/${poste.id}/`, `Retirer le poste « ${poste.intitule} » ?`)}><Icone nom="delete" className="text-lg" /></button>
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
           </div>
         </div>
       </div>
@@ -446,7 +410,6 @@ function erreurDe(error: unknown, repli: string): string | undefined {
 
 function Editeur({ panneau, donnees, onClose }: { panneau: Panneau; donnees: Tableau; onClose: () => void }) {
   if (panneau.genre === "dossier") return <FormulaireDossier dossier={panneau.dossier} agents={donnees.agents} occupes={donnees.dossiers.map((item) => item.agent.matricule)} statuts={donnees.statuts} motifs={donnees.motifs} onClose={onClose} />;
-  if (panneau.genre === "poste") return <FormulairePoste poste={panneau.poste} agents={donnees.agents} onClose={onClose} />;
   if (panneau.genre === "distinction") return <FormulaireDistinction distinction={panneau.distinction} onClose={onClose} />;
   return <FormulaireAction action={panneau.action} onClose={onClose} />;
 }
@@ -557,46 +520,6 @@ function FormulaireCessation({ dossier, agents, occupes, motifs, onClose }: { do
         <label className="block"><span className={LIBELLE}>Agent <span className="text-error">*</span></span><ListeAgents agents={choix} value={saisie.matricule} onChange={(valeur) => setSaisie({ ...saisie, matricule: valeur })} requis disabled={Boolean(dossier)} /></label>
         <label className="block"><span className={LIBELLE}>Date d'effet <span className="text-error">*</span></span><input className={CHAMP} required type="date" value={saisie.date_cessation} onChange={champ("date_cessation")} /></label>
         <label className="block"><span className={LIBELLE}>Précision</span><input className={CHAMP} maxLength={160} value={saisie.statut_detail} onChange={champ("statut_detail")} /></label>
-      </div>
-    </Modale>
-  );
-}
-
-function FormulairePoste({ poste, agents, onClose }: { poste?: Poste; agents: AgentChoix[]; onClose: () => void }) {
-  const client = useQueryClient();
-  const feedback = useFeedback();
-  const [saisie, setSaisie] = useState({
-    intitule: poste?.intitule ?? "",
-    matricule: poste?.titulaire.matricule ?? "",
-    depart: poste?.depart ?? "",
-    successeur: agents.find((agent) => agent.nom_complet === poste?.successeur)?.matricule ?? "",
-    progression: String(poste?.progression ?? 0),
-    commentaire: poste?.commentaire ?? "",
-  });
-  const envoi = useMutation({
-    mutationFn: () => {
-      const corps: Record<string, unknown> = { intitule: saisie.intitule, matricule: saisie.matricule, depart: saisie.depart, progression: Number(saisie.progression), commentaire: saisie.commentaire };
-      if (saisie.successeur) corps.successeur = saisie.successeur;
-      return api(poste ? `${ROUTE}postes/${poste.id}/` : `${ROUTE}postes/`, { method: poste ? "PATCH" : "POST", body: JSON.stringify(corps) });
-    },
-    onSuccess: async () => {
-      await client.invalidateQueries({ queryKey: ["carrieres-fin-carriere"] });
-      feedback.toast(poste ? "Poste mis à jour" : "Poste ajouté");
-      onClose();
-    },
-  });
-  const champ = (cle: "intitule" | "depart" | "progression" | "commentaire") => (event: { target: { value: string } }) => setSaisie({ ...saisie, [cle]: event.target.value });
-  return (
-    <Modale titre={poste ? "Modifier le poste" : "Ajouter un poste sensible"} sousTitre="Le titulaire et le successeur sont des agents du système." icone="crisis_alert" taille="lg" onClose={onClose} onSubmit={() => envoi.mutate()} enCours={envoi.isPending} erreur={erreurDe(envoi.error, "Le poste n'a pas été enregistré.")}>
-      <div className="space-y-4">
-        <label className="block"><span className={LIBELLE}>Intitulé <span className="text-error">*</span></span><input className={CHAMP} required maxLength={160} value={saisie.intitule} onChange={champ("intitule")} /></label>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <label className="block"><span className={LIBELLE}>Titulaire <span className="text-error">*</span></span><ListeAgents agents={agents} value={saisie.matricule} onChange={(valeur) => setSaisie({ ...saisie, matricule: valeur, successeur: valeur === saisie.successeur ? "" : saisie.successeur })} requis /></label>
-          <label className="block"><span className={LIBELLE}>Départ <span className="text-error">*</span></span><input className={CHAMP} required type="date" value={saisie.depart} onChange={champ("depart")} /></label>
-          <label className="block"><span className={LIBELLE}>Successeur</span><ListeAgents agents={agents.filter((agent) => agent.matricule !== saisie.matricule)} value={saisie.successeur} onChange={(valeur) => setSaisie({ ...saisie, successeur: valeur })} /></label>
-          <label className="block"><span className={LIBELLE}>Tutorat (%)</span><input className={CHAMP} required type="number" min={0} max={100} value={saisie.progression} onChange={champ("progression")} /></label>
-        </div>
-        <label className="block"><span className={LIBELLE}>Commentaire</span><input className={CHAMP} maxLength={200} value={saisie.commentaire} onChange={champ("commentaire")} /></label>
       </div>
     </Modale>
   );

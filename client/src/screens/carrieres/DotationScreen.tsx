@@ -497,10 +497,10 @@ export function DotationScreen({ ongletInitial = "affectation" }: { ongletInitia
       {panneau === "pont" ? (
         <Modale titre="Nouvelle passerelle" onClose={fermer}>
           <form className="space-y-3" onSubmit={(event) => { event.preventDefault(); creerPont.mutate(); }}>
-            <label className="block">Pôle cédant
+            <label className="block">Programme cédant
               <input className={`${CHAMP} mt-1`} required value={pont.cedant} onChange={(event) => setPont({ ...pont, cedant: event.target.value })} />
             </label>
-            <label className="block">Pôle récepteur
+            <label className="block">Programme récepteur
               <input className={`${CHAMP} mt-1`} required value={pont.recepteur} onChange={(event) => setPont({ ...pont, recepteur: event.target.value })} />
             </label>
             <label className="block">Profil

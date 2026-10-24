@@ -49,33 +49,35 @@ def deposer(agent: Agent, fichier, intitule: str, _categorie: str) -> str | None
 
 
 # Dossier personnel numérique : trois rubriques et les pièces attendues dans chacune.
+# « obligatoire » : pièce que l'agent doit toujours verser. Avec une « condition » et sans obligation, elle dépend de la situation (marié, enfants) ;
+# sans condition ni obligation, elle est facultative. Les actes administratifs sont établis par la DRH, jamais exigés de l'agent.
 CATALOGUE_DOCUMENTS = [
     {
         "code": "etat_civil",
         "libelle": "Actes d'état civil",
         "types": [
-            {"code": "acte_naissance", "libelle": "Copie d'acte de naissance de l'agent"},
-            {"code": "acte_mariage", "libelle": "Acte de mariage"},
-            {"code": "acte_naissance_enfant", "libelle": "Acte de naissance d'un enfant"},
+            {"code": "acte_naissance", "libelle": "Copie d'acte de naissance de l'agent", "obligatoire": True, "condition": ""},
+            {"code": "acte_mariage", "libelle": "Acte de mariage", "obligatoire": False, "condition": "Si l'agent est marié"},
+            {"code": "acte_naissance_enfant", "libelle": "Acte de naissance d'un enfant", "obligatoire": False, "condition": "Pour chaque enfant déclaré"},
         ],
     },
     {
         "code": "diplomes",
         "libelle": "Diplômes & Certifications",
         "types": [
-            {"code": "diplome", "libelle": "Diplôme"},
-            {"code": "cv", "libelle": "CV"},
+            {"code": "diplome", "libelle": "Diplôme", "obligatoire": True, "condition": "Un justificatif par diplôme déclaré"},
+            {"code": "cv", "libelle": "CV", "obligatoire": False, "condition": ""},
         ],
     },
     {
         "code": "administratifs",
         "libelle": "Actes administratifs",
         "types": [
-            {"code": "arrete_nomination", "libelle": "Arrêté de nomination"},
-            {"code": "decision", "libelle": "Décision"},
-            {"code": "certificat", "libelle": "Certificat"},
-            {"code": "attestation", "libelle": "Attestation"},
-            {"code": "note_service", "libelle": "Note de service"},
+            {"code": "arrete_nomination", "libelle": "Arrêté de nomination", "obligatoire": False, "condition": ""},
+            {"code": "decision", "libelle": "Décision", "obligatoire": False, "condition": ""},
+            {"code": "certificat", "libelle": "Certificat", "obligatoire": False, "condition": ""},
+            {"code": "attestation", "libelle": "Attestation", "obligatoire": False, "condition": ""},
+            {"code": "note_service", "libelle": "Note de service", "obligatoire": False, "condition": ""},
         ],
     },
 ]
@@ -119,6 +121,14 @@ RUBRIQUE_DIPLOMES = "Diplômes & Certifications"
 def verser_justificatif_diplome(agent: Agent, fichier, libelle: str) -> tuple[PieceJointe | None, str | None]:
     """Verse le justificatif d'un diplôme dans le dossier numérique. Retourne la pièce créée, ou un message d'erreur."""
     erreur = deposer_document(agent, fichier, "diplomes", "diplome", libelle, "")
+    if erreur:
+        return None, erreur
+    return agent.pieces.order_by("-id").first(), None
+
+
+def verser_acte_naissance_enfant(agent: Agent, fichier, precision: str) -> tuple[PieceJointe | None, str | None]:
+    """Verse l'acte de naissance d'un enfant dans le dossier numérique. Retourne la pièce créée, ou un message d'erreur."""
+    erreur = deposer_document(agent, fichier, "etat_civil", "acte_naissance_enfant", precision, "")
     if erreur:
         return None, erreur
     return agent.pieces.order_by("-id").first(), None

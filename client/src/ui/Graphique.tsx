@@ -24,6 +24,17 @@ const CLAIR = "var(--color-tertiary-container)";
 const FONCE = "var(--color-primary)";
 
 /** Le canevas ignore la police du navigateur : la taille du texte suit celle de la racine (12px à 100 %). */
+/** Fond des étiquettes de données : une pastille claire à texte sombre, lisible sur n'importe quelle couleur de barre ou de part. */
+const FOND_ETIQUETTE = {
+  backgroundColor: "rgba(255, 255, 255, 0.92)",
+  borderColor: "rgba(15, 23, 42, 0.18)",
+  borderWidth: 1,
+  borderRadius: 4,
+  padding: [2, 5],
+  color: "#1C1C1C",
+  fontWeight: 600 as const,
+};
+
 function styleTexte() {
   const racine = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
   return { fontFamily: "Plus Jakarta Sans, sans-serif", fontSize: Math.round((12 * racine) / 16) };
@@ -35,6 +46,7 @@ export const FORMES = [
   { code: "empilee", libelle: "Barres empilées", icone: IconeEmpilee },
   { code: "empilee-horizontale", libelle: "Barres empilées horizontales", icone: IconeEmpileeHorizontale },
   { code: "pourcentage", libelle: "Barres en pourcentage", icone: IconePourcentage },
+  { code: "pyramide", libelle: "Pyramide (première série à gauche)", icone: IconePyramide },
   { code: "ligne", libelle: "Courbe", icone: IconeLigne },
   { code: "aire", libelle: "Aire", icone: IconeAire },
   { code: "points", libelle: "Courbe à points", icone: IconePoints },
@@ -169,23 +181,32 @@ export function ChoixForme({ forme, onChange }: { forme: FormeGraphique; onChang
 }
 
 /** Graphique piloté de l'extérieur : la forme et les réglages viennent de l'appelant (tableau croisé). */
-export function Toile({ forme, series, etiquettes, legende, hauteur, titre = "Graphique" }: {
+export function Toile({ forme, series, etiquettes, legende, hauteur, titre = "Graphique", couleurs: imposees, onSelection }: {
   forme: FormeGraphique;
   series: SerieGraphique[];
   etiquettes: boolean;
   legende: boolean;
   hauteur: number;
   titre?: string;
+  /** Couleurs choisies par l'utilisateur ; elles passent avant la palette de l'application. */
+  couleurs?: string[];
+  /** Clic sur une barre, un point ou une part : reçoit le libellé de la catégorie (forage). */
+  onSelection?: (libelle: string) => void;
 }) {
   const noeud = useRef<HTMLDivElement>(null);
   const graphique = useRef<EChartsType | null>(null);
   const couleurs = useCouleurs();
+  const selection = useRef(onSelection);
+  selection.current = onSelection;
 
   useEffect(() => {
     const element = noeud.current;
     if (!element) return;
     const instance = init(element);
     graphique.current = instance;
+    instance.on("click", (parametres: { name?: string }) => {
+      if (parametres.name) selection.current?.(parametres.name);
+    });
     const observateur = new ResizeObserver(() => instance.resize());
     observateur.observe(element);
     return () => {
@@ -196,12 +217,21 @@ export function Toile({ forme, series, etiquettes, legende, hauteur, titre = "Gr
   }, []);
 
   const signature = JSON.stringify(series);
+  const choisies = JSON.stringify(imposees ?? []);
   useEffect(() => {
-    graphique.current?.setOption(option(forme, JSON.parse(signature) as SerieGraphique[], etiquettes, legende, paletteGraphique(couleurs)), true);
-  }, [forme, signature, etiquettes, legende, couleurs]);
+    const palette = paletteGraphique(couleurs);
+    const personnalisees = JSON.parse(choisies) as string[];
+    // Les couleurs choisies passent devant ; la palette de l'application complète les séries qui n'en ont pas.
+    graphique.current?.setOption(option(forme, JSON.parse(signature) as SerieGraphique[], etiquettes, legende, [...personnalisees, ...palette]), true);
+    if (element_clicable(noeud.current)) noeud.current.style.cursor = onSelection ? "pointer" : "default";
+  }, [forme, signature, etiquettes, legende, couleurs, choisies, onSelection]);
 
   // hauteur est donnée en px à la police par défaut ; en rem, le graphique grandit avec la police du navigateur.
   return <div ref={noeud} style={{ height: `${hauteur / 16}rem` }} role="img" aria-label={titre} />;
+}
+
+function element_clicable(noeud: HTMLDivElement | null): noeud is HTMLDivElement {
+  return noeud !== null;
 }
 
 function option(forme: FormeGraphique, series: SerieGraphique[], etiquettes: boolean, legende: boolean, palette: string[]): EChartsCoreOption {
@@ -223,6 +253,7 @@ function option(forme: FormeGraphique, series: SerieGraphique[], etiquettes: boo
         width: forme === "entonnoir" ? "76%" : undefined,
         label: {
           show: etiquettes,
+          ...FOND_ETIQUETTE,
           formatter: (point: { name?: string; value?: number }) => `${point.name ?? ""}\n${formater(point.value, false)}`,
         },
         labelLine: { show: etiquettes },
@@ -230,16 +261,18 @@ function option(forme: FormeGraphique, series: SerieGraphique[], etiquettes: boo
       }],
     };
   }
-  const horizontale = forme === "horizontale" || forme === "empilee-horizontale";
+  const pyramide = forme === "pyramide";
+  const horizontale = forme === "horizontale" || forme === "empilee-horizontale" || pyramide;
   const courbe = forme === "ligne" || forme === "aire" || forme === "points";
-  const empilee = forme === "empilee" || forme === "empilee-horizontale" || forme === "pourcentage";
-  const valeurs = forme === "pourcentage" ? enPourcentage(series) : series;
+  const empilee = forme === "empilee" || forme === "empilee-horizontale" || forme === "pourcentage" || pyramide;
+  // Pyramide : la première série (les hommes) part à gauche de l'axe, les autres à droite ; les graduations restent positives.
+  const valeurs = forme === "pourcentage" ? enPourcentage(series) : pyramide ? series.map((serie, rang) => (rang === 0 ? { ...serie, points: serie.points.map((point) => ({ ...point, total: -point.total })) } : serie)) : series;
   const beaucoup = categories.length > 8;
   // En barres horizontales, la première catégorie se lit en haut, comme dans le tableau.
-  const axeCategorie = { type: "category" as const, data: categories, inverse: horizontale, axisLabel: { hideOverlap: true, width: horizontale ? 140 : 110, overflow: "truncate" as const } };
+  const axeCategorie = { type: "category" as const, data: categories, ...(pyramide ? { axisTick: { show: false } } : {}), inverse: horizontale && !pyramide, axisLabel: { hideOverlap: true, width: horizontale ? 140 : 110, overflow: "truncate" as const } };
   // Des comptages n'ont pas de graduation à 0,2 : l'axe reste en entiers quand toutes les valeurs le sont.
   const entiers = valeurs.every((serie) => serie.points.every((point) => Number.isInteger(point.total)));
-  const axeValeur = { type: "value" as const, max: forme === "pourcentage" ? 100 : undefined, minInterval: entiers && forme !== "pourcentage" ? 1 : undefined };
+  const axeValeur = { type: "value" as const, max: forme === "pourcentage" ? 100 : undefined, minInterval: entiers && forme !== "pourcentage" ? 1 : undefined, axisLabel: pyramide ? { formatter: (valeur: number) => Math.abs(valeur).toLocaleString("fr-FR") } : undefined };
   return {
     color: palette,
     textStyle: styleTexte(),
@@ -247,6 +280,7 @@ function option(forme: FormeGraphique, series: SerieGraphique[], etiquettes: boo
       trigger: "axis",
       valueFormatter: (valeur: unknown) => {
         if (typeof valeur !== "number") return "";
+        if (pyramide) return Math.abs(valeur).toLocaleString("fr-FR");
         return forme === "pourcentage" ? `${valeur.toLocaleString("fr-FR", { maximumFractionDigits: 1 })} %` : valeur.toLocaleString("fr-FR");
       },
     },
@@ -267,8 +301,9 @@ function option(forme: FormeGraphique, series: SerieGraphique[], etiquettes: boo
       symbolSize: forme === "points" ? 8 : 4,
       label: {
         show: etiquettes,
+        ...FOND_ETIQUETTE,
         position: empilee ? "inside" : horizontale ? "right" : "top",
-        formatter: (point: { value?: number }) => formater(point.value, forme === "pourcentage"),
+        formatter: (point: { value?: number }) => formater(pyramide && typeof point.value === "number" ? Math.abs(point.value) : point.value, forme === "pourcentage"),
       },
       labelLayout: { hideOverlap: true },
       data: serie.points.map((point) => point.total),
@@ -351,6 +386,16 @@ function IconeEmpilee() {
       <rect x="8" y="9" width="8" height="6" style={{ fill: CLAIR }} />
       <rect x="8" y="15" width="8" height="6" style={{ fill: FONCE }} />
       <path d="M2 21h20" stroke={TRAIT} strokeWidth="1.2" />
+    </Cadre>
+  );
+}
+
+function IconePyramide() {
+  return (
+    <Cadre>
+      <rect x="6" y="4" width="6" height="4" style={{ fill: ENCRE }} /><rect x="12" y="4" width="4" height="4" style={{ fill: CLAIR }} />
+      <rect x="3" y="10" width="9" height="4" style={{ fill: ENCRE }} /><rect x="12" y="10" width="7" height="4" style={{ fill: CLAIR }} />
+      <rect x="5" y="16" width="7" height="4" style={{ fill: ENCRE }} /><rect x="12" y="16" width="6" height="4" style={{ fill: CLAIR }} />
     </Cadre>
   );
 }

@@ -1,10 +1,12 @@
 """Actes et rapports officiels du SIGRH, sur le papier à en-tête du ministère."""
 
+import re
+
 from reportlab.lib.units import mm
 from reportlab.platypus import Flowable, KeepTogether, Spacer, Table, TableStyle
 
 from .mise_en_page import assembler, encadre, fiche, metriques, paragraphe, section, tableau, tableau_reporte, texte
-from .papier import FILET, date_longue, largeur
+from .papier import FILET, MOIS, date_longue, largeur
 
 DRH = "Direction des ressources humaines"
 CARRIERES = "Sous-direction de la gestion des carrières"
@@ -59,52 +61,179 @@ def rendre_acte_demande(demande, signataire=None) -> bytes:
     )
 
 
-def _corps_acte_demande(feuille, demande) -> list:
+# Rédaction des exemplaires de la DAAF : « Je soussigné … atteste que … », sans bloc d'identité ni encadré de validité.
+MODELES_ACTE = {"attestation-travail", "attestation-presence", "autorisation-horaire-allaitement"}
+UNITES = ["zéro", "un", "deux", "trois", "quatre", "cinq", "six", "sept", "huit", "neuf", "dix", "onze", "douze", "treize", "quatorze", "quinze", "seize", "dix-sept", "dix-huit", "dix-neuf"]
+
+
+def _en_lettres(valeur: int) -> str:
+    """12 → « douze (12) », 15 → « quinze (15) » : la forme des exemplaires pour les durées."""
+    return f"{UNITES[valeur]} ({valeur:02d})" if valeur < len(UNITES) else str(valeur)
+
+
+def _structure_avec_article(structure: str) -> str:
+    nom = (structure or "").strip()
+    if not nom:
+        return "à …………………"
+    bas = nom.lower()
+    if bas.startswith(("direction", "sous-direction", "cellule", "inspection", "coordination", "division")):
+        return f"à la {nom}"
+    if bas.startswith(("service", "cabinet", "secrétariat", "secretariat", "collège", "college", "pool", "bureau", "département", "departement")):
+        return f"au {nom}"
+    if nom[:1] in "aeiouéèhAEIOUÉÈH":
+        return f"à l'{nom}"
+    return f"à {nom}"
+
+
+def _designation(agent) -> tuple[str, str]:
+    """Civilité et nom tels que les écrivent les exemplaires : « Madame NOM Prénoms épouse NOM »."""
+    feminin = agent.sexe == "F"
+    celibataire = "libataire" in (agent.statut_matrimonial or "").lower()
+    civilite = "Monsieur" if not feminin else "Mademoiselle" if celibataire else "Madame"
+    jeune_fille = (agent.nom_jeune_fille or "").strip()
+    if feminin and not celibataire and jeune_fille and jeune_fille.lower() != agent.nom.lower():
+        return civilite, f"{jeune_fille} {agent.prenoms} épouse {agent.nom}"
+    return civilite, f"{agent.nom} {agent.prenoms}"
+
+
+def _date_texte(valeur):
+    """Date AAAA-MM-JJ saisie en texte, sinon rien."""
+    from datetime import date
+
+    try:
+        return date.fromisoformat((valeur or "").strip())
+    except ValueError:
+        return None
+
+
+def casse_emploi(texte: str) -> str:
+    """Emploi tel que l'écrivent les exemplaires : majuscule initiale à chaque mot, sauf petits mots et « option »."""
+    brut = (texte or "").strip()
+    if not brut:
+        return brut
+    petits = {"de", "des", "du", "la", "le", "les", "et", "en", "au", "aux", "à", "d", "l", "option"}
+    tout_en_capitales = brut == brut.upper()
+    mots = []
+    for rang, mot in enumerate(brut.split()):
+        bas = mot.lower()
+        if rang > 0 and bas in petits:
+            mots.append(bas)
+            continue
+        if not tout_en_capitales and mot == mot.upper() and re.search("[A-Z]", mot) and (len(mot) <= 4 or "-" in mot):
+            mots.append(mot)
+            continue
+        apostrophe = re.match(r"^([ldj])(['’])(.+)$", bas)
+        if apostrophe:
+            mots.append(f"{apostrophe.group(1)}{apostrophe.group(2)}{apostrophe.group(3)[:1].upper()}{apostrophe.group(3)[1:]}")
+            continue
+        mots.append("-".join(partie[:1].upper() + partie[1:] for partie in bas.split("-")))
+    return " ".join(mots)
+
+
+def _jour_modele(quand) -> str:
+    """« 08 juillet 2024 » : le jour sur deux chiffres, comme sur les exemplaires."""
+    return f"{quand.day:02d} {MOIS[quand.month - 1]} {quand.year}" if quand else ""
+
+
+def _fonction_en_phrase(fonction: str) -> str:
+    """Les fonctions saisies en capitales sont remises en phrase, sauf les sigles."""
+    fonction = fonction.strip()
+    if not fonction or fonction != fonction.upper():
+        return fonction
+    phrase = fonction.lower().capitalize()
+    for sigle in ("daaf", "drh", "dgpe", "dsi", "dsps", "dgpn"):
+        phrase = re.sub(rf"{sigle}", sigle.upper(), phrase, flags=re.IGNORECASE)
+    return phrase
+
+
+def fonction_de_direction(direction: str, repli: str = "") -> str:
+    """« Direction des Affaires Administratives et Financières » → « Directeur des Affaires Administratives et Financières »."""
+    direction = (direction or "").strip()
+    correspondance = re.match(r"^direction\s+g[ée]n[ée]rale\b\s*(.*)$", direction, flags=re.IGNORECASE)
+    if correspondance:
+        return f"Directeur Général {correspondance.group(1)}".strip()
+    correspondance = re.match(r"^direction\b\s*(.*)$", direction, flags=re.IGNORECASE)
+    if correspondance:
+        return f"Directeur {correspondance.group(1)}".strip()
+    return _fonction_en_phrase(repli) or "Directeur"
+
+
+def _soussigne() -> str:
+    from ..parametres import signataire_documents
+
+    signataire = signataire_documents()
+    if not signataire["trouve"]:
+        return "Je soussigné, Directeur des Affaires Administratives et Financières"
+    fonction = fonction_de_direction(signataire["direction"], signataire["fonction"])
+    return f"Je soussigné {signataire['nom']} {signataire['prenoms']}, {fonction}"
+
+
+def _corps_modele_acte(feuille, demande) -> list:
     agent = demande.agent
+    civilite, nom = _designation(agent)
+    emploi = casse_emploi(agent.emploi or agent.grade) or "…………………"
+    # Les exemplaires disent « en service à la Direction … » : la direction de l'agent, pas son service.
+    from ..normalisation import nom_complet_structure
+
+    direction = _structure_avec_article(nom_complet_structure(agent.direction or agent.structure))
+    service = f"en service {direction}"
+    depuis = _jour_modele(agent.prise_service_ministere or _date_texte(agent.prise_service)) or "…………………"
+    if demande.type_acte == "autorisation-horaire-allaitement":
+        mois = round((demande.fin - demande.debut).days / 30.4375) if demande.debut and demande.fin and demande.fin > demande.debut else 0
+        return [
+            *texte(
+                feuille,
+                f"Conformément à l'article 23.12 de la loi n° 2015-532 du 20 juillet 2015 portant code du travail, il est accordé à "
+                f"{civilite.lower()} {nom}, Matricule {agent.matricule}, {emploi}, {service}, un temps de repos pour allaitement "
+                f"d'une (01) heure par jour sur une durée de {_en_lettres(mois) if mois > 0 else '…………………'} mois.",
+            ),
+            *texte(feuille, "Par conséquent, les horaires de service de l'intéressée s'établissent comme suit :"),
+            *texte(feuille, "Début du service : 07h30 mn."),
+            *texte(feuille, "Fin de service : 15h30 mn."),
+            *texte(
+                feuille,
+                f"La présente autorisation prend effet à compter du {_jour_modele(demande.debut) or '…………………'} "
+                f"et prendra fin le {_jour_modele(demande.fin) or '…………………'}.",
+            ),
+        ]
+    if demande.type_acte == "attestation-presence":
+        accord = "présente" if agent.sexe == "F" else "présent"
+        situation = f"est {accord} à son poste de travail, {direction}, depuis le {depuis}."
+    else:
+        situation = f"{service.replace('en service', 'est en service', 1)} depuis le {depuis}."
+    return [
+        *texte(
+            feuille,
+            f"{_soussigne()} du Ministère du Portefeuille de l'Etat et des Entreprises Publiques, atteste que {civilite} {nom}, "
+            f"Matricule {agent.matricule}, {emploi}, {situation}",
+        ),
+        *texte(feuille, "En foi de quoi, la présente attestation lui est délivrée pour servir et valoir ce que de droit."),
+    ]
+
+
+def _corps_acte_demande(feuille, demande) -> list:
+    if demande.type_acte in MODELES_ACTE:
+        return _corps_modele_acte(feuille, demande)
+    agent = demande.agent
+    debut, fin = _jour(demande.debut), _jour(demande.fin)
     corps = [
         *section(feuille, "Identité administrative"),
         _identite_serree(feuille, agent),
         Spacer(1, 3 * mm),
+        *section(feuille, "Mentions de l'acte"),
+        fiche(feuille, [
+            ("Nature", demande.nature),
+            ("Période", debut if demande.debut == demande.fin else f"du {debut} au {fin}"),
+            ("Motif", demande.motif),
+            ("Premier visa", _visa_de(demande)),
+        ]),
+        Spacer(1, 3 * mm),
+        *texte(
+            feuille,
+            f"Il est accordé à {agent.nom_complet}, matricule {agent.matricule}, une {demande.nature.lower()} "
+            f"pour la période indiquée ci-dessus. L'absence est inscrite au registre des absences de l'agent.",
+        ),
     ]
-    if demande.type_acte == "attestation-travail":
-        depuis = f"depuis le {_jour(agent.prise_service_ministere)}" if agent.prise_service_ministere else "à ce jour"
-        fonction = f", {agent.fonction}" if agent.fonction else ""
-        corps += [
-            *section(feuille, "Attestation de travail"),
-            *texte(
-                feuille,
-                f"Le Directeur des ressources humaines atteste que {agent.nom_complet}, matricule {agent.matricule}, "
-                f"{agent.grade or 'agent'}{fonction}, exerce au sein de {agent.organisme.nom} {depuis}. "
-                f"Sa situation administrative est : {agent.situation}.",
-            ),
-        ]
-    elif demande.type_acte == "attestation-presence":
-        corps += [
-            *section(feuille, "Attestation de présence au poste"),
-            *texte(
-                feuille,
-                f"Le Directeur des ressources humaines atteste que {agent.nom_complet}, matricule {agent.matricule}, "
-                f"{agent.grade or 'agent'}, est présent(e) à son poste au sein de {agent.organisme.nom} "
-                f"à la date du {_jour(_date_visa_final(demande))}.",
-            ),
-        ]
-    else:
-        debut, fin = _jour(demande.debut), _jour(demande.fin)
-        corps += [
-            *section(feuille, "Mentions de l'acte"),
-            fiche(feuille, [
-                ("Nature", demande.nature),
-                ("Période", debut if demande.debut == demande.fin else f"du {debut} au {fin}"),
-                ("Motif", demande.motif),
-                ("Premier visa", _visa_de(demande)),
-            ]),
-            Spacer(1, 3 * mm),
-            *texte(
-                feuille,
-                f"Il est accordé à {agent.nom_complet}, matricule {agent.matricule}, une {demande.nature.lower()} "
-                f"pour la période indiquée ci-dessus. L'absence est inscrite au registre des absences de l'agent.",
-            ),
-        ]
     if demande.destinataire:
         corps += [Spacer(1, 2 * mm), *texte(feuille, f"À l'attention de : {demande.destinataire}.")]
     corps += [

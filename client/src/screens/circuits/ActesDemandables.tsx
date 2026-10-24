@@ -10,8 +10,8 @@ import { Select } from "../../ui/Select";
 const CARD = "rounded-xl bg-surface-container-lowest border border-hairline";
 const CHAMP = "w-full h-10 px-3 rounded border border-outline-variant bg-surface-container-lowest font-body-md text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-primary";
 
-type Acte = ElementCircuit & { id: number; periode: boolean; destinataire: boolean; justificatif: string };
-type Edition = { id: number | null; libelle: string; parent: string; periode: boolean; destinataire: boolean; justificatif: string };
+type Acte = ElementCircuit & { id: number; periode: boolean; destinataire: boolean; justificatif: string; justificatif_obligatoire: boolean };
+type Edition = { id: number | null; libelle: string; parent: string; periode: boolean; destinataire: boolean; justificatif: string; justificatif_obligatoire: boolean };
 
 /**
  * Actes que l'agent peut demander depuis son profil. Cette liste alimente le choix « Acte demandé » ;
@@ -60,7 +60,7 @@ export function ActesDemandables() {
         <div>
           <h2 id={titreId} className="font-headline-md text-headline-md text-on-surface">Actes demandables par les agents</h2>
         </div>
-        <button type="button" onClick={() => setEdition({ id: null, libelle: "", parent: "", periode: false, destinataire: false, justificatif: "" })}
+        <button type="button" onClick={() => setEdition({ id: null, libelle: "", parent: "", periode: false, destinataire: false, justificatif: "", justificatif_obligatoire: false })}
           className="inline-flex items-center gap-2 px-4 py-2 rounded bg-primary text-on-primary font-label-lg text-label-lg hover:bg-primary-container transition-colors shrink-0">
           <Icone nom="add" className="text-lg" />Nouvel acte
         </button>
@@ -88,7 +88,7 @@ export function ActesDemandables() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
-                  <button type="button" onClick={() => setEdition({ id: acte.id, libelle: acte.libelle, parent: acte.parent, periode: acte.periode, destinataire: acte.destinataire, justificatif: acte.justificatif })}
+                  <button type="button" onClick={() => setEdition({ id: acte.id, libelle: acte.libelle, parent: acte.parent, periode: acte.periode, destinataire: acte.destinataire, justificatif: acte.justificatif, justificatif_obligatoire: acte.justificatif_obligatoire })}
                     className="px-3 py-1.5 rounded bg-surface-container text-on-surface font-label-md text-label-md hover:bg-surface-container-high">Modifier</button>
                   <button type="button" onClick={() => void retirer(acte)}
                     className="px-3 py-1.5 rounded bg-surface-container text-error font-label-md text-label-md hover:bg-error-container">Retirer</button>
@@ -169,8 +169,15 @@ function EditeurActe({ edition, rubriques, possedeEnfants, onChange, onFermer, o
             <span className="font-body-sm text-body-sm text-on-surface-variant">L’agent peut préciser à qui l’acte est destiné (attestations).</span>
           </span>
         </label>
+        <label className="flex items-start gap-3 p-3 rounded-lg bg-surface-container-low cursor-pointer">
+          <input type="checkbox" className="accent-primary h-4 w-4 mt-0.5" checked={edition.justificatif_obligatoire} onChange={(e) => onChange({ ...edition, justificatif_obligatoire: e.target.checked })} />
+          <span>
+            <span className="font-label-md text-label-md text-on-surface block">Justificatif obligatoire</span>
+            <span className="font-body-sm text-body-sm text-on-surface-variant">La demande n’est pas recevable sans pièce jointe (événement familial, allaitement…).</span>
+          </span>
+        </label>
         <label className="block space-y-1.5">
-          <span className="font-label-md text-label-md text-on-surface font-semibold">Conseil pour le justificatif (facultatif)</span>
+          <span className="font-label-md text-label-md text-on-surface font-semibold">Conseil pour le justificatif</span>
           <input className={CHAMP} value={edition.justificatif} onChange={(e) => onChange({ ...edition, justificatif: e.target.value })} maxLength={200} placeholder="Par exemple : acte de décès, convocation…" />
         </label>
       </div>

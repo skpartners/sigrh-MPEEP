@@ -5,6 +5,8 @@ import type { AgentBrief } from "../../api/types";
 import { useFeedback } from "../../ui/Feedback";
 import { BOUTON_PRIMAIRE, BOUTON_SECONDAIRE, Modale } from "../../ui/Modale";
 import { Skeleton } from "../../ui/Motion";
+import { FilVisas, type VisaFil } from "../../ui/FilVisas";
+import { Pagination, usePagination } from "../../ui/Pagination";
 import { AppChrome } from "../AppChrome";
 import { Icone } from "../../ui/Icone";
 import { Select } from "../../ui/Select";
@@ -25,24 +27,44 @@ type Autorisation = {
   decision: "en_attente" | "validee" | "invalidee";
   motif_decision: string;
 };
+type Statut = "traitement" | "validee" | "accordee" | "refusee";
+type ElementSuivi = {
+  source: "demande" | "absence";
+  reference: string;
+  agent: AgentBrief & { fonction: string };
+  structure: string;
+  type: TypeAutorisation;
+  type_libelle: string;
+  intitule: string;
+  motif: string;
+  debut: string;
+  fin: string;
+  depose_le: string;
+  statut: Statut;
+  etape: string;
+  responsable: string;
+  visas: VisaFil[];
+  /** Autorisation inscrite au registre des absences, quand il y en a une : elle porte la décision du gestionnaire. */
+  absence: Autorisation | null;
+};
 type Registre = {
   exercice: number;
   presenteisme: { taux: number | null; evolution: number | null; objectif: number | null };
-  indicateurs: { total: number; en_attente: number; validee: number; invalidee: number };
-  ventilation: { code: TypeAutorisation; libelle: string; nombre: number; part: number }[];
+  indicateurs: { accordees: number; en_traitement: number; validees: number };
   types: { code: TypeAutorisation; libelle: string }[];
-  jours: { validee: number; en_attente: number; invalidee: number };
-  autorisations: Autorisation[];
+  suivi: ElementSuivi[];
 };
 
 const ROUTE = "/api/v1/carrieres/absences/";
-const PAR_PAGE = 4;
-const COULEUR_TYPE: Record<TypeAutorisation, string> = {
-  autorisation: "bg-primary-container",
-  "autorisation-speciale": "bg-surface-tint",
-  "permission-speciale": "bg-secondary-container",
-};
 const MOIS = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."];
+const LIBELLE_STATUT: Record<Statut, string> = { traitement: "En traitement", validee: "Validée", accordee: "Accordée", refusee: "Refusée" };
+const TON_STATUT: Record<Statut, string> = {
+  traitement: "bg-secondary-fixed text-on-secondary-fixed",
+  validee: "bg-primary-fixed text-on-primary-fixed",
+  accordee: "bg-[#16a34a]/15 text-[#166534]",
+  refusee: "bg-error-container text-on-error-container",
+};
+const FILTRE = "px-3 py-1.5 rounded bg-surface-container-low text-on-surface font-label-sm text-label-sm focus:outline-none focus:ring-1 focus:ring-primary";
 
 function jourMois(iso: string): string {
   const [annee, mois, jour] = iso.split("-").map(Number);
@@ -50,7 +72,8 @@ function jourMois(iso: string): string {
 }
 
 function periode(debut: string, fin: string): string {
-  if (debut === fin) return jourMois(debut);
+  if (!debut) return "";
+  if (debut === fin || !fin) return jourMois(debut);
   return `${jourMois(debut).replace(/ \d{4}$/, "")} au ${jourMois(fin)}`;
 }
 
@@ -62,25 +85,58 @@ function part(nombre: number, total: number): string {
   return `${total ? Math.round((nombre * 100) / total) : 0}%`;
 }
 
-/** Absences : ventilation des motifs, autorisations à statuer et régularisation des justificatifs. */
+/** Circuit d'une permission : les visas de la demande, puis la signature et la délivrance de l'acte. */
+function circuit(item: ElementSuivi): { visas: VisaFil[]; ordreActuel: number | null | undefined } {
+  if (item.source === "absence") {
+    const decision = item.absence?.decision ?? "en_attente";
+    return {
+      visas: [
+        { ordre: 1, instance: "Demande déposée", avis: "Déposée", titulaire: item.agent.nom_complet, date: "", etat: "ok" },
+        {
+          ordre: 2, instance: "Décision de la gestion des absences", titulaire: "", date: "",
+          avis: decision === "validee" ? "Validée" : decision === "invalidee" ? "Invalidée" : "En attente",
+          etat: decision === "validee" ? "ok" : decision === "invalidee" ? "refus" : "attente",
+        },
+      ],
+      ordreActuel: decision === "en_attente" ? 2 : null,
+    };
+  }
+  const dernier = item.visas.length + 1;
+  const visas: VisaFil[] = [
+    ...item.visas,
+    {
+      ordre: dernier, instance: "Signature et délivrance de l'acte", titulaire: "", date: "",
+      avis: item.statut === "accordee" ? "Délivré" : item.statut === "validee" ? "En signature" : "En attente",
+      etat: item.statut === "accordee" ? "ok" : "attente",
+    },
+  ];
+  // Visas obtenus mais acte pas encore délivré : l'étape en cours est la signature. En traitement : la première étape en attente.
+  return { visas, ordreActuel: item.statut === "validee" ? dernier : item.statut === "traitement" ? undefined : null };
+}
+
+/** Suivi des permissions : statutaires et générales, telles que les agents les demandent depuis leur profil. */
 export function AbsencesScreen() {
   const feedback = useFeedback();
   const registre = useQuery({ queryKey: ["carrieres-absences"], queryFn: () => api<Registre>(ROUTE) });
   const [cible, setCible] = useState<{ autorisation: Autorisation; sens: Sens } | null>(null);
   const [detail, setDetail] = useState<Autorisation | null>(null);
+  const [recherche, setRecherche] = useState("");
   const [entite, setEntite] = useState("");
   const [type, setType] = useState("");
-  const [page, setPage] = useState(1);
+  const [statut, setStatut] = useState("");
   const donnees = registre.data;
-  const filtrees = useMemo(
-    () => (donnees?.autorisations ?? []).filter((item) => (!entite || item.structure === entite) && (!type || item.type === type)),
-    [donnees, entite, type],
-  );
-  const pages = Math.max(1, Math.ceil(filtrees.length / PAR_PAGE));
-  const pageCourante = Math.min(page, pages);
-  const visibles = filtrees.slice((pageCourante - 1) * PAR_PAGE, pageCourante * PAR_PAGE);
-  const entites = [...new Set((donnees?.autorisations ?? []).map((item) => item.structure))].sort();
-  const total = donnees?.indicateurs.total ?? 0;
+  const suivi = donnees?.suivi ?? [];
+  const filtrees = useMemo(() => {
+    const q = recherche.trim().toLowerCase();
+    return suivi.filter(
+      (item) =>
+        (!entite || item.structure === entite) && (!type || item.type === type) && (!statut || item.statut === statut)
+        && (!q || `${item.agent.nom_complet} ${item.agent.matricule} ${item.structure} ${item.reference} ${item.motif}`.toLowerCase().includes(q)),
+    );
+  }, [suivi, recherche, entite, type, statut]);
+  const pageSuivi = usePagination(filtrees, `${recherche}|${entite}|${type}|${statut}`, 4);
+  const entites = [...new Set(suivi.map((item) => item.structure))].sort();
+  const total = suivi.length;
   const presence = donnees?.presenteisme;
 
   async function exporterAssiduite() {
@@ -97,43 +153,38 @@ export function AbsencesScreen() {
     <AppChrome>
       <div className="flex flex-col w-full">
         <div className="px-6 py-6 w-full mx-auto space-y-6">
-          {/* En-tête de section régalienne */}
+          {/* En-tête */}
           <div className="bg-surface-container-lowest p-6 rounded-xl shadow-sm relative overflow-hidden motion-rise">
             <div className="absolute -right-16 -top-16 w-64 h-64 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
               <div className="space-y-2">
-                {/* Fil d'Ariane formel */}
                 <div className="flex items-center gap-2 text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wider">
-                  <span className="hover:text-primary transition-colors">SD Gestion des Carrières</span>
-                  {" "}
+                  <span>SD Gestion des Carrières</span>
                   <Icone nom="chevron_right" className="text-xs" />
-                  {" "}
-                  <span className="hover:text-primary transition-colors">{"Temps de Service & Suivi"}</span>
-                  {" "}
+                  <span>{"Temps de Service & Suivi"}</span>
                   <Icone nom="chevron_right" className="text-xs" />
-                  {" "}
-                  <span className="text-primary font-bold">Gestion des autorisations</span>
+                  <span className="text-primary font-bold">Suivi des absences</span>
                 </div>
-                <h1 className="font-headline-lg text-headline-lg text-on-surface tracking-tight">
-                  Gestion des autorisations d'absences
-                </h1>
+                <h1 className="font-headline-lg text-headline-lg text-on-surface tracking-tight">Suivi des absences</h1>
+                <p className="font-body-sm text-body-sm text-on-surface-variant">Permissions statutaires et permissions que les agents demandent depuis leur profil.</p>
               </div>
-              {/* Actions rapides de haut de page */}
               <div className="flex flex-wrap sm:flex-nowrap items-center gap-3 shrink-0">
                 <button className="inline-flex items-center gap-2 px-3 py-1.5 rounded bg-surface-container text-primary font-label-md text-label-md hover:bg-surface-container-high transition-colors" type="button" onClick={() => void exporterAssiduite()}>
                   <Icone nom="picture_as_pdf" className="text-lg" />
-                  {" "}
                   <span>Rapport d'Assiduité Mensuel (PDF)</span>
                 </button>
               </div>
             </div>
           </div>
-          {/* KPIs Métriques d'Assiduité */}
+
+          {/* Indicateurs : les demandes, puis le taux de présence en dernier */}
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-            {/* KPI 1 : le présentéisme provient du pointage (indicateur de pilotage) */}
-            <div className="bg-surface-container-lowest p-5 rounded-xl shadow-sm flex flex-col justify-between relative overflow-hidden motion-card-appear" style={{ "--delay": "80ms" } as CSSProperties}>
+            <Indicateur index={0} titre="Demandes accordées" icone="task_alt" valeur={donnees?.indicateurs.accordees} unite="actes délivrés" detail="Acte signé et délivré à l'agent" part={part(donnees?.indicateurs.accordees ?? 0, total)} ton="neutre" />
+            <Indicateur index={1} titre="Demandes en traitement" icone="hourglass_top" valeur={donnees?.indicateurs.en_traitement} unite="dans le circuit" detail="En attente d'un visa" part={part(donnees?.indicateurs.en_traitement ?? 0, total)} ton="attention" />
+            <Indicateur index={2} titre="Demandes validées" icone="fact_check" valeur={donnees?.indicateurs.validees} unite="en signature" detail="Tous les visas obtenus" part={part(donnees?.indicateurs.validees ?? 0, total)} ton="neutre" />
+            <div className="bg-surface-container-lowest p-5 rounded-xl shadow-sm flex flex-col justify-between relative overflow-hidden motion-card-appear" style={{ "--delay": "320ms" } as CSSProperties}>
               <div className="flex items-center justify-between mb-3">
-                <span className="font-label-md text-label-md text-on-surface-variant uppercase font-semibold">Taux de Présentéisme Global</span>
+                <span className="font-label-md text-label-md text-on-surface-variant uppercase font-semibold">Taux de présence</span>
                 <span className="w-8 h-8 rounded bg-primary-fixed text-on-primary-fixed flex items-center justify-center">
                   <Icone nom="how_to_reg" className="text-lg" />
                 </span>
@@ -149,176 +200,86 @@ export function AbsencesScreen() {
                 ) : null}
               </div>
               <div className="mt-3 flex items-center justify-between font-label-sm text-label-sm text-on-surface-variant">
-                <span>Quorum minimal (paramètre)</span>
+                <span>Quorum minimal</span>
                 <span className="font-bold text-primary">{presence?.objectif != null ? `≥ ${presence.objectif.toFixed(1)}%` : "—"}</span>
               </div>
               <div className="w-full bg-surface-container-high h-1.5 rounded-full mt-2 overflow-hidden">
                 <div className="motion-fill bg-primary h-full rounded-full" style={{ width: `${presence?.taux ?? 0}%` }} />
               </div>
             </div>
-            <Indicateur
-              index={0}
-              titre="Autorisations validées"
-              icone="assignment_turned_in"
-              valeur={donnees?.indicateurs.validee}
-              unite="dossiers justifiés"
-              detail={`${donnees?.jours.validee ?? 0} jour${(donnees?.jours.validee ?? 0) > 1 ? "s" : ""} accordé${(donnees?.jours.validee ?? 0) > 1 ? "s" : ""}`}
-              part={part(donnees?.indicateurs.validee ?? 0, total)}
-              ton="neutre"
-            />
-            <Indicateur
-              index={1}
-              titre="En attente de décision"
-              icone="alarm"
-              valeur={donnees?.indicateurs.en_attente}
-              unite="à statuer"
-              detail={`${donnees?.jours.en_attente ?? 0} jour${(donnees?.jours.en_attente ?? 0) > 1 ? "s" : ""} demandé${(donnees?.jours.en_attente ?? 0) > 1 ? "s" : ""}`}
-              part={part(donnees?.indicateurs.en_attente ?? 0, total)}
-              ton="attention"
-            />
-            <Indicateur
-              index={2}
-              titre="Autorisations invalidées"
-              icone="gavel"
-              valeur={donnees?.indicateurs.invalidee}
-              unite="dossiers refusés"
-              detail={`${donnees?.jours.invalidee ?? 0} jour${(donnees?.jours.invalidee ?? 0) > 1 ? "s" : ""} refusé${(donnees?.jours.invalidee ?? 0) > 1 ? "s" : ""}`}
-              part={part(donnees?.indicateurs.invalidee ?? 0, total)}
-              ton="erreur"
-            />
           </div>
-          {/* Ventilation des autorisations de l'exercice */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            {/* Ventilation des Motifs de l'Exercice */}
-            <div className="lg:col-span-12 bg-surface-container-lowest p-6 rounded-xl shadow-sm space-y-5">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <h2 className="font-headline-sm text-headline-sm text-on-surface">Ventilation Statutaire des Motifs d'Absence</h2>
-                </div>
-                <span className="px-2.5 py-1 rounded bg-surface-container text-on-surface font-code-num text-code-num font-bold whitespace-nowrap">
-                  Total : {total} cas déclarés
-                </span>
-              </div>
-              <div className="space-y-4 pt-2">
-                {registre.isPending
-                  ? [0, 1, 2].map((index) => <Skeleton key={index} className="h-8 w-full" />)
-                  : (donnees?.ventilation ?? []).map((ligne) => (
-                      <div key={ligne.code} className="space-y-1.5">
-                        <div className="flex justify-between gap-3 font-label-md text-label-md">
-                          <span className="text-on-surface font-semibold flex items-center gap-2">
-                            <span className={`w-3 h-3 rounded-full ${COULEUR_TYPE[ligne.code]} inline-block`} />
-                            {ligne.libelle}
-                          </span>
-                          <span className="font-code-num text-code-num text-on-surface font-bold whitespace-nowrap">
-                            {ligne.part}% ({ligne.nombre} cas)
-                          </span>
-                        </div>
-                        <div className="w-full bg-surface-container-high h-2 rounded-full overflow-hidden">
-                          <div className={`motion-fill ${COULEUR_TYPE[ligne.code]} h-full rounded-full`} style={{ width: `${ligne.part}%` }} />
-                        </div>
-                      </div>
-                    ))}
-              </div>
-            </div>
-          </div>
-          {/* Registre Général d'Instruction des Déclarations d'Absence */}
-          <div className="bg-surface-container-lowest rounded-xl shadow-sm overflow-hidden space-y-4 p-6">
+
+          {/* Registre : chaque demande est un circuit */}
+          <section className="bg-surface-container-lowest rounded-xl shadow-sm space-y-4 p-6" aria-labelledby="titre-suivi-absences">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div>
-                <h2 className="font-headline-sm text-headline-sm text-on-surface">Autorisations à statuer</h2>
+                <h2 id="titre-suivi-absences" className="font-headline-sm text-headline-sm text-on-surface">Demandes de permission</h2>
+                <p className="font-body-sm text-body-sm text-on-surface-variant">{total} demande{total > 1 ? "s" : ""} dans votre périmètre, avec l'avancement de chaque circuit.</p>
               </div>
-              {/* Filtres rapides */}
               <div className="flex flex-wrap items-center gap-2">
-                <Select
-                  aria-label="Filtrer par structure"
-                  className="px-3 py-1.5 rounded bg-surface-container-low text-on-surface font-label-sm text-label-sm focus:outline-none focus:ring-1 focus:ring-primary"
-                  value={entite}
-                  onChange={(event) => {
-                    setEntite(event.target.value);
-                    setPage(1);
-                  }}
-                >
+                <input type="search" aria-label="Rechercher une demande" className={`${FILTRE} w-48`} placeholder="Agent, matricule…" value={recherche} onChange={(event) => setRecherche(event.target.value)} />
+                <Select aria-label="Filtrer par structure" className={FILTRE} value={entite} onChange={(event) => setEntite(event.target.value)}>
                   <option value="">Toutes les structures</option>
-                  {entites.map((sigle) => (
-                    <option key={sigle} value={sigle}>{sigle}</option>
-                  ))}
+                  {entites.map((sigle) => <option key={sigle} value={sigle}>{sigle}</option>)}
                 </Select>
-                <Select
-                  aria-label="Filtrer par type d'absence"
-                  className="px-3 py-1.5 rounded bg-surface-container-low text-on-surface font-label-sm text-label-sm focus:outline-none focus:ring-1 focus:ring-primary"
-                  value={type}
-                  onChange={(event) => {
-                    setType(event.target.value);
-                    setPage(1);
-                  }}
-                >
-                  <option value="">Tous les types</option>
-                  {(donnees?.types ?? []).map((item) => (
-                    <option key={item.code} value={item.code}>{item.libelle}</option>
-                  ))}
+                <Select aria-label="Filtrer par type de permission" className={FILTRE} value={type} onChange={(event) => setType(event.target.value)}>
+                  <option value="">Toutes les permissions</option>
+                  {(donnees?.types ?? []).map((item) => <option key={item.code} value={item.code}>{item.libelle}</option>)}
+                </Select>
+                <Select aria-label="Filtrer par avancement" className={FILTRE} value={statut} onChange={(event) => setStatut(event.target.value)}>
+                  <option value="">Tous les états</option>
+                  {(Object.keys(LIBELLE_STATUT) as Statut[]).map((code) => <option key={code} value={code}>{LIBELLE_STATUT[code]}</option>)}
                 </Select>
               </div>
             </div>
-            {/* Tableau Administratif Conforme */}
-            <div className="overflow-x-auto">
-              <table className="w-full text-left font-body-sm text-body-sm">
-                <thead>
-                  <tr className="bg-surface-container-low text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wider">
-                    <th className="py-3 px-4 rounded-l">{"Agent Public & Matricule"}</th>
-                    <th className="py-3 px-4">{"Période & Durée"}</th>
-                    <th className="py-3 px-4" data-min="">État de Conformité</th>
-                    <th className="py-3 px-4 text-right rounded-r">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-surface-container">
-                  {registre.isPending ? (
-                    <tr>
-                      <td colSpan={4} className="py-4 px-4">
-                        <Skeleton className="h-10 w-full" />
-                      </td>
-                    </tr>
-                  ) : registre.isError ? (
-                    <tr>
-                      <td colSpan={4} className="py-6 px-4 text-error">Le registre des autorisations n'a pas pu être chargé.</td>
-                    </tr>
-                  ) : visibles.length === 0 ? (
-                    <tr>
-                      <td colSpan={4} className="py-6 px-4 text-on-surface-variant">Aucune autorisation ne correspond à ces filtres.</td>
-                    </tr>
-                  ) : (
-                    visibles.map((item) => <LigneAutorisation key={item.id} autorisation={item} onChoisir={(sens) => setCible({ autorisation: item, sens })} onDetail={() => setDetail(item)} />)
-                  )}
-                </tbody>
-              </table>
-            </div>
-            {/* Pagination */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 text-on-surface-variant font-label-sm text-label-sm">
-              <div>
-                {filtrees.length
-                  ? `Affichage de ${(pageCourante - 1) * PAR_PAGE + 1} à ${Math.min(pageCourante * PAR_PAGE, filtrees.length)} sur ${filtrees.length} autorisations enregistrées pour l'exercice en cours`
-                  : "Aucune autorisation affichée"}
-              </div>
-              <div className="flex items-center gap-1">
-                <button className="px-3 py-1 rounded bg-surface-container-low text-on-surface hover:bg-surface-container font-semibold disabled:opacity-50" disabled={pageCourante <= 1} type="button" onClick={() => setPage(pageCourante - 1)}>
-                  Précédent
-                </button>
-                {Array.from({ length: pages }, (_, index) => index + 1).map((numero) => (
-                  <button
-                    key={numero}
-                    type="button"
-                    aria-current={numero === pageCourante ? "page" : undefined}
-                    className={`px-3 py-1 rounded font-semibold ${numero === pageCourante ? "bg-primary text-on-primary" : "bg-surface-container-low text-on-surface hover:bg-surface-container"}`}
-                    onClick={() => setPage(numero)}
-                  >
-                    {numero}
-                  </button>
-                ))}
-                <button className="px-3 py-1 rounded bg-surface-container-low text-on-surface hover:bg-surface-container font-semibold disabled:opacity-50" disabled={pageCourante >= pages} type="button" onClick={() => setPage(pageCourante + 1)}>
-                  Suivant
-                </button>
-              </div>
-            </div>
-          </div>
+
+            {registre.isPending ? (
+              <Skeleton className="h-40 w-full" />
+            ) : registre.isError ? (
+              <p className="py-4 text-error">Le suivi des absences n'a pas pu être chargé.</p>
+            ) : filtrees.length === 0 ? (
+              <p className="py-4 text-on-surface-variant">Aucune demande ne correspond à ces filtres.</p>
+            ) : (
+              <ul className="space-y-4">
+                {pageSuivi.visibles.map((item) => {
+                  const { visas, ordreActuel } = circuit(item);
+                  return (
+                    <li key={`${item.source}-${item.reference}`} className="rounded-xl border border-hairline p-5 space-y-4">
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <span className="w-10 h-10 rounded-full bg-primary-fixed text-primary flex items-center justify-center font-bold text-sm shrink-0">{item.agent.initiales}</span>
+                          <div className="min-w-0">
+                            <p className="font-label-lg text-label-lg font-bold text-on-surface">{item.agent.nom_complet}</p>
+                            <p className="font-code-num text-code-num text-on-surface-variant flex flex-wrap items-center gap-2">
+                              <span>Mat. {item.agent.matricule}</span>
+                              <span aria-hidden="true">•</span>
+                              <span className="px-1.5 rounded bg-surface-container text-on-surface text-[0.6875rem] font-semibold">{item.structure}</span>
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right space-y-1">
+                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded font-label-sm text-label-sm font-bold ${TON_STATUT[item.statut]}`}>{LIBELLE_STATUT[item.statut]}</span>
+                          <p className="font-label-sm text-label-sm text-on-surface-variant">{item.reference}</p>
+                        </div>
+                      </div>
+                      <p className="font-label-md text-label-md text-on-surface">
+                        <span className="font-bold">{item.type_libelle}</span>
+                        {item.debut ? <span className="ml-2 font-code-num text-code-num text-on-surface-variant">{periode(item.debut, item.fin)}</span> : null}
+                      </p>
+                      {item.motif ? <p className="font-body-sm text-body-sm text-on-surface-variant">Motif : {item.motif}</p> : null}
+                      <FilVisas visas={visas} enCours={item.statut === "traitement" || item.statut === "validee"} ordreActuel={ordreActuel} libelleActuel={item.statut === "validee" ? "À signer" : "À viser"} libelle={`Circuit ${item.reference}`} />
+                      {item.absence ? (
+                        <div className="border-t border-hairline pt-3">
+                          <ActionsDecision autorisation={item.absence} onChoisir={(sens) => setCible({ autorisation: item.absence as Autorisation, sens })} onDetail={() => setDetail(item.absence as Autorisation)} />
+                        </div>
+                      ) : null}
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+            <Pagination page={pageSuivi.page} pages={pageSuivi.pages} total={pageSuivi.total} aller={pageSuivi.aller} libelle="demande" />
+          </section>
         </div>
       </div>
       {detail ? <ModaleDetail autorisation={detail} onClose={() => setDetail(null)} /> : null}
@@ -350,64 +311,6 @@ function Indicateur({ titre, icone, valeur, unite, detail, part, ton, index = 0 
         <div className={`motion-fill ${couleurs.barre} h-full rounded-full`} style={{ width: part }} />
       </div>
     </div>
-  );
-}
-
-function LigneAutorisation({ autorisation, onChoisir, onDetail }: { autorisation: Autorisation; onChoisir: (sens: Sens) => void; onDetail: () => void }) {
-  const { agent } = autorisation;
-  return (
-    <tr className="hover:bg-surface-container-low/50 transition-colors">
-      <td className="py-4 px-4">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-primary-fixed text-primary flex items-center justify-center font-bold text-sm shrink-0">{agent.initiales}</div>
-          <div>
-            <div className="font-label-lg text-label-lg font-bold text-on-surface">{agent.nom_complet}</div>
-            <div className="font-code-num text-code-num text-on-surface-variant flex flex-wrap items-center gap-2">
-              <span>Mat. {agent.matricule}</span>
-              <span aria-hidden="true">•</span>
-              <span className="px-1.5 py-0.2 rounded bg-surface-container text-on-surface text-[0.6875rem] font-semibold">{autorisation.structure}</span>
-            </div>
-          </div>
-        </div>
-      </td>
-      <td className="py-4 px-4">
-        <div className="font-code-num text-code-num font-semibold text-on-surface">{periode(autorisation.debut, autorisation.fin)}</div>
-        <span className="inline-block mt-0.5 px-2 py-0.5 rounded bg-surface-container text-primary font-code-num text-code-num">
-          {autorisation.jours} jour{autorisation.jours > 1 ? "s" : ""} ouvré{autorisation.jours > 1 ? "s" : ""}
-        </span>
-      </td>
-      <td className="py-4 px-4">
-        <EtatDecision decision={autorisation.decision} />
-      </td>
-      <td className="py-4 px-4 text-right">
-        <ActionsDecision autorisation={autorisation} onChoisir={onChoisir} onDetail={onDetail} />
-      </td>
-    </tr>
-  );
-}
-
-function EtatDecision({ decision }: { decision: Autorisation["decision"] }) {
-  if (decision === "validee") {
-    return (
-      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-surface-container text-primary font-label-sm text-label-sm font-semibold">
-        <span className="w-1.5 h-1.5 rounded-full bg-primary-container" />
-        Conforme & approuvée
-      </span>
-    );
-  }
-  if (decision === "invalidee") {
-    return (
-      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-error-container text-on-error-container font-label-sm text-label-sm font-semibold">
-        <span className="w-1.5 h-1.5 rounded-full bg-error" />
-        Invalidée
-      </span>
-    );
-  }
-  return (
-    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-secondary-fixed text-on-secondary-fixed font-label-sm text-label-sm font-semibold">
-      <span className="w-1.5 h-1.5 rounded-full bg-secondary-container" />
-      En attente de décision
-    </span>
   );
 }
 

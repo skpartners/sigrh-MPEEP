@@ -15,7 +15,6 @@ from .models import (
     Agent,
     DistinctionCarriere,
     DossierRetraite,
-    PosteSensible,
     TypeFinCarriere,
 )
 from .present import GRADES_65_ANS, agent_brief
@@ -95,7 +94,7 @@ def assurer_admissions(aujourd_hui: date) -> None:
         if (_anniversaire(agent.date_naissance, age) - aujourd_hui).days > HORIZON_ADMISSION:
             continue
         DossierRetraite.objects.create(
-            agent=agent, motif=motif, age_limite=age, entree_service=_date(agent.prise_service), statut=DossierRetraite.Statut.QUITTANCE,
+            agent=agent, motif=motif, age_limite=age, entree_service=_date(agent.prise_service), statut=DossierRetraite.Statut.NOTIFIE,
         )
 
 
@@ -108,7 +107,6 @@ def tableau(request):
     dossiers = list(agents_visibles(DossierRetraite.objects.select_related("agent", "agent__organisme", "motif"), request.user, "agent__matricule"))
     lignes = [dossier_row(item, aujourd_hui) for item in dossiers]
     dans_l_annee = [ligne for ligne in lignes if ligne["date_limite"] and (date.fromisoformat(ligne["date_limite"]) - aujourd_hui).days <= 365]
-    postes = list(agents_visibles(PosteSensible.objects.select_related("titulaire", "titulaire__organisme"), request.user, "titulaire__matricule"))
     pyramide = []
     for code, libelle, minimum, maximum in TRANCHES:
         membres = [agent for agent in agents if minimum <= _age(agent.date_naissance, aujourd_hui) <= maximum]
@@ -124,24 +122,22 @@ def tableau(request):
             }
         )
     pilotage = _pilotage()
-    transmis = [ligne for ligne in lignes if ligne["statut"] in {"transmis", "notifie"}]
+    # Départs de l'année en cours : les dossiers dont la date de départ tombe dans l'exercice.
+    departs_annee = [ligne for ligne in lignes if ligne["date_limite"] and date.fromisoformat(ligne["date_limite"]).year == aujourd_hui.year]
     pilotage["renouvellement"] = _renouvellement(agents, len(dans_l_annee), aujourd_hui)
     return Response(
         {
             "exercice": aujourd_hui.year,
             "effectif": len(agents),
             "indicateurs": {
-                "departs": len(dans_l_annee),
-                "departs_cadres": sum(1 for ligne in dans_l_annee if ligne["agent"]["grade"].startswith("A")),
-                "postes": len(postes),
-                "binomes": sum(1 for poste in postes if poste.successeur),
+                "departs_annee": len(departs_annee),
+                "notifies": sum(1 for ligne in lignes if ligne["statut"] == DossierRetraite.Statut.NOTIFIE),
+                "receptions": sum(1 for ligne in lignes if ligne["statut"] == DossierRetraite.Statut.RECEPTION),
+                "transmis": sum(1 for ligne in lignes if ligne["statut"] == DossierRetraite.Statut.TRANSMIS),
                 "dossiers": len(lignes),
-                "transmis": len(transmis),
-                "cessations": sum(1 for ligne in lignes if not ligne["automatique"]),
             },
             "pyramide": pyramide,
             "dossiers": lignes,
-            "postes": [_poste_row(poste) for poste in postes],
             "motifs": [
                 {"id": item.id, "code": item.code, "libelle": item.libelle, "automatique": item.automatique}
                 for item in TypeFinCarriere.objects.all()
@@ -175,18 +171,6 @@ def _renouvellement(agents: list, sortants: int, aujourd_hui: date) -> dict:
     if not entrants and not sortants:
         return {"texte": ""}
     return {"texte": f"{entrants} entrant{'s' if entrants > 1 else ''} sur 12 mois pour {sortants} sortant{'s' if sortants > 1 else ''} prévu{'s' if sortants > 1 else ''}"}
-
-
-def _poste_row(poste: PosteSensible) -> dict:
-    return {
-        "id": poste.id,
-        "intitule": poste.intitule,
-        "titulaire": agent_brief(poste.titulaire),
-        "depart": poste.depart.isoformat(),
-        "successeur": poste.successeur,
-        "progression": poste.progression,
-        "commentaire": poste.commentaire,
-    }
 
 
 def _agent(matricule: str) -> Agent | None:
@@ -223,7 +207,7 @@ def _dossier_depuis(donnees, agent: Agent | None = None, entree_actuelle: date |
     age = _entier(donnees.get("age_limite"), 60)
     if age is None or not 40 <= age <= 75:
         return Response({"detail": "L'âge limite doit être compris entre 40 et 75 ans."}, status=400)
-    statut = (donnees.get("statut") or DossierRetraite.Statut.QUITTANCE).strip()
+    statut = (donnees.get("statut") or DossierRetraite.Statut.NOTIFIE).strip()
     if statut not in DossierRetraite.Statut.values:
         return Response({"detail": "Ce statut de dossier n'existe pas."}, status=400)
     return agent, entree, age, statut, (donnees.get("statut_detail") or "").strip()[:160]
@@ -324,74 +308,6 @@ def dossier(request, pk: int):
     item.statut_detail = (request.data.get("statut_detail") if "statut_detail" in request.data else item.statut_detail or "").strip()[:160]
     item.save()
     return Response(dossier_row(item, timezone.localdate()))
-
-
-def _poste_depuis(donnees, actuel: PosteSensible | None = None):
-    intitule = (donnees.get("intitule") or "").strip()
-    if not intitule:
-        return Response({"detail": "L'intitulé du poste est obligatoire."}, status=400)
-    if actuel is not None and "matricule" not in donnees:
-        titulaire = actuel.titulaire
-    else:
-        titulaire = _agent(donnees.get("matricule") or "")
-        if titulaire is None:
-            return Response({"detail": "Le titulaire doit être un agent du système."}, status=400)
-    depart = _date(donnees.get("depart"))
-    if depart is None:
-        return Response({"detail": "Indiquez la date de départ du titulaire."}, status=400)
-    progression = _entier(donnees.get("progression"), 0)
-    if progression is None or not 0 <= progression <= 100:
-        return Response({"detail": "La progression du tutorat va de 0 à 100."}, status=400)
-    if actuel is not None and "successeur" not in donnees:
-        successeur = actuel.successeur
-    elif not (donnees.get("successeur") or "").strip():
-        successeur = ""
-    else:
-        personne = _agent(donnees.get("successeur"))
-        if personne is None:
-            return Response({"detail": "Le successeur doit être un agent du système."}, status=400)
-        if personne.pk == titulaire.pk:
-            return Response({"detail": "Le successeur ne peut pas être le titulaire."}, status=400)
-        successeur = personne.nom_complet[:160]
-    return intitule[:160], titulaire, depart, successeur, progression, (donnees.get("commentaire") or "").strip()[:200]
-
-
-@api_view(["POST"])
-@permission_classes([IsAuthenticated])
-def creer_poste(request):
-    lu = _poste_depuis(request.data)
-    if isinstance(lu, Response):
-        return lu
-    intitule, titulaire, depart, successeur, progression, commentaire = lu
-    if not agent_visible(request.user, titulaire):
-        return refus_hors_perimetre()
-    item = PosteSensible.objects.create(
-        intitule=intitule, titulaire=titulaire, depart=depart, successeur=successeur, progression=progression, commentaire=commentaire,
-    )
-    return Response(_poste_row(item), status=201)
-
-
-@api_view(["PATCH", "DELETE"])
-@permission_classes([IsAuthenticated])
-def poste(request, pk: int):
-    item = get_object_or_404(PosteSensible.objects.select_related("titulaire", "titulaire__organisme"), pk=pk)
-    if not agent_visible(request.user, item.titulaire):
-        return refus_hors_perimetre()
-    if request.method == "DELETE":
-        item.delete()
-        return Response(status=204)
-    lu = _poste_depuis(request.data, item)
-    if isinstance(lu, Response):
-        return lu
-    intitule, titulaire, depart, successeur, progression, commentaire = lu
-    item.intitule = intitule
-    item.titulaire = titulaire
-    item.depart = depart
-    item.successeur = successeur
-    item.progression = progression
-    item.commentaire = commentaire
-    item.save()
-    return Response(_poste_row(item))
 
 
 @api_view(["POST"])

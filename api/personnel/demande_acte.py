@@ -67,7 +67,8 @@ def types() -> list[dict]:
             "icone": acte.icone,
             "periode": acte.periode,
             "destinataire": acte.destinataire,
-            "justificatif": acte.justificatif or "Pièce justificative (facultatif).",
+            "justificatif": acte.justificatif or ("Pièce justificative." if acte.justificatif_obligatoire else "Pièce justificative (facultatif)."),
+            "justificatif_obligatoire": acte.justificatif_obligatoire,
             "circuit": [instance for instance, _fonction in etapes_circuit(acte.code)],
         }
         for acte in ordonnes
@@ -106,6 +107,8 @@ def deposer(agent: Agent, payload: dict, justificatif=None) -> str | None:
             return "La date de début ne peut pas être dans le passé."
         if acte.code not in SANS_PLAFOND and (fin - debut).days + 1 > DUREE_MAX_JOURS:
             return f"Une absence ne peut pas dépasser {DUREE_MAX_JOURS} jours."
+    if acte.justificatif_obligatoire and not justificatif:
+        return "Joignez le justificatif de votre demande : cet acte n'est pas recevable sans pièce."
     erreur_fichier = _controler_justificatif(justificatif)
     if erreur_fichier:
         return erreur_fichier
@@ -314,10 +317,10 @@ def _accorder_conge(demande: Demande, aujourd_hui: date) -> None:
         Agent.objects.filter(pk=demande.agent_id).update(conges_consommes=F("conges_consommes") + int(trouve.group(1)))
         from .droits_conges import consommer, exercice_a_attribuer
 
-        # L'exercice dont relève ce congé est figé au moment de l'accord : le certificat le reprendra.
-        demande.exercice = exercice_a_attribuer(demande.agent)
+        # L'exercice dont relève ce congé est celui choisi au dépôt ; à défaut, celui que désignent les droits.
+        demande.exercice = demande.exercice or exercice_a_attribuer(demande.agent)
         demande.save(update_fields=["exercice"])
-        consommer(demande.agent, int(trouve.group(1)))
+        consommer(demande.agent, int(trouve.group(1)), demande.exercice)
 
 
 def _prevenir(demande: Demande, delivre: bool, refuse: bool, motif: str) -> None:

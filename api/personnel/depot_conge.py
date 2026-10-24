@@ -40,8 +40,9 @@ def deposer(agent, payload: dict) -> str | None:
         return "Cette période ne compte aucun jour ouvrable."
     # Le congé annuel suit les dates arrêtées par la campagne de planification : l'agent n'en donne pas d'autres,
     # il active l'une de ses périodes. Sans plan arrêté (pas de campagne), la saisie des dates reste libre.
+    exercice = None
     if type_conge is not None and _annuel(type_conge):
-        erreur = _controler_plan_arrete(agent, debut, fin)
+        erreur, exercice = _controler_exercice(agent, payload, debut, fin, jours)
         if erreur:
             return erreur
     interim = " ".join(str(payload.get("interim") or "").split())  # facultatif
@@ -69,6 +70,7 @@ def deposer(agent, payload: dict) -> str | None:
             categorie="conge",
             debut=debut,
             fin=fin,
+            exercice=exercice,
         )
         _visas(demande, aujourd_hui, debut, fin, interim, observations, configurees)
         if absence is not None:
@@ -115,15 +117,59 @@ def periodes_arretees(agent) -> list[tuple[date, date]]:
     return periodes
 
 
+def _periode_demandee(agent, debut: date, fin: date) -> bool:
+    return agent.demandes.filter(categorie="conge", debut=debut, fin=fin).exclude(etape__icontains="refus").exists()
+
+
 def _controler_plan_arrete(agent, debut: date, fin: date) -> str | None:
     arretees = periodes_arretees(agent)
     if not arretees:
         return None
     if (debut, fin) not in arretees:
         return "Votre congé annuel suit les dates arrêtées par la campagne : choisissez l'une de vos périodes."
-    if agent.demandes.filter(categorie="conge", debut=debut, fin=fin).exclude(etape__icontains="refus").exists():
+    if _periode_demandee(agent, debut, fin):
         return "Cette période a déjà été demandée."
+    # Deux tranches : la plus ancienne se demande d'abord.
+    restantes = [periode for periode in arretees if not _periode_demandee(agent, *periode)]
+    if restantes and (debut, fin) != restantes[0]:
+        return "Demandez d'abord votre première période : la tranche la plus ancienne se prend en premier."
     return None
+
+
+def _controler_exercice(agent, payload: dict, debut: date, fin: date, jours: int) -> tuple[str | None, int | None]:
+    """Exercice dont relève le congé annuel, et règle de dates qui en découle. Retourne (erreur, exercice)."""
+    from .droits_conges import annee_courante, est_reliquat
+    from .models import DroitConge
+
+    droits = list(DroitConge.objects.filter(agent=agent))
+    if not droits:
+        # Droits non chargés pour cet agent : seule la règle de la campagne s'applique.
+        return _controler_plan_arrete(agent, debut, fin), None
+    ouverts = {droit.annee: droit for droit in droits if droit.restant > 0}
+    if not ouverts:
+        return "Aucun jour de congé annuel ne reste à prendre.", None
+    normal = annee_courante() - 1
+    try:
+        exercice = int(payload.get("exercice") or 0)
+    except (TypeError, ValueError):
+        exercice = 0
+    if not exercice:
+        exercice = normal if normal in ouverts else min(ouverts)
+    if exercice not in ouverts:
+        return f"Aucun jour de congé annuel n'est dû au titre de {exercice}.", None
+    deja = sum(
+        int(trouve.group(1))
+        for demande in agent.demandes.filter(categorie="conge", exercice=exercice)
+        if not _close(demande.etape) and "refus" not in demande.etape.lower() and (trouve := re.search(r"\((\d+) j", demande.nature))
+    )
+    if jours > ouverts[exercice].restant - deja:
+        return f"Il reste {max(ouverts[exercice].restant - deja, 0)} j au titre de {exercice} : la demande en compte {jours}.", None
+    if est_reliquat(exercice):
+        # Reliquat : l'agent choisit son départ, mais en année N.
+        if debut.year != annee_courante():
+            return f"Les jours de {exercice} se prennent en {annee_courante()} : choisissez un départ en {annee_courante()}.", None
+        return None, exercice
+    return _controler_plan_arrete(agent, debut, fin), exercice
 
 
 def _annuel(type_conge: TypeConge) -> bool:

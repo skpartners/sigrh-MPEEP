@@ -117,11 +117,12 @@ class Command(BaseCommand):
         charger_formation(lambda nom: getattr(modeles, nom))
         self._communications(drh)
         self._nomenclature()
-        from personnel.habilitations_defaut import appliquer, appliquer_secretariat
+        from personnel.habilitations_defaut import appliquer, appliquer_gestionnaire_rh, appliquer_secretariat
         from personnel.models import FonctionHabilitation
 
         appliquer()
         appliquer_secretariat(ModuleHabilitation, FonctionHabilitation, RoleMatrice)
+        appliquer_gestionnaire_rh(RoleMatrice)
         self.stdout.write(self.style.SUCCESS("Jeu de démonstration SIGRH chargé."))
 
     # --- Référentiels --------------------------------------------------------

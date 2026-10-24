@@ -1,10 +1,11 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { api } from "../../api/client";
-import type { Dossier } from "../../api/types";
+import type { Dossier, SessionUser } from "../../api/types";
 import { useFeedback } from "../../ui/Feedback";
 import { BOUTON_PRIMAIRE, BOUTON_SECONDAIRE, Modale } from "../../ui/Modale";
 import { Pagination, usePagination } from "../../ui/Pagination";
+import { CalendrierAnnuel, PERIODES_VIDES, type Collegue } from "../../ui/CalendrierAnnuel";
 import { ApercuCertificat } from "./CertificatCessation";
 import { CircuitDemande, absenceEnCours, demandeClose, jour, periode, pluriel, useDocumentAgent, type Absence } from "./commun";
 import { Icone } from "../../ui/Icone";
@@ -39,7 +40,70 @@ function valeurs(agent: Dossier) {
       : `Le service compte ${presence.presents} % d'agents présents, en dessous du quorum de ${presence.quorum} %.`,
     plage: annees.length === 0 ? String(new Date().getFullYear()) : min === max ? String(min) : `${min} - ${max}`,
     exercices: [...new Set(annees)].sort((a, b) => b - a),
+    // D'où vient le solde : les jours qui restent, exercice par exercice.
+    parExercice: agent.conges.droits.filter((droit) => droit.restant > 0),
   };
+}
+
+/** Droits de congé annuel par exercice. Un exercice antérieur à N-1 est un reliquat, que le DRH peut annuler. */
+function DroitsParExercice({ agent }: { agent: Dossier }) {
+  const client = useQueryClient();
+  const feedback = useFeedback();
+  const moi = useQuery({ queryKey: ["me"], queryFn: () => api<SessionUser>("/api/v1/me/"), staleTime: Infinity });
+  const [confirmation, setConfirmation] = useState<number | null>(null);
+  const droits = agent.conges.droits;
+  if (droits.length === 0) return null;
+
+  async function annuler(annee: number) {
+    try {
+      const dossier = await feedback.run(
+        "Annulation du reliquat…",
+        () => api<Dossier>(`/api/v1/agents/${encodeURIComponent(agent.matricule)}/droits-conges/${annee}/remise-a-zero/`, { method: "POST" }),
+        { success: { title: "Reliquat annulé", message: `Le reliquat de ${annee} est remis à zéro.` }, error: "Le reliquat n'a pas pu être annulé." },
+      );
+      client.setQueryData(["agent", agent.matricule], dossier);
+      setConfirmation(null);
+    } catch {
+      /* le toast d'erreur est déjà affiché */
+    }
+  }
+
+  return (
+    <section className="bg-surface-container-lowest rounded-xl p-5 shadow-sm space-y-3" aria-labelledby="droits-exercice">
+      <h2 id="droits-exercice" className="font-headline-sm text-headline-sm text-on-surface">Droits par exercice</h2>
+      <p className="font-body-sm text-body-sm text-on-surface-variant">
+        Les congés (N-1) se prennent aux dates arrêtées par la campagne. Le reliquat (N-2 et plus ancien) se prend aux dates choisies par l'agent, en année courante ; le DRH peut l'annuler.
+      </p>
+      <ul className="divide-y divide-hairline">
+        {droits.map((droit) => (
+          <li key={droit.annee} className="flex flex-wrap items-center gap-x-6 gap-y-2 py-2">
+            <span className="w-16 font-code-num text-code-num font-bold text-on-surface">{droit.annee}</span>
+            <span className="font-body-sm text-body-sm text-on-surface-variant">{droit.pris} / {droit.dus} j pris · <strong className="text-on-surface">{droit.restant} j restants</strong></span>
+            <span className={`rounded-full px-2 font-label-sm text-label-sm font-bold ${droit.reliquat ? "bg-secondary-fixed text-on-secondary-fixed" : "bg-primary-fixed text-on-primary-fixed"}`}>
+              {droit.reliquat ? "Reliquat" : "Congés"}
+            </span>
+            {droit.remis_a_zero_le ? <span className="font-label-sm text-label-sm text-on-surface-variant">Annulé le {jour(droit.remis_a_zero_le)}</span> : null}
+            {moi.data?.drh && droit.reliquat && droit.restant > 0 ? (
+              <span className="ml-auto flex items-center gap-2">
+                {confirmation === droit.annee ? (
+                  <>
+                    <button type="button" className="rounded bg-error px-3 py-1.5 font-label-sm text-label-sm text-on-error" onClick={() => void annuler(droit.annee)}>
+                      Confirmer : retirer {droit.restant} j
+                    </button>
+                    <button type="button" className="rounded px-3 py-1.5 font-label-sm text-label-sm text-on-surface-variant hover:bg-surface-container" onClick={() => setConfirmation(null)}>Garder</button>
+                  </>
+                ) : (
+                  <button type="button" className="rounded border border-error px-3 py-1.5 font-label-sm text-label-sm text-error hover:bg-error-container/50" onClick={() => setConfirmation(droit.annee)}>
+                    Remettre à zéro
+                  </button>
+                )}
+              </span>
+            ) : null}
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
 }
 
 /** Congés & absences de l'agent : soldes, circuit, présence du service et registre. */
@@ -81,7 +145,7 @@ export function OngletConges({ agent }: { agent: Dossier }) {
             <button className="px-4 py-2 rounded bg-primary text-on-primary font-label-md text-label-md flex items-center gap-2 hover:bg-primary-container transition-colors shadow-sm" onClick={() => setFormulaire(true)} type="button">
               <Icone nom="add_circle" className="text-base" />
               {" "}
-              <span>Déclarer un congé ou une absence</span>
+              <span>Demander un congé</span>
             </button>
           </div>
         </div>
@@ -92,13 +156,26 @@ export function OngletConges({ agent }: { agent: Dossier }) {
             <div className="flex items-start justify-between">
               <div className="space-y-1">
                 <span className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider font-bold">
-                  Solde de congé annuel
+                  Congés disponibles
                 </span>
                 <div className="flex items-baseline gap-2">
                   <span className="font-headline-xl text-headline-xl text-primary font-bold">{v.reliquat}</span>
                   {" "}
                   <span className="font-label-lg text-label-lg text-on-surface-variant font-medium">jours ouvrables</span>
                 </div>
+                {v.parExercice.length ? (
+                  <ul className="flex flex-wrap gap-1.5 pt-1" aria-label="Solde par exercice">
+                    {v.parExercice.map((droit) => (
+                      <li key={droit.annee} className={`rounded-full px-2.5 py-0.5 font-label-sm text-label-sm font-semibold ${droit.reliquat ? "bg-secondary-fixed text-on-secondary-fixed" : "bg-primary-fixed text-on-primary-fixed"}`}>
+                        {droit.annee} · {droit.restant} j{droit.reliquat ? " (reliquat)" : ""}
+                      </li>
+                    ))}
+                  </ul>
+                ) : agent.conges.report > 0 ? (
+                  <ul className="flex flex-wrap gap-1.5 pt-1" aria-label="Reliquat">
+                    <li className="rounded-full bg-secondary-fixed px-2.5 py-0.5 font-label-sm text-label-sm font-semibold text-on-secondary-fixed">Reliquat · {Math.min(agent.conges.report, agent.conges.reliquat)} j</li>
+                  </ul>
+                ) : null}
               </div>
               <div className="p-2.5 rounded bg-primary-fixed text-primary flex items-center justify-center">
                 <Icone nom="account_balance_wallet" className="text-2xl" />
@@ -162,6 +239,7 @@ export function OngletConges({ agent }: { agent: Dossier }) {
             </div>
           </div>
         </div>
+        <DroitsParExercice agent={agent} />
         {enCircuit.length || pendantes.length ? (
           <div className="space-y-4">
             {enCircuit.map((demande) => <CircuitDemande key={demande.reference} demande={demande} />)}
@@ -173,7 +251,7 @@ export function OngletConges({ agent }: { agent: Dossier }) {
               <span className="w-2.5 h-2.5 rounded-full bg-surface-container-high" />
               <h2 className="font-headline-sm text-headline-sm text-on-surface">Circuit d'Ordonnancement</h2>
             </div>
-            <p className="font-body-sm text-body-sm text-on-surface-variant">Aucune demande de congé ou d'absence n'est en cours pour ce dossier.</p>
+            <p className="font-body-sm text-body-sm text-on-surface-variant">Aucune demande de congé n'est en cours pour ce dossier.</p>
           </div>
         )}
         {/* Main Grid: Section 2 (Formulaire) + Section 4 (Planning Présence) */}
@@ -485,8 +563,19 @@ export function FormulaireConge({ agent, onClose }: { agent: Dossier; onClose: (
     return { ...brouillon, interim: collegues.some((item) => item.nom === brouillon.interim) ? brouillon.interim : "" };
   });
   const [enCours, setEnCours] = useState(false);
+  // Seuls les exercices qui donnent droit à un congé sont proposés. En principe N-1, aux dates de la campagne ;
+  // un exercice plus ancien est un reliquat, dont l'agent choisit lui-même le départ en année N.
+  const droitsOuverts = agent.conges.droits.filter((droit) => droit.restant > 0);
+  const anneeCourante = new Date().getFullYear();
+  const exerciceNormal = anneeCourante - 1;
+  const [exerciceDemande, setExerciceDemande] = useState<number | null>(null);
+  // N-1 par défaut ; un exercice plus ancien n'est proposé que s'il reste des jours (le DRH peut les annuler).
+  const exercicesProposes = [exerciceNormal, ...droitsOuverts.map((droit) => droit.annee).filter((annee) => annee < exerciceNormal)].sort((a, b) => b - a);
+  const exerciceChoisi = exerciceDemande !== null && exercicesProposes.includes(exerciceDemande) ? exerciceDemande : exerciceNormal;
+  const droitChoisi = agent.conges.droits.find((droit) => droit.annee === exerciceChoisi);
   // Les dates du congé annuel sont celles que la campagne de planification a arrêtées : l'agent active une période.
-  const planification = useQuery({ queryKey: ["planification-conges"], queryFn: () => api<{ plans: PlanArrete[] }>("/api/v1/conges/planification/") });
+  const planification = useQuery({ queryKey: ["planification-conges"], queryFn: () => api<{ plans: PlanArrete[]; collegues?: Collegue[] }>("/api/v1/conges/planification/") });
+  const collegues_conges = planification.data?.collegues ?? [];
   const annuel = saisie.type === "conge-annuel" || agent.types_conges.some((type) => type.enfants.some((enfant) => enfant.code === saisie.type && /annuel/i.test(enfant.libelle)));
   const monPlan = planification.data?.plans.find((plan) => plan.moi && plan.palier === "publie");
   const arretees: PeriodeArretee[] = monPlan
@@ -494,16 +583,23 @@ export function FormulaireConge({ agent, onClose }: { agent: Dossier; onClose: (
     : [];
   const dejaDemandee = (periodeChoisie: PeriodeArretee) =>
     agent.demandes.some((demande) => demande.categorie === "conge" && demande.debut === periodeChoisie.debut && demande.fin === periodeChoisie.fin && !/refus/i.test(demande.etape));
-  const verrouille = annuel && arretees.length > 0;
+  const reliquat = annuel && Boolean(droitChoisi?.reliquat);
+  const verrouille = annuel && !reliquat && arretees.length > 0;
   const disponibles = arretees.filter((item) => !dejaDemandee(item));
+  // Deux tranches : la plus ancienne se demande d'abord.
+  const prochaine = disponibles[0];
   // Verrouillé : la période choisie est l'une des périodes encore à demander, la première par défaut.
   useEffect(() => {
     if (!verrouille) return;
     const valide = disponibles.some((item) => item.debut === saisie.debut && item.fin === saisie.fin);
     if (!valide) setSaisie((actuelle) => ({ ...actuelle, debut: disponibles[0]?.debut ?? "", fin: disponibles[0]?.fin ?? "" }));
   }, [verrouille, saisie.debut, saisie.fin, disponibles.map((item) => item.debut).join(",")]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Passage au reliquat : les dates de la campagne ne s'appliquent plus, l'agent choisit les siennes.
+  useEffect(() => {
+    if (reliquat && arretees.some((item) => item.debut === saisie.debut && item.fin === saisie.fin)) setSaisie((actuelle) => ({ ...actuelle, debut: "", fin: "" }));
+  }, [reliquat]); // eslint-disable-line react-hooks/exhaustive-deps
   const jours = joursDecomptes(saisie.debut, saisie.fin, annuel);
-  const solde = Math.max(agent.conges.reliquat - jours, 0);
+  const solde = Math.max((droitChoisi ? droitChoisi.restant : agent.conges.reliquat) - jours, 0);
   const champ = (cle: keyof Saisie) => (event: { target: { value: string } }) => setSaisie((actuelle) => ({ ...actuelle, [cle]: event.target.value }));
 
   function brouillon() {
@@ -534,6 +630,14 @@ export function FormulaireConge({ agent, onClose }: { agent: Dossier; onClose: (
       feedback.toast("Plus de 30 jours", `On ne prend pas plus de ${PLAFOND_EXERCICE} jours au titre d'un seul exercice : déposez une demande par exercice.`, "info");
       return;
     }
+    if (annuel && droitChoisi && jours > droitChoisi.restant) {
+      feedback.toast("Droits insuffisants", `Il reste ${droitChoisi.restant} j au titre de ${droitChoisi.annee} : la demande en compte ${jours}.`, "info");
+      return;
+    }
+    if (reliquat && saisie.debut.slice(0, 4) !== String(anneeCourante)) {
+      feedback.toast("Départ en " + anneeCourante, `Les jours de ${exerciceChoisi} se prennent en ${anneeCourante} : choisissez un départ en ${anneeCourante}.`, "info");
+      return;
+    }
     setEnCours(true);
     try {
       await feedback.run(
@@ -541,7 +645,7 @@ export function FormulaireConge({ agent, onClose }: { agent: Dossier; onClose: (
         () =>
           api<Dossier>(`/api/v1/agents/${encodeURIComponent(agent.matricule)}/conges/demande/`, {
             method: "POST",
-            body: JSON.stringify({ type: saisie.type, debut: saisie.debut, fin: saisie.fin, interim: saisie.interim.trim(), observations: saisie.observations }),
+            body: JSON.stringify({ type: saisie.type, debut: saisie.debut, fin: saisie.fin, interim: saisie.interim.trim(), observations: saisie.observations, ...(annuel && exerciceChoisi ? { exercice: exerciceChoisi } : {}) }),
           }),
         {
           success: { title: "Demande transmise", message: "Elle est entrée dans le circuit, au visa du chef de service." },
@@ -560,8 +664,7 @@ export function FormulaireConge({ agent, onClose }: { agent: Dossier; onClose: (
 
   return (
     <Modale
-      titre="Demande d'absence ou congé statutaire"
-      sousTitre="Formalité administrative · Décret d'application n°2023-892"
+      titre="Demande de congés"
       icone="event_available"
       taille="xl"
       onClose={onClose}
@@ -586,7 +689,7 @@ export function FormulaireConge({ agent, onClose }: { agent: Dossier; onClose: (
         <label className="block space-y-1.5">
           <span className={`${LIBELLE} flex items-center justify-between`}>
             <span>
-              Nature de la demande statutaire <span className="text-error">*</span>
+              Nature du congé <span className="text-error">*</span>
             </span>
           </span>
           <Select className={`${CHAMP} cursor-pointer`} value={saisie.type} onChange={champ("type")} required>
@@ -601,24 +704,19 @@ export function FormulaireConge({ agent, onClose }: { agent: Dossier; onClose: (
                 <option key={type.code} value={type.code}>{type.libelle}</option>
               ),
             )}
-            {agent.types_absences.length ? (
-              <optgroup label="Absences et autorisations">
-                {agent.types_absences.map((type) => (
-                  <option key={type.code} value={type.code}>{type.libelle}</option>
-                ))}
-              </optgroup>
-            ) : null}
           </Select>
         </label>
         {verrouille ? (
           <fieldset className="space-y-2">
             <legend className={LIBELLE}>Période de congé arrêtée par la campagne</legend>
             <p className="font-body-sm text-body-sm text-on-surface-variant">
-              Vos dates sont déjà arrêtées : il suffit d'activer la période et de la soumettre à votre hiérarchie.
+              Vos dates sont déjà arrêtées par la campagne{exerciceChoisi ? ` (congé de ${exerciceChoisi})` : ""} et ne peuvent pas être modifiées.
+              {arretees.length > 1 ? " La tranche la plus ancienne se demande d'abord." : ""}
             </p>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2" role="radiogroup" aria-label="Période de congé">
               {arretees.map((item, rang) => {
                 const deja = dejaDemandee(item);
+                const enAttente = !deja && item !== prochaine;
                 const choisie = saisie.debut === item.debut && saisie.fin === item.fin;
                 const nombre = joursDecomptes(item.debut, item.fin, true);
                 return (
@@ -627,7 +725,7 @@ export function FormulaireConge({ agent, onClose }: { agent: Dossier; onClose: (
                     type="button"
                     role="radio"
                     aria-checked={choisie}
-                    disabled={deja}
+                    disabled={deja || enAttente}
                     onClick={() => setSaisie((actuelle) => ({ ...actuelle, debut: item.debut, fin: item.fin }))}
                     className={`flex items-center gap-3 rounded-xl border p-4 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${choisie ? "border-primary bg-primary-fixed/50" : "border-hairline bg-surface-container-low hover:bg-surface-container"}`}
                   >
@@ -638,6 +736,7 @@ export function FormulaireConge({ agent, onClose }: { agent: Dossier; onClose: (
                         {periode(item.debut, item.dernier)} · {pluriel(nombre, "jour")}
                       </span>
                       {deja ? <span className="mt-1 inline-block rounded-full bg-primary/10 px-2 font-label-sm text-label-sm font-bold text-primary">Déjà demandée</span> : null}
+                      {enAttente ? <span className="mt-1 inline-block rounded-full bg-surface-container-high px-2 font-label-sm text-label-sm font-bold text-on-surface-variant">À demander après la première période</span> : null}
                     </span>
                   </button>
                 );
@@ -647,7 +746,12 @@ export function FormulaireConge({ agent, onClose }: { agent: Dossier; onClose: (
           </fieldset>
         ) : (
           <>
-            {annuel ? (
+            {reliquat ? (
+              <p className="rounded-lg border border-secondary bg-secondary-fixed/40 p-3 font-body-sm text-body-sm text-on-surface">
+                Reliquat de {exerciceChoisi} ({droitChoisi?.restant} j) : vous choisissez vous-même vos dates de départ, en {anneeCourante}.
+                Le DRH peut annuler ce reliquat.
+              </p>
+            ) : annuel ? (
               <p className="rounded-lg bg-surface-container-low p-3 font-body-sm text-body-sm text-on-surface-variant">
                 Aucune période n'est encore arrêtée pour vous par la campagne de planification : indiquez vos dates.
               </p>
@@ -657,7 +761,7 @@ export function FormulaireConge({ agent, onClose }: { agent: Dossier; onClose: (
             <span className={LIBELLE}>
               Date de début (incluse) <span className="text-error">*</span>
             </span>
-            <input className={CHAMP} type="date" value={saisie.debut} onChange={champ("debut")} required />
+            <input className={CHAMP} type="date" value={saisie.debut} min={reliquat ? `${anneeCourante}-01-01` : undefined} max={reliquat ? `${anneeCourante}-12-31` : undefined} onChange={champ("debut")} required />
           </label>
           <label className="block space-y-1.5">
             <span className={LIBELLE}>
@@ -668,6 +772,18 @@ export function FormulaireConge({ agent, onClose }: { agent: Dossier; onClose: (
         </div>
           </>
         )}
+        {collegues_conges.length > 0 ? (
+          // Les plages déjà prises par les collègues de la structure : à consulter avant de choisir un départ.
+          <details open={reliquat || undefined} className="group rounded-xl border border-hairline p-3">
+            <summary className="flex cursor-pointer flex-wrap items-center gap-2 font-label-lg text-label-lg font-bold text-on-surface">
+              <Icone nom="expand_more" className="text-xl transition-transform group-open:rotate-180" />
+              Congés déjà pris par vos collègues ({collegues_conges.length})
+            </summary>
+            <div className="mt-3">
+              <CalendrierAnnuel annee={Number(saisie.debut.slice(0, 4)) || anneeCourante} valeur={PERIODES_VIDES} onChange={() => undefined} lecture collegues={collegues_conges} />
+            </div>
+          </details>
+        ) : null}
         <div className="p-3.5 rounded bg-surface-container flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <Icone nom="calculate" className="text-primary text-xl" />
@@ -706,15 +822,17 @@ export function FormulaireConge({ agent, onClose }: { agent: Dossier; onClose: (
           entree={{
             agent,
             type: saisie.type,
-            libelle: [...agent.types_conges.flatMap((item) => (item.enfants.length ? item.enfants : [item])), ...agent.types_absences].find((item) => item.code === saisie.type)?.libelle,
+            libelle: agent.types_conges.flatMap((item) => (item.enfants.length ? item.enfants : [item])).find((item) => item.code === saisie.type)?.libelle,
             debut: saisie.debut,
             fin: saisie.fin,
             jours,
             annuel,
-            exercice: agent.conges.exercice,
+            exercice: annuel ? exerciceChoisi : agent.conges.exercice,
+            exercices: exercicesProposes,
             rang: Math.max(arretees.findIndex((item) => item.debut === saisie.debut), 0),
             periodes: arretees.length,
           }}
+          onExercice={setExerciceDemande}
         />
       </div>
     </Modale>

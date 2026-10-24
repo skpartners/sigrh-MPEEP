@@ -1,13 +1,13 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { ApiError, api } from "../api/client";
+import { ApiError, api, telecharger, type ErreurLigne } from "../api/client";
 import { dateCourte, nombre } from "../ui/format";
 import { useFeedback } from "../ui/Feedback";
 import { Icone } from "../ui/Icone";
 import { Modale } from "../ui/Modale";
 import { SelectEmploi, useNomenclature } from "../ui/Nomenclature";
 import { Pagination, usePagination } from "../ui/Pagination";
-import { LIBELLE_ETAT, TableauEmplois, type CampagneBesoins, type EmploiBesoins, type FicheBesoins, type NoeudBesoins, type TotauxBesoins } from "./gpec/besoinsCommun";
+import { LIBELLE_ETAT, type CampagneBesoins, type EmploiBesoins, type FicheBesoins, type NoeudBesoins, type TotauxBesoins } from "./gpec/besoinsCommun";
 import { Select } from "../ui/Select";
 
 export type MesBesoins =
@@ -38,7 +38,77 @@ export function useMesBesoins(actif: boolean, exercice?: number) {
   });
 }
 
-/** Onglet du profil d'un responsable de structure : il répond à l'appel et suit la remontée de ses structures. */
+/** Expression par fichier : le gestionnaire télécharge le modèle, le renseigne, puis le verse ici. */
+function VersementFichier({ actif }: { actif: boolean }) {
+  const client = useQueryClient();
+  const feedback = useFeedback();
+  const [fichier, setFichier] = useState<File | null>(null);
+  const [cle, setCle] = useState(0);
+  const [enCours, setEnCours] = useState(false);
+  const [erreur, setErreur] = useState("");
+  const [lignes, setLignes] = useState<ErreurLigne[]>([]);
+
+  async function verser() {
+    if (!fichier) return;
+    setEnCours(true);
+    setErreur("");
+    setLignes([]);
+    try {
+      const corps = new FormData();
+      corps.set("fichier", fichier);
+      const reponse = await api<{ creees: number; corrigees: number }>("/api/v1/besoins/fichier/", { method: "POST", body: corps });
+      feedback.toast("Besoins enregistrés", `${reponse.creees} créé${reponse.creees > 1 ? "s" : ""}, ${reponse.corrigees} corrigé${reponse.corrigees > 1 ? "s" : ""}.`, "success");
+      setFichier(null);
+      setCle((n) => n + 1);
+      await client.invalidateQueries({ queryKey: CLE });
+    } catch (cause) {
+      if (cause instanceof ApiError) {
+        setErreur(cause.message);
+        setLignes(cause.erreurs);
+      } else {
+        setErreur("Le fichier n'a pas pu être versé.");
+      }
+    } finally {
+      setEnCours(false);
+    }
+  }
+
+  return (
+    <section className={CARTE} aria-labelledby="titre-fichier-besoins">
+      <h3 id="titre-fichier-besoins" className="flex items-center gap-2 font-headline-sm text-headline-sm text-on-surface font-bold">
+        <Icone nom="upload_file" className="text-primary text-xl" />Exprimer mes besoins par fichier
+      </h3>
+      <p className="mt-1 font-body-sm text-body-sm text-on-surface-variant">
+        Renseignez le modèle reçu à l'ouverture de l'appel (ou téléchargez-le ici), puis versez-le : vos besoins sont enregistrés d'un coup.
+      </p>
+      <div className="mt-4 flex flex-wrap items-center gap-3">
+        <button type="button" className="inline-flex items-center gap-2 rounded-lg border border-outline-variant px-4 py-2.5 font-label-md text-label-md text-on-surface hover:bg-surface-container-low"
+          onClick={() => void telecharger("/api/v1/besoins/modele/", "modele-expression-besoins.xlsx")}>
+          <Icone nom="download" className="text-lg" />Télécharger le modèle
+        </button>
+        <input key={cle} type="file" accept=".xlsx" disabled={!actif || enCours} aria-label="Classeur renseigné"
+          onChange={(e) => { setFichier(e.target.files?.[0] ?? null); setErreur(""); setLignes([]); }}
+          className="block text-sm text-on-surface file:mr-4 file:rounded-lg file:border-0 file:bg-primary-fixed file:px-4 file:py-2 file:text-on-primary-fixed disabled:opacity-60" />
+        <button type="button" disabled={!actif || !fichier || enCours} onClick={() => void verser()}
+          className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 font-label-md text-label-md text-on-primary disabled:opacity-50">
+          <Icone nom={enCours ? "progress_activity" : "cloud_upload"} className={`text-lg ${enCours ? "motion-spin" : ""}`} />Verser le fichier renseigné
+        </button>
+      </div>
+      {!actif ? <p className="mt-2 font-body-sm text-body-sm text-on-surface-variant">Le versement est possible tant que l'appel est ouvert.</p> : null}
+      {erreur ? <p role="alert" className="mt-3 text-sm text-error">{erreur}</p> : null}
+      {lignes.length > 0 ? (
+        <ul className="mt-2 max-h-48 overflow-auto rounded-lg bg-error-container/50 px-3 py-2 space-y-1" aria-label="Lignes incorrectes">
+          {lignes.slice(0, 30).map((item) => (
+            <li key={`${item.ligne}-${item.message}`} className="font-body-sm text-body-sm text-on-error-container">{item.ligne ? `Ligne ${item.ligne} : ` : ""}{item.message}</li>
+          ))}
+          {lignes.length > 30 ? <li className="font-body-sm text-body-sm text-on-error-container">et {lignes.length - 30} autres lignes</li> : null}
+        </ul>
+      ) : null}
+    </section>
+  );
+}
+
+/** Onglet du profil d'un gestionnaire RH : il répond à l'appel et suit la remontée de ses structures. */
 export function BesoinsResponsable() {
   const client = useQueryClient();
   const feedback = useFeedback();
@@ -51,14 +121,14 @@ export function BesoinsResponsable() {
   const page = usePagination(fiches, String(fiches.length));
 
   if (requete.isLoading) return <p className="text-on-surface-variant">Chargement…</p>;
-  if (!donnees || !donnees.responsable) return <p className={`${CARTE} text-on-surface-variant`}>Cet espace est réservé aux responsables de structure.</p>;
+  if (!donnees || !donnees.responsable) return <p className={`${CARTE} text-on-surface-variant`}>Cet espace est réservé aux gestionnaires RH.</p>;
 
   const campagne = donnees.campagne;
   const exercices = donnees.exercices;
   const passe = Boolean(exercice && campagne && exercice !== exercices[0]);
   const saisissable = Boolean(campagne && campagne.ouverte) && !passe;
-  const rattachees = donnees.arbre.some((n) => n.enfants.length > 0);
-  const emploisRemontes = donnees.emplois;
+  // Chaque gestionnaire exprime depuis son espace : on lui signale seulement ce qui n'est pas encore renseigné.
+  const sansExpression = saisissable ? donnees.structures.filter((structure) => !fiches.some((fiche) => fiche.entite.id === structure.id)) : [];
 
   async function retirer(f: FicheBesoins) {
     if (!(await feedback.confirm(`Retirer le besoin « ${f.profil} » ?`, { confirmLabel: "Supprimer" }))) return;
@@ -73,11 +143,10 @@ export function BesoinsResponsable() {
       <section className={CARTE}>
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h2 className="font-headline-sm text-headline-sm text-on-surface font-bold">Besoins RH{campagne ? ` ${campagne.exercice}` : ""}</h2>
-            <p className="mt-1 font-body-md text-body-md text-on-surface-variant">
-              {donnees.structures.slice(0, 3).map((s) => `${s.nom} (${s.niveau_libelle})`).join(" · ")}
-              {donnees.structures.length > 3 ? ` · et ${donnees.structures.length - 3} autres structures` : ""}
-            </p>
+            <h2 className="flex flex-wrap items-center gap-2 font-headline-sm text-headline-sm text-on-surface font-bold">
+              Besoins RH{campagne ? ` ${campagne.exercice}` : ""}
+              {sansExpression.length > 0 ? <span className="rounded-full bg-error px-2.5 py-0.5 font-label-sm text-label-sm font-bold text-on-error">Non renseignée</span> : null}
+            </h2>
             {exercices.length > 1 ? (
               <label className="mt-2 inline-flex items-center gap-2 font-label-md text-label-md text-on-surface">
                 Exercice
@@ -93,12 +162,10 @@ export function BesoinsResponsable() {
             </p>
             {campagne?.cadrage ? <p className="mt-2 font-body-md text-body-md text-on-surface">{campagne.cadrage}</p> : null}
           </div>
-          <button type="button" disabled={!saisissable} className="inline-flex items-center gap-2 px-3 py-1.5 rounded bg-primary text-on-primary font-label-md text-label-md disabled:opacity-50" onClick={() => setEdition("nouvelle")}>
-            <Icone nom="add" className="text-lg" />
-            Exprimer un besoin
-          </button>
         </div>
       </section>
+
+      {passe ? null : <VersementFichier actif={saisissable} />}
 
       <section className={CARTE}>
         <h3 className="font-headline-sm text-headline-sm text-on-surface font-bold mb-4">Mes besoins</h3>
@@ -136,10 +203,6 @@ export function BesoinsResponsable() {
         <Pagination page={page.page} pages={page.pages} total={page.total} aller={page.aller} libelle="besoin" />
       </section>
 
-      <section className={CARTE}>
-        <h3 className="font-headline-sm text-headline-sm text-on-surface font-bold mb-4">{rattachees ? "Besoins par emploi, avec les structures rattachées" : "Besoins par emploi"}</h3>
-        <TableauEmplois emplois={emploisRemontes} />
-      </section>
 
       {edition ? <FormulaireBesoin structures={donnees.structures} fiche={edition === "nouvelle" ? null : edition} onClose={() => setEdition(null)} /> : null}
     </div>

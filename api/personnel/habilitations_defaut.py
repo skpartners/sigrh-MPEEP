@@ -92,6 +92,28 @@ def appliquer(Role=RoleMatrice, Fonction=FonctionHabilitation, Compte=Profil, Ut
     profil.save(update_fields=["precisions"])
 
 
+ROLE_GESTIONNAIRE_RH = "Gestionnaire RH"
+
+
+def appliquer_gestionnaire_rh(Role) -> None:
+    """Rôle « Gestionnaire RH » : point focal d'une structure, aux habilitations de l'agent (calqué sur lui)."""
+    if Role.objects.filter(role=ROLE_GESTIONNAIRE_RH).exists():
+        return
+    modele = Role.objects.filter(role="Agent").first()
+    if modele is None:
+        return
+    ordre = (Role.objects.order_by("-ordre").values_list("ordre", flat=True).first() or 0) + 1
+    Role.objects.create(
+        ordre=ordre,
+        role=ROLE_GESTIONNAIRE_RH,
+        description="Point focal RH d'une structure : exprime ses besoins en agents",
+        icone="support_agent",
+        droits=list(modele.droits),
+        superieurs=list(modele.superieurs),
+        precisions=dict(modele.precisions or {}),
+    )
+
+
 MODULE_SECRETARIAT = "Carrières & Actes"
 FONCTION_SECRETARIAT = "Secrétariat"
 ROLE_SECRETAIRE = "Secrétaire"

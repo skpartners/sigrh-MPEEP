@@ -99,7 +99,7 @@ export function StructuresScreen() {
       await client.invalidateQueries({ queryKey: ["utilisateurs"] });
       await client.invalidateQueries({ queryKey: ["dotation"] });
       await client.invalidateQueries({ queryKey: ["besoins"] });
-      feedback.toast(editionPole ? "Pôle mis à jour" : "Pôle ajouté", cree.nom);
+      feedback.toast(editionPole ? "Programme mis à jour" : "Programme ajouté", cree.nom);
       setFormulairePole(null);
       setEditionPole(null);
     },
@@ -136,12 +136,12 @@ export function StructuresScreen() {
 
   function supprimerPole(item: Pole) {
     void agir({
-      confirmation: `Supprimer le pôle « ${item.libelle || item.nom} » ?`,
+      confirmation: `Supprimer le programme « ${item.libelle || item.nom} » ?`,
       confirmLabel: "Supprimer",
-      attente: "Suppression du pôle…",
+      attente: "Suppression du programme…",
       route: `/api/v1/poles/${encodeURIComponent(item.code)}/`,
       methode: "DELETE",
-      succes: "Pôle supprimé",
+      succes: "Programme supprimé",
     });
   }
 
@@ -176,7 +176,7 @@ export function StructuresScreen() {
             <div>
               <h1 className="font-headline-lg text-headline-lg text-on-surface">Structures du ministère</h1>
               <p className="mt-2 max-w-3xl font-body-md text-body-md text-on-surface-variant">
-                {data.poles.length} pôle{data.poles.length > 1 ? "s" : ""}, {data.structures.length} structure{data.structures.length > 1 ? "s" : ""}. Les grades et les emplois de cette page alimentent les dossiers et les besoins.
+                {data.poles.length} programme{data.poles.length > 1 ? "s" : ""}, {data.structures.length} structure{data.structures.length > 1 ? "s" : ""}. Les grades et les emplois de cette page alimentent les dossiers et les besoins.
               </p>
             </div>
             <div className="flex w-full flex-col gap-2 self-end sm:w-fit">
@@ -186,8 +186,8 @@ export function StructuresScreen() {
                 modeleNom="modele-structures.xlsx"
                 importUrl="/api/v1/structures/import/"
                 titre="Importer le référentiel"
-                sousTitre="Une ligne crée ou met à jour un pôle, une structure, un grade ou un emploi."
-                aide="Le modèle a une feuille par liste : Pôles, Structures, Grades et Emplois. Le niveau et le rattachement placent la structure dans la hiérarchie. Une cellule vide, sur une ligne déjà connue, conserve la valeur enregistrée."
+                sousTitre="Une ligne crée ou met à jour un programme, une structure, un grade ou un emploi."
+                aide="Le modèle a une feuille par liste : Programmes, Structures, Grades et Emplois. Le niveau et le rattachement placent la structure dans la hiérarchie. Une cellule vide, sur une ligne déjà connue, conserve la valeur enregistrée."
                 toastTitre="Référentiel mis à jour"
                 invalidations={[["structures"], ["nomenclature"], ["utilisateurs"], ["dotation"], ["besoins"]]}
               />
@@ -195,7 +195,7 @@ export function StructuresScreen() {
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                   <button type="button" className={`${PRIMAIRE} w-full justify-center`} onClick={() => ouvrirPole()}>
                     <Icone nom="add" className="text-lg" />
-                    Ajouter un pôle
+                    Ajouter un programme
                   </button>
                   <button type="button" className={`${PRIMAIRE} w-full justify-center`} onClick={ouvrirCreation}>
                     <Icone nom="add" className="text-lg" />
@@ -235,7 +235,7 @@ export function StructuresScreen() {
             <table className="w-full min-w-[40rem] text-left">
               <thead className="bg-surface-container-low font-label-sm text-label-sm uppercase tracking-wide text-on-surface-variant">
                 <tr>
-                  <th className="px-4 py-3">Pôle</th>
+                  <th className="px-4 py-3">Programme</th>
                   <th className="px-4 py-3">Quorum</th>
                   <th className="px-4 py-3 text-right">Actions</th>
                 </tr>
@@ -243,7 +243,7 @@ export function StructuresScreen() {
               <tbody>
                 {data.poles.length === 0 ? (
                   <tr>
-                    <td colSpan={2} className="px-4 py-8 text-center font-body-sm text-body-sm text-on-surface-variant">Aucun pôle. Ajoutez-en un avant de créer une structure.</td>
+                    <td colSpan={2} className="px-4 py-8 text-center font-body-sm text-body-sm text-on-surface-variant">Aucun programme. Ajoutez-en un avant de créer une structure.</td>
                   </tr>
                 ) : pagePoles.visibles.map((item) => (
                   <tr key={item.code} className="border-t border-hairline">
@@ -257,13 +257,13 @@ export function StructuresScreen() {
               </tbody>
             </table>
           </div>
-          <Pagination page={pagePoles.page} pages={pagePoles.pages} total={pagePoles.total} aller={pagePoles.aller} libelle="pôle" />
+          <Pagination page={pagePoles.page} pages={pagePoles.pages} total={pagePoles.total} aller={pagePoles.aller} libelle="programme" />
         </section>
 
         <section className={`${CARTE} overflow-hidden motion-rise`} style={{ "--delay": "160ms" } as CSSProperties}>
           <div className="p-4">
-            <Select className={`${CHAMP} max-w-sm`} value={pole} aria-label="Filtrer par pôle" onChange={(event) => setPole(event.target.value)}>
-              <option value="">Tous les pôles</option>
+            <Select className={`${CHAMP} max-w-sm`} value={pole} aria-label="Filtrer par programme" onChange={(event) => setPole(event.target.value)}>
+              <option value="">Tous les programmes</option>
               {data.poles.map((item) => <option key={item.code} value={item.code}>{item.libelle}</option>)}
             </Select>
           </div>
@@ -274,14 +274,14 @@ export function StructuresScreen() {
                   <th className="px-4 py-3">Structure</th>
                   <th className="px-4 py-3">Niveau</th>
                   <th className="px-4 py-3">Rattachement</th>
-                  <th className="px-4 py-3">Pôle</th>
+                  <th className="px-4 py-3">Programme</th>
                   <th className="px-4 py-3 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {visibles.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-4 py-8 text-center font-body-sm text-body-sm text-on-surface-variant">Aucune structure ne correspond à ce pôle.</td>
+                    <td colSpan={6} className="px-4 py-8 text-center font-body-sm text-body-sm text-on-surface-variant">Aucune structure ne correspond à ce programme.</td>
                   </tr>
                 ) : pageStructures.visibles.map(({ item, profondeur }) => {
                   const teinte = teinteNiveau(item.niveau);
@@ -338,7 +338,7 @@ export function StructuresScreen() {
               <input className={CHAMP} required value={formulaire.nom} onChange={(event) => setFormulaire({ ...formulaire, nom: event.target.value })} />
             </label>
             <label className="block space-y-1">
-              <span className="font-label-sm text-label-sm text-on-surface-variant">Pôle</span>
+              <span className="font-label-sm text-label-sm text-on-surface-variant">Programme</span>
               <Select
                 className={CHAMP}
                 required
@@ -413,7 +413,7 @@ export function StructuresScreen() {
 
       {formulairePole ? (
         <Modale
-          titre={editionPole ? "Modifier le pôle" : "Ajouter un pôle"}
+          titre={editionPole ? "Modifier le programme" : "Ajouter un programme"}
           sousTitre="Regroupe les directions générales du ministère."
           icone="account_tree"
           onClose={() => { if (!enregistrerPole.isPending) { setFormulairePole(null); setEditionPole(null); } }}

@@ -23,7 +23,7 @@ export type LigneSecretariat = {
   imprimable: boolean;
   document: {
     agent: AgentDocument;
-    conge: { exercice: number | null; type: string; libelle: string; annuel: boolean; jours: number; rang: number; periodes: number } | null;
+    conge: { exercice: number | null; exercices: number[]; type: string; libelle: string; annuel: boolean; jours: number; rang: number; periodes: number } | null;
   } | null;
 };
 

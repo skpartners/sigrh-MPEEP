@@ -21,6 +21,8 @@ export type StyleX = {
   aligne?: "left" | "right" | "center";
   retrait?: number;
   retour?: boolean;
+  /** Texte aligné en haut de la cellule (par défaut au milieu). */
+  haut?: boolean;
 };
 
 export type CelluleX = { v: string | number | null; s?: StyleX };
@@ -229,7 +231,7 @@ class RegistreStyles {
   private polices = new Map<string, number>([[policeXml({}), 0]]);
   private fonds = new Map<string, number>([["none", 0], ["gray125", 1]]);
   private bordures = new Map<string, number>([["", 0]]);
-  private xfs = new Map<string, number>([[`0|0|0|0|left|0|0`, 0]]);
+  private xfs = new Map<string, number>([[`0|0|0|0|left|0|0|0`, 0]]);
 
   indice(style: StyleX): number {
     const police = this.inscrire(this.polices, policeXml(style));
@@ -237,7 +239,7 @@ class RegistreStyles {
     const bordure = style.bordure ? this.inscrire(this.bordures, style.bordure) : 0;
     const format = FORMATS[style.format ?? "texte"];
     const aligne = style.aligne ?? (style.format && style.format !== "texte" ? "right" : "left");
-    return this.inscrire(this.xfs, `${police}|${fond}|${bordure}|${format}|${aligne}|${style.retrait ?? 0}|${style.retour ? 1 : 0}`);
+    return this.inscrire(this.xfs, `${police}|${fond}|${bordure}|${format}|${aligne}|${style.retrait ?? 0}|${style.retour ? 1 : 0}|${style.haut ? 1 : 0}`);
   }
 
   private inscrire(registre: Map<string, number>, cle: string): number {
@@ -260,8 +262,8 @@ class RegistreStyles {
       return `<border><left style="thin">${fin}</left><right style="thin">${fin}</right>${haut}<bottom style="thin">${fin}</bottom><diagonal/></border>`;
     });
     const xfs = [...this.xfs.keys()].map((cle) => {
-      const [police, fond, bordure, format, aligne, retrait, retour] = cle.split("|");
-      const alignement = `<alignment horizontal="${aligne}" vertical="center"${retrait !== "0" ? ` indent="${retrait}"` : ""}${retour === "1" ? ` wrapText="1"` : ""}/>`;
+      const [police, fond, bordure, format, aligne, retrait, retour, haut] = cle.split("|");
+      const alignement = `<alignment horizontal="${aligne}" vertical="${haut === "1" ? "top" : "center"}"${retrait !== "0" ? ` indent="${retrait}"` : ""}${retour === "1" ? ` wrapText="1"` : ""}/>`;
       return `<xf numFmtId="${format}" fontId="${police}" fillId="${fond}" borderId="${bordure}" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyNumberFormat="1" applyAlignment="1">${alignement}</xf>`;
     });
     return (
@@ -306,14 +308,14 @@ const AXE_VALEURS = 500002;
 function graphiqueXml(graphique: GraphiqueX): string {
   const forme = graphique.forme;
   const circulaire = forme === "secteur" || forme === "anneau";
-  const horizontal = forme === "horizontale" || forme === "empilee-horizontale" || forme === "entonnoir";
+  const horizontal = forme === "horizontale" || forme === "empilee-horizontale" || forme === "entonnoir" || forme === "pyramide";
   const titre = graphique.titre
     ? `<c:title><c:tx><c:rich><a:bodyPr/><a:lstStyle/><a:p><a:pPr><a:defRPr sz="1300" b="1"/></a:pPr><a:r><a:rPr lang="fr-FR" sz="1300" b="1"/><a:t>${echapper(graphique.titre)}</a:t></a:r></a:p></c:rich></c:tx><c:overlay val="0"/></c:title><c:autoTitleDeleted val="0"/>`
     : `<c:autoTitleDeleted val="1"/>`;
   const legende = graphique.legende && (circulaire || graphique.series.length > 1)
     ? `<c:legend><c:legendPos val="b"/><c:overlay val="0"/></c:legend>`
     : "";
-  const axes = circulaire ? "" : axesXml(horizontal, forme === "pourcentage");
+  const axes = circulaire ? "" : axesXml(horizontal, forme === "pourcentage", forme === "pyramide");
   return (
     `${ENTETE}<c:chartSpace xmlns:c="${NS_C}" xmlns:a="${NS_A}" xmlns:r="${NS_REL}">` +
     `<c:roundedCorners val="0"/>` +
@@ -334,7 +336,7 @@ function traceXml(graphique: GraphiqueX): string {
       .map((couleur, indice) => `<c:dPt><c:idx val="${indice}"/><c:bubble3D val="0"/>${remplissage(couleur)}</c:dPt>`)
       .join("");
     const corps = serie
-      ? `<c:ser><c:idx val="0"/><c:order val="0"/>${nomSerie(serie)}${points}${etiquettes(graphique.etiquettes, { position: "outEnd", lignes: true })}${categories(graphique)}${valeurs(serie)}</c:ser>`
+      ? `<c:ser><c:idx val="0"/><c:order val="0"/>${nomSerie(serie)}${points}${etiquettes(graphique.etiquettes, { position: forme === "secteur" ? "outEnd" : undefined, lignes: forme === "secteur" })}${categories(graphique)}${valeurs(serie)}</c:ser>`
       : "";
     return forme === "anneau"
       ? `<c:doughnutChart><c:varyColors val="1"/>${corps}<c:firstSliceAng val="0"/><c:holeSize val="55"/></c:doughnutChart>`
@@ -355,28 +357,28 @@ function traceXml(graphique: GraphiqueX): string {
     );
     return `<c:areaChart><c:grouping val="standard"/><c:varyColors val="0"/>${series.join("")}${ids}</c:areaChart>`;
   }
-  const horizontal = forme === "horizontale" || forme === "empilee-horizontale" || forme === "entonnoir";
-  const groupement = forme === "pourcentage" ? "percentStacked" : forme === "empilee" || forme === "empilee-horizontale" ? "stacked" : "clustered";
+  const horizontal = forme === "horizontale" || forme === "empilee-horizontale" || forme === "entonnoir" || forme === "pyramide";
+  const groupement = forme === "pourcentage" ? "percentStacked" : forme === "empilee" || forme === "empilee-horizontale" || forme === "pyramide" ? "stacked" : "clustered";
   // Empilées, les étiquettes sont dans la barre : leur encre suit la couleur de la série.
   const series = graphique.series.map(
-    (serie, indice) => `<c:ser>${identite(indice)}${nomSerie(serie)}${remplissage(serie.couleur)}<c:invertIfNegative val="0"/>${etiquettes(graphique.etiquettes, { encre: groupement === "clustered" ? undefined : serie.encre })}${categories(graphique)}${valeurs(serie)}</c:ser>`,
+    (serie, indice) => `<c:ser>${identite(indice)}${nomSerie(serie)}${remplissage(serie.couleur)}<c:invertIfNegative val="0"/>${etiquettes(graphique.etiquettes, { encre: groupement === "clustered" ? undefined : serie.encre, format: forme === "pyramide" ? "#,##0;#,##0" : undefined })}${categories(graphique)}${valeurs(serie)}</c:ser>`,
   );
   return (
     `<c:barChart><c:barDir val="${horizontal ? "bar" : "col"}"/><c:grouping val="${groupement}"/><c:varyColors val="0"/>${series.join("")}` +
-    `<c:gapWidth val="${forme === "entonnoir" ? 20 : 60}"/>${groupement === "clustered" ? "" : `<c:overlap val="100"/>`}${ids}</c:barChart>`
+    `<c:gapWidth val="${forme === "entonnoir" ? 20 : forme === "pyramide" ? 30 : 60}"/>${groupement === "clustered" ? "" : `<c:overlap val="100"/>`}${ids}</c:barChart>`
   );
 }
 
-function axesXml(horizontal: boolean, pourcentage: boolean): string {
+function axesXml(horizontal: boolean, pourcentage: boolean, pyramide = false): string {
   const ligne = (couleur: string) => `<c:spPr><a:ln w="9525"><a:solidFill><a:srgbClr val="${couleur}"/></a:solidFill></a:ln></c:spPr>`;
   return (
-    `<c:catAx><c:axId val="${AXE_CATEGORIES}"/><c:scaling><c:orientation val="${horizontal ? "maxMin" : "minMax"}"/></c:scaling><c:delete val="0"/>` +
+    `<c:catAx><c:axId val="${AXE_CATEGORIES}"/><c:scaling><c:orientation val="${horizontal && !pyramide ? "maxMin" : "minMax"}"/></c:scaling><c:delete val="0"/>` +
     `<c:axPos val="${horizontal ? "l" : "b"}"/><c:numFmt formatCode="General" sourceLinked="1"/><c:majorTickMark val="none"/><c:minorTickMark val="none"/>` +
-    `<c:tickLblPos val="nextTo"/>${ligne("BFBFBF")}<c:crossAx val="${AXE_VALEURS}"/><c:crosses val="autoZero"/><c:auto val="1"/><c:lblAlgn val="ctr"/><c:lblOffset val="100"/><c:noMultiLvlLbl val="0"/></c:catAx>` +
+    `<c:tickLblPos val="${pyramide ? "low" : "nextTo"}"/>${ligne("BFBFBF")}<c:crossAx val="${AXE_VALEURS}"/><c:crosses val="autoZero"/><c:auto val="1"/><c:lblAlgn val="ctr"/><c:lblOffset val="100"/><c:noMultiLvlLbl val="0"/></c:catAx>` +
     `<c:valAx><c:axId val="${AXE_VALEURS}"/><c:scaling><c:orientation val="minMax"/></c:scaling><c:delete val="0"/>` +
     `<c:axPos val="${horizontal ? "b" : "l"}"/><c:majorGridlines>${ligne("E5E7EB")}</c:majorGridlines>` +
-    `<c:numFmt formatCode="${pourcentage ? "0%" : "General"}" sourceLinked="${pourcentage ? 0 : 1}"/><c:majorTickMark val="none"/><c:minorTickMark val="none"/>` +
-    `<c:tickLblPos val="nextTo"/><c:spPr><a:ln><a:noFill/></a:ln></c:spPr><c:crossAx val="${AXE_CATEGORIES}"/><c:crosses val="${horizontal ? "max" : "autoZero"}"/><c:crossBetween val="between"/></c:valAx>`
+    `<c:numFmt formatCode="${pourcentage ? "0%" : pyramide ? "#,##0;#,##0" : "General"}" sourceLinked="${pourcentage || pyramide ? 0 : 1}"/><c:majorTickMark val="none"/><c:minorTickMark val="none"/>` +
+    `<c:tickLblPos val="nextTo"/><c:spPr><a:ln><a:noFill/></a:ln></c:spPr><c:crossAx val="${AXE_CATEGORIES}"/><c:crosses val="${horizontal && !pyramide ? "max" : "autoZero"}"/><c:crossBetween val="between"/></c:valAx>`
   );
 }
 
@@ -414,13 +416,13 @@ function trait(couleur: string): string {
   return `<c:spPr><a:ln w="28575" cap="rnd"><a:solidFill><a:srgbClr val="${hex(couleur)}"/></a:solidFill><a:round/></a:ln></c:spPr>`;
 }
 
-function etiquettes(visibles: boolean, { encre, position, lignes = false }: { encre?: string; position?: "outEnd"; lignes?: boolean } = {}): string {
+function etiquettes(visibles: boolean, { encre, position, lignes = false, format }: { encre?: string; position?: "outEnd"; lignes?: boolean; format?: string } = {}): string {
   if (!visibles) return "";
   const texte = encre
     ? `<c:txPr><a:bodyPr/><a:lstStyle/><a:p><a:pPr><a:defRPr sz="900" b="1"><a:solidFill><a:srgbClr val="${hex(encre)}"/></a:solidFill></a:defRPr></a:pPr><a:endParaRPr lang="fr-FR"/></a:p></c:txPr>`
     : "";
   return (
-    `<c:dLbls><c:spPr><a:noFill/><a:ln><a:noFill/></a:ln></c:spPr>${texte}${position ? `<c:dLblPos val="${position}"/>` : ""}` +
+    `<c:dLbls>${format ? `<c:numFmt formatCode="${format}" sourceLinked="0"/>` : ""}<c:spPr><a:noFill/><a:ln><a:noFill/></a:ln></c:spPr>${texte}${position ? `<c:dLblPos val="${position}"/>` : ""}` +
     `<c:showLegendKey val="0"/><c:showVal val="1"/><c:showCatName val="0"/><c:showSerName val="0"/><c:showPercent val="0"/><c:showBubbleSize val="0"/>` +
     `${lignes ? `<c:showLeaderLines val="1"/>` : ""}</c:dLbls>`
   );

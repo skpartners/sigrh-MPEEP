@@ -18,6 +18,7 @@ from .taches import en_arriere_plan
 from .demo_ecrans import jours_ouvres
 from .models import Absence, Agent, BlocEcran, Notification, Organisme, PieceJointe
 from .present import agent_brief
+from .roles import ROLES_SIMPLES
 from .visibilite import agent_visible, agents_visibles, matricules_visibles, refus_hors_perimetre
 from .rattachement import normaliser as _normaliser, seuils_effectifs, structure_de, structures_par_nom, structures_reglables
 
@@ -61,32 +62,103 @@ def autorisation_row(item: Absence, par_nom: dict | None = None) -> dict:
     }
 
 
+# Le suivi ne porte que sur les permissions que l'agent demande depuis son profil : les permissions statutaires
+# (« permission spéciale d'absence ») et les permissions générales (« permission »).
+ACTES_SUIVIS = {"permission-speciale": TYPES.PERMISSION, "permission": TYPES.AUTORISATION}
+LIBELLES_SUIVIS = {TYPES.PERMISSION: "Permission statutaire", TYPES.AUTORISATION: "Permission"}
+
+
+def _statut_demande(demande) -> str:
+    """Où en est la demande : en traitement, validée par le circuit (en signature), accordée (acte délivré) ou refusée."""
+    if demande.etape.startswith("Clôturée : acte délivré"):
+        return "accordee"
+    if demande.etape.startswith("Validée"):
+        return "validee"
+    if demande.etape.startswith("Clôturée"):
+        return "refusee"
+    return "traitement"
+
+
+def _visas_demande(demande) -> list[dict]:
+    return [
+        {
+            "ordre": visa.ordre, "instance": visa.instance, "titulaire": visa.titulaire, "fonction": visa.fonction, "avis": visa.avis,
+            "commentaire": visa.commentaire, "date": visa.date.isoformat() if visa.date else None,
+            "signature_url": visa.signature.url if visa.signature else "",
+        }
+        for visa in demande.visas.all()
+    ]
+
+
+def suivi_permissions(visibles, par_nom: dict) -> list[dict]:
+    """Les permissions demandées par les agents du périmètre, chacune avec son circuit, les plus récentes d'abord."""
+    from .models import Demande
+
+    demandes = Demande.objects.filter(categorie="acte", type_acte__in=ACTES_SUIVIS).select_related("agent", "absence_liee").prefetch_related("visas")
+    absences = Absence.objects.filter(type_autorisation__in=ACTES_SUIVIS.values()).exclude(demande__categorie="acte").select_related("agent", "demande")
+    if visibles is not None:
+        demandes = demandes.filter(agent__matricule__in=visibles)
+        absences = absences.filter(agent__matricule__in=visibles)
+    lignes = []
+    for demande in demandes.order_by("-depose_le", "-id")[:300]:
+        type_absence = ACTES_SUIVIS[demande.type_acte]
+        entite = structure_de(demande.agent, par_nom)
+        lignes.append({
+            "source": "demande",
+            "reference": demande.reference,
+            "agent": {**agent_brief(demande.agent), "fonction": demande.agent.fonction},
+            "structure": entite.nom if entite else (demande.agent.structure or "Structure non renseignée"),
+            "type": type_absence,
+            "type_libelle": LIBELLES_SUIVIS[type_absence],
+            "intitule": demande.nature,
+            "motif": demande.motif,
+            "debut": demande.debut.isoformat() if demande.debut else "",
+            "fin": demande.fin.isoformat() if demande.fin else "",
+            "depose_le": demande.depose_le.isoformat(),
+            "statut": _statut_demande(demande),
+            "etape": demande.etape,
+            "responsable": demande.responsable,
+            "visas": _visas_demande(demande),
+            "absence": autorisation_row(demande.absence_liee, par_nom) if getattr(demande, "absence_liee", None) else None,
+        })
+    for absence in absences.order_by("-debut", "-id")[:300]:
+        statut = {"validee": "accordee", "invalidee": "refusee"}.get(absence.decision, "traitement")
+        ligne = autorisation_row(absence, par_nom)
+        lignes.append({
+            "source": "absence",
+            "reference": f"ABS-{absence.id}",
+            "agent": ligne["agent"],
+            "structure": ligne["structure"],
+            "type": absence.type_autorisation,
+            "type_libelle": LIBELLES_SUIVIS[absence.type_autorisation],
+            "intitule": absence.nature,
+            "motif": absence.motif_decision,
+            "debut": ligne["debut"],
+            "fin": ligne["fin"],
+            "depose_le": ligne["debut"],
+            "statut": statut,
+            "etape": "Décision de la gestion des absences",
+            "responsable": "",
+            "visas": [],
+            "absence": ligne,
+        })
+    return sorted(lignes, key=lambda item: item["depose_le"], reverse=True)
+
+
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 @parser_classes([JSONParser, MultiPartParser, FormParser])
 def autorisations(request):
-    lignes = list(
-        agents_visibles(Absence.objects.exclude(type_autorisation=""), request.user, "agent__matricule")
-        .select_related("agent", "agent__organisme").order_by("-debut", "-id")
-    )
     visibles = matricules_visibles(request.user)
-    total = len(lignes)
-    compte = {code: sum(1 for item in lignes if item.type_autorisation == code) for code, _ in TYPES.choices}
-    decisions = {code: sum(1 for item in lignes if item.decision == code) for code, _ in Absence.Decision.choices}
-    jours = {code: sum(item.jours for item in lignes if item.decision == code) for code, _ in Absence.Decision.choices}
-    par_nom = structures_par_nom()
+    suivi = suivi_permissions(visibles, structures_par_nom())
+    compte = {statut: sum(1 for item in suivi if item["statut"] == statut) for statut in ("accordee", "traitement", "validee", "refusee")}
     return Response(
         {
             "exercice": timezone.localdate().year,
             "presenteisme": presenteisme_calcule(visibles),
-            "indicateurs": {"total": total, **decisions},
-            "jours": jours,
-            "ventilation": [
-                {"code": code, "libelle": libelle, "nombre": compte[code], "part": round(compte[code] * 100 / total) if total else 0}
-                for code, libelle in TYPES.choices
-            ],
-            "types": [{"code": code, "libelle": libelle} for code, libelle in TYPES.choices],
-            "autorisations": [autorisation_row(item, par_nom) for item in lignes],
+            "indicateurs": {"accordees": compte["accordee"], "en_traitement": compte["traitement"], "validees": compte["validee"]},
+            "types": [{"code": code, "libelle": LIBELLES_SUIVIS[code]} for code in ACTES_SUIVIS.values()],
+            "suivi": suivi,
         }
     )
 
@@ -408,7 +480,8 @@ def conges(request):
         {"exercice": courante.exercice, "statut": courante.statut, "statut_libelle": courante.get_statut_display(), "delai": courante.delai.isoformat()}
         if courante else None
     )
-    from .parametres import quorum_presence
+    from . import suivi_conges
+    from .parametres import etat_quorum, quorum_presence
 
     seuil = quorum_presence()
     quorums = quorums_par_structure(timezone.localdate(), seuil, visibles, request.user)
@@ -427,6 +500,8 @@ def conges(request):
             },
             "campagne": campagne,
             "presence": {"taux": radar["taux_du_jour"], "seuil": seuil},
+            "quorum": etat_quorum(),
+            "suivi": suivi_conges.suivi(visibles),
             "trimestres": radar["trimestres"],
             "mensuel": radar["mensuel"],
             "quorums": quorums[0],
@@ -466,3 +541,71 @@ def instruire_conge(request, pk: int):
         item.decide_le = timezone.localdate()
         item.save(update_fields=["instruction", "statut", "motif_decision", "decide_le"])
     return Response(arbitrage_row(item))
+
+
+@api_view(["PATCH"])
+@permission_classes([IsAuthenticated])
+def modifier_quorum(request):
+    """Fixe le quorum mensuel du ministère (1 à 100 %), ou revient à la moyenne des quorums des structures (valeur vide)."""
+    from .parametres import _parametres, etat_quorum
+    from .planification import _est_drh, _est_rh
+
+    if not (_est_rh(request.user) or _est_drh(request.user)):
+        return Response({"detail": "Seule l'équipe RH règle le quorum du ministère."}, status=403)
+    objet = _parametres()
+    if objet is None:
+        return Response({"detail": "Les paramètres du ministère ne sont pas encore initialisés."}, status=409)
+    brut = request.data.get("quorum")
+    if brut in (None, ""):
+        objet.quorum_automatique = True
+        objet.save(update_fields=["quorum_automatique"])
+        return Response(etat_quorum())
+    try:
+        quorum = int(brut)
+    except (TypeError, ValueError):
+        quorum = 0
+    if not 1 <= quorum <= 100:
+        return Response({"detail": "Le quorum de présence est un pourcentage entre 1 et 100."}, status=400)
+    objet.quorum_presence_pourcent = quorum
+    objet.quorum_automatique = False
+    objet.save(update_fields=["quorum_presence_pourcent", "quorum_automatique"])
+    return Response(etat_quorum())
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def mes_quorums(request):
+    """Les structures dont l'utilisateur est le responsable (et celles qu'elles contiennent), avec leur quorum : il le règle depuis son profil."""
+    from .models import EntiteTutelle
+    from .parametres import quorum_presence
+    from .rattachement import seuils_effectifs, structures_sous
+
+    profil = getattr(request.user, "profil", None)
+    if profil is None or profil.role in ROLES_SIMPLES:
+        return Response({"quorum_ministere": quorum_presence(), "structures": []})
+    racines = [s for s in (profil.structure, profil.interim) if s is not None]
+    if not racines:
+        return Response({"quorum_ministere": quorum_presence(), "structures": []})
+    identifiants = structures_sous(racines)
+    seuils = seuils_effectifs(quorum_presence())
+    ordre = {s.id: rang for rang, s in enumerate(racines)}
+    structures = sorted(
+        EntiteTutelle.objects.filter(id__in=identifiants).select_related("parent"),
+        key=lambda s: (ordre.get(s.id, len(racines)), s.nom),
+    )
+    return Response({
+        "quorum_ministere": quorum_presence(),
+        "structures": [
+            {
+                "code": s.code,
+                "nom": s.nom,
+                "niveau_libelle": s.get_niveau_display(),
+                "principale": s.id in ordre,
+                "parent": s.parent.nom if s.parent_id else "",
+                "propre": s.quorum_presence_pourcent,
+                "valeur": seuils.get(s.id, (quorum_presence(), True))[0],
+                "herite": seuils.get(s.id, (quorum_presence(), True))[1],
+            }
+            for s in structures[:80]
+        ],
+    })

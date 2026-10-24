@@ -3,7 +3,12 @@ import { Icone } from "./Icone";
 
 export type Periodes = { debut: string; fin: string; debut2: string; fin2: string };
 /** Congés choisis par un collègue de la même structure, validés ou non. */
-export type Collegue = { matricule: string; nom: string; debut: string; fin: string; debut2: string | null; fin2: string | null; palier: string; palier_libelle: string };
+export type Collegue = { matricule: string; nom: string; debut: string; fin: string; debut2: string | null; fin2: string | null; palier: string; palier_libelle: string; autres?: { debut: string; fin: string }[] };
+
+/** Toutes les plages d'un collègue : ses deux temps de campagne, puis les congés demandés depuis. */
+function plagesDe(c: Collegue): { debut: string; fin: string }[] {
+  return [{ debut: c.debut, fin: c.fin }, ...(c.debut2 && c.fin2 ? [{ debut: c.debut2, fin: c.fin2 }] : []), ...(c.autres ?? [])];
+}
 export const PERIODES_VIDES: Periodes = { debut: "", fin: "", debut2: "", fin2: "" };
 
 const MOIS = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
@@ -60,6 +65,8 @@ export function CalendrierAnnuel({
   const [deuxTemps, setDeuxTemps] = useState(Boolean(valeur.debut2));
   const [actif, setActif] = useState<Cible>(0);
   const [attente, setAttente] = useState("");
+  // Jour survolé pendant qu'un début est posé : la période à venir se dessine avant le second clic.
+  const [survol, setSurvol] = useState("");
   const [avis, setAvis] = useState("");
   const aujourdhui = new Date().toISOString().slice(0, 10);
   // En lecture ou si la seconde période existe déjà, elle s'affiche même si le mode n'a pas été activé.
@@ -97,10 +104,12 @@ export function CalendrierAnnuel({
     if (autre.debut && autre.fin && debut <= autre.fin && fin >= autre.debut) {
       setAvis("Les deux périodes ne peuvent pas se chevaucher.");
       setAttente("");
+      setSurvol("");
       return;
     }
     poser(actif, debut, fin);
     setAttente("");
+    setSurvol("");
     if (deuxTemps && actif === 0 && !valeur.debut2) setActif(1);
   }
 
@@ -124,29 +133,42 @@ export function CalendrierAnnuel({
   }
 
   function absentsLe(jour: string): Collegue[] {
-    return collegues.filter((c) => (jour >= c.debut && jour <= c.fin) || Boolean(c.debut2 && c.fin2 && jour >= c.debut2 && jour <= c.fin2));
+    return collegues.filter((c) => plagesDe(c).some((plage) => jour >= plage.debut && jour <= plage.fin));
   }
 
   // Collègues déjà absents sur au moins un des jours choisis : un avertissement, pas un blocage.
   const chevauchent = useMemo(() => {
     const choisis = [[valeur.debut, valeur.fin], [valeur.debut2, valeur.fin2]].filter(([debut, fin]) => debut && fin);
     return collegues.filter((c) =>
-      choisis.some(([debut, fin]) => [[c.debut, c.fin], [c.debut2, c.fin2]].some(([cd, cf]) => cd && cf && debut <= cf && fin >= cd)),
+      choisis.some(([debut, fin]) => plagesDe(c).some((plage) => debut <= plage.fin && fin >= plage.debut)),
     );
   }, [collegues, valeur]);
 
   function classeJour(jour: string, indexSemaine: number): string {
-    const p1 = valeur.debut && valeur.fin && jour >= valeur.debut && jour <= valeur.fin;
-    const p2 = valeur.debut2 && valeur.fin2 && jour >= valeur.debut2 && jour <= valeur.fin2;
-    const base = "relative flex h-8 w-full items-center justify-center rounded-md font-label-sm text-label-sm transition-colors";
-    if (attente === jour) return `${base} bg-primary text-on-primary ring-2 ring-primary ring-offset-1`;
-    if (p1) return `${base} bg-primary text-on-primary font-semibold`;
-    if (p2) return `${base} bg-attention text-white font-semibold`;
-    const survol = lecture ? "" : "hover:bg-primary-fixed";
+    const base = "relative flex h-8 w-full items-center justify-center font-label-sm text-label-sm transition-colors";
+    // Chaque période est une bande continue : bornes pleines, jours intermédiaires teintés, bords arrondis en début/fin de ligne.
+    const bande = (debut: string, fin: string, plein: string, teinte: string): string | null => {
+      if (!debut || !fin || jour < debut || jour > fin) return null;
+      const borne = jour === debut || jour === fin;
+      const gauche = jour === debut || indexSemaine === 0 ? "rounded-l-md" : "";
+      const droite = jour === fin || indexSemaine === 6 ? "rounded-r-md" : "";
+      return `${base} ${borne ? `${plein} font-bold shadow-sm` : `${teinte} font-semibold`} ${gauche} ${droite}`;
+    };
+    const periode1 = bande(valeur.debut, valeur.fin, "bg-[#16a34a] text-white", "bg-[#16a34a]/25 text-on-surface");
+    if (periode1) return periode1;
+    const periode2 = bande(valeur.debut2, valeur.fin2, "bg-[#9333ea] text-white", "bg-[#9333ea]/25 text-on-surface");
+    if (periode2) return periode2;
+    if (attente === jour) return `${base} rounded-md ${actif === 0 ? "bg-[#16a34a] text-white ring-[#16a34a]" : "bg-[#9333ea] text-white ring-[#9333ea]"} font-bold ring-2 ring-offset-1`;
+    // Aperçu de la période en cours de choix, entre le début posé et le jour survolé.
+    if (attente && survol) {
+      const [de, a] = attente < survol ? [attente, survol] : [survol, attente];
+      if (jour >= de && jour <= a) return `${base} rounded-sm ${actif === 0 ? "bg-[#16a34a]/15 text-on-surface outline-dashed outline-1 -outline-offset-1 outline-[#16a34a]" : "bg-[#9333ea]/15 text-on-surface outline-dashed outline-1 -outline-offset-1 outline-[#9333ea]"} font-semibold`;
+    }
     const collegue = collegues.length > 0 && absentsLe(jour).length > 0;
-    const weekend = collegue ? "text-[#1e3a8a] bg-[#dbeafe]" : indexSemaine >= 5 ? "text-on-surface-variant/70 bg-surface-container-low/60" : "text-on-surface";
-    const auj = jour === aujourdhui ? "ring-1 ring-primary" : "";
-    return `${base} ${weekend} ${survol} ${auj}`;
+    const teinte = collegue ? "rounded-md bg-[#dbeafe] text-[#1e3a8a]" : indexSemaine >= 5 ? "rounded-md bg-surface-container text-on-surface-variant" : "rounded-md text-on-surface";
+    const survolable = lecture ? "" : "hover:bg-primary-fixed hover:text-on-surface";
+    const auj = jour === aujourdhui ? "font-bold ring-2 ring-on-surface" : "";
+    return `${base} ${teinte} ${survolable} ${auj}`;
   }
 
   const total = totalJours(valeur);
@@ -182,7 +204,7 @@ export function CalendrierAnnuel({
               className={`flex items-center justify-between gap-3 rounded-xl border p-3 ${selectionnee ? "border-primary bg-primary-fixed/40" : "border-hairline bg-surface-container-low/60"}`}
             >
               <button type="button" disabled={lecture} onClick={() => { setActif(cible); setAttente(""); }} className="flex min-w-0 flex-1 items-center gap-3 text-left disabled:cursor-default">
-                <span className={`h-3 w-3 shrink-0 rounded-full ${cible === 0 ? "bg-primary" : "bg-attention"}`} aria-hidden="true" />
+                <span className={`h-3 w-3 shrink-0 rounded-full ${cible === 0 ? "bg-[#16a34a]" : "bg-[#9333ea]"}`} aria-hidden="true" />
                 <span className="min-w-0">
                   <span className="block font-label-md text-label-md font-bold text-on-surface">{deuxAffichees ? `Période ${cible + 1}` : "Période de congé"}</span>
                   <span className="block font-body-sm text-body-sm text-on-surface-variant">
@@ -199,6 +221,16 @@ export function CalendrierAnnuel({
           );
         })}
       </div>
+      {attente && !lecture ? (
+        <button
+          type="button"
+          onClick={() => { setAttente(""); setSurvol(""); }}
+          className="inline-flex items-center gap-2 rounded-full border border-outline-variant px-4 py-1.5 font-label-md text-label-md text-on-surface-variant transition-colors hover:border-error hover:text-error"
+        >
+          <Icone nom="close" className="text-base" />
+          Annuler le début posé le {court(attente)}
+        </button>
+      ) : null}
       {droit ? (
         <div
           role="status"
@@ -232,8 +264,8 @@ export function CalendrierAnnuel({
             {collegues.map((c) => (
               <li key={c.matricule} className="inline-flex items-center gap-2 rounded-full bg-[#dbeafe] px-3 py-1 font-body-sm text-body-sm text-[#1e3a8a]">
                 <span className="font-semibold">{c.nom}</span>
-                {resumePeriodes({ debut: c.debut, fin: c.fin, debut2: c.debut2 ?? "", fin2: c.fin2 ?? "" })}
-                <span className="rounded-full bg-white/70 px-2 text-[11px] font-bold uppercase">{c.palier === "publie" ? "Arrêté" : "Proposé"}</span>
+                {plagesDe(c).map((plage) => `du ${court(plage.debut)} au ${court(plage.fin)}`).join(" et ")}
+                <span className="rounded-full bg-white/70 px-2 text-[11px] font-bold uppercase">{c.palier === "publie" ? "Arrêté" : c.palier === "demande" ? "Demandé" : "Proposé"}</span>
               </li>
             ))}
           </ul>
@@ -246,11 +278,20 @@ export function CalendrierAnnuel({
         </p>
       ) : null}
 
+      <ul className="flex flex-wrap items-center gap-x-5 gap-y-2 font-label-sm text-label-sm text-on-surface-variant" aria-label="Légende du calendrier">
+        <li className="inline-flex items-center gap-2"><span className="h-4 w-8 rounded-md bg-[#16a34a]" aria-hidden="true" />{deuxAffichees ? "Période 1" : "Votre période"}</li>
+        {deuxAffichees ? <li className="inline-flex items-center gap-2"><span className="h-4 w-8 rounded-md bg-[#9333ea]" aria-hidden="true" />Période 2</li> : null}
+        <li className="inline-flex items-center gap-2"><span className="h-4 w-8 rounded-md bg-[#16a34a]/25 ring-1 ring-[#16a34a]/50" aria-hidden="true" />Jours entre les bornes</li>
+        {collegues.length > 0 ? <li className="inline-flex items-center gap-2"><span className="h-4 w-8 rounded-md bg-[#dbeafe] ring-1 ring-[#2563eb]/40" aria-hidden="true" />Collègue absent</li> : null}
+        <li className="inline-flex items-center gap-2"><span className="h-4 w-8 rounded-md bg-surface-container" aria-hidden="true" />Week-end</li>
+        <li className="inline-flex items-center gap-2"><span className="h-4 w-8 rounded-md ring-2 ring-on-surface" aria-hidden="true" />Aujourd'hui</li>
+      </ul>
+
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
         {mois.map((m) => (
           <div key={m.nom} className="rounded-xl border border-hairline bg-surface-container-lowest p-3">
             <h4 className="mb-2 text-center font-label-lg text-label-lg font-bold text-on-surface">{m.nom}</h4>
-            <div className="grid grid-cols-7 gap-1">
+            <div className="grid grid-cols-7 gap-x-0 gap-y-1" onMouseLeave={() => setSurvol("")}>
               {JOURS.map((jour, index) => (
                 <div key={index} className="text-center font-label-sm text-label-sm text-on-surface-variant">{jour}</div>
               ))}
@@ -264,6 +305,7 @@ export function CalendrierAnnuel({
                     type="button"
                     disabled={lecture}
                     onClick={() => choisir(jour)}
+                    onMouseEnter={() => (attente ? setSurvol(jour) : undefined)}
                     title={absents.length ? `${court(jour)} · absent${absents.length > 1 ? "s" : ""} : ${absents.map((c) => c.nom).join(", ")}` : undefined}
                     aria-label={`${court(jour)}${absents.length ? ` · absents : ${absents.map((c) => c.nom).join(", ")}` : ""}`}
                     aria-pressed={Boolean((valeur.debut && jour >= valeur.debut && jour <= valeur.fin) || (valeur.debut2 && jour >= valeur.debut2 && jour <= valeur.fin2))}

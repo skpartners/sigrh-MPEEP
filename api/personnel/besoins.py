@@ -1,7 +1,8 @@
-"""Expression des besoins : un appel est lancé aux responsables de structure, qui répondent depuis leur profil.
+"""Expression des besoins : un appel est lancé aux gestionnaires RH, qui répondent depuis leur profil.
 
-Chaque responsable exprime les fonctionnaires et les contractuels dont sa structure a besoin. Les réponses sont ensuite
-centralisées : le service remonte à la sous-direction, qui remonte à la direction.
+Le gestionnaire RH est le point focal d'une structure (il peut y en avoir plusieurs, selon ses démembrements). Il exprime
+les fonctionnaires et les contractuels dont elle a besoin. Les réponses sont ensuite centralisées : le service remonte à
+la sous-direction, qui remonte à la direction.
 """
 
 from collections import defaultdict
@@ -19,7 +20,7 @@ from rest_framework.response import Response
 from .taches import en_arriere_plan
 from .effectifs import _reference
 from .models import CampagneBesoin, EmploiReferentiel, EntiteTutelle, FicheBesoin, Notification, Profil
-from .roles import ROLES_SIMPLES
+from .roles import ROLE_GESTIONNAIRE_RH
 from .rattachement import structures_reglables
 
 PLAFOND_AGENTS = 500
@@ -29,18 +30,17 @@ PLAFOND_AGENTS = 500
 
 
 def _structures_du_responsable(user) -> list[EntiteTutelle]:
-    """Les structures dont le compte est responsable (titulaire ou intérimaire)."""
+    """Les structures dont le compte est gestionnaire RH : seuls les points focaux expriment des besoins."""
     profil = getattr(user, "profil", None)
     if profil is not None and profil.administrateur:
         # Le compte administrateur tient toutes les structures : il peut exprimer un besoin pour n'importe laquelle.
         return list(EntiteTutelle.objects.exclude(niveau=EntiteTutelle.Niveau.MINISTERE).order_by("ordre", "nom"))
-    if profil is None or profil.role in ROLES_SIMPLES:
+    if profil is None or profil.role != ROLE_GESTIONNAIRE_RH:
         return []
-    retenues: dict[int, EntiteTutelle] = {}
-    for structure in (profil.structure, profil.interim):
-        if structure is not None and structure.niveau != EntiteTutelle.Niveau.MINISTERE:
-            retenues[structure.id] = structure
-    return list(retenues.values())
+    structure = profil.structure
+    if structure is None or structure.niveau == EntiteTutelle.Niveau.MINISTERE:
+        return []
+    return [structure]
 
 
 def _est_pilote(user) -> bool:
@@ -48,16 +48,12 @@ def _est_pilote(user) -> bool:
     return structures_reglables(user) is None
 
 
-def _responsables() -> dict[int, User]:
-    """Un responsable par structure : le titulaire d'abord, à défaut l'intérimaire."""
-    resultat: dict[int, User] = {}
-    profils = Profil.objects.select_related("user", "structure", "interim").exclude(role__in=ROLES_SIMPLES)
+def _responsables() -> dict[int, list[User]]:
+    """Les gestionnaires RH de chaque structure : une structure en compte un ou plusieurs, selon ses démembrements."""
+    resultat: dict[int, list[User]] = defaultdict(list)
+    profils = Profil.objects.select_related("user").filter(role=ROLE_GESTIONNAIRE_RH, structure__isnull=False, user__is_active=True).order_by("user__last_name", "user__first_name")
     for profil in profils:
-        if profil.structure_id and profil.structure_id not in resultat:
-            resultat[profil.structure_id] = profil.user
-    for profil in profils:
-        if profil.interim_id and profil.interim_id not in resultat:
-            resultat[profil.interim_id] = profil.user
+        resultat[profil.structure_id].append(profil.user)
     return resultat
 
 
@@ -115,7 +111,7 @@ def _ligne_fiche(item: FicheBesoin, par_id: dict[int, EntiteTutelle]) -> dict:
     }
 
 
-def _arbre(visibles: set[int] | None, fiches: list[FicheBesoin], responsables: dict[int, User], racines_forcees: list[int] | None = None):
+def _arbre(visibles: set[int] | None, fiches: list[FicheBesoin], responsables: dict[int, list[User]], racines_forcees: list[int] | None = None):
     """Les structures avec leurs réponses propres et cumulées (service, sous-direction, direction)."""
     entites = list(EntiteTutelle.objects.exclude(niveau=EntiteTutelle.Niveau.MINISTERE).order_by("ordre", "nom"))
     par_id = {e.id: e for e in entites}
@@ -132,14 +128,14 @@ def _arbre(visibles: set[int] | None, fiches: list[FicheBesoin], responsables: d
         f, c = sum(x.fonctionnaires for x in mes), sum(x.contractuels for x in mes)
         cumul_f = f + sum(s["cumul"]["fonctionnaires"] for s in sous)
         cumul_c = c + sum(s["cumul"]["contractuels"] for s in sous)
-        responsable = responsables.get(e.id)
+        gestionnaires = responsables.get(e.id, [])
         return {
             "id": e.id,
             "nom": e.nom,
             "niveau": e.niveau,
             "niveau_libelle": e.get_niveau_display(),
-            "responsable": _nom(responsable),
-            "a_un_responsable": responsable is not None,
+            "responsable": ", ".join(_nom(user) for user in gestionnaires),
+            "a_un_responsable": bool(gestionnaires),
             "repond": bool(mes),
             "fiches": len(mes),
             "lignes": [
@@ -233,7 +229,7 @@ def centralisation(request):
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def lancer_campagne(request):
-    """Lance (ou rouvre) l'appel : chaque responsable de structure en est prévenu."""
+    """Lance (ou rouvre) l'appel : chaque gestionnaire RH en est prévenu."""
     if not _est_pilote(request.user):
         return Response({"detail": "Seule la direction des ressources humaines lance l'appel."}, status=403)
     donnees = request.data
@@ -260,7 +256,7 @@ def lancer_campagne(request):
             defaults={"ouverte": True, "cadrage": cadrage, "limite": limite, "ouverte_le": aujourd_hui},
         )
         responsables = _responsables()
-        destinataires = {u.pk: u for u in responsables.values()}
+        destinataires = {u.pk: u for gestionnaires in responsables.values() for u in gestionnaires}
         mention = f" Réponse attendue avant le {limite:%d/%m/%Y}." if limite else ""
         maintenant = timezone.now()
         Notification.objects.bulk_create([
@@ -275,7 +271,7 @@ def lancer_campagne(request):
     return Response({
         "campagne": _ligne_campagne(campagne),
         "prevenus": len(destinataires),
-        "alerte": "" if destinataires else "Aucun responsable de structure n'est désigné : personne n'a reçu l'appel. Nommez-les dans Utilisateurs.",
+        "alerte": "" if destinataires else "Aucun gestionnaire RH n'est désigné : personne n'a reçu l'appel. Nommez-les dans Utilisateurs (rôle « Gestionnaire RH »).",
     }, status=201)
 
 
@@ -298,7 +294,7 @@ def cloturer_campagne(request):
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def mes_fiches(request):
-    """Ce que voit un responsable de structure dans son profil : l'appel, ses réponses et la remontée de ses structures."""
+    """Ce que voit un gestionnaire RH dans son profil : l'appel, ses réponses et la remontée de ses structures."""
     structures = _structures_du_responsable(request.user)
     if not structures:
         return Response({"responsable": False})
@@ -368,7 +364,7 @@ def _lire(donnees, structures: list[EntiteTutelle], actuelle: FicheBesoin | None
             identifiant = 0
         structure = next((s for s in structures if s.id == identifiant), None)
         if structure is None:
-            return Response({"detail": "Choisissez la structure dont vous êtes responsable."}, status=400)
+            return Response({"detail": "Choisissez la structure dont vous êtes gestionnaire RH."}, status=400)
     existant = FicheBesoin.objects.filter(campagne=actuelle.campagne if actuelle is not None else _campagne(), entite=structure, emploi=emploi)
     if actuelle is not None:
         existant = existant.exclude(pk=actuelle.pk)
@@ -391,7 +387,7 @@ def _lire(donnees, structures: list[EntiteTutelle], actuelle: FicheBesoin | None
 def creer_fiche(request):
     structures = _structures_du_responsable(request.user)
     if not structures:
-        return Response({"detail": "Seul un responsable de structure exprime des besoins."}, status=403)
+        return Response({"detail": "Seul un gestionnaire RH exprime les besoins de sa structure."}, status=403)
     campagne = _campagne()
     refus = _ouverte(campagne)
     if refus:

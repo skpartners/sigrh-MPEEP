@@ -37,7 +37,7 @@ class Signataire:
 
 
 def rendre_convocation(procedure, echeance: date, delai: int, degre: dict | None, seance=None, signataire: Signataire | None = None) -> bytes:
-    """PDF de la convocation : notification des griefs et délai du contradictoire."""
+    """PDF de la convocation : notification des fautes reprochées et délai du contradictoire."""
     from io import BytesIO
 
     edition = date_longue(timezone.localdate())
@@ -142,7 +142,7 @@ def _titre(feuille: dict[str, ParagraphStyle], reference: str) -> list:
         Spacer(1, 1 * mm),
         paragraphe("CONVOCATION", feuille["titre"]),
         Spacer(1, 0.8 * mm),
-        paragraphe("Notification des griefs et exercice des droits de la défense", feuille["sous_titre"]),
+        paragraphe("Notification des fautes reprochées et exercice des droits de la défense", feuille["sous_titre"]),
         Spacer(1, 2.2 * mm),
         ligne,
     ]
@@ -237,7 +237,7 @@ def _dossier(feuille, procedure, echeance: date, delai: int, degre: dict | None)
         ("LINEABOVE", (0, 1), (-1, 1), 0.25, FILET),
     ]))
     contenu = [
-        paragraphe("Grief", feuille["label"]),
+        paragraphe("Faute", feuille["label"]),
         paragraphe(procedure.grief, feuille["valeur_forte"]),
         Spacer(1, 1.4 * mm),
         paragraphe("Faits reprochés", feuille["label"]),

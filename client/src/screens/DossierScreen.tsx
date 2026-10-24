@@ -1,3 +1,4 @@
+import { positionAffichee } from "../ui/situation";
 import { useQuery } from "@tanstack/react-query";
 import { useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from "react";
 import { Link, Navigate, useParams, useSearchParams } from "react-router-dom";
@@ -221,7 +222,7 @@ function DossierContenu({ agent }: { agent: Dossier }) {
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="font-code-num text-code-num bg-primary-fixed text-on-primary-fixed px-2.5 py-0.5 rounded font-bold tracking-wide">Matricule {agent.matricule}</span>
                   <span className="px-2.5 py-0.5 bg-surface-container-low text-on-surface-variant font-label-sm text-label-sm rounded font-semibold">Corps : {agent.corps}</span>
-                  <Statut>{agent.situation}</Statut>
+                  <Statut>{`${positionAffichee(agent).position}${positionAffichee(agent).detail ? ` · ${positionAffichee(agent).detail}` : ""}`}</Statut>
                 </div>
                 <h1 className="font-headline-lg text-headline-lg text-on-surface font-bold tracking-tight mt-1">{agent.nom_complet}</h1>
                 <p className="font-body-md text-body-md text-primary font-semibold flex items-start gap-1.5 min-w-0">

@@ -131,7 +131,7 @@ def importer(contenu: bytes, user: User) -> dict:
     with transaction.atomic():
         for rang, (numero, agent, saisie) in enumerate(plans, start=1):
             progresser(rang * 100 // max(len(plans), 1), f"Agent {rang} sur {len(plans)}")
-            erreur = enregistrer_situation(agent, saisie)
+            erreur = enregistrer_situation(agent, saisie, position_libre=True)
             if erreur:
                 erreurs.append({"ligne": numero, "message": erreur})
         if erreurs:

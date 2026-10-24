@@ -114,3 +114,11 @@ def test_la_saisie_est_formatee_a_l_enregistrement():
     pole = PoleMinisteriel.objects.create(code="p", nom="Pôle", ordre=1) if PoleMinisteriel._meta.get_field("ordre") else None
     entite = EntiteTutelle.objects.create(code="e1", nom="MOYENS GENERAUX", pole=pole, niveau="service")
     assert entite.nom == "Moyens Généraux"
+
+
+def test_sigle_de_structure_ecrit_en_toutes_lettres():
+    from personnel.normalisation import nom_complet_structure
+
+    assert nom_complet_structure("DAAF") == "Direction des Affaires Administratives et Financières"
+    assert nom_complet_structure("Service du Budget") == "Service du Budget"
+    assert nom_complet_structure("") == ""

@@ -314,17 +314,10 @@ def verser_cadre_discipline(modele) -> None:
 
 # matricule, âge limite, entrée en service, statut, détail
 RETRAITES = [
-    ("289043B", 60, date(1991, 3, 1), "notifie", "Livret de pension généré"),
-    ("392104D", 55, date(1997, 10, 6), "quittance", "Audit de clôture en cours"),
-    ("501229K", 65, date(1990, 9, 3), "arrete", "Visa du contrôle financier accordé"),
-    ("318490K", 60, date(1995, 1, 9), "visite", "Convocation à la médecine du travail"),
-]
-
-# intitulé, titulaire, successeur, progression du tutorat (%), commentaire
-POSTES_SENSIBLES = [
-    ("Direction du portefeuille • DGPE", "289043B", "M. KOFFI Yao Christian", 80, "Tutorat avancé"),
-    ("Direction des études techniques • BNETD", "501229K", "", 0, "Appel à candidature interne ouvert"),
-    ("Cellule de contrôle financier • DGPE", "318490K", "M. KOUASSI Jean-Baptiste", 55, "Immersion en cours"),
+    ("289043B", 60, date(1991, 3, 1), "transmis", "Livret de pension généré"),
+    ("392104D", 55, date(1997, 10, 6), "notifie", "Agent informé de son admission"),
+    ("501229K", 65, date(1990, 9, 3), "reception", "Pièces du dossier reçues"),
+    ("318490K", 60, date(1995, 1, 9), "notifie", "Convocation à la médecine du travail"),
 ]
 
 FIN_CARRIERE = {
@@ -332,8 +325,7 @@ FIN_CARRIERE = {
         "fil": ["SD Gestion des carrières", "Fin de carrière, départs & anticipation", "GPEEC"],
         "titre": "Pilotage des fins de carrière, départs à la retraite & cessations d'activité",
         "chapeau": (
-            "Liquidation des droits statutaires, arbitrage des radiations, calcul des indemnités de départ (IDR) "
-            "et sécurisation de la relève des postes sensibles."
+            "Liquidation des droits statutaires, arbitrage des radiations et calcul des indemnités de départ (IDR)."
         ),
     },
     "accompagnement": {
@@ -354,9 +346,7 @@ FIN_CARRIERE = {
 def charger_fin_carriere(modele) -> None:
     Agent = modele("Agent")
     Dossier = modele("DossierRetraite")
-    Poste = modele("PosteSensible")
     Dossier.objects.all().delete()
-    Poste.objects.all().delete()
     limites = {}
     for matricule, age, entree, statut, detail in RETRAITES:
         agent = Agent.objects.filter(matricule=matricule).first()
@@ -372,10 +362,6 @@ def charger_fin_carriere(modele) -> None:
         if agent.date_naissance:
             naissance = agent.date_naissance
             limites[matricule] = naissance.replace(year=naissance.year + age, day=min(naissance.day, 28))
-    for intitule, matricule, successeur, progression, commentaire in POSTES_SENSIBLES:
-        agent = Agent.objects.filter(matricule=matricule).first()
-        if agent is not None and matricule in limites:
-            Poste.objects.create(intitule=intitule, titulaire=agent, depart=limites[matricule], successeur=successeur, progression=progression, commentaire=commentaire)
     for cle, contenu in FIN_CARRIERE.items():
         _bloc(modele, "fin-carriere", cle, contenu)
     verser_pilotage_fin_carriere(modele, remplacer=True)

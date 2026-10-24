@@ -1,7 +1,9 @@
-"""Structures réelles du ministère, communes à la dotation et à l'expression des besoins."""
+"""Structures réelles du ministère, communes à la dotation et à l'expression des besoins.
+
+Chaque structure se rattache à un programme (le « pôle » du modèle) ; le programme Administration générale contient le Cabinet."""
 
 POLES = (
-    ("cabinet", "Cabinet"),
+    ("administration-generale", "Administration générale"),
     ("dgpe", "DGPE"),
     ("dgpn", "DGPN"),
 )
@@ -52,18 +54,18 @@ def niveau_depuis_nom(nom: str) -> str:
 
 # (code, pôle, nom, niveau, parent) — la direction générale contient les directions centrales, qui contiennent les sous-directions, qui contiennent les services.
 STRUCTURES = (
-    ("ministere", "cabinet", "Ministère", "ministere", ""),
-    ("cabinet", "cabinet", "Cabinet", "direction-generale", "ministere"),
+    ("ministere", "administration-generale", "Ministère", "ministere", ""),
+    ("cabinet", "administration-generale", "Cabinet", "direction-generale", "ministere"),
     ("dgpe", "dgpe", "Direction Générale du Portefeuille de l'État", "direction-generale", "ministere"),
     ("dgpn", "dgpn", "DGPN", "direction-generale", "ministere"),
-    ("ig", "cabinet", "Inspection Générale", "direction-centrale", "cabinet"),
-    ("daf", "cabinet", "Direction des Affaires Financières", "direction-centrale", "cabinet"),
-    ("drh", "cabinet", "Direction des Ressources Humaines", "direction-centrale", "cabinet"),
-    ("dsps", "cabinet", "Direction de la Stratégie, de la Planification et des Statistiques", "direction-centrale", "cabinet"),
-    ("dcrp", "cabinet", "Direction de la Communication et des Relations Publiques", "direction-centrale", "cabinet"),
-    ("dsi", "cabinet", "Direction des Systèmes d'Information", "direction-centrale", "cabinet"),
-    ("cmp", "cabinet", "Cellule de Passation des Marchés Publics", "direction-centrale", "cabinet"),
-    ("genre", "cabinet", "Cellule Genre", "direction-centrale", "cabinet"),
+    ("ig", "administration-generale", "Inspection Générale", "direction-centrale", "cabinet"),
+    ("daf", "administration-generale", "Direction des Affaires Financières", "direction-centrale", "cabinet"),
+    ("drh", "administration-generale", "Direction des Ressources Humaines", "direction-centrale", "cabinet"),
+    ("dsps", "administration-generale", "Direction de la Stratégie, de la Planification et des Statistiques", "direction-centrale", "cabinet"),
+    ("dcrp", "administration-generale", "Direction de la Communication et des Relations Publiques", "direction-centrale", "cabinet"),
+    ("dsi", "administration-generale", "Direction des Systèmes d'Information", "direction-centrale", "cabinet"),
+    ("cmp", "administration-generale", "Cellule de Passation des Marchés Publics", "direction-centrale", "cabinet"),
+    ("genre", "administration-generale", "Cellule Genre", "direction-centrale", "cabinet"),
     ("dppss", "dgpe", "Direction du Portefeuille des Secteurs Primaire et Secondaire", "direction-centrale", "dgpe"),
     ("dpst", "dgpe", "Direction du Portefeuille du Secteur Tertiaire", "direction-centrale", "dgpe"),
     ("dse", "dgpe", "Direction de la Stratégie et de l'Expertise", "direction-centrale", "dgpe"),
@@ -75,7 +77,7 @@ STRUCTURES = (
     ("daj-dgpn", "dgpn", "Direction des Affaires Juridiques (DGEPN)", "direction-centrale", "dgpn"),
     ("dinfo", "dgpn", "Direction de l'Informatique", "direction-centrale", "dgpn"),
     ("dpc", "dgpn", "Direction du Personnel et de la Communication", "direction-centrale", "dgpn"),
-    ("sdap", "cabinet", "Service de la Documentation, des Archives et de la Publication", "service", "dcrp"),
+    ("sdap", "administration-generale", "Service de la Documentation, des Archives et de la Publication", "service", "dcrp"),
     ("sgpte", "dgpe", "Service de Gestion des Projets, de la Transformation, du Suivi et de l'Évaluation", "service", "dse"),
     ("smg-dgpe", "dgpe", "Service des Moyens Généraux (DGPE)", "service", "dchc"),
     ("ssi-dgpe", "dgpe", "Service des Systèmes d'Information (DGPE)", "service", "dse"),

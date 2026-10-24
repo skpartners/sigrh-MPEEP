@@ -17,7 +17,7 @@ def _client(matricule: str, mot_de_passe: str = "Sigrh-Dev-2026") -> APIClient:
 
 @pytest.fixture
 def monde():
-    """Direction > sous-direction > service, chacun avec son responsable, plus un agent sans responsabilité."""
+    """Direction > sous-direction > service, chacun avec son chef et son gestionnaire RH (point focal), plus un agent sans responsabilité."""
     call_command("seed_demo")
     drh = _client("DRH-2018-044")
     organisme = Organisme.objects.first()
@@ -27,9 +27,12 @@ def monde():
     service = EntiteTutelle.objects.create(code="sv-test", nom="Service test", pole=pole, niveau="service", parent=sous)
     comptes = {}
     for cle, structure in (("direction", direction), ("sous", sous), ("service", service)):
-        user = User.objects.create_user(username=f"RESP-{cle}", password="Sigrh-Dev-2026")
-        Profil.objects.create(user=user, fonction=f"Responsable {cle}", role="Chef de service", organisme=organisme, structure=structure)
-        comptes[cle] = _client(user.username)
+        chef = User.objects.create_user(username=f"RESP-{cle}", password="Sigrh-Dev-2026")
+        Profil.objects.create(user=chef, fonction=f"Responsable {cle}", role="Chef de service", organisme=organisme, structure=structure)
+        comptes[f"chef_{cle}"] = _client(chef.username)
+        gestionnaire = User.objects.create_user(username=f"GEST-{cle}", password="Sigrh-Dev-2026")
+        Profil.objects.create(user=gestionnaire, fonction=f"Gestionnaire RH {cle}", role="Gestionnaire RH", organisme=organisme, structure=structure)
+        comptes[cle] = _client(gestionnaire.username)
     simple = User.objects.create_user(username="AGENT-simple", password="Sigrh-Dev-2026")
     Profil.objects.create(user=simple, fonction="Agent", role="Agent", organisme=organisme)
     comptes["simple"] = _client("AGENT-simple")
@@ -49,12 +52,16 @@ def test_l_appel_est_lance_par_le_drh_et_previent_les_responsables(monde):
     CampagneBesoin.objects.all().delete()
     lancement = monde["drh"].post("/api/v1/besoins/campagne/", {"exercice": 2027, "cadrage": "Besoins 2027"}, format="json")
     assert lancement.status_code == 201 and lancement.json()["campagne"]["ouverte"]
-    assert Notification.objects.filter(destinataire__username="RESP-service", titre__contains="2027").exists()
+    assert Notification.objects.filter(destinataire__username="GEST-service", titre__contains="2027").exists()
+    assert not Notification.objects.filter(destinataire__username="RESP-service", titre__contains="2027").exists()  # le chef n'est pas le point focal
     assert not Notification.objects.filter(destinataire__username="AGENT-simple", titre__contains="2027").exists()
 
 
-def test_seul_un_responsable_voit_et_saisit_ses_besoins(monde):
+def test_seul_un_gestionnaire_rh_voit_et_saisit_ses_besoins(monde):
     assert monde["simple"].get("/api/v1/besoins/mes-fiches/").json() == {"responsable": False}
+    # Le chef de la structure n'est pas le point focal : ni l'onglet, ni la saisie.
+    assert monde["chef_service"].get("/api/v1/besoins/mes-fiches/").json() == {"responsable": False}
+    assert monde["chef_service"].post("/api/v1/besoins/fiches/", _fiche(), format="json").status_code == 403
     assert monde["simple"].post("/api/v1/besoins/fiches/", _fiche(), format="json").status_code == 403
     vue = monde["service"].get("/api/v1/besoins/mes-fiches/").json()
     assert vue["responsable"] and [s["nom"] for s in vue["structures"]] == ["Service Test"]
@@ -74,7 +81,7 @@ def test_la_centralisation_remonte_du_service_a_la_direction(monde):
     assert racine["propre"]["total"] == 2 and racine["cumul"] == {"fonctionnaires": 3, "contractuels": 3, "total": 6}
     sous = racine["enfants"][0]
     assert sous["cumul"]["total"] == 4 and sous["enfants"][0]["propre"] == {"fonctionnaires": 2, "contractuels": 1, "total": 3}
-    service = monde["service"].get("/api/v1/besoins/").json()
+    service = monde["chef_service"].get("/api/v1/besoins/").json()
     assert len(service["fiches"]) == 1 and service["arbre"][0]["nom"] == "Service Test"
     # Le DRH voit tout.
     tout = monde["drh"].get("/api/v1/besoins/").json()
@@ -94,10 +101,10 @@ def test_pas_de_saisie_hors_de_sa_structure_ni_appel_clos(monde):
     # L'appel clos, seul le DRH corrige ou retire une ligne, et le responsable en est informé.
     corrigee = monde["drh"].patch(route, _fiche(fonctionnaires=7, contractuels=0), format="json")
     assert corrigee.status_code == 200 and corrigee.json()["volume"] == 7
-    assert Notification.objects.filter(destinataire__username="RESP-service", titre="Besoin corrigé par la DRH").exists()
+    assert Notification.objects.filter(destinataire__username="GEST-service", titre="Besoin corrigé par la DRH").exists()
     assert monde["drh"].delete(route).status_code == 204
     assert not FicheBesoin.objects.filter(reference=cree["reference"]).exists()
-    assert Notification.objects.filter(destinataire__username="RESP-service", titre="Besoin retiré par la DRH").exists()
+    assert Notification.objects.filter(destinataire__username="GEST-service", titre="Besoin retiré par la DRH").exists()
 
 
 def test_les_besoins_sont_exprimes_par_emploi_de_la_nomenclature(monde):
@@ -135,14 +142,11 @@ def test_l_administrateur_a_l_onglet_et_exprime_pour_n_importe_quelle_structure(
     assert len(ids) == len(set(ids)) and cible.id not in ids
 
 
-def test_le_drh_est_un_responsable_de_sa_direction_seulement(monde):
-    # Dans cet espace le DRH est un responsable comme les autres : sa direction, et elle seule.
-    vue = monde["drh"].get("/api/v1/besoins/mes-fiches/").json()
-    assert vue["responsable"] is True
-    assert [s["nom"] for s in vue["structures"]] == ["Direction des Ressources Humaines"]
-    autre = monde["structures"]["service"]
+def test_le_drh_n_exprime_pas_de_besoin_sans_etre_gestionnaire_rh(monde):
+    # Le DRH lance l'appel et centralise ; l'expression revient aux seuls gestionnaires RH.
+    assert monde["drh"].get("/api/v1/besoins/mes-fiches/").json() == {"responsable": False}
     assert monde["drh"].post("/api/v1/besoins/campagne/", {"exercice": 2027, "cadrage": "Besoins 2027"}, format="json").status_code == 201
-    assert monde["drh"].post("/api/v1/besoins/fiches/", _fiche(structure=autre.id), format="json").status_code == 400
+    assert monde["drh"].post("/api/v1/besoins/fiches/", _fiche(), format="json").status_code == 403
 
 
 def test_exercices_passes_consultables_en_lecture_seule(monde):
@@ -178,4 +182,53 @@ def test_lancer_l_appel_sans_responsable_le_signale(monde):
     lancement = compte.post("/api/v1/besoins/campagne/", {"exercice": 2028}, format="json")
     assert lancement.status_code == 201
     corps = lancement.json()
-    assert corps["prevenus"] == 0 and "Aucun responsable" in corps["alerte"]
+    assert corps["prevenus"] == 0 and "Aucun gestionnaire RH" in corps["alerte"]
+
+
+def _classeur(*lignes):
+    from personnel.besoins_fichier import COLONNES
+    from personnel.classeur import habiller
+
+    return habiller([{
+        "nom": "Besoins", "titre": "Besoins", "sous_titre": "Test", "notice": "Test",
+        "lignes": [list(COLONNES), *lignes],
+    }])
+
+
+def _fichier(contenu):
+    from django.core.files.uploadedfile import SimpleUploadedFile
+
+    return SimpleUploadedFile("besoins.xlsx", contenu, content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+
+
+def test_le_gestionnaire_telecharge_le_modele_et_verse_son_fichier(monde):
+    from personnel.models import EmploiReferentiel
+
+    assert monde["chef_service"].get("/api/v1/besoins/modele/").status_code == 403
+    modele = monde["service"].get("/api/v1/besoins/modele/")
+    assert modele.status_code == 200 and modele.content.startswith(b"PK")  # classeur .xlsx
+
+    emploi = EmploiReferentiel.objects.order_by("ordre", "id").first()
+    url = "/api/v1/besoins/fichier/"
+    # Pas d'appel ouvert : le versement est refusé.
+    CampagneBesoin.objects.all().update(ouverte=False)
+    assert monde["service"].post(url, {"fichier": _fichier(_classeur(["Service Test", emploi.libelle, 2, 1, "Renfort"]))}, format="multipart").status_code == 409
+    assert monde["drh"].post("/api/v1/besoins/campagne/", {"exercice": 2027, "cadrage": "Besoins 2027"}, format="json").status_code == 201
+
+    # Tout ou rien : une ligne incorrecte, et rien n'est enregistré.
+    avant = FicheBesoin.objects.count()
+    faux = monde["service"].post(url, {"fichier": _fichier(_classeur(["", emploi.libelle, 2, 0, ""], ["", "Emploi inconnu", 1, 0, ""]))}, format="multipart")
+    assert faux.status_code == 400 and faux.json()["erreurs"][0]["message"].startswith("L'emploi")
+    assert FicheBesoin.objects.count() == avant
+
+    # La structure du gestionnaire est celle par défaut ; une autre structure est refusée.
+    autre = monde["service"].post(url, {"fichier": _fichier(_classeur(["Sous-direction Test", emploi.libelle, 1, 0, ""]))}, format="multipart")
+    assert autre.status_code == 400 and "n'est pas la vôtre" in autre.json()["erreurs"][0]["message"]
+
+    cree = monde["service"].post(url, {"fichier": _fichier(_classeur(["", emploi.libelle, 2, 1, "Renfort"]))}, format="multipart")
+    assert cree.status_code == 201 and cree.json() == {"creees": 1, "corrigees": 0}
+    # Versé de nouveau, le fichier corrige le besoin du même emploi.
+    corrige = monde["service"].post(url, {"fichier": _fichier(_classeur(["", emploi.libelle, 5, 0, "Création du poste"]))}, format="multipart")
+    assert corrige.json() == {"creees": 0, "corrigees": 1}
+    fiche = FicheBesoin.objects.get(entite__code="sv-test", emploi=emploi)
+    assert (fiche.fonctionnaires, fiche.contractuels, fiche.volume, fiche.motif) == (5, 0, 5, "Création du poste")

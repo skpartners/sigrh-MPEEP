@@ -1,7 +1,8 @@
 import { BesoinsResponsable, useMesBesoins } from "./BesoinsResponsable";
 import { MobiliteAgent } from "./dotation/MobiliteAgent";
-import { createContext, useContext, useState, type FormEvent, type ReactNode, type ChangeEvent } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { createContext, useContext, useEffect, useState, type FormEvent, type ReactNode, type ChangeEvent } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import type { SessionUser } from "../api/types";
 import { ApiError, api, mediaUrl, telecharger } from "../api/client";
 import { useFeedback } from "../ui/Feedback";
 import type { Dossier } from "../api/types";
@@ -9,28 +10,49 @@ import { useSearchParams } from "react-router-dom";
 import { DemandesActes } from "./DemandesActes";
 import { DemandesConges } from "./DemandesConges";
 import { DocumentsAgent } from "./DocumentsAgent";
-import { CollecteAgent, pastilleCollecte } from "./formation/CollecteAgent";
+import { CollecteAgent, compteFormation } from "./formation/CollecteAgent";
+import { demandeClose } from "./dossier-onglets/commun";
+import { FilVisas } from "../ui/FilVisas";
+import { positionAffichee } from "../ui/situation";
 import { Icone } from "../ui/Icone";
 import { CHAMPS_PROFIL, controleNom, premiereErreur } from "../ui/validation";
 import { EditeurPhoto, Portrait } from "../ui/PhotoProfil";
 import { Select } from "../ui/Select";
 
 type OngletProfil = "profil" | "documents" | "conges" | "demandes" | "formation" | "besoins" | "disposition";
+/** Onglets dont la pastille reste affichée tant que l'exigence n'est pas respectée. */
+const EXIGENCES = new Set<OngletProfil>(["profil", "documents", "besoins", "formation"]);
 const ONGLETS: OngletProfil[] = ["profil", "documents", "conges", "demandes", "formation", "besoins", "disposition"];
 
 const ETAPES_DISCIPLINE: [string, string][] = [
-  ["demande_explication", "Demande d’explication"],
-  ["instruction_conseil", "Instruction devant le conseil de discipline"],
-  ["decision_execution", "Décision et exécution"],
+  ["instruction", "Instruction"],
+  ["audience", "Audience"],
+  ["decision", "Décision"],
 ];
 
 const PAGE = "w-full px-4 sm:px-6 lg:px-8 py-6 mx-auto flex-1";
 const CARD = "bg-surface-container-lowest rounded-xl border border-hairline p-6";
 
 type Brouillon = Record<string, string>;
-const EditionContexte = createContext<{ edition: boolean; brouillon: Brouillon; maj: (cle: string, valeur: string) => void }>({
-  edition: false, brouillon: {}, maj: () => undefined,
+const EditionContexte = createContext<{ edition: boolean; brouillon: Brouillon; maj: (cle: string, valeur: string) => void; exigees: Set<string> }>({
+  edition: false, brouillon: {}, maj: () => undefined, exigees: new Set(),
 });
+
+/**
+ * Renseignements que l'agent doit toujours fournir sur son profil : état civil, coordonnées, personne à contacter.
+ * Ce qui dépend d'une situation (date du mariage et conjoint si marié, nom de jeune fille…) n'est jamais compté ni exigé,
+ * pas plus que le téléphone secondaire ou la pièce d'identité (versée à part).
+ */
+function informationsExigees(agent: Dossier): { exigees: Set<string>; absentes: number } {
+  const ec = agent.etat_civil;
+  const valeurs: Record<string, string | undefined> = {
+    nom: ec.nom, prenoms: ec.prenoms, sexe: ec.sexe_code, date_naissance: ec.date_naissance, lieu_naissance: ec.lieu_naissance,
+    statut_matrimonial: ec.statut_matrimonial_code, adresse_residence: ec.adresse_residence, ville: ec.ville, telephone: ec.telephone,
+    courriel: ec.courriel, contact_urgence_nom: ec.contact_urgence_nom, contact_urgence_telephone: ec.contact_urgence_telephone,
+  };
+  const cles = Object.keys(valeurs);
+  return { exigees: new Set(cles), absentes: cles.filter((cle) => !valeurs[cle]?.trim()).length };
+}
 
 const OPTIONS_SEXE: [string, string][] = [["H", "Homme"], ["F", "Femme"]];
 const OPTIONS_STATUT: [string, string][] = [["", "Non renseigné"], ["celibataire", "Célibataire"], ["marie", "Marié(e)"], ["veuf", "Veuf / veuve"], ["divorce", "Divorcé(e)"]];
@@ -39,7 +61,8 @@ const OPTIONS_NIVEAU: [string, string][] = [["", "Non renseigné"], ["cepe", "CE
 function Champ({ label, value, nom, type = "text", options }: {
   label: string; value?: string | number | null; nom?: string; type?: "text" | "date" | "email" | "tel"; options?: [string, string][];
 }) {
-  const { edition, brouillon, maj } = useContext(EditionContexte);
+  const { edition, brouillon, maj, exigees } = useContext(EditionContexte);
+  const requis = Boolean(nom && exigees.has(nom));
   if (edition && nom) {
     const id = `profil-${nom}`;
     const valeur = brouillon[nom] ?? "";
@@ -47,7 +70,7 @@ function Champ({ label, value, nom, type = "text", options }: {
     const probleme = regle?.controle?.(valeur) ?? null;
     return (
       <div className="py-3 border-b border-hairline min-w-0">
-        <label htmlFor={id} className="font-label-sm text-label-sm text-on-surface-variant block">{label}</label>
+        <label htmlFor={id} className="font-label-sm text-label-sm text-on-surface-variant block">{label}{requis ? <span className="text-error"> *</span> : null}</label>
         {options ? (
           <Select id={id} value={valeur} onChange={(e) => maj(nom, e.target.value)} className={`${CHAMP_FORM} mt-1`}>
             {options.map(([code, libelle]) => <option key={code} value={code}>{libelle}</option>)}
@@ -65,15 +88,15 @@ function Champ({ label, value, nom, type = "text", options }: {
   }
   return (
     <div className="py-3 border-b border-hairline min-w-0">
-      <dt className="font-label-sm text-label-sm text-on-surface-variant">{label}</dt>
+      <dt className="font-label-sm text-label-sm text-on-surface-variant">{label}{requis ? <span className="text-error"> *</span> : null}</dt>
       <dd className="mt-1 font-body-md text-body-md text-on-surface font-semibold break-words">
-        {value !== undefined && value !== null && String(value).trim() ? String(value) : <span className="font-normal text-on-surface-variant">Non renseigné</span>}
+        {value !== undefined && value !== null && String(value).trim() ? String(value) : <span className={requis ? "font-semibold text-error" : "font-normal text-on-surface-variant"}>Non renseigné</span>}
       </dd>
     </div>
   );
 }
 
-function GroupeEtatCivil({ titre, icone, children, grille = true }: { titre: string; icone: string; children: ReactNode; grille?: boolean }) {
+function GroupeEtatCivil({ titre, icone, children, grille = true }: { titre: ReactNode; icone: string; children: ReactNode; grille?: boolean }) {
   return (
     <section className="rounded-xl border border-hairline bg-surface-container-low/50 p-5 transition-shadow duration-300 hover:shadow-[0_8px_24px_-12px_color-mix(in_oklab,var(--color-primary)_30%,transparent)]">
       <h3 className="mb-3 flex items-center gap-3 font-label-lg text-label-lg font-bold text-on-surface">
@@ -149,7 +172,9 @@ function PieceIdentite({ agent }: { agent: Dossier }) {
       <dl className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6">
         <Champ label="Type de pièce" value={ec.type_piece_identite_libelle} />
         <Champ label="Numéro de la pièce" value={ec.numero_piece_identite} />
-        <Champ label="Document" value={lien ? ec.piece_identite_nom || "Document chargé" : ""} />
+        {lien ? <Champ label="Document" value={ec.piece_identite_nom || "Document chargé"} /> : (
+          <p role="status" className="rounded-lg border border-error bg-error-container px-3 py-2 font-label-md text-label-md font-semibold text-on-error-container">Pièce d’identité obligatoire : non versée.</p>
+        )}
       </dl>
     );
   }
@@ -199,6 +224,8 @@ function EnfantsACharge({ agent }: { agent: Dossier }) {
   const feedback = useFeedback();
   const vide = { nom: "", prenoms: "", sexe: "", date_naissance: "", lieu_naissance: "" };
   const [formulaire, setFormulaire] = useState(vide);
+  const [acte, setActe] = useState<File | null>(null);
+  const [cleActe, setCleActe] = useState(0);
   const [erreur, setErreur] = useState("");
   const [enCours, setEnCours] = useState(false);
   const base = `/api/v1/agents/${encodeURIComponent(agent.matricule)}/enfants/`;
@@ -231,9 +258,17 @@ function EnfantsACharge({ agent }: { agent: Dossier }) {
       setErreur(fautif);
       return;
     }
-    const corps = { ...formulaire, date_naissance: formulaire.date_naissance || null };
-    if (await appliquer(() => api<Dossier>(base, { method: "POST", body: JSON.stringify(corps) }), "Enfant ajouté")) {
+    if (!acte) {
+      setErreur("Joignez l’acte de naissance de l’enfant.");
+      return;
+    }
+    const corps = new FormData();
+    for (const [cle, valeur] of Object.entries(formulaire)) corps.set(cle, valeur);
+    corps.set("fichier", acte);
+    if (await appliquer(() => api<Dossier>(base, { method: "POST", body: corps }), "Enfant ajouté")) {
       setFormulaire(vide);
+      setActe(null);
+      setCleActe((n) => n + 1);
     }
   }
 
@@ -253,6 +288,11 @@ function EnfantsACharge({ agent }: { agent: Dossier }) {
                   {enfant.date_naissance ? ` · né${enfant.sexe === "Fille" ? "e" : ""} le ${dateFr(enfant.date_naissance)}${ageDe(enfant.date_naissance)}` : ""}
                 </p>
                 <p className="font-body-sm text-body-sm text-on-surface-variant">{enfant.lieu_naissance || "Lieu de naissance non renseigné"}</p>
+                {enfant.acte_naissance?.fichier_url ? (
+                  <a href={mediaUrl(enfant.acte_naissance.fichier_url)} target="_blank" rel="noreferrer" className="mt-1 inline-flex items-center gap-1 font-body-sm text-body-sm text-primary underline">
+                    <Icone nom="description" className="text-base" />Voir l’acte de naissance
+                  </a>
+                ) : <p className="mt-1 font-body-sm text-body-sm text-error">Acte de naissance non joint</p>}
               </div>
               {modifiable ? <button
                 type="button"
@@ -294,6 +334,13 @@ function EnfantsACharge({ agent }: { agent: Dossier }) {
           <div className="sm:col-span-2">
             <label htmlFor="enfant-lieu" className="block font-label-md text-on-surface mb-2">Lieu de naissance</label>
             <input id="enfant-lieu" value={formulaire.lieu_naissance} onChange={(e) => maj("lieu_naissance", e.target.value)} maxLength={160} placeholder="Ex. : Abidjan" className={CHAMP_FORM} />
+          </div>
+          <div className="sm:col-span-6">
+            <label htmlFor="enfant-acte" className="block font-label-md text-on-surface mb-2">Acte de naissance (obligatoire)</label>
+            <input key={cleActe} id="enfant-acte" type="file" required accept=".pdf,.png,.jpg,.jpeg,.webp"
+              onChange={(e) => setActe(e.target.files?.[0] ?? null)}
+              className="block w-full text-sm text-on-surface file:mr-4 file:rounded-lg file:border-0 file:bg-primary file:px-4 file:py-2 file:text-on-primary" />
+            <p className="mt-1 text-sm text-on-surface-variant">PDF ou image, 15 Mo maximum. Il est classé dans Mes documents.</p>
           </div>
         </div>
         {erreur ? <p role="alert" className="text-sm text-error">{erreur}</p> : null}
@@ -353,6 +400,10 @@ function ParcoursAcademique({ agent }: { agent: Dossier }) {
 
   async function ajouter(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!fichier && !pieceId) {
+      setErreur("Joignez le diplôme (fichier ou document déjà versé).");
+      return;
+    }
     const corps = new FormData();
     for (const [cle, valeur] of Object.entries(formulaire)) corps.set(cle, valeur);
     if (fichier) corps.set("fichier", fichier);
@@ -395,8 +446,6 @@ function ParcoursAcademique({ agent }: { agent: Dossier }) {
                         <a href={mediaUrl(diplome.piece.fichier_url)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-primary underline">
                           <Icone nom="description" className="text-base" />Voir le justificatif
                         </a>
-                        {modifiable ? <button type="button" disabled={enCours} onClick={() => void appliquer(() => api<Dossier>(`${base}${diplome.id}/justificatif/`, { method: "DELETE" }), "Justificatif détaché")}
-                          className="text-on-surface-variant underline hover:text-error disabled:opacity-60">Détacher</button> : null}
                       </span>
                     ) : modifiable ? (
                       <span className="flex flex-col gap-1.5 min-w-48">
@@ -413,7 +462,7 @@ function ParcoursAcademique({ agent }: { agent: Dossier }) {
                           </Select>
                         ) : null}
                       </span>
-                    ) : <span className="text-on-surface-variant">Non versé</span>}
+                    ) : <span className="text-error">Diplôme non versé</span>}
               </div>
             </li>
           ))}
@@ -440,8 +489,8 @@ function ParcoursAcademique({ agent }: { agent: Dossier }) {
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-6 gap-4">
           <div className="sm:col-span-3">
-            <label htmlFor="diplome-fichier" className="block font-label-md text-on-surface mb-2">Justificatif (facultatif)</label>
-            <input key={cleFichier} id="diplome-fichier" type="file" accept=".pdf,.png,.jpg,.jpeg,.webp" disabled={Boolean(pieceId)}
+            <label htmlFor="diplome-fichier" className="block font-label-md text-on-surface mb-2">Diplôme à joindre (obligatoire)</label>
+            <input key={cleFichier} id="diplome-fichier" type="file" required={!pieceId} accept=".pdf,.png,.jpg,.jpeg,.webp" disabled={Boolean(pieceId)}
               onChange={(e) => setFichier(e.target.files?.[0] ?? null)}
               className="block w-full text-sm text-on-surface file:mr-4 file:rounded-lg file:border-0 file:bg-primary file:px-4 file:py-2 file:text-on-primary disabled:opacity-60" />
             <p className="mt-1 text-sm text-on-surface-variant">PDF ou image, 15 Mo maximum. Il est classé dans Mes documents.</p>
@@ -582,21 +631,79 @@ function Bloc({ titre, icone, children }: { titre: string; icone: string; childr
   );
 }
 
+/**
+ * Documents obligatoires qui manquent : seulement les types que le catalogue marque « Obligatoire », tels que l'onglet Documents
+ * les présente. Les pièces « selon la situation » (acte de mariage, actes des enfants) et les facultatives n'y comptent pas.
+ */
+function documentsObligatoiresAbsents(agent: Dossier): number {
+  return agent.catalogue_documents
+    .flatMap((rubrique) => rubrique.types.filter((type) => type.obligatoire).map((type) => ({ rubrique, type })))
+    .filter(({ rubrique, type }) => !agent.pieces.some((piece) => piece.categorie === rubrique.libelle && (piece.intitule === type.libelle || piece.intitule.startsWith(`${type.libelle} — `)))).length;
+}
+
 export function ProfilAgentTroisOnglets({ agent }: { agent: Dossier }) {
   const mesBesoins = useMesBesoins(agent.modifiable !== false);
   const responsable = mesBesoins.data?.responsable === true;
-  const besoinsAttendus = mesBesoins.data?.responsable === true && Boolean(mesBesoins.data.campagne?.ouverte) && mesBesoins.data.fiches.length === 0;
+  // Structures du gestionnaire qui n'ont pas encore exprimé de besoin, tant que l'appel est ouvert.
+  const besoins = mesBesoins.data;
+  const besoinsAttendus = besoins && besoins.responsable && besoins.campagne?.ouverte
+    ? besoins.structures.filter((structure) => !besoins.fiches.some((fiche) => fiche.entite.id === structure.id)).length
+    : 0;
   const [params] = useSearchParams();
   const demande = params.get("onglet") as OngletProfil | null;
   const [onglet, setOnglet] = useState<OngletProfil>(demande && ONGLETS.includes(demande) ? demande : "profil");
   const [photoOuverte, setPhotoOuverte] = useState(false);
   const modifiable = agent.modifiable !== false;
+  const mobilite = useQuery({ queryKey: ["mobilite"], queryFn: () => api<{ mes_mutations: { statut: string }[] }>("/api/v1/mobilite/"), enabled: modifiable });
+  // Campagne de congés ouverte aux agents : tant que l'agent n'a pas déposé ses dates, la pastille de l'onglet reste affichée.
+  const moi = useQuery({ queryKey: ["me"], queryFn: () => api<SessionUser>("/api/v1/me/"), staleTime: Infinity });
+  const campagneConges = useQuery({
+    queryKey: ["planification-conges"],
+    queryFn: () => api<{ campagne: { formulaire: boolean } | null }>("/api/v1/conges/planification/"),
+    enabled: moi.data?.matricule === agent.matricule,
+  });
+  const campagneAttendue = Boolean(campagneConges.data?.campagne?.formulaire);
+  // Ce qui attend l'agent dans chaque onglet : un nombre en rouge, qui s'efface une fois l'onglet ouvert.
+  const informationsAFournir = informationsExigees(agent);
+  const compteurs: Partial<Record<OngletProfil, number>> = {
+    // Mon profil : les informations que l'agent doit encore renseigner, et la pièce d'identité à verser.
+    profil: informationsAFournir.absentes + (agent.etat_civil.piece_identite_url ? 0 : 1),
+    documents: documentsObligatoiresAbsents(agent),
+    // Congés et actes : le nombre de demandes que le circuit a validées (accordées, ou actes validés et délivrés).
+    conges: (campagneAttendue ? 1 : 0) + agent.demandes.filter((item) => item.categorie === "conge" && demandeClose(item) && !/refus/i.test(item.etape) && !item.visas.some((visa) => visa.avis === "Refusée")).length,
+    demandes: agent.demandes.filter((item) => item.categorie === "acte" && (item.etape.startsWith("Validée") || item.etape.startsWith("Clôturée : acte délivré"))).length,
+    formation: compteFormation(agent),
+    besoins: besoinsAttendus,
+    // Mutations : comme les congés et les actes, le nombre de demandes que le circuit a accordées.
+    disposition: mobilite.data?.mes_mutations.filter((mutation) => mutation.statut === "accordee").length ?? 0,
+  };
+  const cleVus = `sigrh-onglets-vus-${agent.matricule}`;
+  const [vus, setVus] = useState<Record<string, number>>(() => {
+    try {
+      return JSON.parse(localStorage.getItem(cleVus) ?? "{}") as Record<string, number>;
+    } catch {
+      return {};
+    }
+  });
   const client = useQueryClient();
   const feedback = useFeedback();
   const [edition, setEdition] = useState(false);
   const [brouillon, setBrouillon] = useState<Brouillon>({});
   const [erreur, setErreur] = useState("");
   const [enCours, setEnCours] = useState(false);
+  // Une exigence non respectée (renseignements, documents, besoins, formation) garde sa pastille tant qu'elle ne l'est pas, onglet ouvert ou non.
+  // Les nombres d'information (demandes validées, mutations) s'effacent à l'ouverture et reviennent avec le nouveau nombre.
+  const compteOuvert = compteurs[onglet] ?? 0;
+  useEffect(() => {
+    if (vus[onglet] === compteOuvert) return;
+    const suivant = { ...vus, [onglet]: compteOuvert };
+    setVus(suivant);
+    try {
+      localStorage.setItem(cleVus, JSON.stringify(suivant));
+    } catch {
+      /* stockage indisponible : l'indicateur reparaîtra à la prochaine visite */
+    }
+  }, [onglet, compteOuvert]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function brouillonDe(a: Dossier): Brouillon {
     const e = a.etat_civil;
@@ -655,7 +762,7 @@ export function ProfilAgentTroisOnglets({ agent }: { agent: Dossier }) {
 
 
   return (
-    <EditionContexte.Provider value={{ edition, brouillon, maj: (cle, valeur) => setBrouillon((b) => ({ ...b, [cle]: valeur })) }}>
+    <EditionContexte.Provider value={{ edition, brouillon, maj: (cle, valeur) => setBrouillon((b) => ({ ...b, [cle]: valeur })), exigees: informationsAFournir.exigees }}>
     <div className={PAGE}>
       <div className="motion-content flex flex-col w-full">
         <div className={`${CARD} mb-6`}>
@@ -684,7 +791,7 @@ export function ProfilAgentTroisOnglets({ agent }: { agent: Dossier }) {
                 <span className="px-2.5 py-1 rounded bg-primary-fixed text-on-primary-fixed font-label-sm">Matricule : {agent.matricule}</span>
                 <span className="px-2.5 py-1 rounded bg-surface-container-low text-on-surface-variant font-label-sm">Emploi : {agent.situation_saisie?.emploi || "Non renseigné"}</span>
                 <span className="px-2.5 py-1 rounded bg-surface-container-low text-on-surface-variant font-label-sm">Fonction : {agent.situation_saisie?.fonction || "Non renseignée"}</span>
-                <span className={`px-2.5 py-1 rounded font-label-sm font-semibold ${!agent.situation || agent.situation === "En activité" ? "bg-surface-container-low text-on-surface-variant" : "bg-secondary-container text-on-secondary-container"}`}>Position : {agent.situation || "Non renseignée"}</span>
+                <span className={`px-2.5 py-1 rounded font-label-sm font-semibold ${positionAffichee(agent).position === "En activité" ? "bg-surface-container-low text-on-surface-variant" : "bg-secondary-container text-on-secondary-container"}`}>Position : {positionAffichee(agent).position}{positionAffichee(agent).detail ? ` · ${positionAffichee(agent).detail}` : ""}</span>
               </div>
             </div>
           </div>
@@ -733,10 +840,15 @@ export function ProfilAgentTroisOnglets({ agent }: { agent: Dossier }) {
               type="button" onClick={() => setOnglet(id)}
               className={`inline-flex items-center gap-2 rounded-lg px-4 py-3 font-label-md text-label-md transition-colors ${onglet === id ? "bg-primary text-on-primary font-semibold" : "text-on-surface-variant hover:bg-surface-container-low"}`}>
               <Icone nom={icone} className="text-lg" />{libelle}
-              {(id === "formation" && pastilleCollecte(agent)) || (id === "besoins" && besoinsAttendus) ? (
-                <span className="relative flex h-2 w-2" aria-label="Collecte en attente">
-                  <span className="absolute inset-0 rounded-full bg-secondary-container motion-pulse-dot" />
-                  <span className="relative h-2 w-2 rounded-full bg-secondary-container" />
+              {id === "besoins" && (compteurs[id] ?? 0) > 0 ? (
+                // Besoins RH : un simple point rouge, qui attire l'attention sans chiffre.
+                <span className="relative flex h-3 w-3" role="img" aria-label="Expression des besoins non renseignée">
+                  <span className="absolute inset-0 rounded-full bg-error motion-pulse-dot" />
+                  <span className="relative h-3 w-3 rounded-full bg-error" />
+                </span>
+              ) : (EXIGENCES.has(id) || (id === "conges" && campagneAttendue) ? (compteurs[id] ?? 0) > 0 : id !== onglet && (compteurs[id] ?? 0) > (vus[id] ?? 0)) ? (
+                <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-error px-1.5 text-[11px] font-bold leading-none text-on-error shadow-sm" aria-label={id === "conges" && campagneAttendue ? "Campagne de congés en cours : dates à déposer" : id === "conges" || id === "demandes" || id === "disposition" ? `${compteurs[id]} validée${(compteurs[id] ?? 0) > 1 ? "s" : ""} par le circuit` : id === "documents" ? `${compteurs[id]} document${(compteurs[id] ?? 0) > 1 ? "s" : ""} obligatoire${(compteurs[id] ?? 0) > 1 ? "s" : ""} absent${(compteurs[id] ?? 0) > 1 ? "s" : ""}` : `${compteurs[id]} à traiter`}>
+                  {(compteurs[id] ?? 0) > 99 ? "99+" : compteurs[id]}
                 </span>
               ) : null}
             </button>
@@ -762,7 +874,7 @@ export function ProfilAgentTroisOnglets({ agent }: { agent: Dossier }) {
                     <Champ label="Statut matrimonial" value={ec.statut_matrimonial} nom="statut_matrimonial" options={OPTIONS_STATUT} />
                     <Champ label="Date du mariage" value={dateFr(ec.date_mariage)} nom="date_mariage" type="date" />
                   </GroupeEtatCivil>
-                  <GroupeEtatCivil titre="Pièce d’identité" icone="id_card" grille={false}>
+                  <GroupeEtatCivil titre={<>Pièce d’identité <span className="text-error">*</span></>} icone="id_card" grille={false}>
                     <PieceIdentite agent={agent} />
                   </GroupeEtatCivil>
                   <GroupeEtatCivil titre="Coordonnées" icone="call">
@@ -794,6 +906,20 @@ export function ProfilAgentTroisOnglets({ agent }: { agent: Dossier }) {
                       {groupe.lignes.map((ligne) => <Champ key={ligne.libelle} label={ligne.libelle} value={valeurAdmin(ligne.valeur)} />)}
                     </GroupeEtatCivil>
                   ))}
+                  <GroupeEtatCivil titre="Identité du conjoint" icone="person">
+                    <Champ label="Nom" value={agent.famille.conjoint.nom} nom="conjoint_nom" />
+                    <Champ label="Prénoms" value={agent.famille.conjoint.prenoms} nom="conjoint_prenoms" />
+                  </GroupeEtatCivil>
+                  <GroupeEtatCivil titre="Contacts du conjoint" icone="call">
+                    <Champ label="Téléphone" value={agent.famille.conjoint.telephone} nom="conjoint_telephone" type="tel" />
+                    <Champ label="Adresse e-mail" value={agent.famille.conjoint.courriel} nom="conjoint_courriel" type="email" />
+                  </GroupeEtatCivil>
+                  <JustificatifMariage agent={agent} />
+                  <div className="lg:col-span-2">
+                    <GroupeEtatCivil titre={`Enfants (${agent.famille.enfants.length})`} icone="child_care" grille={false}>
+                      <EnfantsACharge agent={agent} />
+                    </GroupeEtatCivil>
+                  </div>
                 </div>
               </Bloc>
 
@@ -836,18 +962,25 @@ export function ProfilAgentTroisOnglets({ agent }: { agent: Dossier }) {
                         </p>
                         <p className="mt-2 font-body-md text-on-surface font-semibold">{procedure.grief}</p>
                         <p className="font-body-sm text-on-surface-variant whitespace-pre-wrap">{procedure.description}</p>
-                        <ol className="mt-3 flex flex-wrap gap-2" aria-label="Étapes de la procédure">
-                          {ETAPES_DISCIPLINE.map(([code, libelle]) => {
+                        <div className="mt-3">
+                          {(() => {
                             const rang = ETAPES_DISCIPLINE.findIndex(([c]) => c === procedure.phase);
-                            const atteinte = ETAPES_DISCIPLINE.findIndex(([c]) => c === code) <= rang;
+                            const terminee = procedure.phase === "decision";
                             return (
-                              <li key={code} aria-current={code === procedure.phase ? "step" : undefined}
-                                className={`px-2.5 py-1 rounded-full font-label-sm ${code === procedure.phase ? "bg-primary text-on-primary" : atteinte ? "bg-primary-fixed text-on-primary-fixed" : "bg-surface-container text-on-surface-variant"}`}>
-                                {libelle}
-                              </li>
+                              <FilVisas
+                                libelle="Étapes de la procédure"
+                                enCours={!terminee}
+                                ordreActuel={terminee ? null : rang + 1}
+                                libelleActuel="En cours"
+                                visas={ETAPES_DISCIPLINE.map(([, libelle], index) => ({
+                                  ordre: index + 1, instance: libelle, titulaire: "", date: "",
+                                  avis: index < rang || terminee ? "Terminée" : index === rang ? "En cours" : "À venir",
+                                  etat: index < rang || terminee ? "ok" : "attente",
+                                }))}
+                              />
                             );
-                          })}
-                        </ol>
+                          })()}
+                        </div>
                         {procedure.decision ? (
                           <p className="mt-3 font-body-sm text-on-surface">
                             <strong>Décision du {dateFr(procedure.date_decision)} :</strong> {procedure.decision}
@@ -865,23 +998,6 @@ export function ProfilAgentTroisOnglets({ agent }: { agent: Dossier }) {
                 <ParcoursAcademique agent={agent} />
               </Bloc>
 
-              <Bloc titre="Conjoint" icone="favorite">
-                <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-                  <GroupeEtatCivil titre="Identité du conjoint" icone="person">
-                    <Champ label="Nom" value={agent.famille.conjoint.nom} nom="conjoint_nom" />
-                    <Champ label="Prénoms" value={agent.famille.conjoint.prenoms} nom="conjoint_prenoms" />
-                  </GroupeEtatCivil>
-                  <GroupeEtatCivil titre="Contacts du conjoint" icone="call">
-                    <Champ label="Téléphone" value={agent.famille.conjoint.telephone} nom="conjoint_telephone" type="tel" />
-                    <Champ label="Adresse e-mail" value={agent.famille.conjoint.courriel} nom="conjoint_courriel" type="email" />
-                  </GroupeEtatCivil>
-                  <JustificatifMariage agent={agent} />
-                </div>
-              </Bloc>
-
-              <Bloc titre={`Enfants (${agent.famille.enfants.length})`} icone="child_care">
-                <EnfantsACharge agent={agent} />
-              </Bloc>
             </div>
           )}
 

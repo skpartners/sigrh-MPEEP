@@ -295,7 +295,7 @@ def test_dossier_agent(api):
     assert valeurs["Date de prise de service dans le ministère"] == "2018-10-01"
     assert valeurs["Date de prise de service dans l'emploi"] == "2015-01-12"
     assert valeurs["Date de prise de service dans la fonction"] == "2022-03-15"
-    assert valeurs["Positions"] == "En formation"  # retenu pour un module de formation en cours (jeu de démonstration)
+    assert valeurs["Positions"] == "En activité · En formation"  # en activité, retenu pour un module de formation en cours (jeu de démonstration)
     assert valeurs["Lieu de Travail"].startswith("Immeuble SCIAM")
 
     anonyme = api.get("/api/v1/agents/349812K/dossier/")
@@ -348,7 +348,8 @@ def test_modifier_situation_administrative(api):
     assert valeurs["Grade"] == "A5"
     assert valeurs["Catégorie"] == "Catégorie A"
     assert valeurs["Fonction"] == "Chef de service"
-    assert valeurs["Positions"] == "Détachement"
+    # La position est automatique : celle envoyée par le formulaire est ignorée, l'agent garde la position que ses dates lui donnent.
+    assert "Détachement" not in valeurs["Positions"] and valeurs["Positions"].startswith("En activité")
     assert valeurs["Date de première prise de service (Fonction Publique)"] == "2015-01-12"
     assert valeurs["Date de prise de service dans l'emploi"] == ""
     assert valeurs["Date de prise de service dans la fonction"] == "2024-06-01"
@@ -360,7 +361,7 @@ def test_modifier_situation_administrative(api):
     invalide = {**saisie, "prise_service_ministere": "32/13/2020"}
     rejet = api.patch("/api/v1/agents/349812K/", invalide, format="json", **auth)
     assert rejet.status_code == 400
-    assert Agent.objects.get(matricule="349812K").situation == "Détachement"
+    assert Agent.objects.get(matricule="349812K").situation.startswith("En ")
 
 
 def test_telecharger_acte_mis_a_disposition(api):
@@ -1676,7 +1677,7 @@ def test_gestion_des_utilisateurs(api):
     assert cree.json()["actif"] is True
     assert cree.json()["structure"] == "svc-actes"
     assert cree.json()["structure_nom"] == "Service des Actes"
-    assert cree.json()["pole"] == "cabinet"
+    assert cree.json()["pole"] == "administration-generale"
     assert cree.json()["superieur"] == "DRH-2018-044"
 
     sans_superieur = api.post(
@@ -2241,11 +2242,13 @@ def test_ajout_de_structure(api):
     assert page.status_code == 200
     corps = page.json()
     assert any(item["code"] == "drh" for item in corps["structures"])
-    assert {item["code"] for item in corps["poles"]} == {"cabinet", "dgpe", "dgpn"}
+    assert {item["code"] for item in corps["poles"]} == {"administration-generale", "dgpe", "dgpn"}
+    # Le Cabinet fait partie du programme Administration générale, comme les directions qui en relèvent.
+    assert next(item for item in corps["structures"] if item["code"] == "cabinet")["pole"] == "administration-generale"
 
     doublon = api.post(
         "/api/v1/structures/",
-        {"nom": "Direction des Ressources Humaines", "pole": "cabinet"},
+        {"nom": "Direction des Ressources Humaines", "pole": "administration-generale"},
         format="json",
         **auth,
     )
@@ -2274,13 +2277,13 @@ def test_ajout_de_structure(api):
 
     modifie = api.patch(
         "/api/v1/structures/cellule-de-prospective/",
-        {"nom": "Cellule de Prospective et d'Études", "pole": "cabinet"},
+        {"nom": "Cellule de Prospective et d'Études", "pole": "administration-generale"},
         format="json",
         **auth,
     )
     assert modifie.status_code == 200
     assert modifie.json()["code"] == "cellule-de-prospective"
-    assert modifie.json()["pole"] == "cabinet"
+    assert modifie.json()["pole"] == "administration-generale"
 
     occupee = api.delete("/api/v1/structures/drh/", **auth)
     assert occupee.status_code == 400
@@ -2544,6 +2547,85 @@ def test_tableaux_croises_dynamiques(api):
     assert not CompositionStatistique.objects.filter(pk=identifiant).exists()
 
 
+def test_etats_statistiques_composes_et_champs_de_structure(api):
+    from personnel.models import EtatStatistique
+
+    auth = _connexion(api, "DRH-2018-044")
+
+    # Les champs ajoutés pour les états : programme, catégorie d'après le grade, famille d'emploi, tranches d'âge détaillées.
+    cube = api.get(
+        "/api/v1/statistiques/cube/?source=agents&champs=programme,categorie_statutaire,famille_emploi,tranche_age_detail,sexe",
+        **auth,
+    )
+    assert cube.status_code == 200
+    donnees = cube.json()
+    assert {champ["code"] for champ in donnees["champs"]} == {"programme", "categorie_statutaire", "famille_emploi", "tranche_age_detail", "sexe"}
+    assert sum(groupe["n"] for groupe in donnees["groupes"]) == donnees["total"]
+    position = {champ["code"]: rang for rang, champ in enumerate(donnees["champs"])}
+    tranches = {groupe["v"][position["tranche_age_detail"]] for groupe in donnees["groupes"]}
+    assert tranches <= {"Moins de 25 ans", "25 à 34 ans", "35 à 44 ans", "45 à 54 ans", "55 à 59 ans", "60 ans et plus", "Non renseigné"}
+    categories = {groupe["v"][position["categorie_statutaire"]] for groupe in donnees["groupes"]}
+    assert categories <= {"Catégorie A", "Catégorie B", "Catégorie C", "Catégorie D", "Non renseigné", "Non classé"}
+
+    corps = {
+        "nom": "État du personnel",
+        "modele": "etat-du-personnel",
+        "configuration": {
+            "titre": "État du personnel",
+            "synthese": True,
+            "blocs": [
+                {
+                    "id": "ages",
+                    "redaction": "age",
+                    "kicker": "GRAPHIQUE 3",
+                    "titre_auto": True,
+                    "commentaires": None,
+                    "anneau": True,
+                    "config": {
+                        "source": "agents",
+                        "lignes": ["tranche_age_detail"],
+                        "colonnes": ["sexe"],
+                        "graphique": {"forme": "pyramide", "couleurs": ["#14365d", "pas-une-couleur", "#2A9D8F"]},
+                    },
+                },
+                {"id": "libre", "redaction": "inconnue", "commentaires": ["  Premier point  ", "", "Second point"], "config": {"source": "agents"}},
+            ],
+        },
+    }
+    cree = api.post("/api/v1/statistiques/etats/", corps, format="json", **auth)
+    assert cree.status_code == 201
+    identifiant = cree.json()["id"]
+    assert cree.json()["mien"] is True
+    blocs = cree.json()["configuration"]["blocs"]
+    assert len(blocs) == 2
+    assert blocs[0]["config"]["graphique"]["forme"] == "pyramide"
+    assert blocs[0]["config"]["graphique"]["couleurs"] == ["#14365D", "#2A9D8F"]
+    assert blocs[0]["anneau"] is True
+    assert blocs[0]["commentaires"] is None
+    assert blocs[1]["redaction"] == "libre"
+    assert blocs[1]["commentaires"] == ["Premier point", "Second point"]
+    assert blocs[1]["anneau"] is False
+
+    assert api.post("/api/v1/statistiques/etats/", {**corps, "nom": " "}, format="json", **auth).status_code == 400
+    sans_bloc = api.post("/api/v1/statistiques/etats/", {**corps, "configuration": {"blocs": []}}, format="json", **auth)
+    assert sans_bloc.status_code == 400
+
+    assert any(item["id"] == identifiant for item in api.get("/api/v1/statistiques/etats/", **auth).json())
+    renomme = api.patch(f"/api/v1/statistiques/etats/{identifiant}/", {"nom": "Effectifs 2026"}, format="json", **auth)
+    assert renomme.status_code == 200
+    assert renomme.json()["nom"] == "Effectifs 2026"
+    assert len(renomme.json()["configuration"]["blocs"]) == 2
+
+    autre = api.post("/api/v1/auth/login/", {"matricule": "349812K", "password": "Sigrh-Dev-2026"}, format="json")
+    auth_autre = {"HTTP_AUTHORIZATION": f"Token {autre.json()['token']}"}
+    assert api.patch(f"/api/v1/statistiques/etats/{identifiant}/", {"nom": "Piraté"}, format="json", **auth_autre).status_code == 403
+    assert api.delete(f"/api/v1/statistiques/etats/{identifiant}/", **auth_autre).status_code == 403
+    assert EtatStatistique.objects.filter(pk=identifiant).exists()
+
+    assert api.delete(f"/api/v1/statistiques/etats/{identifiant}/", **auth).status_code == 204
+    assert not EtatStatistique.objects.filter(pk=identifiant).exists()
+
+
 def test_planification_annuelle_des_conges(api):
     from datetime import date, timedelta
 
@@ -2786,22 +2868,28 @@ def test_chaque_utilisateur_change_son_mot_de_passe(api):
     assert api.post("/api/v1/auth/login/", {"matricule": "349812K", "password": "Ministere-Portefeuille-27"}, format="json").status_code == 200
 
 
-def test_enfants_a_charge_ajout_et_retrait(api):
+def _acte_pdf():
+    from django.core.files.uploadedfile import SimpleUploadedFile
+
+    return SimpleUploadedFile("acte.pdf", b"%PDF-1.4 test", content_type="application/pdf")
+
+
+def test_enfants_a_charge_ajout_et_retrait(api, tmp_path, settings):
+    settings.MEDIA_ROOT = tmp_path
     token = _token(api)
     auth = {"HTTP_AUTHORIZATION": f"Token {token}"}
     url = "/api/v1/agents/349812K/enfants/"
     incomplet = api.post(url, {"nom": "Koné", "prenoms": "Awa"}, format="json", **auth)
     assert incomplet.status_code == 400
-    futur = api.post(url, {"nom": "Koné", "prenoms": "Awa", "sexe": "F", "date_naissance": "2999-01-01"}, format="json", **auth)
+    futur = api.post(url, {"nom": "Koné", "prenoms": "Awa", "sexe": "F", "date_naissance": "2999-01-01", "fichier": _acte_pdf()}, format="multipart", **auth)
     assert futur.status_code == 400
-    ajout = api.post(
-        url,
-        {"nom": "Koné", "prenoms": "Awa", "sexe": "F", "date_naissance": "2015-04-02", "lieu_naissance": "Bouaké"},
-        format="json",
-        **auth,
-    )
+    complet = {"nom": "Koné", "prenoms": "Awa", "sexe": "F", "date_naissance": "2015-04-02", "lieu_naissance": "Bouaké"}
+    sans_acte = api.post(url, complet, format="json", **auth)
+    assert sans_acte.status_code == 400 and "acte de naissance" in sans_acte.json()["detail"]
+    ajout = api.post(url, {**complet, "fichier": _acte_pdf()}, format="multipart", **auth)
     assert ajout.status_code == 201
     enfants = ajout.json()["famille"]["enfants"]
+    assert enfants[0]["acte_naissance"]["intitule"].startswith("Acte de naissance d'un enfant")
     assert [(e["nom"], e["sexe"], e["date_naissance"], e["lieu_naissance"]) for e in enfants] == [("Koné", "Fille", "2015-04-02", "Bouaké")]
     retrait = api.delete(f"{url}{enfants[0]['id']}/", **auth)
     assert retrait.status_code == 200
@@ -2926,11 +3014,20 @@ def test_permission_delivree_inscrite_aux_absences_et_quota(api):
     depot = "/api/v1/agents/394812H/actes-demandes/"
     lundi = date.today() + timedelta(days=(7 - date.today().weekday()) % 7 or 7)
 
+    from django.core.files.uploadedfile import SimpleUploadedFile
+
+    def justificatif():
+        return SimpleUploadedFile("convocation.pdf", b"%PDF-1.4 test", content_type="application/pdf")
+
+    # Sans justificatif, une autorisation spéciale n'est pas recevable.
+    sans = api.post(depot, {"type": "autorisation-speciale", "motif": "x", "debut": lundi.isoformat(), "fin": (lundi + timedelta(days=1)).isoformat()}, format="multipart", **agent)
+    assert sans.status_code == 400 and "justificatif" in sans.json()["detail"]
+
     # Le quota d'autorisations spéciales est contrôlé dès le dépôt.
-    trop = api.post(depot, {"type": "autorisation-speciale", "motif": "x", "debut": lundi.isoformat(), "fin": (lundi + timedelta(days=27)).isoformat()}, format="json", **agent)
+    trop = api.post(depot, {"type": "autorisation-speciale", "motif": "x", "debut": lundi.isoformat(), "fin": (lundi + timedelta(days=27)).isoformat(), "justificatif": justificatif()}, format="multipart", **agent)
     assert trop.status_code == 400 and "dépasse" in trop.json()["detail"]
 
-    lot = api.post(depot, {"type": "autorisation-speciale", "motif": "Mariage d'un frère", "debut": lundi.isoformat(), "fin": (lundi + timedelta(days=1)).isoformat()}, format="json", **agent)
+    lot = api.post(depot, {"type": "autorisation-speciale", "motif": "Mariage d'un frère", "debut": lundi.isoformat(), "fin": (lundi + timedelta(days=1)).isoformat(), "justificatif": justificatif()}, format="multipart", **agent)
     assert lot.status_code == 201
     reference = next(item for item in lot.json()["demandes"] if item["categorie"] == "acte")["reference"]
     assert not Absence.objects.filter(justificatif=f"Acte {reference}").exists()
@@ -2948,25 +3045,26 @@ def test_permission_delivree_inscrite_aux_absences_et_quota(api):
     assert api.get(f"/api/v1/demandes-actes/{reference}/document/", **agent).status_code == 409
 
 
-def test_modification_du_dossier_reservee_a_l_agent_et_aux_responsables(api):
+def test_modification_du_dossier_reservee_a_l_agent_et_aux_responsables(api, tmp_path, settings):
+    settings.MEDIA_ROOT = tmp_path
     simple = _jeton(api, "394812H")
     drh = _jeton(api, "DRH-2018-044")
     enfant = {"nom": "Koné", "prenoms": "Awa", "sexe": "F"}
 
     # Un agent ne touche pas au dossier d'un autre.
-    assert api.post("/api/v1/agents/349812K/enfants/", enfant, format="json", **simple).status_code == 403
+    assert api.post("/api/v1/agents/349812K/enfants/", enfant, format="multipart", **simple).status_code == 403
     assert api.post("/api/v1/agents/349812K/photo/", {}, format="multipart", **simple).status_code == 403
     assert api.post("/api/v1/agents/349812K/piece-identite/", {"type_piece": "cni", "numero": "1"}, format="multipart", **simple).status_code == 403
     assert api.post("/api/v1/agents/349812K/documents/", {"rubrique": "diplomes", "type_document": "cv"}, format="multipart", **simple).status_code == 403
     assert api.delete("/api/v1/agents/349812K/enfants/1/", **simple).status_code == 403
 
     # Il gère le sien, et le droit est annoncé au front.
-    propre = api.post("/api/v1/agents/394812H/enfants/", enfant, format="json", **simple)
+    propre = api.post("/api/v1/agents/394812H/enfants/", {**enfant, "fichier": _acte_pdf()}, format="multipart", **simple)
     assert propre.status_code == 201 and propre.json()["modifiable"] is True
     assert api.get("/api/v1/agents/394812H/", **simple).json()["modifiable"] is True
 
     # Le DRH gère le dossier d'un agent de son périmètre.
-    assert api.post("/api/v1/agents/394812H/enfants/", enfant, format="json", **drh).status_code == 201
+    assert api.post("/api/v1/agents/394812H/enfants/", {**enfant, "fichier": _acte_pdf()}, format="multipart", **drh).status_code == 201
 
 
 def test_justificatif_de_demande_visible_et_fichiers_lisibles_depuis_le_front(api, tmp_path, settings):
@@ -3182,13 +3280,16 @@ def test_sous_rubrique_de_conge_suit_le_circuit_de_sa_rubrique(api):
     assert [visa["instance"] for visa in demande["visas"]][:2] == ["Requête déposée", "Directeur"]
 
 
-def test_parcours_academique_plusieurs_diplomes(api):
+def test_parcours_academique_plusieurs_diplomes(api, tmp_path, settings):
+    settings.MEDIA_ROOT = tmp_path
     auth = {"HTTP_AUTHORIZATION": f"Token {_token(api)}"}
     url = "/api/v1/agents/349812K/diplomes/"
     assert api.post(url, {"niveau_etude": "inconnu"}, format="json", **auth).status_code == 400
     avant = len(api.get("/api/v1/agents/349812K/", **auth).json()["parcours_academique"]["diplomes"])
-    api.post(url, {"niveau_etude": "licence", "libelle": "Licence de droit", "domaine_formation": "Droit"}, format="json", **auth)
-    ajout = api.post(url, {"niveau_etude": "master", "libelle": "Master de gestion", "domaine_formation": "Gestion"}, format="json", **auth)
+    sans = api.post(url, {"niveau_etude": "licence", "libelle": "Licence de droit"}, format="json", **auth)
+    assert sans.status_code == 400 and "Joignez le diplôme" in sans.json()["detail"]
+    api.post(url, {"niveau_etude": "licence", "libelle": "Licence de droit", "domaine_formation": "Droit", "fichier": _acte_pdf()}, format="multipart", **auth)
+    ajout = api.post(url, {"niveau_etude": "master", "libelle": "Master de gestion", "domaine_formation": "Gestion", "fichier": _acte_pdf()}, format="multipart", **auth)
     assert ajout.status_code == 201
     parcours = ajout.json()["parcours_academique"]
     assert len(parcours["diplomes"]) == avant + 2
@@ -3254,17 +3355,15 @@ def test_diplome_relie_a_son_justificatif(api, tmp_path, settings):
     # Un justificatif déjà versé, non rattaché, peut être choisi pour une autre ligne ; un fichier étranger est refusé.
     versee = api.post("/api/v1/agents/349812K/documents/", {"rubrique": "diplomes", "type_document": "diplome", "fichier": pdf()}, format="multipart", **auth)
     libre = versee.json()["parcours_academique"]["pieces_libres"][-1]
-    sans = api.post(url, {"niveau_etude": "licence", "libelle": "Licence de droit"}, format="json", **auth).json()
-    cible = next(d for d in sans["parcours_academique"]["diplomes"] if d["libelle"] == "Licence de droit")
-    assert api.post(f"{url}{cible['id']}/justificatif/", {"piece_id": "999999"}, format="json", **auth).status_code == 400
-    lie = api.post(f"{url}{cible['id']}/justificatif/", {"piece_id": libre["id"]}, format="json", **auth)
-    assert lie.status_code == 200
-    assert next(d for d in lie.json()["parcours_academique"]["diplomes"] if d["id"] == cible["id"])["piece"]["id"] == libre["id"]
+    assert api.post(url, {"niveau_etude": "licence", "libelle": "Licence de droit", "piece_id": "999999"}, format="json", **auth).status_code == 400
+    lie = api.post(url, {"niveau_etude": "licence", "libelle": "Licence de droit", "piece_id": libre["id"]}, format="json", **auth)
+    assert lie.status_code == 201
+    cible = next(d for d in lie.json()["parcours_academique"]["diplomes"] if d["libelle"] == "Licence de droit")
+    assert cible["piece"]["id"] == libre["id"]
 
-    # Détacher laisse la pièce au coffre.
+    # Le diplôme est obligatoire : on ne détache pas le justificatif.
     detache = api.delete(f"{url}{cible['id']}/justificatif/", **auth)
-    assert next(d for d in detache.json()["parcours_academique"]["diplomes"] if d["id"] == cible["id"])["piece"] is None
-    assert any(p["id"] == libre["id"] for p in detache.json()["pieces"])
+    assert detache.status_code == 400
 
 
 def test_conge_sans_remplacant_et_decompte_par_nature(api):
@@ -3432,13 +3531,14 @@ def test_mutation_avec_document_joint_facultatif(api, tmp_path, settings):
     assert ligne["justificatif_url"]
 
 
-def test_etat_pdf_de_l_agent_reprend_toutes_les_informations_du_profil(api, monkeypatch):
+def test_etat_pdf_de_l_agent_reprend_toutes_les_informations_du_profil(api, monkeypatch, tmp_path, settings):
+    settings.MEDIA_ROOT = tmp_path
     from personnel.rapports import documents
 
     auth = _auth(api)
     api.patch("/api/v1/agents/349812K/profil/", {"nom_jeune_fille": "Traoré", "telephone": "07 08 09 10 11", "adresse_residence": "Cocody Angré", "ville": "Abidjan"}, format="json", **auth)
-    api.post("/api/v1/agents/349812K/enfants/", {"nom": "Koné", "prenoms": "Awa", "sexe": "F", "date_naissance": "2015-04-02", "lieu_naissance": "Bouaké"}, format="json", **auth)
-    api.post("/api/v1/agents/349812K/diplomes/", {"niveau_etude": "master", "libelle": "Master de gestion", "domaine_formation": "Gestion"}, format="json", **auth)
+    api.post("/api/v1/agents/349812K/enfants/", {"nom": "Koné", "prenoms": "Awa", "sexe": "F", "date_naissance": "2015-04-02", "lieu_naissance": "Bouaké", "fichier": _acte_pdf()}, format="multipart", **auth)
+    api.post("/api/v1/agents/349812K/diplomes/", {"niveau_etude": "master", "libelle": "Master de gestion", "domaine_formation": "Gestion", "fichier": _acte_pdf()}, format="multipart", **auth)
 
     saisis = []
     original = documents._sections_profil
@@ -3731,21 +3831,27 @@ def test_secretariat_reserve_a_l_administrateur_et_aux_secretaires_rattachees(ap
     assert api.get("/api/v1/me/", **secretaire).json()["secretariat"] is False
 
 
-def test_droits_de_conge_par_exercice_le_plus_ancien_se_consomme_d_abord(api):
+def test_droits_de_conge_par_exercice_n_moins_un_d_abord_puis_le_plus_ancien(api):
+    from datetime import date
+
     from personnel.droits_conges import consommer, detail, exercice_a_attribuer
     from personnel.import_droits_conges import _jours
     from personnel.models import Agent, DroitConge
 
+    n = date.today().year
     assert [_jours("-"), _jours(None), _jours(30.0), _jours("15"), _jours("EPUISE")] == [0, 0, 30, 15, 0]
     agent = Agent.objects.get(matricule="394812H")
-    DroitConge.objects.create(agent=agent, annee=2024, jours_dus=15)
-    DroitConge.objects.create(agent=agent, annee=2025, jours_dus=30)
-    assert exercice_a_attribuer(agent) == 2024
+    DroitConge.objects.create(agent=agent, annee=n - 2, jours_dus=15)
+    DroitConge.objects.create(agent=agent, annee=n - 1, jours_dus=30)
+    # Le congé de la campagne relève de N-1 ; le reliquat plus ancien reste une exception choisie par l'agent.
+    assert exercice_a_attribuer(agent) == n - 1
+    # Sans exercice précisé, l'imputation reste du plus ancien au plus récent.
     consommer(agent, 20)
-    assert [(item["annee"], item["restant"]) for item in detail(agent)] == [(2024, 0), (2025, 25)]
-    assert exercice_a_attribuer(agent) == 2025
+    assert [(item["annee"], item["restant"]) for item in detail(agent)] == [(n - 2, 0), (n - 1, 25)]
+    assert exercice_a_attribuer(agent) == n - 1
     dossier = api.get("/api/v1/agents/394812H/", **_jeton(api, "394812H")).json()
-    assert dossier["conges"]["exercice"] == 2025 and [item["annee"] for item in dossier["conges"]["droits"]] == [2024, 2025]
+    assert dossier["conges"]["exercice"] == n - 1 and [item["annee"] for item in dossier["conges"]["droits"]] == [n - 2, n - 1]
+    assert [item["reliquat"] for item in dossier["conges"]["droits"]] == [True, False]
 
 
 def test_secretariat_previsualisation_pour_la_secretaire_impression_libre_pour_l_admin(api):
@@ -3924,3 +4030,101 @@ def test_messagerie_medias_accuses_reponses_groupes_et_purge_de_48_heures(api, s
     assert api.post("/api/v1/messagerie/conversations/", {"sujet": "Équipe", "participants": ids[:1]}, format="json", **alice).status_code == 400
     groupe = api.post("/api/v1/messagerie/conversations/", {"sujet": "Équipe", "participants": ids}, format="json", **alice)
     assert groupe.status_code == 201 and groupe.json()["groupe"] is True and groupe.json()["titre"] == "Équipe"
+
+
+def test_export_excel_de_la_situation_administrative_par_position(api):
+    import io
+    import zipfile
+
+    from personnel.models import Agent
+
+    auth = _auth(api)
+    agent = Agent.objects.exclude(matricule="DRH-2018-044").first()
+    Agent.objects.filter(pk=agent.pk).update(situation="Détachement")
+
+    def lire(position):
+        reponse = api.get(f"/api/v1/situation/export/?position={position}", **auth)
+        assert reponse.status_code == 200 and reponse["Content-Type"].endswith("spreadsheetml.sheet")
+        assert f"situation-{position}-" in reponse["Content-Disposition"]
+        with zipfile.ZipFile(io.BytesIO(reponse.content)) as classeur:
+            return " ".join(classeur.read(nom).decode("utf-8", "ignore") for nom in classeur.namelist() if nom.endswith(("sharedStrings.xml", "sheet1.xml")))
+
+    assert agent.matricule in lire("detachement")
+    assert agent.matricule not in lire("activite")
+    assert agent.matricule in lire("toutes")
+    assert api.get("/api/v1/situation/export/?position=inconnue", **auth).status_code == 400
+
+
+def test_detail_de_la_position_en_activite(api):
+    from datetime import timedelta
+
+    from django.utils import timezone
+
+    from personnel.models import Agent, Demande
+    from personnel.positions import details_activite, famille_position
+
+    assert [famille_position(x) for x in ("En activité", "En formation", "En congé annuel", "Détachement", "Mise à disposition", "Disponibilité", "Hors cadre")] == [
+        "activite", "activite", "activite", "detachement", "detachement", "disponibilite", "hors",
+    ]
+    jour = timezone.localdate()
+    agent = Agent.objects.filter(situation="En activité").first()
+    assert details_activite([agent])[agent.matricule] == "Présence au poste"
+    Demande.objects.create(
+        reference="CG-DET-1", agent=agent, nature="Congé de maternité (98 j)", categorie="conge", etape="Clôturée : congé accordé",
+        responsable="DRH", echeance="", depose_le=jour, debut=jour - timedelta(days=2), fin=jour + timedelta(days=30),
+    )
+    assert details_activite([agent])[agent.matricule] == "Congé de maternité"
+    Agent.objects.filter(pk=agent.pk).update(situation="Détachement")
+    agent.refresh_from_db()
+    assert details_activite([agent])[agent.matricule] == ""  # une autre position n'a pas de détail d'activité
+
+
+def test_les_positions_suivent_les_dates_du_jour_par_tache_periodique(api):
+    from datetime import timedelta
+
+    from django.utils import timezone
+
+    from personnel.models import Agent, PositionAdministrative
+    from personnel.positions import en_activite
+    from personnel.tasks import synchroniser_positions
+
+    jour = timezone.localdate()
+    agent = Agent.objects.filter(situation="En activité").first()
+    # Un détachement qui a commencé hier : la tâche passe l'agent en détachement, et il sort de l'activité.
+    PositionAdministrative.objects.create(
+        agent=agent, type="detachement", structure_accueil="Ministère d'accueil", date_debut=jour - timedelta(days=1), date_fin=jour + timedelta(days=20),
+    )
+    assert synchroniser_positions() >= 1
+    agent.refresh_from_db()
+    assert agent.situation == "En détachement" and not en_activite(Agent.objects.filter(pk=agent.pk)).exists()
+    # Le détachement est terminé : à la tâche suivante, l'agent redevient en activité.
+    PositionAdministrative.objects.filter(agent=agent).update(date_fin=jour - timedelta(days=1))
+    assert synchroniser_positions() >= 1
+    agent.refresh_from_db()
+    assert agent.situation == "En activité" and en_activite(Agent.objects.filter(pk=agent.pk)).exists()
+    assert synchroniser_positions() == 0  # rien n'a changé depuis
+
+
+def test_indicateurs_disciplinaires_decisions_par_degre_et_non_lieu(api):
+    from django.utils import timezone
+
+    from personnel.models import Agent, ProcedureDisciplinaire
+
+    auth = _auth(api)
+    jour = timezone.localdate()
+    agents = list(Agent.objects.all()[:4])
+    ProcedureDisciplinaire.objects.all().delete()
+
+    def ouvrir(agent, ref, degre, avis):
+        ProcedureDisciplinaire.objects.create(
+            agent=agent, reference=ref, degre=degre, avis=avis, grief="Faute", description="Test", saisine=jour,
+            date_decision=jour if avis in {"sanction", "classee"} else None,
+        )
+
+    ouvrir(agents[0], "DISC-T-1", 1, "instruction")
+    ouvrir(agents[1], "DISC-T-2", 1, "sanction")
+    ouvrir(agents[2], "DISC-T-3", 2, "sanction")
+    ouvrir(agents[3], "DISC-T-4", 2, "classee")
+    indicateurs = api.get("/api/v1/carrieres/discipline/", **auth).json()["indicateurs"]
+    assert indicateurs["instruction"] == 1
+    assert (indicateurs["decisions"], indicateurs["decisions_premier_degre"], indicateurs["decisions_second_degre"], indicateurs["non_lieu"]) == (3, 1, 1, 1)

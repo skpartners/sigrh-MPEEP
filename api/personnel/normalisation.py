@@ -136,3 +136,26 @@ def nom_structure(libelle: str) -> str:
             colle = jeton == "-"
             sortie.append(jeton)
     return "".join(sortie)
+
+
+# Sigles que les données portent comme nom de structure, et le nom complet que les documents officiels doivent écrire.
+SIGLES_STRUCTURES = {
+    "DAAF": "Direction des Affaires Administratives et Financières",
+    "DAJ": "Direction des Affaires Juridiques",
+}
+
+
+def nom_complet_structure(libelle: str) -> str:
+    """Nom en toutes lettres d'une structure saisie sous forme de sigle ; le libellé est rendu tel quel quand il n'en est pas un."""
+    texte = (libelle or "").strip()
+    if not texte:
+        return ""
+    if texte.upper() in SIGLES_STRUCTURES:
+        return SIGLES_STRUCTURES[texte.upper()]
+    if " " not in texte and len(texte) <= 8:
+        from .models import EntiteTutelle
+
+        entite = EntiteTutelle.objects.filter(code=texte.lower()).first()
+        if entite is not None and entite.nom.strip().upper() != texte.upper():
+            return entite.nom.strip()
+    return texte

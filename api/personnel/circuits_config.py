@@ -29,7 +29,7 @@ def lister() -> dict:
         },
         "roles": [
             {"role": item.role, "description": item.description}
-            for item in RoleMatrice.objects.exclude(role__in=("Agent", "Secrétaire"))  # ni l'agent ni le secrétariat ne visent
+            for item in RoleMatrice.objects.exclude(role__in=("Agent", "Secrétaire", "Gestionnaire RH"))  # ni l'agent, ni le secrétariat, ni le point focal RH ne visent
         ],
     }
 
@@ -143,6 +143,7 @@ def enregistrer_acte(payload: dict, acte: ActeDemandable | None = None) -> tuple
         if acte is None:
             acte = ActeDemandable(code=_code_acte(libelle), ordre=_ordre_suivant())
         acte.libelle, acte.periode, acte.destinataire, acte.justificatif = libelle, periode, destinataire, aide
+        acte.justificatif_obligatoire = bool(payload.get("justificatif_obligatoire"))
         acte.parent = parent
         acte.icone = "event_available" if periode else "description"
         acte.save()
@@ -296,6 +297,7 @@ def _acte(acte: ActeDemandable, circuit_id: int | None = None) -> dict:
         "periode": acte.periode,
         "destinataire": acte.destinataire,
         "justificatif": acte.justificatif,
+        "justificatif_obligatoire": acte.justificatif_obligatoire,
     }
 
 

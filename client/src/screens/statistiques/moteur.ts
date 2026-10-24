@@ -28,7 +28,15 @@ export type ConfigTcd = {
   tri: { par: "libelle" | "valeur"; sens: "asc" | "desc" };
   options: { total_lignes: boolean; total_colonnes: boolean; sous_totaux: boolean };
   replies: string[];
-  graphique: { visible: boolean; forme: FormeGraphique; etiquettes: boolean; legende: boolean; inverser: boolean; titre: string };
+  graphique: {
+    visible: boolean; forme: FormeGraphique; etiquettes: boolean; legende: boolean; inverser: boolean; titre: string;
+    /** Couleurs choisies, dans l'ordre des séries (ou des catégories d'un secteur) ; vide : la palette de l'application. */
+    couleurs: string[];
+    /** Niveau de la hiérarchie des lignes montré par le graphique (0 : le premier) ; null : les lignes visibles du tableau. */
+    niveau: number | null;
+    /** Chemin du forage : le graphique détaille les enfants de ce nœud. */
+    focus: string[];
+  };
   /** Le nom du tableau suit son contenu tant que l'utilisateur ne l'a pas saisi lui-même. */
   nom_auto: boolean;
 };
@@ -107,7 +115,7 @@ export function configVide(source = "agents"): ConfigTcd {
     tri: { par: "libelle", sens: "asc" },
     options: { total_lignes: true, total_colonnes: true, sous_totaux: true },
     replies: [],
-    graphique: { visible: true, forme: "barre", etiquettes: true, legende: true, inverser: false, titre: "" },
+    graphique: { visible: true, forme: "barre", etiquettes: true, legende: true, inverser: false, titre: "", couleurs: [], niveau: null, focus: [] },
     nom_auto: true,
   };
 }
@@ -154,7 +162,24 @@ export function libelleChamp(code: string, source: SourceCatalogue | undefined):
 
 const SEP = "\u0001";
 const TOTAL = "\u0002";
-const comparateur = new Intl.Collator("fr", { numeric: true, sensitivity: "base" });
+const collateur = new Intl.Collator("fr", { numeric: true, sensitivity: "base" });
+
+/** Ordre naturel de certains champs : les tranches d'âge se lisent du plus jeune au plus âgé, les hommes avant les femmes. */
+const ORDRES: Record<string, string[]> = {
+  tranche_age_detail: ["Moins de 25 ans", "25 à 34 ans", "35 à 44 ans", "45 à 54 ans", "55 à 59 ans", "60 ans et plus", "Non renseigné"],
+  sexe: ["Homme", "Femme"],
+};
+
+/** Compare deux modalités d'un champ : l'ordre naturel s'il existe, sinon l'ordre alphabétique (chiffres compris). */
+function compareChamp(code: string | undefined, a: string, b: string): number {
+  const ordre = code ? ORDRES[code] : undefined;
+  if (ordre) {
+    const ia = ordre.indexOf(a);
+    const ib = ordre.indexOf(b);
+    if (ia !== -1 || ib !== -1) return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
+  }
+  return collateur.compare(a, b);
+}
 
 /** « de corps », « d'âge » : élision devant une voyelle ou un h muet. */
 function de(mot: string): string {
@@ -267,7 +292,7 @@ export function calculerTcd(cube: Cube | undefined, config: ConfigTcd): Resultat
   for (const [code, indice] of position) {
     const vues = new Set<string>();
     for (const groupe of groupes) vues.add(groupe.v[indice]);
-    modalites[code] = [...vues].sort(comparateur.compare);
+    modalites[code] = [...vues].sort((a, b) => compareChamp(code, a, b));
   }
 
   const retenu = (code: string, valeur: string) => {
@@ -367,7 +392,8 @@ export function calculerTcd(cube: Cube | undefined, config: ConfigTcd): Resultat
   const sens = config.tri.sens === "desc" ? -1 : 1;
   const trier = (noeuds: NoeudLigne[]) => {
     noeuds.sort((a, b) => {
-      const ordre = config.tri.par === "valeur" ? poids(a) - poids(b) || comparateur.compare(a.libelle, b.libelle) : comparateur.compare(a.libelle, b.libelle);
+      const champ = config.lignes[a.niveau];
+      const ordre = config.tri.par === "valeur" ? poids(a) - poids(b) || compareChamp(champ, a.libelle, b.libelle) : compareChamp(champ, a.libelle, b.libelle);
       return ordre * sens;
     });
     noeuds.forEach((noeud) => trier(noeud.enfants));
@@ -390,7 +416,7 @@ export function calculerTcd(cube: Cube | undefined, config: ConfigTcd): Resultat
     .map(([cle, chemin]) => ({ cle, chemin }))
     .sort((a, b) => {
       for (let indice = 0; indice < a.chemin.length; indice += 1) {
-        const ordre = comparateur.compare(a.chemin[indice], b.chemin[indice]);
+        const ordre = compareChamp(config.colonnes[indice], a.chemin[indice], b.chemin[indice]);
         if (ordre) return ordre;
       }
       return 0;
@@ -440,10 +466,27 @@ export function formaterValeur(nombre: number | null, valeur: ValeurTcd | undefi
   return nombre.toLocaleString("fr-FR", { minimumFractionDigits: decimales, maximumFractionDigits: decimales });
 }
 
-/** Lignes et séries du graphique croisé : les lignes visibles terminales, une série par colonne et par valeur. */
-export function seriesGraphique(resultat: ResultatTcd, config: ConfigTcd, source: SourceCatalogue | undefined): { categories: string[]; series: SerieGraphique[] } {
-  const terminales = resultat.lignes.filter((ligne) => !ligne.cachee && (!ligne.groupe || ligne.replie));
-  const categories = terminales.length ? terminales.map((ligne) => ligne.noeud.chemin.join(" · ")) : ["Total"];
+/**
+ * Lignes et séries du graphique croisé, une série par colonne et par valeur.
+ * Sans niveau choisi, ce sont les lignes visibles terminales du tableau. Avec un niveau (et un chemin de forage), le graphique
+ * descend dans la hiérarchie des lignes à la manière de Power BI : un niveau à la fois, en détaillant le nœud choisi.
+ */
+export function seriesGraphique(resultat: ResultatTcd, config: ConfigTcd, source: SourceCatalogue | undefined): {
+  categories: string[]; series: SerieGraphique[]; cles: string[]; profondeur: number; forage: boolean;
+} {
+  const profondeur = Math.max(config.lignes.length, 1);
+  const forage = config.lignes.length > 1 && !config.graphique.inverser;
+  const focus = forage ? config.graphique.focus.slice(0, profondeur - 1) : [];
+  const niveau = forage ? Math.min(Math.max(config.graphique.niveau ?? focus.length, focus.length), profondeur - 1) : -1;
+  const sousFocus = (ligne: LigneAffichee) => focus.every((morceau, rang) => ligne.noeud.chemin[rang] === morceau);
+  const terminales = forage
+    ? resultat.lignes.filter((ligne) => sousFocus(ligne) && (ligne.noeud.niveau === niveau || (ligne.noeud.niveau < niveau && !ligne.groupe)))
+    : resultat.lignes.filter((ligne) => !ligne.cachee && (!ligne.groupe || ligne.replie));
+  // Le dernier segment suffit quand il désigne seul la ligne (un grade, une direction) ; sinon le chemin lève l'ambiguïté.
+  const derniers = terminales.map((ligne) => ligne.noeud.chemin[ligne.noeud.chemin.length - 1]);
+  const seul = forage && new Set(derniers).size === derniers.length;
+  const libelleLigne = (ligne: LigneAffichee) => (seul ? ligne.noeud.chemin[ligne.noeud.chemin.length - 1] : forage ? ligne.noeud.chemin.slice(focus.length).join(" · ") : ligne.noeud.chemin.join(" · "));
+  const categories = terminales.length ? terminales.map(libelleLigne) : ["Total"];
   const clesLignes = terminales.length ? terminales.map((ligne) => ligne.noeud.cle) : [""];
   const plusieurs = config.valeurs.length > 1;
   const colonnes = config.colonnes.length ? resultat.colonnes : [{ cle: CLE_TOTAL, chemin: [] }];
@@ -462,8 +505,11 @@ export function seriesGraphique(resultat: ResultatTcd, config: ConfigTcd, source
       });
     }
   });
-  if (!config.graphique.inverser) return { categories, series };
+  if (!config.graphique.inverser) return { categories, series, cles: clesLignes, profondeur, forage };
   return {
+    cles: [],
+    profondeur,
+    forage: false,
     categories: series.map((serie) => serie.nom),
     series: categories.map((categorie, rang) => ({
       nom: categorie,

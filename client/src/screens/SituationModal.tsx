@@ -1,3 +1,4 @@
+import { positionAffichee } from "../ui/situation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { ApiError, api } from "../api/client";
@@ -110,7 +111,6 @@ export function SituationModal({ agent, onClose }: { agent: Dossier; onClose: ()
               onChange={(code, categorie) => setFormulaire((actuel) => ({ ...actuel, grade: code, categorie: categorie || actuel.categorie }))}
             />
           </label>
-          <Saisie libelle="Échelon" valeur={formulaire.echelon} onChange={(valeur) => champ("echelon", valeur)} />
           <label className="block">
             <span className="block font-label-sm text-label-sm text-on-surface-variant mb-1">Date de première prise de service (Fonction Publique)</span>
             <input
@@ -125,7 +125,13 @@ export function SituationModal({ agent, onClose }: { agent: Dossier; onClose: ()
           <DateSaisie libelle="Date de prise de service dans l'emploi" valeur={formulaire.prise_service_emploi} onChange={(valeur) => champ("prise_service_emploi", valeur)} />
           <Saisie libelle="Fonction" valeur={formulaire.fonction} onChange={(valeur) => champ("fonction", valeur)} />
           <DateSaisie libelle="Date de prise de service dans la fonction" valeur={formulaire.prise_service_fonction} onChange={(valeur) => champ("prise_service_fonction", valeur)} />
-          <Saisie libelle="Positions" valeur={formulaire.situation} onChange={(valeur) => champ("situation", valeur)} />
+          <div className="block">
+            <span className="block font-label-sm text-label-sm text-on-surface-variant mb-1">Position</span>
+            <p aria-readonly="true" className="flex min-h-10 items-center rounded border border-outline-variant bg-surface-container px-3 font-body-md text-body-md text-on-surface-variant">
+              {positionAffichee(agent).position}{positionAffichee(agent).detail ? ` · ${positionAffichee(agent).detail}` : ""}
+            </p>
+            <span className="block mt-1 font-label-sm text-label-sm text-on-surface-variant">Automatique : elle suit les dates du jour (détachement, disponibilité, formation, congés).</span>
+          </div>
         </div>
     </Modale>
   );
