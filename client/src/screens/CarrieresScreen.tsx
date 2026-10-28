@@ -11,6 +11,7 @@ import { useFeedback } from "../ui/Feedback";
 import { AppChrome } from "./AppChrome";
 import { Icone } from "../ui/Icone";
 import { Select } from "../ui/Select";
+import { correspond } from "../ui/recherche";
 
 const CARD = "rounded-xl bg-surface-container-lowest border border-hairline";
 const PAR_PAGE = 6;
@@ -178,7 +179,7 @@ function TableauAvancement({ lignes }: { lignes: Ligne[] | undefined }) {
     (ligne) =>
       (!regime || ligne.mode === regime) &&
       (!avis || ligne.avis === avis) &&
-      (!q || `${ligne.agent.nom_complet} ${ligne.agent.matricule} ${ligne.grade_echelon} ${ligne.emploi}`.toLowerCase().includes(q)),
+      (!q || correspond(`${ligne.agent.nom_complet} ${ligne.agent.matricule} ${ligne.grade_echelon} ${ligne.emploi}`, q)),
   );
   const pages = Math.max(1, Math.ceil(filtrees.length / PAR_PAGE));
   const courante = Math.min(page, pages - 1);

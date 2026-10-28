@@ -16,6 +16,7 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import { Icone } from "./Icone";
+import { correspond } from "./recherche";
 
 /** Au-delà de ce nombre de choix, la liste se filtre en tapant ; en dessous, la liste native suffit. */
 const SEUIL_RECHERCHE = 7;
@@ -44,11 +45,6 @@ function lireChoix(enfants: ReactNode, groupe = "", sortie: Choix[] = []): Choix
     }
   });
   return sortie;
-}
-
-/** « Côte d'Ivoire » et « cote d ivoire » se valent : on compare sans accents ni casse. */
-function normaliser(texte: string): string {
-  return texte.normalize("NFD").replace(/\p{M}/gu, "").toLocaleLowerCase("fr");
 }
 
 /**
@@ -88,8 +84,7 @@ function ListeRecherche({
   const affichage = courant === "" ? "" : (selection?.libelle ?? courant);
 
   const filtres = useMemo(() => {
-    const cherche = normaliser(saisie.trim());
-    return choix.filter((item) => item.valeur !== "" && (!cherche || normaliser(`${item.libelle} ${item.groupe}`).includes(cherche)));
+    return choix.filter((item) => item.valeur !== "" && correspond(`${item.libelle} ${item.groupe}`, saisie));
   }, [choix, saisie]);
 
   useEffect(() => setActif(0), [saisie, ouvert]);

@@ -81,8 +81,8 @@ export function CarteLogo({ reglages }: { reglages: Reglages | undefined }) {
     <section className={CARTE} style={{ "--delay": "120ms" } as CSSProperties} aria-labelledby="titre-logo">
       <h2 id="titre-logo" className="font-headline-sm text-headline-sm text-on-surface">Logo de la structure</h2>
       <div className="mt-6 flex flex-col sm:flex-row sm:items-center gap-6">
-        <div className="h-32 w-32 shrink-0 rounded-xl border border-hairline bg-surface-container flex items-center justify-center p-3">
-          <img src={visible} alt="Logo de la structure" className="max-h-full max-w-full object-contain" />
+        <div className="h-32 w-32 shrink-0 overflow-hidden rounded-full border border-hairline bg-surface-container flex items-center justify-center p-4">
+          <img src={visible} alt="Logo de la structure" className="h-full w-full object-contain" />
         </div>
         <div className="space-y-3">
           <p className="font-body-sm text-body-sm text-on-surface-variant">{apercu ? "Aperçu : le logo n'est pas encore enregistré." : actuel ? "Logo de la structure en vigueur." : "Armoiries par défaut."}</p>

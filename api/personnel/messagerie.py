@@ -399,8 +399,8 @@ def annuaire(request):
     """Collègues joignables par la messagerie (comptes actifs avec un profil)."""
     q = str(request.query_params.get("q") or "").strip()
     rows = User.objects.filter(is_active=True, profil__isnull=False).exclude(pk=request.user.pk).select_related("profil__organisme")
-    if q:
-        rows = rows.filter(Q(first_name__icontains=q) | Q(last_name__icontains=q) | Q(username__icontains=q) | Q(profil__fonction__icontains=q))
+    for mot in q.replace(",", " ").split():
+        rows = rows.filter(Q(first_name__icontains=mot) | Q(last_name__icontains=mot) | Q(username__icontains=mot) | Q(profil__fonction__icontains=mot))
     return Response([personne(u) for u in rows.order_by("last_name", "first_name")[:30]])
 
 

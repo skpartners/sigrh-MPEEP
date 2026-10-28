@@ -17,6 +17,7 @@ from django.utils.dateparse import parse_date
 
 from .circuits_config import etapes_pour_acte
 from .demo_ecrans import jours_ouvres
+from .hors_ligne import aujourdhui
 from .inscriptions import _reference
 from .models import Absence, ActeDemandable, Agent, Demande, Notification, VisaDemande
 from .signatures import copie_signature
@@ -103,7 +104,7 @@ def deposer(agent: Agent, payload: dict, justificatif=None) -> str | None:
             return "Indiquez la date de début et la date de fin."
         if fin < debut:
             return "La date de fin précède la date de début."
-        if debut < timezone.localdate():
+        if debut < aujourdhui():
             return "La date de début ne peut pas être dans le passé."
         if acte.code not in SANS_PLAFOND and (fin - debut).days + 1 > DUREE_MAX_JOURS:
             return f"Une absence ne peut pas dépasser {DUREE_MAX_JOURS} jours."
@@ -120,7 +121,7 @@ def deposer(agent: Agent, payload: dict, justificatif=None) -> str | None:
             return f"Il vous reste {max(0, restants)} jour(s) d'autorisation spéciale cette année : cette demande les dépasse."
     destinataire = " ".join(str(payload.get("destinataire") or "").split())[:160] if acte.destinataire else ""
     etapes = etapes_circuit(acte.code)
-    aujourd_hui = timezone.localdate()
+    aujourd_hui = aujourdhui()
     from .parametres import libelle_echeance_hierarchie
 
     with transaction.atomic():
@@ -272,6 +273,7 @@ def decider(demande: Demande, acteur, sens: str, motif: str) -> str | None:
             demande.visas.filter(avis="En attente").update(avis="Sans suite")
             demande.etape, demande.responsable = CLOTURE_REFUS
             demande.echeance = "Aucune suite"
+            _solder_registre(demande, False, motif, aujourd_hui)
             if demande.categorie == "mutation":
                 from .mutations import refuser
 
@@ -304,6 +306,16 @@ def decider(demande: Demande, acteur, sens: str, motif: str) -> str | None:
     return None
 
 
+def _solder_registre(demande: Demande, accordee: bool, motif: str, aujourd_hui: date) -> None:
+    """Une absence demandée figure aussi au registre : l'issue du circuit la décide, sans seconde validation."""
+    Absence.objects.filter(demande=demande, decision=Absence.Decision.EN_ATTENTE).update(
+        decision=Absence.Decision.VALIDEE if accordee else Absence.Decision.INVALIDEE,
+        statut="Justifiée" if accordee else "Injustifiée",
+        motif_decision=(motif or ("Demande accordée au terme du circuit de validation." if accordee else "Demande refusée."))[:1000],
+        decide_le=aujourd_hui,
+    )
+
+
 def _accorder_conge(demande: Demande, aujourd_hui: date) -> None:
     """Dernier visa d'un congé : la demande est close, le congé annuel est décompté du reliquat de l'agent."""
     VisaDemande.objects.filter(demande=demande, instance=PAPIER_CONGE).update(
@@ -312,6 +324,7 @@ def _accorder_conge(demande: Demande, aujourd_hui: date) -> None:
     )
     demande.etape, demande.responsable = CLOTURE_CONGE
     demande.echeance = "Terminée"
+    _solder_registre(demande, True, "", aujourd_hui)
     trouve = re.search(r"\((\d+) j", demande.nature)
     if trouve and "annuel" in demande.nature.lower():
         Agent.objects.filter(pk=demande.agent_id).update(conges_consommes=F("conges_consommes") + int(trouve.group(1)))

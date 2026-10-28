@@ -29,6 +29,7 @@ const ENTREES_MENU: { groupe: string; titre: string; module: string; fonction: s
   { groupe: "GPEC", titre: "Expression des besoins", module: "GPEC", fonction: "Expression des besoins" },
   { groupe: "GPEC", titre: "Recrutement", module: "GPEC", fonction: "Recrutement" },
   { groupe: "Métier", titre: "Documents publics & communication", module: "Statistiques & RBAC", fonction: "Communication" },
+  { groupe: "Métier", titre: "Projets et études RH", module: "Projets et études RH", fonction: "Projets et études" },
   { groupe: "Gouvernance", titre: "Statistiques", module: "Statistiques & RBAC", fonction: "Statistiques" },
   { groupe: "Paramètres", titre: "Accueil", module: "Statistiques & RBAC", fonction: "Paramètres" },
   { groupe: "Paramètres", titre: "Circuits de validation", module: "Statistiques & RBAC", fonction: "Circuits et habilitations" },
@@ -59,6 +60,13 @@ const DROIT: Record<string, { libelle: string; style: string }> = {
 };
 
 const NIVEAUX = ["lecture", "saisie", "validation", "refus"] as const;
+
+const INDICATIONS: { code: (typeof NIVEAUX)[number]; texte: string }[] = [
+  { code: "refus", texte: "La page et l'action sont fermées. Le menu affiche « Hors de votre habilitation »." },
+  { code: "lecture", texte: "La page s'ouvre et le contenu se consulte. Aucune création ni modification." },
+  { code: "saisie", texte: "La consultation reste ouverte. On peut créer, corriger et supprimer." },
+  { code: "validation", texte: "La saisie reste ouverte. S'y ajoutent les décisions du responsable : viser, lancer ou clôturer." },
+];
 const COLONNE_ROLE = "sticky left-0 z-10 w-36 max-w-36 sm:w-56 sm:max-w-56 whitespace-normal shadow-[4px_0_8px_-4px_rgba(11,28,48,0.18)]";
 
 function messageErreur(error: unknown): string {
@@ -91,7 +99,7 @@ export function HabilitationsScreen() {
     <AppChrome>
       <div className="w-full px-4 sm:px-6 lg:px-8 py-6 mx-auto flex-1">
         <div className="flex flex-col w-full space-y-8">
-          <div className={`${CARD} p-6 motion-rise`}>
+          <div className={`${CARD} p-6 motion-rise space-y-4`}>
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
               <div className="space-y-1.5">
                 <h1 className="font-headline-lg text-headline-lg text-on-surface tracking-tight">Habilitations</h1>
@@ -105,6 +113,19 @@ export function HabilitationsScreen() {
                 <Icone nom="verified_user" className="text-lg" />
                 <span>Audit des habilitations</span>
               </button>
+            </div>
+            <div className="space-y-3">
+              <p className="font-body-sm text-body-sm text-on-surface-variant">
+                Chaque niveau supérieur comprend les droits du niveau inférieur. Lecture, saisie et validation ouvrent le menu. Seul l'accès refusé le ferme.
+              </p>
+              <ul className="grid gap-3 sm:grid-cols-2" aria-label="Signification des niveaux">
+                {INDICATIONS.map((item) => (
+                  <li key={item.code} className="flex items-start gap-2">
+                    <span className={`shrink-0 px-2.5 py-1 rounded font-label-sm text-label-sm ${DROIT[item.code].style}`}>{DROIT[item.code].libelle}</span>
+                    <span className="font-body-sm text-body-sm text-on-surface">{item.texte}</span>
+                  </li>
+                ))}
+              </ul>
             </div>
           </div>
 

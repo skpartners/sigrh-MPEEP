@@ -7,6 +7,7 @@ import { dateCourte, dateLongue, nombre, pluriel } from "../../ui/format";
 import { Skeleton } from "../../ui/Motion";
 import { BOUTON_PRIMAIRE, CARTE, CHAMP, EnTeteSection, Modale, Vide } from "./ui";
 import { Icone } from "../../ui/Icone";
+import { correspond } from "../../ui/recherche";
 
 /** Dossier de formation : formations suivies par un agent, heures cumulées, attestation imprimable. */
 export function Passeport() {
@@ -15,7 +16,7 @@ export function Passeport() {
   const agents = useQuery({ queryKey: ["agents", ""], queryFn: () => api<AgentBrief[]>("/api/v1/agents/") });
   const q = recherche.trim().toLowerCase();
   const proposes = useMemo(
-    () => (agents.data ?? []).filter((a) => !q || `${a.nom_complet} ${a.matricule} ${a.organisme_sigle}`.toLowerCase().includes(q)).slice(0, 8),
+    () => (agents.data ?? []).filter((a) => !q || correspond(`${a.nom_complet} ${a.matricule} ${a.organisme_sigle}`, q)).slice(0, 8),
     [agents.data, q],
   );
 
@@ -128,7 +129,9 @@ function Attestation({ agent, formation, onClose }: { agent: Dossier; formation:
     >
       <article className="zone-impression rounded-lg border border-hairline bg-white p-8 text-[#0b1c30]">
         <header className="flex items-center gap-4 border-b border-hairline pb-4">
-          <img src={`${import.meta.env.BASE_URL}logo.png`} alt="Armoiries de la République de Côte d'Ivoire" className="h-16 w-16 object-contain" />
+          <span className="inline-flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white ring-1 ring-hairline">
+            <img src={`${import.meta.env.BASE_URL}logo.png`} alt="Armoiries de la République de Côte d'Ivoire" className="h-full w-full object-contain p-[10%]" />
+          </span>
           <div>
             <p className="font-label-md text-label-md uppercase tracking-wider">République de Côte d'Ivoire</p>
             <p className="font-body-sm text-body-sm">Ministère du Portefeuille de l'État et des Entreprises Publiques</p>

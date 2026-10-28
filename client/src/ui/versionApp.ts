@@ -25,7 +25,8 @@ export async function nouvelleVersionPubliee(): Promise<boolean> {
   const chargee = entreeChargee();
   if (!chargee) return false;
   try {
-    const reponse = await fetch(import.meta.env.BASE_URL, { cache: "no-store", headers: { Accept: "text/html" } });
+    // Le paramètre empêche le service worker de répondre avec sa copie de la page : on interroge bien le serveur.
+    const reponse = await fetch(`${import.meta.env.BASE_URL}?verifier=${Date.now()}`, { cache: "no-store", headers: { Accept: "text/html" } });
     if (!reponse.ok) return false;
     const publiee = entreeDuDocument(await reponse.text());
     return publiee !== null && publiee !== chargee;

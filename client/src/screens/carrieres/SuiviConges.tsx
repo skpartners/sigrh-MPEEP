@@ -5,6 +5,7 @@ import { Icone } from "../../ui/Icone";
 import { Pagination, usePagination } from "../../ui/Pagination";
 import { Select } from "../../ui/Select";
 import { Skeleton } from "../../ui/Motion";
+import { correspond } from "../../ui/recherche";
 
 export type ElementSuivi = {
   source: "demande" | "plan";
@@ -148,7 +149,7 @@ export function SuiviConges({
     return lignes.filter(
       (ligne) =>
         (!type || ligne.type === type) && (!etat || ligne.etat === etat)
-        && (!q || `${ligne.agent?.nom_complet ?? ""} ${ligne.agent?.matricule ?? ""} ${ligne.structure} ${ligne.intitule} ${ligne.reference}`.toLowerCase().includes(q)),
+        && (!q || correspond(`${ligne.agent?.nom_complet ?? ""} ${ligne.agent?.matricule ?? ""} ${ligne.structure} ${ligne.intitule} ${ligne.reference}`, q)),
     );
   }, [lignes, recherche, type, etat]);
   const page = usePagination(filtrees, `${recherche}|${type}|${etat}`, 5);

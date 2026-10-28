@@ -1,6 +1,7 @@
 import re
 from django.contrib.auth import authenticate
 from django.db import transaction
+from django.db.models import Q
 from django.utils import timezone
 from django.contrib.auth.models import User
 from django.http import HttpResponse
@@ -49,6 +50,9 @@ from .models import (
 from . import resume_carrieres
 from .adhesion import adhesion_complete
 from .circuits_config import enregistrer, lister
+from .hors_ligne import idempotente
+from .hors_ligne_catalogue import ACTE, CONGE, DOSSIER, FICHIER, NOTIFICATION
+from .hors_ligne_droits import exiger_hors_ligne
 from .parametres import identite_ministre, portrait_url
 from .utilisateurs import acces_menu, perimetre_matricules
 from .secretariat import peut_secretariat
@@ -400,6 +404,8 @@ def _detail(agent, user) -> dict:
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 @parser_classes([MultiPartParser, FormParser])
+@exiger_hors_ligne(FICHIER)
+@idempotente
 def deposer_photo(request, matricule: str):
     """L'agent verse sa photo de profil, choisie ou prise avec l'appareil photo."""
     from pathlib import Path
@@ -424,6 +430,8 @@ def deposer_photo(request, matricule: str):
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 @parser_classes([MultiPartParser, FormParser])
+@exiger_hors_ligne(DOSSIER, FICHIER)
+@idempotente
 def deposer_piece_identite(request, matricule: str):
     """L'agent déclare le type de sa pièce d'identité, son numéro, puis charge le document."""
     from pathlib import Path
@@ -473,6 +481,8 @@ CHAMPS_PROFIL_DATE = {"date_naissance", "date_mariage"}
 
 @api_view(["PATCH"])
 @permission_classes([IsAuthenticated])
+@exiger_hors_ligne(DOSSIER)
+@idempotente
 def modifier_profil(request, matricule: str):
     """Met à jour les informations personnelles : état civil, coordonnées, parcours académique, conjoint."""
     from datetime import date
@@ -546,6 +556,8 @@ def modifier_profil(request, matricule: str):
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 @parser_classes([JSONParser, MultiPartParser, FormParser])
+@exiger_hors_ligne(DOSSIER, FICHIER)
+@idempotente
 def ajouter_enfant(request, matricule: str):
     """Déclare un enfant à charge sur le dossier de l'agent."""
     from datetime import date
@@ -623,6 +635,8 @@ def _justificatif_diplome(request, agent: Agent, libelle: str):
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 @parser_classes([JSONParser, MultiPartParser, FormParser])
+@exiger_hors_ligne(DOSSIER, FICHIER)
+@idempotente
 def ajouter_diplome(request, matricule: str):
     """Ajoute une ligne au parcours académique de l'agent."""
     from .models import Diplome
@@ -655,6 +669,8 @@ def ajouter_diplome(request, matricule: str):
 @api_view(["POST", "DELETE"])
 @permission_classes([IsAuthenticated])
 @parser_classes([JSONParser, MultiPartParser, FormParser])
+@exiger_hors_ligne(FICHIER)
+@idempotente
 def justificatif_diplome(request, matricule: str, pk: int):
     """Rattache (POST) ou détache (DELETE) le justificatif d'une ligne du parcours académique."""
     from .models import Diplome
@@ -677,6 +693,8 @@ def justificatif_diplome(request, matricule: str, pk: int):
 
 @api_view(["DELETE"])
 @permission_classes([IsAuthenticated])
+@exiger_hors_ligne(DOSSIER)
+@idempotente
 def retirer_diplome(request, matricule: str, pk: int):
     """Retire une ligne du parcours académique."""
     from .models import Diplome
@@ -691,6 +709,8 @@ def retirer_diplome(request, matricule: str, pk: int):
 
 @api_view(["DELETE"])
 @permission_classes([IsAuthenticated])
+@exiger_hors_ligne(DOSSIER)
+@idempotente
 def retirer_enfant(request, matricule: str, pk: int):
     """Retire un enfant du dossier de l'agent."""
     from .models import Enfant
@@ -1067,9 +1087,9 @@ def agents(request):
     if matricules is not None:
         rows = rows.filter(matricule__in=matricules)
     if query:
-        rows = rows.filter(nom__icontains=query) | rows.filter(prenoms__icontains=query) | rows.filter(
-            matricule__icontains=query
-        )
+        # Chaque mot saisi doit se retrouver quelque part (nom, prénoms, matricule) : ni l'ordre ni la casse ne comptent.
+        for mot in query.replace(",", " ").split():
+            rows = rows.filter(Q(nom__icontains=mot) | Q(prenoms__icontains=mot) | Q(matricule__icontains=mot))
     echeances = echeances_en_cours()
     from .positions import details_activite
 
@@ -1243,6 +1263,8 @@ def inscrire_formation(request, matricule: str):
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 @parser_classes([JSONParser])
+@exiger_hors_ligne(CONGE)
+@idempotente
 def deposer_conge(request, matricule: str):
     from .depot_conge import deposer
 
@@ -1296,6 +1318,8 @@ def valider_inscription(request, reference: str):
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 @parser_classes([MultiPartParser, FormParser])
+@exiger_hors_ligne(FICHIER)
+@idempotente
 def deposer_piece(request, matricule: str):
     from .pieces import deposer
 
@@ -1314,6 +1338,8 @@ def deposer_piece(request, matricule: str):
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 @parser_classes([MultiPartParser, FormParser])
+@exiger_hors_ligne(FICHIER)
+@idempotente
 def deposer_document(request, matricule: str):
     """Verse une pièce du dossier personnel numérique (état civil, diplômes, actes administratifs)."""
     from .pieces import deposer_document as verser
@@ -1365,6 +1391,8 @@ def demandes_actes(request):
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 @parser_classes([JSONParser, MultiPartParser, FormParser])
+@exiger_hors_ligne(ACTE)
+@idempotente
 def deposer_demande_acte(request, matricule: str):
     """L'agent demande un acte en son nom : attestation, permission ou autorisation d'absence."""
     from .demande_acte import deposer
@@ -1935,6 +1963,7 @@ def notifications(request):
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
+@exiger_hors_ligne(NOTIFICATION)
 def notification_lue(request, pk: int):
     notification = get_object_or_404(Notification, pk=pk, destinataire=request.user)
     notification.lue = True
@@ -1944,6 +1973,7 @@ def notification_lue(request, pk: int):
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
+@exiger_hors_ligne(NOTIFICATION)
 def notifications_toutes_lues(request):
     total = Notification.objects.filter(destinataire=request.user, lue=False).update(lue=True)
     return Response({"marquees": total})

@@ -14,8 +14,22 @@ DIST = settings.BASE_DIR.parent / "client" / "dist"
 PREFIXE = "/sigrh/"
 
 
+def en_tetes_hors_ligne(en_tetes, chemin, url):
+    """Le service worker et le manifeste ne se gardent jamais : le navigateur doit voir tout de suite un nouveau déploiement.
+
+    Un service worker servi avec une validité de plusieurs minutes retarderait d'autant la mise à jour du mode hors ligne
+    (et donc de l'application). Étendue autorisée : tout /sigrh/.
+    """
+    nom = url.rsplit("/", 1)[-1]
+    if nom in {"sw.js", "registerSW.js", "manifest.webmanifest"}:
+        en_tetes["Cache-Control"] = "no-cache"
+    if nom == "sw.js":
+        en_tetes["Service-Worker-Allowed"] = PREFIXE
+
+
 class WhiteNoiseFront(WhiteNoiseMiddleware):
     def __init__(self, get_response=None, settings=settings):
         super().__init__(get_response, settings)
+        self.add_headers_function = en_tetes_hors_ligne
         if DIST.is_dir():
             self.add_files(str(DIST), prefix=PREFIXE)

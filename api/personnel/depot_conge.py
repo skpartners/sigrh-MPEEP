@@ -4,10 +4,10 @@ import re
 from datetime import date, timedelta
 
 from django.db import transaction
-from django.utils import timezone
 from django.utils.dateparse import parse_date
 
 from .circuits_config import etapes_pour_absence, etapes_pour_conge
+from .hors_ligne import aujourdhui
 from .inscriptions import _reference
 from .models import PLAFOND_EXERCICE, Absence, Demande, TypeAbsence, TypeConge, VisaDemande
 
@@ -51,7 +51,8 @@ def deposer(agent, payload: dict) -> str | None:
         return f"On ne peut pas prendre plus de {PLAFOND_EXERCICE} jours au titre d'un seul exercice : déposez une demande par exercice."
     if type_conge is not None and _annuel(type_conge) and _deja_ouvert(agent) + jours > agent.reliquat_conges:
         return f"Le reliquat de congé annuel ({agent.reliquat_conges} j) ne couvre pas cette demande."
-    aujourd_hui = timezone.localdate()
+    # Date de saisie : une demande déposée hors ligne compte à la date où l'agent l'a validée, pas à celle de la synchronisation.
+    aujourd_hui = aujourdhui()
     configurees = etapes_pour_conge(type_conge) if type_conge is not None else etapes_pour_absence(absence)
     if configurees:
         etape, responsable = f"Étape 2 : {configurees[0][0]}", configurees[0][1] or "Avis attendu"

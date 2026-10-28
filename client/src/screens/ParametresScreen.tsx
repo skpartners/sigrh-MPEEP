@@ -5,10 +5,10 @@ import {
   CLE_COULEURS,
   COULEURS_DEFAUT,
   appliquerCouleurs,
-  contraste,
   couleursCourantes,
   couleurValide,
   paletteGraphique,
+  principaleAjustee,
   useCouleursEnregistrees,
   type Couleurs,
 } from "../ui/Couleurs";
@@ -16,6 +16,7 @@ import { useFeedback } from "../ui/Feedback";
 import { BOUTON_DANGER, BOUTON_PRIMAIRE, BOUTON_SECONDAIRE } from "../ui/Modale";
 import { AppChrome } from "./AppChrome";
 import { CarteEffectif } from "./EffectifCarte";
+import { CarteHorsLigne } from "./ParametresHorsLigne";
 import { CarteEmplois, CarteLogo } from "./ParametresReferentiel";
 import { Icone } from "../ui/Icone";
 import { Select } from "../ui/Select";
@@ -29,6 +30,7 @@ type Parametres = {
   peut_modifier: boolean;
   civilite: string;
   nom: string;
+  matricule: string;
   inactivite_minutes: number;
   delais: {
     visa_acte_jours: number;
@@ -54,6 +56,7 @@ export function ParametresScreen() {
   const [enCours, setEnCours] = useState(false);
   const [civilite, setCivilite] = useState("");
   const [nom, setNom] = useState("");
+  const [matricule, setMatricule] = useState("");
   const [erreurIdentite, setErreurIdentite] = useState("");
   const [inactivite, setInactivite] = useState("15");
   const [delaiVisa, setDelaiVisa] = useState("2");
@@ -76,6 +79,7 @@ export function ParametresScreen() {
     if (!page.data) return;
     setCivilite(page.data.civilite);
     setNom(page.data.nom);
+    setMatricule(page.data.matricule ?? "");
     setInactivite(String(page.data.inactivite_minutes ?? 15));
     setDelaiVisa(String(page.data.delais?.visa_acte_jours ?? 2));
     setDelaiHierarchie(String(page.data.delais?.validation_hierarchie_jours ?? 3));
@@ -158,8 +162,13 @@ export function ParametresScreen() {
 
   async function enregistrerIdentite() {
     const nomNettoye = nom.trim();
+    const matriculeNettoye = matricule.trim();
     if (nomNettoye && !civilite) {
       setErreurIdentite("Choisissez la civilité.");
+      return;
+    }
+    if (nomNettoye && !matriculeNettoye) {
+      setErreurIdentite("Indiquez le matricule du ministre.");
       return;
     }
     setEnCours(true);
@@ -170,9 +179,9 @@ export function ParametresScreen() {
         () =>
           api<Parametres>("/api/v1/parametres/identite/", {
             method: "POST",
-            body: JSON.stringify({ civilite, nom: nomNettoye }),
+            body: JSON.stringify({ civilite, nom: nomNettoye, matricule: matriculeNettoye }),
           }),
-        { success: { title: "Identité enregistrée", message: "La civilité et le nom sont publiés sur le portail." } },
+        { success: { title: "Identité enregistrée", message: "Le compte du ministre est à jour dans la gestion des utilisateurs." } },
       );
       client.setQueryData(["parametres"], reponse);
       await client.invalidateQueries({ queryKey: ["accueil"] });
@@ -260,6 +269,7 @@ export function ParametresScreen() {
                   {data.civilite || data.nom
                     ? [data.civilite, data.nom].filter(Boolean).join(" ")
                     : "Aucune identité n'est encore enregistrée."}
+                  {data.matricule ? ` Matricule ${data.matricule}.` : ""}
                   {" "}
                   {visible ? "Portrait en vigueur." : "Aucun portrait n'est encore déposé."}
                   {" "}
@@ -268,7 +278,7 @@ export function ParametresScreen() {
               ) : (
                 <>
                   <form
-                    className="grid gap-4 sm:grid-cols-[12rem_minmax(0,1fr)_auto] sm:items-end"
+                    className="grid gap-4 sm:grid-cols-2 lg:grid-cols-[12rem_minmax(0,1fr)_12rem_auto] lg:items-end"
                     onSubmit={(event) => {
                       event.preventDefault();
                       void enregistrerIdentite();
@@ -299,11 +309,25 @@ export function ParametresScreen() {
                         onChange={(event) => setNom(event.target.value)}
                       />
                     </label>
+                    <label className="block space-y-1.5">
+                      <span className="font-label-sm text-label-sm text-on-surface-variant">Matricule</span>
+                      <input
+                        className={CHAMP}
+                        value={matricule}
+                        maxLength={150}
+                        disabled={enCours || !data}
+                        autoComplete="off"
+                        onChange={(event) => setMatricule(event.target.value)}
+                      />
+                    </label>
                     <button type="submit" className={BOUTON_PRIMAIRE} disabled={enCours || !data}>
                       Enregistrer l'identité
                     </button>
+                    <p className="sm:col-span-2 lg:col-span-4 font-body-sm text-body-sm text-on-surface-variant">
+                      Ce matricule ouvre le compte du ministre dans la gestion des utilisateurs. Il se change ici, tant que le matricule définitif n'est pas connu.
+                    </p>
                     {erreurIdentite ? (
-                      <p className="sm:col-span-3 font-body-sm text-body-sm text-error" role="alert">{erreurIdentite}</p>
+                      <p className="sm:col-span-2 lg:col-span-4 font-body-sm text-body-sm text-error" role="alert">{erreurIdentite}</p>
                     ) : null}
                   </form>
                   <div className="space-y-2">
@@ -434,6 +458,8 @@ export function ParametresScreen() {
         <SectionSignataire peutModifier={Boolean(data?.peut_modifier)} pret={Boolean(data)} enregistre={data?.signataire?.matricule ?? ""} />
 
         <SectionCouleurs peutModifier={Boolean(data?.peut_modifier)} pret={Boolean(data)} />
+
+        <CarteHorsLigne />
       </div>
     </AppChrome>
   );
@@ -455,7 +481,7 @@ function SectionCouleurs({ peutModifier, pret }: { peutModifier: boolean; pret: 
   const valides = couleurValide(brouillon.principale) && couleurValide(brouillon.accent);
   const modifiees = brouillon.principale !== reference.principale || brouillon.accent !== reference.accent;
   const parDefaut = brouillon.principale === COULEURS_DEFAUT.principale && brouillon.accent === COULEURS_DEFAUT.accent;
-  const tropClaire = couleurValide(brouillon.principale) && contraste(brouillon.principale, "#FFFFFF") < 4.5;
+  const tropClaire = principaleAjustee(brouillon.principale);
 
   useEffect(() => {
     if (enregistrees.data) setBrouillon(enregistrees.data);
@@ -563,7 +589,7 @@ function SectionCouleurs({ peutModifier, pret }: { peutModifier: boolean; pret: 
 
         {tropClaire ? (
           <p className="font-body-sm text-body-sm text-on-surface" role="status">
-            La couleur principale est claire : les liens et titres qui la portent seront difficiles à lire sur fond blanc. Une teinte plus foncée est conseillée.
+            Cette couleur principale est trop claire pour porter du texte. L'application l'assombrit automatiquement (boutons, liens, titres, barre latérale) afin que tout reste lisible. Une teinte plus foncée rendra exactement la couleur choisie.
           </p>
         ) : null}
 

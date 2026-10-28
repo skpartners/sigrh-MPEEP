@@ -1,3 +1,4 @@
+import { Chargement } from "../../ui/Chargement";
 import type { ReactNode } from "react";
 import { Icone } from "../../ui/Icone";
 import { nombre } from "../../ui/format";
@@ -37,7 +38,7 @@ export function PageGrh({ rubrique, titre, resume, actions, children, chargement
             {actions ? <div className="flex flex-wrap gap-2">{actions}</div> : null}
           </div>
         </section>
-        {chargement ? <p className="text-on-surface-variant">Chargement…</p> : erreur ? <p role="alert" className="text-error">{erreur}</p> : children}
+        {chargement ? <Chargement libelle="Chargement…" /> : erreur ? <p role="alert" className="text-error">{erreur}</p> : children}
       </div>
     </AppChrome>
   );

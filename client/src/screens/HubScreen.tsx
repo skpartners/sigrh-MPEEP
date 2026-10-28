@@ -231,7 +231,7 @@ export function CarteModule({
       <div className={`absolute -top-8 -right-8 w-32 h-32 rounded-full ${accent.tache} blur-3xl pointer-events-none`} aria-hidden="true" />
 
       {/* Contenu principal */}
-      <div className="relative z-10 flex flex-col flex-1 gap-3">
+      <div className={`relative z-10 flex flex-col flex-1 gap-3 ${autorise ? "" : "opacity-60"}`}>
 
         {/* Ligne 1 : icône + badge */}
         <div className="flex items-start justify-between gap-3">
@@ -276,9 +276,9 @@ export function CarteModule({
       {!autorise ? (
         <div className="relative z-10 mt-auto pt-4">
           <div className="border-t border-hairline/60 mb-3" />
-          <span className="flex items-center justify-between gap-2 w-full px-4 py-2.5 rounded-xl font-label-md text-label-md bg-surface-container/50 text-on-surface-variant border border-hairline/40">
+          <span className={`flex items-center justify-between gap-2 w-full px-4 py-2.5 rounded-xl font-label-md text-label-md font-semibold border ${bientot ? "bg-surface-container/50 text-on-surface-variant border-hairline/40" : "bg-error-container text-error border-error/40"}`}>
             <span>{bientot ? "Bientôt disponible" : "Hors de votre habilitation"}</span>
-            <Icone nom={bientot ? "construction" : "lock"} className="text-base opacity-50 shrink-0" />
+            <Icone nom={bientot ? "construction" : "lock"} className={`text-base shrink-0 ${bientot ? "opacity-50" : ""}`} />
           </span>
         </div>
       ) : null}
@@ -289,7 +289,7 @@ export function CarteModule({
 
   if (!autorise) {
     return (
-      <article aria-disabled="true" title={bientot ? "Bientôt disponible" : "Hors de votre habilitation"} className={`${classe} opacity-60`}>
+      <article aria-disabled="true" title={bientot ? "Bientôt disponible" : "Hors de votre habilitation"} className={classe}>
         {corps}
       </article>
     );

@@ -1,3 +1,4 @@
+import { Chargement } from "../ui/Chargement";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEvent, type ReactNode } from "react";
 import { api, televerser } from "../api/client";
@@ -7,6 +8,7 @@ import { reducedMotion } from "../ui/Motion";
 import { useIntervalle, useTempsReel } from "../ui/TempsReel";
 import { Icone } from "../ui/Icone";
 import { Coches, EnregistreurVocal, PieceBulle, taille } from "./MessagerieMedias";
+import { correspond } from "../ui/recherche";
 
 const CLE_LISTE = ["messagerie"];
 const cleFil = (id: number) => ["messagerie", "fil", id];
@@ -250,7 +252,7 @@ export function MessagerieBouton() {
             <span className="font-label-sm text-label-sm text-on-surface-variant">{nonLus ? `${nonLus} non lu${nonLus > 1 ? "s" : ""}` : "Tout est lu"}</span>
           </div>
           <ul className="max-h-80 overflow-y-auto overscroll-contain">
-            {liste.isPending ? <li className="px-4 py-6 text-center font-body-sm text-body-sm text-on-surface-variant">Chargement…</li> : null}
+            {liste.isPending ? <li><Chargement enLigne libelle="Chargement…" /></li> : null}
             {liste.isError ? <li className="px-4 py-6 text-center font-body-sm text-body-sm text-error" role="alert">La messagerie est indisponible.</li> : null}
             {liste.data && apercu.length === 0 ? (
               <li className="px-4 py-6 text-center font-body-sm text-body-sm text-on-surface-variant">Aucune conversation pour l'instant.</li>
@@ -313,7 +315,7 @@ function VueListe({ onOuvrir, onNouveau }: { onOuvrir: (id: number) => void; onN
 
   const q = filtre.trim().toLowerCase();
   const conversations = (liste.data?.conversations ?? []).filter(
-    (c) => !q || c.titre.toLowerCase().includes(q) || c.interlocuteurs.some((p) => p.fonction.toLowerCase().includes(q)),
+    (c) => !q || correspond(c.titre, q) || c.interlocuteurs.some((p) => correspond(p.fonction, q)),
   );
 
   return (
@@ -343,7 +345,7 @@ function VueListe({ onOuvrir, onNouveau }: { onOuvrir: (id: number) => void; onN
         </span>
       </label>
       <ul className="flex-1 overflow-y-auto overscroll-contain py-2" aria-label="Conversations">
-        {liste.isPending ? <li className="px-4 py-6 text-center font-body-sm text-body-sm text-on-surface-variant">Chargement…</li> : null}
+        {liste.isPending ? <li><Chargement enLigne libelle="Chargement…" /></li> : null}
         {liste.isError ? (
           <li className="px-4 py-6 text-center" role="alert">
             <p className="font-label-lg text-label-lg text-error">La messagerie est indisponible.</p>
@@ -756,7 +758,7 @@ function VueFil({ id, onRetour }: { id: number; onRetour: () => void }) {
         avatar={conversation ? <Avatar conversation={conversation} taille="w-9 h-9" /> : null}
       />
       <ol ref={defilement} role="log" aria-live="polite" aria-label="Messages" className="flex-1 overflow-y-auto overscroll-contain px-3 py-3 space-y-1.5 bg-background">
-        {fil.isPending ? <li className="py-6 text-center font-body-sm text-body-sm text-on-surface-variant">Chargement…</li> : null}
+        {fil.isPending ? <li><Chargement enLigne libelle="Chargement…" /></li> : null}
         {fil.isError ? (
           <li className="py-6 text-center" role="alert">
             <p className="font-label-lg text-label-lg text-error">Ce fil n'a pas pu être chargé.</p>

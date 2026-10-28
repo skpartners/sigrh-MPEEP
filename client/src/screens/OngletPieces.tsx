@@ -1,6 +1,9 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useRef, useState, type DragEvent, type ReactNode } from "react";
-import { ApiError, api, mediaUrl, telecharger } from "../api/client";
+import { ApiError, mediaUrl, telecharger } from "../api/client";
+import { annoncerAttente } from "../hors-ligne/dossier";
+import { apiHorsLigne } from "../hors-ligne/envoi";
+import { useFeedback } from "../ui/Feedback";
 import type { Dossier } from "../api/types";
 import { dateCourte } from "../ui/format";
 import { BOUTON_PRIMAIRE, BOUTON_SECONDAIRE, Modale } from "../ui/Modale";
@@ -363,16 +366,22 @@ function DepotPiece({ agent, onClose, onEnregistre }: {
   const [acte, setActe] = useState(agent.types_actes[0]?.libelle ?? "");
   const [fichier, setFichier] = useState<File | null>(null);
   const [survole, setSurvole] = useState(false);
+  const feedback = useFeedback();
+  const client = useQueryClient();
   const depot = useMutation({
     mutationFn: async () => {
       const corps = new FormData();
       corps.set("intitule", acte);
       corps.set("categorie", acte);
       if (fichier) corps.set("fichier", fichier);
-      return api<Dossier>(`/api/v1/agents/${encodeURIComponent(agent.matricule)}/pieces/`, { method: "POST", body: corps });
+      // Hors ligne, la pièce reste chiffrée sur l'appareil et part, pour analyse antivirus, au retour de la connexion.
+      return apiHorsLigne<Dossier>(`/api/v1/agents/${encodeURIComponent(agent.matricule)}/pieces/`, { corps, libelle: `Pièce versée : ${acte}`, capacite: "fichier" });
     },
-    onSuccess: (dossier) => {
-      onEnregistre(dossier);
+    onSuccess: (resultat) => {
+      if (resultat.enAttente) {
+        annoncerAttente(feedback, resultat.action);
+        void client.invalidateQueries({ queryKey: ["agent", agent.matricule] });
+      } else onEnregistre(resultat.reponse);
       onClose();
     },
   });

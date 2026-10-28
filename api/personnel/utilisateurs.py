@@ -9,7 +9,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from .effectifs import _ligne_structure
-from .models import EntiteTutelle, ModuleHabilitation, Organisme, Profil, RoleMatrice
+from .models import Agent, EntiteTutelle, ModuleHabilitation, Organisme, Profil, RoleMatrice
 from .roles import ROLE_SECRETAIRE, ROLES_SIMPLES
 
 NIVEAUX = ("refus", "lecture", "saisie", "validation")
@@ -20,8 +20,30 @@ def _texte(valeur) -> str:
     return str(valeur or "").strip()
 
 
+def _structure_effective(profil: Profil):
+    """La structure du compte : celle de son profil, sinon celle de son dossier d'agent.
+
+    Un compte ouvert à partir de l'effectif n'a pas toujours reçu sa structure : le dossier de l'agent (service,
+    sous-direction, direction) la porte déjà. Sans ce repli, la liste des comptes déclarerait « sans structure »
+    un agent dont le rattachement est connu.
+    """
+    if profil.structure_id:
+        return profil.structure
+    from .rattachement import structure_de, structures_par_nom
+
+    agents = _retenu(
+        "agents_par_matricule",
+        lambda: {agent.matricule: agent for agent in Agent.objects.only("matricule", "service", "sous_direction", "direction", "structure")},
+    )
+    agent = agents.get(profil.user.username)
+    if agent is None:
+        return None
+    return structure_de(agent, _retenu("structures_par_nom", structures_par_nom))
+
+
 def _ligne(user: User, courant: User) -> dict:
     profil = user.profil
+    structure = _structure_effective(profil)
     return {
         "matricule": user.username,
         "nom": user.last_name,
@@ -33,13 +55,13 @@ def _ligne(user: User, courant: User) -> dict:
         "organisme": profil.organisme.code,
         "organisme_nom": profil.organisme.nom,
         "organisme_sigle": profil.organisme.sigle,
-        "structure": profil.structure.code if profil.structure_id else "",
-        "structure_nom": profil.structure.nom if profil.structure_id else "",
-        "pole": profil.structure.pole.code if profil.structure_id else "",
-        "pole_libelle": profil.structure.pole.nom if profil.structure_id else "",
+        "structure": structure.code if structure else "",
+        "structure_nom": structure.nom if structure else "",
+        "pole": structure.pole.code if structure else "",
+        "pole_libelle": structure.pole.nom if structure else "",
         "superieur": profil.superieur.username if profil.superieur_id else "",
         "superieur_nom": profil.superieur.get_full_name() if profil.superieur_id else "",
-        "alerte": _alerte_hierarchie(profil),
+        "alerte": _alerte_hierarchie(profil, structure),
         "interim": _interim(profil),
         "interimaire": profil.interim.code if profil.interim_id else "",
         "interimaire_nom": profil.interim.nom if profil.interim_id else "",
@@ -230,9 +252,9 @@ def _role_responsable(structure) -> str:
     return "Directeur"
 
 
-def _alerte_hierarchie(profil: Profil) -> str:
+def _alerte_hierarchie(profil: Profil, structure=None) -> str:
     """Signale un compte déjà enregistré qui ne suit pas le rattachement hiérarchique."""
-    structure = profil.structure
+    structure = structure or profil.structure
     if structure is None:
         return "Ce compte n'est rattaché à aucune structure."
     if profil.role not in ROLES_SIMPLES and profil.role != _role_responsable(structure):
@@ -798,11 +820,17 @@ def acces_menu(profil: Profil) -> dict:
     modules = _modules()
     droits = _effectives(profil)
     resolues = _precisions_resolues(profil)
+
+    def droit_module(index: int, module: ModuleHabilitation) -> str:
+        """Le niveau d'un module est celui dont héritent ses rubriques ; si toutes sont refusées, le module l'est aussi."""
+        droit = droits[index] if index < len(droits) else "refus"
+        fonctions = list(module.fonctions.all())
+        if fonctions and all(resolues.get(str(fonction.pk), droit) == "refus" for fonction in fonctions):
+            return "refus"
+        return droit
+
     return {
-        "modules": {
-            module.libelle: droits[index] if index < len(droits) else "refus"
-            for index, module in enumerate(modules)
-        },
+        "modules": {module.libelle: droit_module(index, module) for index, module in enumerate(modules)},
         "fonctions": {
             f"{module.libelle}|{fonction.libelle}": resolues.get(
                 str(fonction.pk), droits[index] if index < len(droits) else "refus"

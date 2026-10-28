@@ -1,8 +1,6 @@
 @import "tailwindcss";
-@import "@fontsource/plus-jakarta-sans/400.css";
-@import "@fontsource/plus-jakarta-sans/500.css";
-@import "@fontsource/plus-jakarta-sans/600.css";
-@import "@fontsource/plus-jakarta-sans/700.css";
+@import "@fontsource-variable/hanken-grotesk/wght.css";
+@import "@fontsource-variable/bricolage-grotesque/opsz.css";
 
 /* Écrans peu hauts : la connexion se resserre. Seuils en em, donc relatifs à la taille de police
    choisie dans le navigateur ; le zoom, lui, réduit déjà la hauteur utile en px CSS. */
@@ -13,13 +11,17 @@
      dans md et lg, même si le navigateur arrondit ou si la police par défaut est un peu plus grande. */
   --breakpoint-md: 47.5rem;
   --breakpoint-lg: 63.5rem;
-  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
-  --font-headline-xl: var(--font-sans);
-  --font-headline-xl-mobile: var(--font-sans);
-  --font-headline-lg: var(--font-sans);
-  --font-headline-lg-mobile: var(--font-sans);
-  --font-headline-md: var(--font-sans);
-  --font-headline-sm: var(--font-sans);
+  /* Deux voix : Bricolage Grotesque porte les titres et les grands chiffres (caractère, dessin
+     optique qui s'affine avec la taille) ; Hanken Grotesk porte tout le reste, sobre et très lisible
+     en petit corps, chiffres tabulaires pour les colonnes. Deux polices variables, deux fichiers. */
+  --font-sans: "Hanken Grotesk Variable", ui-sans-serif, system-ui, "Segoe UI", sans-serif;
+  --font-display: "Bricolage Grotesque Variable", "Hanken Grotesk Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-headline-xl: var(--font-display);
+  --font-headline-xl-mobile: var(--font-display);
+  --font-headline-lg: var(--font-display);
+  --font-headline-lg-mobile: var(--font-display);
+  --font-headline-md: var(--font-display);
+  --font-headline-sm: var(--font-display);
   --font-body-lg: var(--font-sans);
   --font-body-md: var(--font-sans);
   --font-body-sm: var(--font-sans);
@@ -30,29 +32,33 @@
 
   /* Titres fluides : taille téléphone jusqu'à 40rem de large, taille bureau à partir de 80rem. */
   --text-headline-xl: clamp(1.75rem, 1.25rem + 1.25vw, 2.25rem);
-  --text-headline-xl--line-height: 1.22;
+  --text-headline-xl--line-height: 1.15;
+  --text-headline-xl--letter-spacing: -0.025em;
   --text-headline-xl--font-weight: 700;
   --text-headline-xl-mobile: 1.75rem;
   --text-headline-xl-mobile--line-height: 2.25rem;
   --text-headline-xl-mobile--font-weight: 700;
   --text-headline-lg: clamp(1.5rem, 1.125rem + 0.9375vw, 1.875rem);
-  --text-headline-lg--line-height: 1.27;
+  --text-headline-lg--line-height: 1.2;
+  --text-headline-lg--letter-spacing: -0.02em;
   --text-headline-lg--font-weight: 700;
   --text-headline-lg-mobile: 1.5rem;
   --text-headline-lg-mobile--line-height: 2rem;
   --text-headline-lg-mobile--font-weight: 700;
   --text-headline-md: clamp(1.25rem, 1.125rem + 0.3125vw, 1.375rem);
-  --text-headline-md--line-height: 1.27;
-  --text-headline-md--font-weight: 600;
+  --text-headline-md--line-height: 1.25;
+  --text-headline-md--letter-spacing: -0.015em;
+  --text-headline-md--font-weight: 650;
   --text-headline-sm: 1.125rem;
   --text-headline-sm--line-height: 1.5rem;
-  --text-headline-sm--font-weight: 600;
+  --text-headline-sm--letter-spacing: -0.01em;
+  --text-headline-sm--font-weight: 650;
   --text-body-lg: 1rem;
-  --text-body-lg--line-height: 1.5rem;
+  --text-body-lg--line-height: 1.6rem;
   --text-body-md: 0.875rem;
-  --text-body-md--line-height: 1.25rem;
+  --text-body-md--line-height: 1.35rem;
   --text-body-sm: 0.8125rem;
-  --text-body-sm--line-height: 1.125rem;
+  --text-body-sm--line-height: 1.2rem;
   --text-label-lg: 0.875rem;
   --text-label-lg--line-height: 1.25rem;
   --text-label-lg--font-weight: 600;
@@ -169,6 +175,10 @@ body {
   background-attachment: fixed;
   color: var(--color-on-surface);
   font-family: var(--font-sans);
+  font-optical-sizing: auto;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* Chiffres tabulaires : matricules, soldes, dates et KPI s'alignent en colonne (DESIGN.md). */
@@ -176,6 +186,19 @@ table,
 .font-code-num,
 [class*="text-headline-"] {
   font-variant-numeric: tabular-nums;
+}
+
+/* Titres équilibrés (pas de mot seul sur la dernière ligne), paragraphes sans veuve. */
+@layer base {
+  h1,
+  h2,
+  h3,
+  [class*="text-headline-"] {
+    text-wrap: balance;
+  }
+  p {
+    text-wrap: pretty;
+  }
 }
 
 /* Surfaces navigateur aux couleurs de la palette. */
@@ -246,8 +269,34 @@ input[type="checkbox"]:focus-visible {
   100% { opacity: 1; transform: none; }
 }
 @keyframes toast-in {
-  from { opacity: 0; transform: translate3d(18px, 8px, 0) scale(0.96); }
-  to   { opacity: 1; transform: none; }
+  from { opacity: 0; filter: blur(5px); transform: translate3d(24px, 10px, 0) scale(0.94); }
+  to   { opacity: 1; filter: blur(0); transform: none; }
+}
+@keyframes toast-pop {
+  0%   { opacity: 0; transform: scale(0.35) rotate(-14deg); }
+  62%  { opacity: 1; transform: scale(1.14) rotate(3deg); }
+  100% { opacity: 1; transform: none; }
+}
+@keyframes toast-trace {
+  to { stroke-dashoffset: 0; }
+}
+@keyframes orbite-tour {
+  to { transform: rotate(360deg); }
+}
+@keyframes orbite-contre {
+  to { transform: rotate(-360deg); }
+}
+@keyframes orbite-halo {
+  0%, 100% { opacity: 0.45; transform: scale(0.86); }
+  50%      { opacity: 0.9;  transform: scale(1.06); }
+}
+@keyframes orbite-sceau {
+  0%, 100% { transform: scale(0.94); }
+  50%      { transform: scale(1.03); }
+}
+@keyframes points-saut {
+  0%, 80%, 100% { transform: translateY(0); opacity: 0.35; }
+  40%           { transform: translateY(-0.28em); opacity: 1; }
 }
 @keyframes toast-out {
   to { opacity: 0; transform: translate3d(28px, 0, 0) scale(0.97); }
@@ -377,9 +426,118 @@ input[type="checkbox"]:focus-visible {
   position: absolute;
   inset: auto 0 0 0;
   height: 3px;
-  opacity: 0.55;
+  opacity: 0.7;
   transform-origin: left;
   animation: toast-progress linear forwards;
+}
+/* Notification : carte claire lavée de la teinte du message (--ton), médaillon à l'icône animée.
+   Pas de filet coloré sur le côté : la teinte vit dans le médaillon, le lavis et la barre de temps. */
+.toast {
+  --ton: var(--color-primary);
+  background:
+    radial-gradient(120% 140% at 0% 0%, color-mix(in oklab, var(--ton) 11%, transparent) 0%, transparent 62%),
+    var(--color-surface-container-lowest);
+  box-shadow:
+    0 1px 0 rgb(255 255 255 / 0.8) inset,
+    0 2px 4px -1px rgb(11 28 48 / 0.08),
+    0 18px 36px -14px rgb(11 28 48 / 0.32);
+}
+.toast-medaillon {
+  background: color-mix(in oklab, var(--ton) 14%, #fff);
+  color: color-mix(in oklab, var(--ton) 80%, #000);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--ton) 24%, transparent);
+  animation: toast-pop 560ms var(--ease-out) 90ms both;
+}
+.toast-trace {
+  stroke-dasharray: 26;
+  stroke-dashoffset: 26;
+  animation: toast-trace 460ms var(--ease-out) 280ms forwards;
+}
+
+/* ------------------------------------------------------------------ */
+/* Chargement : l'orbite. Le sceau de l'application au centre, deux    */
+/* arcs qui tournent en sens contraire et un halo à la teinte d'accent.*/
+/* ------------------------------------------------------------------ */
+.orbite {
+  --t: 5rem;
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: var(--t);
+  height: var(--t);
+  flex-shrink: 0;
+}
+.orbite::before {
+  content: "";
+  position: absolute;
+  inset: -22%;
+  border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in oklab, var(--color-secondary-container) 85%, transparent) 0%, transparent 68%);
+  animation: orbite-halo 2.6s var(--ease-in-out) infinite;
+}
+.orbite-arcs {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.orbite-piste { stroke: color-mix(in oklab, var(--color-primary) 12%, transparent); }
+.orbite-tour {
+  transform-origin: 50% 50%;
+  animation: orbite-tour 1.5s cubic-bezier(0.45, 0.1, 0.35, 0.9) infinite;
+}
+.orbite-contre {
+  transform-origin: 50% 50%;
+  animation: orbite-contre 2.4s linear infinite;
+}
+.orbite-sceau {
+  position: relative;
+  width: 56%;
+  height: 56%;
+  object-fit: contain;
+  border-radius: 50%;
+  animation: orbite-sceau 2.2s var(--ease-in-out) infinite;
+}
+.orbite-petit { --t: 1.5rem; }
+.orbite-petit::before { display: none; }
+/* Trois points qui sautent, à la suite d'un libellé. */
+.points-attente {
+  display: inline-flex;
+  gap: 0.18em;
+  margin-left: 0.2em;
+}
+.points-attente > i {
+  width: 0.28em;
+  height: 0.28em;
+  border-radius: 50%;
+  background: currentColor;
+  animation: points-saut 1.2s var(--ease-in-out) infinite;
+}
+.points-attente > i:nth-child(2) { animation-delay: 0.15s; }
+.points-attente > i:nth-child(3) { animation-delay: 0.3s; }
+/* Barre d'attente de la fenêtre de traitement : deux vagues qui se croisent. */
+.attente-piste {
+  position: relative;
+  height: 0.25rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--color-primary) 10%, transparent);
+}
+.attente-piste::before,
+.attente-piste::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 38%;
+  border-radius: inherit;
+  animation: indeterminate 1.5s var(--ease-in-out) infinite;
+}
+.attente-piste::before { background: var(--color-primary); }
+.attente-piste::after {
+  background: var(--color-tertiary);
+  opacity: 0.55;
+  animation-delay: 0.35s;
 }
 /* Barre de chargement globale. */
 .chargement-haut {
@@ -403,8 +561,8 @@ input[type="checkbox"]:focus-visible {
   width: 100%;
   transform-origin: left;
   border-radius: 0 3px 3px 0;
-  background: linear-gradient(90deg, var(--color-secondary-container), var(--color-primary));
-  box-shadow: 0 0 10px color-mix(in oklab, var(--color-primary) 55%, transparent);
+  background: linear-gradient(90deg, var(--color-tertiary), var(--color-primary));
+  box-shadow: 0 1px 8px color-mix(in oklab, var(--color-primary) 45%, transparent);
   transition: transform 260ms linear;
 }
 .motion-spin {
@@ -795,6 +953,19 @@ a[class*="rounded"]:active {
     width: 100%;
     animation: none;
   }
+  /* L'orbite reste visible, sans rotation : les points et les barres se figent. */
+  .orbite::before,
+  .orbite-tour,
+  .orbite-contre,
+  .orbite-sceau,
+  .points-attente > i,
+  .attente-piste::before,
+  .attente-piste::after {
+    animation: none !important;
+  }
+  .attente-piste::before { width: 100%; }
+  .attente-piste::after { display: none; }
+  .orbite-tour { transform: rotate(40deg); }
 }
 
 /* ------------------------------------------------------------------ */

@@ -9,6 +9,7 @@ import { AppChrome } from "../AppChrome";
 import { dateFr } from "../dossier-onglets/commun";
 import { aModeleActe } from "../dossier-onglets/ModelesActes";
 import { CLE_SECRETARIAT, type LigneSecretariat } from "./types";
+import { correspond } from "../../ui/recherche";
 
 const PAGE = "w-full px-4 sm:px-6 lg:px-8 py-6 mx-auto flex-1 space-y-6";
 
@@ -45,7 +46,7 @@ export function SecretariatScreen() {
   const visibles = demandes.filter(
     (item) =>
       (filtre === "toutes" || item.statut === filtre) &&
-      (!terme || [item.reference, item.nature, item.agent.nom_complet, item.agent.matricule].some((texte) => texte.toLowerCase().includes(terme))),
+      (!terme || [item.reference, item.nature, item.agent.nom_complet, item.agent.matricule].some((texte) => correspond(texte, terme))),
   );
 
   return (

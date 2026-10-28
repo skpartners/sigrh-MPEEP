@@ -4,6 +4,7 @@ import { useFeedback } from "../ui/Feedback";
 import { useState } from "react";
 import { ApiError, api, telecharger } from "../api/client";
 import type { Dossier, SessionUser } from "../api/types";
+import { apiHorsLigne } from "../hors-ligne/envoi";
 import { dateCourte } from "../ui/format";
 import { Icone } from "../ui/Icone";
 import { ApercuFichier, telechargerFichier } from "../ui/ApercuFichier";
@@ -132,12 +133,18 @@ function FormulaireDemande({ agent, types, onClose }: { agent: Dossier; types: T
       corps.set("debut", debut);
       corps.set("fin", fin);
       if (justificatif) corps.set("justificatif", justificatif);
-      const dossier = await feedback.run(
+      // Hors ligne, la demande (justificatif compris) est gardée chiffrée sur l'appareil et part au retour de la connexion.
+      const resultat = await feedback.run(
         "Transmission de la demande…",
-        () => api<Dossier>(`/api/v1/agents/${encodeURIComponent(agent.matricule)}/actes-demandes/`, { method: "POST", body: corps }),
-        { success: { title: "Demande transmise", message: "Elle est entrée dans le circuit, au visa de votre chef de service." }, error: "La demande n’a pas été transmise." },
+        () => apiHorsLigne<Dossier>(`/api/v1/agents/${encodeURIComponent(agent.matricule)}/actes-demandes/`, { capacite: "acte", corps, libelle: `Demande d’acte : ${(type?.libelle ?? "acte administratif").toLowerCase()}` }),
+        { error: "La demande n’a pas été transmise." },
       );
-      client.setQueryData(["agent", agent.matricule], dossier);
+      if (resultat.enAttente) {
+        feedback.toast("Demande enregistrée hors ligne", "Elle sera transmise au circuit dès le retour de la connexion.", "info");
+      } else {
+        feedback.toast("Demande transmise", "Elle est entrée dans le circuit, au visa de votre chef de service.");
+        client.setQueryData(["agent", agent.matricule], resultat.reponse);
+      }
       void client.invalidateQueries({ queryKey: ["agent", agent.matricule] });
       void client.invalidateQueries({ queryKey: ["demandes-actes"] });
       setCode("");

@@ -3,6 +3,7 @@ import { dateCourte, nombre } from "../../ui/format";
 import { useAction } from "../../ui/useAction";
 import type { Prestataire, TableauFormation } from "./types";
 import { BOUTON_ICONE, BOUTON_PRIMAIRE, Badge, CARTE, Case, DateChamp, EnTeteSection, Liste, Modale, Texte, Vide, messageErreur, useEnregistrement } from "./ui";
+import { ouvreAuClic } from "../../ui/clicLigne";
 import { Icone } from "../../ui/Icone";
 
 const CATEGORIES = [
@@ -51,7 +52,7 @@ export function Prestataires({ data }: { data: TableauFormation }) {
       ) : (
         <ul className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-4">
           {liste.map((p) => (
-            <li key={p.id} className={`${CARTE} motion-content p-5 flex flex-col gap-3 ${p.actif ? "" : "opacity-70"}`}>
+            <li key={p.id} title={`Modifier ${p.nom}`} onClick={ouvreAuClic(() => setEdition(p))} className={`cursor-pointer ${CARTE} motion-content p-5 flex flex-col gap-3 hover:bg-surface-container-low/70 ${p.actif ? "" : "opacity-70"}`}>
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <p className="font-label-sm text-label-sm text-primary font-semibold">{p.categorie_libelle}</p>

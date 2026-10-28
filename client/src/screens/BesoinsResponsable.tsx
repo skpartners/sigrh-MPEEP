@@ -1,7 +1,9 @@
+import { Chargement } from "../ui/Chargement";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { ApiError, api, telecharger, type ErreurLigne } from "../api/client";
 import { dateCourte, nombre } from "../ui/format";
+import { ouvreAuClic } from "../ui/clicLigne";
 import { useFeedback } from "../ui/Feedback";
 import { Icone } from "../ui/Icone";
 import { Modale } from "../ui/Modale";
@@ -120,7 +122,7 @@ export function BesoinsResponsable() {
   const fiches = donnees && donnees.responsable ? donnees.fiches : [];
   const page = usePagination(fiches, String(fiches.length));
 
-  if (requete.isLoading) return <p className="text-on-surface-variant">Chargement…</p>;
+  if (requete.isLoading) return <Chargement libelle="Chargement…" />;
   if (!donnees || !donnees.responsable) return <p className={`${CARTE} text-on-surface-variant`}>Cet espace est réservé aux gestionnaires RH.</p>;
 
   const campagne = donnees.campagne;
@@ -185,7 +187,7 @@ export function BesoinsResponsable() {
               {fiches.length === 0 ? (
                 <tr><td colSpan={6} className="py-6 text-on-surface-variant">{campagne ? "Vous n'avez pas encore exprimé de besoin." : "Aucun appel n'a été lancé."}</td></tr>
               ) : page.visibles.map((f) => (
-                <tr key={f.reference} className="border-b border-hairline text-on-surface align-top">
+                <tr key={f.reference} title={saisissable ? `Modifier ${f.profil}` : undefined} onClick={saisissable ? ouvreAuClic(() => setEdition(f)) : undefined} className={`border-b border-hairline text-on-surface align-top ${saisissable ? "cursor-pointer hover:bg-surface-container-low/70" : ""}`}>
                   <td className="py-3 pr-4">{f.entite.nom}</td>
                   <td className="py-3 pr-4"><span className="block font-semibold">{f.emploi.libelle}{f.grade ? ` · ${f.grade}` : ""}</span>{f.motif ? <span className="block text-on-surface-variant">{f.motif}</span> : null}</td>
                   <td className="py-3 pr-4 text-right">{nombre(f.fonctionnaires)}</td>

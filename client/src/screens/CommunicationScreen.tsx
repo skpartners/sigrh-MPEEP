@@ -1,3 +1,4 @@
+import { Chargement } from "../ui/Chargement";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState, type CSSProperties, type ReactNode } from "react";
 import { Link } from "react-router-dom";
@@ -47,6 +48,7 @@ type Tableau = {
     communiques: number;
     decisions: number;
     flashs: number;
+    evenements: number;
     ce_mois: number;
     taux_lecture: number;
     objectif: number;
@@ -212,7 +214,7 @@ export function CommunicationScreen() {
 
         {indicateurs && (
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-            <Carte index={0} libelle="Publications actives" valeur={nombre(indicateurs.actives)} detail={`${indicateurs.notes} notes · ${indicateurs.circulaires} circulaires · ${indicateurs.communiques + indicateurs.decisions + indicateurs.flashs} autres`} droite={`+${indicateurs.ce_mois} ce mois`} icone="library_books" />
+            <Carte index={0} libelle="Publications actives" valeur={nombre(indicateurs.actives)} detail={`${indicateurs.notes} notes · ${indicateurs.circulaires} circulaires · ${indicateurs.evenements} événements · ${indicateurs.communiques + indicateurs.decisions + indicateurs.flashs} autres`} droite={`+${indicateurs.ce_mois} ce mois`} icone="library_books" />
             <Carte index={1} libelle="Taux de lecture" valeur={`${nombre(indicateurs.taux_lecture, 1)} %`} detail={`Objectif ${indicateurs.objectif} %`} droite={indicateurs.taux_lecture >= indicateurs.objectif ? "Atteint" : "Sous l'objectif"} icone="done_all" barre={indicateurs.taux_lecture} />
             <Carte index={2} libelle="Lectures" valeur={nombre(indicateurs.signes)} detail={`Sur ${nombre(indicateurs.agents)} destinataires visés`} droite={`${nombre(indicateurs.en_attente)} pas encore ouvertes`} icone="visibility" />
             <Carte index={3} libelle="Urgences actives" valeur={nombre(indicateurs.urgences)} detail={indicateurs.urgence_detail || "Aucune alerte en cours"} droite={indicateurs.echeance ? `Échéance ${dateLongue(indicateurs.echeance)}` : ""} icone="priority_high" accent />
@@ -235,7 +237,7 @@ export function CommunicationScreen() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           <div className="lg:col-span-8 space-y-4">
             <h2 className="font-headline-sm text-headline-sm text-on-surface">{nombre(liste.length)} publication{liste.length > 1 ? "s" : ""} en vigueur</h2>
-            {page.isLoading && <p className="text-on-surface-variant">Chargement du registre…</p>}
+            {page.isLoading && <Chargement libelle="Chargement du registre…" />}
             {pages.visibles.map((item) => (
               <article key={item.id} className="motion-content relative overflow-hidden rounded-lg bg-surface-container-lowest border border-hairline p-5 pl-6">
                 <span className={`absolute left-0 top-0 bottom-0 w-1.5 ${item.urgence === "urgent" ? "bg-secondary-container" : "bg-primary"}`} />

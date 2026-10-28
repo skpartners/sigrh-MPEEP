@@ -1,21 +1,9 @@
+import { purgerLecture } from "../hors-ligne/lecture";
+import { signalerCoupure } from "../hors-ligne/connexion";
+import { RACINE, TOKEN_KEY, adresseApi, apiBaseUrl } from "./adresse";
 import { attendreTache, type SuiviTache } from "./taches";
 
-const RACINE = "/sigrh";
-const BASE = (import.meta.env.DEV
-  ? (import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8101")
-  : (import.meta.env.VITE_API_BASE_URL || "")
-).replace(/\/$/, "");
-
-const TOKEN_KEY = "sigrh_token";
-
-export function apiBaseUrl(): string {
-  return BASE;
-}
-
-function adresseApi(path: string): string {
-  const chemin = path.startsWith(RACINE) ? path : `${RACINE}${path.startsWith("/") ? path : `/${path}`}`;
-  return `${BASE}${chemin}`;
-}
+export { adresseApi, apiBaseUrl };
 
 export function pageConnexion(): string {
   return `${RACINE}/connexion`;
@@ -36,6 +24,8 @@ export function setToken(token: string | null, remember = false): void {
   sessionStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem(TOKEN_KEY);
   if (token) (remember ? localStorage : sessionStorage).setItem(TOKEN_KEY, token);
+  // Plus de session : les écrans gardés pour le mode hors ligne deviennent illisibles (leur clé est détruite).
+  else void purgerLecture();
 }
 
 /** Remplace le jeton de la session en cours (après un changement de mot de passe), sur le même stockage. */
@@ -65,6 +55,13 @@ export class ApiError extends Error {
   }
 }
 
+/** Le serveur n'a pas pu être joint (pas de réponse) : à distinguer d'un refus du serveur. */
+export class ErreurReseau extends ApiError {
+  constructor() {
+    super(0, "Le serveur est injoignable : vous êtes hors ligne.");
+  }
+}
+
 export async function api<T>(path: string, options: RequestInit = {}): Promise<T> {
   const headers = new Headers(options.headers);
   headers.set("Accept", "application/json");
@@ -74,7 +71,13 @@ export async function api<T>(path: string, options: RequestInit = {}): Promise<T
   const token = getToken();
   if (token) headers.set("Authorization", `Token ${token}`);
 
-  const response = await fetch(adresseApi(path), { ...options, headers });
+  let response: Response;
+  try {
+    response = await fetch(adresseApi(path), { ...options, headers });
+  } catch {
+    signalerCoupure();
+    throw new ErreurReseau();
+  }
   // Jeton expiré ou révoqué : on repart de la connexion plutôt que de laisser l'écran en erreur.
   if (response.status === 401 && token && !path.startsWith("/api/v1/auth/")) {
     setToken(null);

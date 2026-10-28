@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { ApiError, api, telecharger } from "../../api/client";
+import { ouvreAuClic } from "../../ui/clicLigne";
 import { useFeedback } from "../../ui/Feedback";
 import type { AgentBrief, Dossier } from "../../api/types";
 import { BOUTON_PRIMAIRE, BOUTON_SECONDAIRE, Modale } from "../../ui/Modale";
@@ -12,6 +13,7 @@ import { ParcoursModal } from "./ParcoursModal";
 import { PositionsModal } from "./PositionsModal";
 import { Icone } from "../../ui/Icone";
 import { positionAffichee } from "../../ui/situation";
+import { correspond } from "../../ui/recherche";
 
 const PAGE = "w-full px-4 sm:px-6 lg:px-8 py-6 mx-auto flex-1 space-y-6";
 const TAILLE = 8;
@@ -95,14 +97,8 @@ export function SituationScreen() {
   const visibles = useMemo(() => {
     const q = filtre.trim().toLowerCase();
     return tous.filter((agent) => {
-      const correspond =
-        !q
-        || agent.nom_complet.toLowerCase().includes(q)
-        || agent.matricule.toLowerCase().includes(q)
-        || agent.organisme.toLowerCase().includes(q)
-        || agent.structure.toLowerCase().includes(q)
-        || agent.situation.toLowerCase().includes(q);
-      return correspond && (position === "toutes" || famille(agent.situation) === position);
+      const trouve = correspond(`${agent.nom_complet} ${agent.matricule} ${agent.organisme} ${agent.structure} ${agent.situation}`, q);
+      return trouve && (position === "toutes" || famille(agent.situation) === position);
     }).sort((a, b) => (a.echeance ?? "9999-12-31").localeCompare(b.echeance ?? "9999-12-31"));
   }, [tous, filtre, position]);
   const pages = Math.max(1, Math.ceil(visibles.length / TAILLE));
@@ -231,7 +227,7 @@ export function SituationScreen() {
                       ))
                     : null}
                   {lignes.map((agent) => (
-                    <tr key={agent.matricule} className={`border-t border-hairline ${agent.echeance_proche ? "bg-error-container/30 shadow-[inset_4px_0_0_var(--color-error)] hover:bg-error-container/50" : "hover:bg-surface-container-low/60"}`}>
+                    <tr key={agent.matricule} title={`Modifier la situation de ${agent.nom_complet}`} onClick={ouvreAuClic(() => setMatricule(agent.matricule))} className={`cursor-pointer border-t border-hairline ${agent.echeance_proche ? "bg-error-container/30 shadow-[inset_4px_0_0_var(--color-error)] hover:bg-error-container/50" : "hover:bg-surface-container-low/60"}`}>
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-3">
                           <Portrait agent={agent} className="w-9 h-9 rounded-full bg-primary-fixed text-on-primary-fixed font-label-md text-label-md shrink-0" />
@@ -358,7 +354,7 @@ function EditionAgent({ matricule, onClose }: { matricule: string; onClose: () =
         </>
       }
     >
-      {dossier.isError ? null : <div className="motion-indeterminate h-1 w-full overflow-hidden rounded-full bg-surface-container" />}
+      {dossier.isError ? null : <div className="attente-piste" role="status" aria-label="Chargement de la situation" />}
     </Modale>
   );
 }

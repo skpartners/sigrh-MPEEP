@@ -1,3 +1,5 @@
+import { Chargement } from "../ui/Chargement";
+import { correspond } from "../ui/recherche";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Fragment, useEffect, useMemo, useState, type CSSProperties } from "react";
 import { ApiError, api } from "../api/client";
@@ -121,24 +123,37 @@ export function UtilisateursScreen() {
 
   const data = annuaire.data;
   const visibles = useMemo(() => {
-    const terme = recherche.trim().toLowerCase();
     return (data?.utilisateurs ?? []).filter((compte) => {
-      const texte = `${compte.matricule} ${compte.nom_complet} ${compte.fonction} ${compte.courriel}`.toLowerCase();
-      return (!terme || texte.includes(terme)) && (!role || compte.role === role) && (!structure || compte.structure === structure);
+      const texte = `${compte.matricule} ${compte.nom_complet} ${compte.fonction} ${compte.courriel}`;
+      return correspond(texte, recherche) && (!role || compte.role === role) && (!structure || compte.structure === structure);
     });
   }, [data, recherche, role, structure]);
+  const arbre = useMemo(() => rangerStructures(data?.structures ?? []), [data?.structures]);
+  const places = useMemo(() => {
+    const parCode = new Map(arbre.map((ligne) => [ligne.item.code, ligne]));
+    const chemin = new Map<string, string[]>();
+    const suivre = (code: string, vus = new Set<string>()): string[] => {
+      const connu = chemin.get(code);
+      if (connu) return connu;
+      const ligne = parCode.get(code);
+      if (!ligne || vus.has(code)) return [];
+      const parents = ligne.item.parent ? suivre(ligne.item.parent, new Set(vus).add(code)) : [];
+      const noms = [...parents, ligne.item.nom];
+      chemin.set(code, noms);
+      return noms;
+    };
+    for (const ligne of arbre) suivre(ligne.item.code);
+    return { parCode, chemin };
+  }, [arbre]);
   const ordonnes = useMemo(() => {
-    const rang = new Map<string, number>();
-    for (const item of data?.structures ?? []) {
-      if (item.pole && !rang.has(item.pole)) rang.set(item.pole, rang.size);
-    }
+    const position = new Map(arbre.map(({ item }, index) => [item.code, index]));
     return [...visibles].sort((a, b) => {
-      const gauche = a.pole ? (rang.get(a.pole) ?? 500) : 1000;
-      const droite = b.pole ? (rang.get(b.pole) ?? 500) : 1000;
+      const gauche = a.structure ? (position.get(a.structure) ?? 100000) : 200000;
+      const droite = b.structure ? (position.get(b.structure) ?? 100000) : 200000;
       if (gauche !== droite) return gauche - droite;
       return a.nom_complet.localeCompare(b.nom_complet, "fr");
     });
-  }, [visibles, data?.structures]);
+  }, [visibles, arbre]);
   const pageComptes = usePagination(ordonnes, `${recherche}|${role}|${structure}`);
   const allerPage = pageComptes.aller;
 
@@ -187,8 +202,8 @@ export function UtilisateursScreen() {
       setEdition(null);
       setMotDePasseVisible(false);
       if (creation) {
-        const texte = `${compte.matricule} ${compte.nom_complet} ${compte.fonction} ${compte.courriel}`.toLowerCase();
-        const cacheParFiltre = (recherche.trim() && !texte.includes(recherche.trim().toLowerCase()))
+        const texte = `${compte.matricule} ${compte.nom_complet} ${compte.fonction} ${compte.courriel}`;
+        const cacheParFiltre = !correspond(texte, recherche)
           || (role && compte.role !== role)
           || (structure && compte.structure !== structure);
         if (cacheParFiltre) {
@@ -251,7 +266,7 @@ export function UtilisateursScreen() {
   }
 
   if (annuaire.isLoading) {
-    return <AppChrome><p className={`${PAGE} text-on-surface-variant`}>Chargement des comptes…</p></AppChrome>;
+    return <AppChrome><div className={PAGE}><Chargement libelle="Chargement des comptes…" /></div></AppChrome>;
   }
   if (!data) {
     return <AppChrome><p className={`${PAGE} text-error`}>Les comptes n'ont pas pu être chargés.</p></AppChrome>;
@@ -339,22 +354,32 @@ export function UtilisateursScreen() {
                     <td colSpan={7} className="px-4 py-8 text-center font-body-sm text-body-sm text-on-surface-variant">Aucun compte ne correspond à ces filtres.</td>
                   </tr>
                 ) : pageComptes.visibles.map((compte, index, page) => {
-                  const code = compte.pole || "";
-                  const precedent = index > 0 ? (page[index - 1].pole || "") : null;
+                  const code = compte.structure || "";
+                  const precedent = index > 0 ? (page[index - 1].structure || "") : null;
                   const entete = code !== precedent;
-                  const libelle = code ? (compte.pole_libelle || code) : "Sans programme";
-                  const effectif = ordonnes.filter((item) => (item.pole || "") === code).length;
+                  const place = places.parCode.get(code);
+                  const chemin = places.chemin.get(code) ?? [];
+                  const profondeur = place?.profondeur ?? 0;
+                  const libelle = chemin.at(-1) || compte.structure_nom || "Sans structure";
+                  const parents = chemin.slice(0, -1).join(" › ");
+                  const effectif = ordonnes.filter((item) => (item.structure || "") === code).length;
                   return (
                     <Fragment key={compte.matricule}>
                       {entete ? (
-                        <tr className="border-t border-hairline bg-primary-fixed text-on-primary-fixed">
-                          <th colSpan={7} scope="colgroup" className="px-4 py-2 text-left font-label-md text-label-md font-bold">
-                            {libelle}
-                            <span className="ml-2 font-normal">{effectif} compte{effectif > 1 ? "s" : ""}</span>
+                        <tr className={`border-t border-hairline ${profondeur === 0 ? "bg-primary-fixed text-on-primary-fixed" : "bg-surface-container-low text-on-surface"}`}>
+                          <th colSpan={7} scope="colgroup" className="py-2 pr-4 text-left font-label-md text-label-md" style={{ paddingLeft: `${16 + profondeur * 20}px` }}>
+                            <span className="font-bold">{libelle}</span>
+                            {place?.item.niveau_libelle ? <span className="ml-2 font-normal opacity-80">{place.item.niveau_libelle}</span> : null}
+                            <span className="ml-2 font-normal opacity-80">{effectif} compte{effectif > 1 ? "s" : ""}</span>
+                            {parents ? <span className="mt-0.5 block font-normal opacity-80">{parents}</span> : null}
                           </th>
                         </tr>
                       ) : null}
-                      <tr className="border-t border-hairline">
+                      <tr
+                        className="cursor-pointer border-t border-hairline hover:bg-surface-container-low/70"
+                        title={`Modifier ${compte.nom_complet}`}
+                        onClick={() => ouvrirEdition(compte)}
+                      >
                         <td className="px-4 py-3 font-code-num text-code-num text-on-surface">{compte.matricule}</td>
                         <td className="px-4 py-3">
                           <p className="font-body-md text-body-md text-on-surface">{compte.nom_complet}</p>
@@ -377,11 +402,11 @@ export function UtilisateursScreen() {
                           </span>
                         </td>
                         <td className="px-4 py-3 text-right">
-                          <button type="button" className="font-label-md text-label-md text-primary hover:underline" onClick={() => ouvrirEdition(compte)}>
+                          <button type="button" className="cursor-pointer font-label-md text-label-md text-primary hover:underline" onClick={(event) => { event.stopPropagation(); ouvrirEdition(compte); }}>
                             Modifier
                           </button>
                           {compte.moi ? null : (
-                            <button type="button" className="ml-3 font-label-md text-label-md text-error hover:underline" onClick={() => supprimer(compte)}>
+                            <button type="button" className="ml-3 cursor-pointer font-label-md text-label-md text-error hover:underline" onClick={(event) => { event.stopPropagation(); supprimer(compte); }}>
                               Supprimer
                             </button>
                           )}

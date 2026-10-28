@@ -1,7 +1,9 @@
+import { Chargement } from "../../ui/Chargement";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { ApiError, api } from "../../api/client";
 import type { EtapeParcours } from "../../api/types";
+import { ouvreAuClic } from "../../ui/clicLigne";
 import { useFeedback } from "../../ui/Feedback";
 import { Icone } from "../../ui/Icone";
 import { BOUTON_PRIMAIRE, BOUTON_SECONDAIRE, Modale } from "../../ui/Modale";
@@ -114,7 +116,7 @@ export function ParcoursModal({ matricule, nom, onClose }: { matricule: string; 
           <button type="button" className={BOUTON_SECONDAIRE} onClick={() => setEdition(null)} disabled={enregistrer.isPending}>Revenir à la liste</button>
         </div>
       ) : liste.isPending ? (
-        <p className="text-on-surface-variant">Chargement du parcours…</p>
+        <Chargement libelle="Chargement du parcours…" />
       ) : liste.isError ? (
         <p role="alert" className="text-error">Le parcours n'a pas pu être chargé.</p>
       ) : liste.data.length === 0 ? (
@@ -122,7 +124,7 @@ export function ParcoursModal({ matricule, nom, onClose }: { matricule: string; 
       ) : (
         <ol className="space-y-2.5">
           {liste.data.map((item) => (
-            <li key={`${item.origine}-${item.id}`} className="p-3 bg-surface-container-low rounded-lg flex items-start justify-between gap-3">
+            <li key={`${item.origine}-${item.id}`} title={item.origine === "position" ? undefined : `Modifier ${item.intitule}`} onClick={item.origine === "position" ? undefined : ouvreAuClic(() => ouvrir(item))} className={`p-3 bg-surface-container-low rounded-lg flex items-start justify-between gap-3 ${item.origine === "position" ? "" : "cursor-pointer hover:bg-surface-container"}`}>
               <div className="min-w-0">
                 <p className="flex flex-wrap items-center gap-2">
                   <span className="px-2 py-0.5 rounded bg-primary-fixed text-on-primary-fixed font-label-sm text-label-sm font-semibold">{item.type_libelle}</span>

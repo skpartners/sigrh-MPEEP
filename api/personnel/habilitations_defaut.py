@@ -1,14 +1,16 @@
-"""Droits par rubrique de Paramètres.
+"""Répartition par défaut des habilitations.
 
-Le module « Statistiques & RBAC » reste le droit de repli (tableau de bord,
-statistiques, communication). Les rubriques regroupées sous Paramètres ont
-leur propre niveau, sinon un chef ou un directeur hériterait de la validation
-du module sur les comptes, les circuits et l'identité du ministère.
+Tout le monde ouvre le profil agent. Le tableau de bord est réservé aux responsables
+hiérarchiques. La GRH, les statistiques, les projets et études et la communication
+sont réservés aux responsables de la DRH (sous-directeur, directeur) et, en lecture
+ou validation, au directeur général et au ministre. Le secrétariat reste au rôle
+Secrétaire. Le gestionnaire RH,
+point focal d'une structure, n'exprime que les besoins.
 """
 
 from django.contrib.auth.models import User
 
-from personnel.models import FonctionHabilitation, Profil, RoleMatrice
+from personnel.models import FonctionHabilitation, ModuleHabilitation, Profil, RoleMatrice
 
 MATRICULE_DRH = "DRH-2018-044"
 
@@ -58,8 +60,108 @@ RUBRIQUES = {
 }
 
 
+# Droit du module. Une fonction absente de PRECISIONS hérite de ce niveau.
+# Les rôles absents ici n'ont aucun module, sauf ceux de ROLES_VALIDATION.
+DROITS_MODULES = {
+    "Agent": {"Dossier Agent": "lecture"},
+    "Secrétaire": {"Dossier Agent": "lecture"},
+    "Gestionnaire RH": {"Dossier Agent": "lecture"},
+    "Chef de service": {"Dossier Agent": "lecture"},
+    "Sous directeur": {
+        "Dossier Agent": "lecture",
+        "Carrières & Actes": "validation",
+        "Social & Santé": "validation",
+        "Formations": "validation",
+        "Statistiques & RBAC": "lecture",
+        "GPEC": "saisie",
+        "Projets et études RH": "saisie",
+    },
+    "Directeur": {
+        "Dossier Agent": "validation",
+        "Carrières & Actes": "validation",
+        "Social & Santé": "validation",
+        "Formations": "validation",
+        "Statistiques & RBAC": "validation",
+        "GPEC": "validation",
+        "Projets et études RH": "validation",
+    },
+}
+ROLES_VALIDATION = {"Directeur général", "Ministre", "Administrateur"}
+MODULE_PROJETS = "Projets et études RH"
+FONCTION_PROJETS = "Projets et études"
+
+# Exceptions par fonction : (module, fonction) → niveau, seulement s'il diffère du module.
+PRECISIONS = {
+    "Secrétaire": {("Carrières & Actes", "Secrétariat"): "saisie"},
+    "Gestionnaire RH": {("GPEC", "Expression des besoins"): "saisie"},
+    "Chef de service": {
+        ("Carrières & Actes", "Congés"): "validation",
+        ("Carrières & Actes", "Absences"): "lecture",
+        ("Statistiques & RBAC", "Tableau de bord"): "lecture",
+        ("Statistiques & RBAC", "Circuits et habilitations"): "lecture",
+        ("Statistiques & RBAC", "Structures du ministère"): "lecture",
+    },
+    "Sous directeur": {
+        ("Statistiques & RBAC", "Communication"): "saisie",
+        ("Statistiques & RBAC", "Paramètres"): "refus",
+        ("Statistiques & RBAC", "Habilitations"): "refus",
+        ("Statistiques & RBAC", "Circuits et habilitations"): "lecture",
+        ("Statistiques & RBAC", "Comptes utilisateurs"): "lecture",
+        ("Statistiques & RBAC", "Structures du ministère"): "saisie",
+    },
+    "Directeur": {
+        ("Statistiques & RBAC", "Paramètres"): "refus",
+        ("Statistiques & RBAC", "Habilitations"): "lecture",
+        ("Statistiques & RBAC", "Circuits et habilitations"): "validation",
+        ("Statistiques & RBAC", "Comptes utilisateurs"): "validation",
+        ("Statistiques & RBAC", "Structures du ministère"): "validation",
+    },
+}
+
+
+def _assurer_projets(Module, Fonction) -> None:
+    module = Module.objects.filter(libelle=MODULE_PROJETS).first()
+    if module is None:
+        ordre = (Module.objects.order_by("-ordre").values_list("ordre", flat=True).first() or 0) + 1
+        module = Module.objects.create(ordre=ordre, libelle=MODULE_PROJETS)
+    if not Fonction.objects.filter(module=module, libelle=FONCTION_PROJETS).exists():
+        Fonction.objects.create(module=module, ordre=1, libelle=FONCTION_PROJETS)
+
+
+def repartir(Role=RoleMatrice, Fonction=FonctionHabilitation, Module=ModuleHabilitation) -> None:
+    """Pose la répartition par défaut et retire les exceptions de fonction qui ouvraient tout le menu."""
+    _assurer_projets(Module, Fonction)
+    modules = list(Module.objects.order_by("ordre"))
+    index = {module.libelle: position for position, module in enumerate(modules)}
+    fonctions = {
+        (fonction.module.libelle, fonction.libelle): fonction
+        for fonction in Fonction.objects.select_related("module")
+    }
+    for role in Role.objects.all():
+        spec = DROITS_MODULES.get(role.role, {})
+        plein = role.role in ROLES_VALIDATION
+        droits = [
+            "validation" if plein else spec.get(module.libelle, "refus")
+            for module in modules
+        ]
+        precisions = {}
+        for (module_nom, libelle), droit in PRECISIONS.get(role.role, {}).items():
+            fonction = fonctions.get((module_nom, libelle))
+            position = index.get(module_nom)
+            if fonction is None or position is None or droit == droits[position]:
+                continue
+            precisions[str(fonction.pk)] = droit
+        secretariat = fonctions.get(("Carrières & Actes", "Secrétariat"))
+        carriere = index.get("Carrières & Actes")
+        if secretariat is not None and carriere is not None and role.role != "Secrétaire" and droits[carriere] != "refus":
+            precisions[str(secretariat.pk)] = "refus"
+        role.droits = droits
+        role.precisions = precisions
+        role.save(update_fields=["droits", "precisions"])
+
+
 def appliquer(Role=RoleMatrice, Fonction=FonctionHabilitation, Compte=Profil, Utilisateur=User) -> None:
-    """Pose les précisions de rôle, et la dérogation du DRH sur ces rubriques."""
+    """Pose les précisions des rubriques de paramètres, et la dérogation du DRH."""
     libelles = {libelle for droits in RUBRIQUES.values() for libelle in droits}
     identifiants = {
         item.libelle: item.pk

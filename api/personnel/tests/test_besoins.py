@@ -81,8 +81,8 @@ def test_la_centralisation_remonte_du_service_a_la_direction(monde):
     assert racine["propre"]["total"] == 2 and racine["cumul"] == {"fonctionnaires": 3, "contractuels": 3, "total": 6}
     sous = racine["enfants"][0]
     assert sous["cumul"]["total"] == 4 and sous["enfants"][0]["propre"] == {"fonctionnaires": 2, "contractuels": 1, "total": 3}
-    service = monde["chef_service"].get("/api/v1/besoins/").json()
-    assert len(service["fiches"]) == 1 and service["arbre"][0]["nom"] == "Service Test"
+    # La centralisation est la rubrique « Expression des besoins » : le chef de service n'en a pas l'habilitation, le serveur la lui refuse comme le menu.
+    assert monde["chef_service"].get("/api/v1/besoins/").status_code == 403
     # Le DRH voit tout.
     tout = monde["drh"].get("/api/v1/besoins/").json()
     assert tout["totaux"]["volume"] >= 6 + 16 and tout["peut_lancer"]

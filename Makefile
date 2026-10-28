@@ -9,7 +9,7 @@ JOURNAL    := api/logs/sigrh-service.log
 
 .DEFAULT_GOAL := aide
 .PHONY: aide dev api front installer build migrer migrations tests verifier \
-        service-installer service-demarrer service-arreter service-redemarrer service-etat service-journal deploiement
+        service-installer service-demarrer service-arreter service-redemarrer service-etat service-journal clamav-verifier deploiement
 
 aide: ## Liste les cibles
 	@$(POWERSHELL) -File scripts/aide-make.ps1
@@ -67,6 +67,9 @@ service-redemarrer: ## Redémarre le service (après un changement Python ou un 
 
 service-etat: ## État du service
 	@$(POWERSHELL) -Command "Get-Service $(SERVICE) | Format-Table Name, Status, StartType -AutoSize"
+
+clamav-verifier: ## Verifie l'antivirus : ClamAV-Daemon, detection EICAR, signatures, dependance du service
+	@$(POWERSHELL) -File api/deploiement/verifier-clamav.ps1
 
 service-journal: ## Suit le journal du service (Ctrl+C pour quitter)
 	@$(POWERSHELL) -Command "Get-Content -Path '$(JOURNAL)' -Tail 50 -Wait"

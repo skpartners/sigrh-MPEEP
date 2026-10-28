@@ -1,4 +1,5 @@
 import { Fragment, useState } from "react";
+import { ouvreAuClic } from "../../ui/clicLigne";
 import { Icone } from "../../ui/Icone";
 import { dateCourte, nombre } from "../../ui/format";
 
@@ -88,7 +89,7 @@ export function ArbreBesoins({ arbre, actions }: { arbre: NoeudBesoins[]; action
 
   function emplois(n: NoeudBesoins, profondeur: number) {
     return n.lignes.map((l) => (
-      <tr key={l.reference} className="border-b border-hairline align-top text-on-surface-variant">
+      <tr key={l.reference} title={actions ? `Modifier le besoin ${l.emploi}` : undefined} onClick={actions ? ouvreAuClic(() => actions.modifier(n, l)) : undefined} className={`border-b border-hairline align-top text-on-surface-variant ${actions ? "cursor-pointer hover:bg-surface-container-low/70" : ""}`}>
         <td className="py-2 pr-4" style={marge(profondeur)}>
           <span className="inline-flex items-start gap-1.5">
             <span className="w-6" />

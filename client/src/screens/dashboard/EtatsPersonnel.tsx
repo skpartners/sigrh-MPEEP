@@ -1,3 +1,4 @@
+import { Chargement } from "../../ui/Chargement";
 import { useQuery } from "@tanstack/react-query";
 import { Fragment, useMemo, useState, type ReactNode } from "react";
 import { api } from "../../api/client";
@@ -6,6 +7,7 @@ import { Icone } from "../../ui/Icone";
 import { usePagination } from "../../ui/Pagination";
 import { CHAMP, Recherche, TableauListe } from "../dotation/commun";
 import { Select } from "../../ui/Select";
+import { correspond } from "../../ui/recherche";
 
 type Ventilation = { libelle: string; hommes: number; femmes: number; total: number };
 type Programme = { programme: string; hommes: number; femmes: number; total: number; structures: Ventilation[] };
@@ -107,7 +109,7 @@ export function EtatsPersonnel() {
   });
   const d = requete.data;
   if (requete.isError && !d) return <p role="alert" className={`${CARTE} text-error`}>Les états du personnel n'ont pas pu être chargés (vérifiez la période).</p>;
-  if (!d) return <p className={`${CARTE} text-on-surface-variant`}>Chargement des états…</p>;
+  if (!d) return <div className={CARTE}><Chargement libelle="Chargement des états…" /></div>;
   const s = d.socio_demographie;
   return (
     <div className="space-y-8">
@@ -246,7 +248,7 @@ function Projection({ lignes }: { lignes: Etats["sorties"]["projection"] }) {
 function AgentsAdmis({ admis, periode, onPeriode }: { admis: Etats["sorties"]["admis"]; periode: { debut: string; fin: string }; onPeriode: (p: { debut: string; fin: string }) => void }) {
   const [recherche, setRecherche] = useState("");
   const terme = recherche.trim().toLowerCase();
-  const lignes = useMemo(() => admis.agents.filter((a) => !terme || [a.nom_complet, a.matricule, a.grade, a.structure].some((v) => v.toLowerCase().includes(terme))), [admis.agents, terme]);
+  const lignes = useMemo(() => admis.agents.filter((a) => !terme || [a.nom_complet, a.matricule, a.grade, a.structure].some((v) => correspond(v, terme))), [admis.agents, terme]);
   const page = usePagination(lignes, terme + admis.debut + admis.fin);
   return (
     <Etat titre={`Agents admis à faire valoir leur droit à la retraite sur la période ${admis.debut}-${admis.fin}`}>
@@ -281,7 +283,7 @@ function AgentsAdmis({ admis, periode, onPeriode }: { admis: Etats["sorties"]["a
 function Responsables({ donnees }: { donnees: Etats["autres"]["responsables"] }) {
   const [recherche, setRecherche] = useState("");
   const terme = recherche.trim().toLowerCase();
-  const lignes = useMemo(() => donnees.structures.filter((l) => !terme || [l.structure, l.programme, ...l.responsables.map((r) => r.nom_complet)].some((v) => v.toLowerCase().includes(terme))), [donnees.structures, terme]);
+  const lignes = useMemo(() => donnees.structures.filter((l) => !terme || [l.structure, l.programme, ...l.responsables.map((r) => r.nom_complet)].some((v) => correspond(v, terme))), [donnees.structures, terme]);
   const page = usePagination(lignes, terme);
   return (
     <Etat titre="Agents ayant des postes de responsabilité par structure">
@@ -311,7 +313,7 @@ function DetailAgents({ lignes }: { lignes: Etats["autres"]["detail"] }) {
   const [famille, setFamille] = useState("");
   const familles = useMemo(() => [...new Set(lignes.map((l) => l.famille))].sort(), [lignes]);
   const terme = recherche.trim().toLowerCase();
-  const filtrees = useMemo(() => lignes.filter((l) => (!famille || l.famille === famille) && (!terme || [l.emploi, l.grade, l.structure, l.famille].some((v) => v.toLowerCase().includes(terme)))), [lignes, famille, terme]);
+  const filtrees = useMemo(() => lignes.filter((l) => (!famille || l.famille === famille) && (!terme || [l.emploi, l.grade, l.structure, l.famille].some((v) => correspond(v, terme)))), [lignes, famille, terme]);
   const page = usePagination(filtrees, `${terme}|${famille}`);
   const total = filtrees.reduce((n, l) => n + l.effectif, 0);
   return (

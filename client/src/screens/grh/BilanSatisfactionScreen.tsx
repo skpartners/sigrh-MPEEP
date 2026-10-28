@@ -6,6 +6,7 @@ import { usePagination } from "../../ui/Pagination";
 import { Kpi, pourcent, PageGrh, Section } from "./ui";
 import { Recherche, TableauListe } from "../dotation/commun";
 import { LIBELLE_ETAT, type CampagneBesoins } from "../gpec/besoinsCommun";
+import { correspond } from "../../ui/recherche";
 
 type Effectifs = { fonctionnaires: number; contractuels: number; total: number };
 type Ligne = {
@@ -33,7 +34,7 @@ export function BilanSatisfactionScreen() {
   const [recherche, setRecherche] = useState("");
   const b = bilan.data;
   const terme = recherche.trim().toLowerCase();
-  const lignes = useMemo(() => (b?.lignes ?? []).filter((l) => !terme || [l.emploi, l.grade].some((v) => v.toLowerCase().includes(terme))), [b?.lignes, terme]);
+  const lignes = useMemo(() => (b?.lignes ?? []).filter((l) => !terme || [l.emploi, l.grade].some((v) => correspond(v, terme))), [b?.lignes, terme]);
   const page = usePagination(lignes, terme);
   return (
     <PageGrh

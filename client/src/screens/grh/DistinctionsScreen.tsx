@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { ApiError, api } from "../../api/client";
+import { ouvreAuClic } from "../../ui/clicLigne";
 import { useFeedback } from "../../ui/Feedback";
 import { Icone } from "../../ui/Icone";
 import { Modale } from "../../ui/Modale";
@@ -54,7 +55,7 @@ export function DistinctionsScreen() {
                 {lignes.length === 0 ? <p className="font-body-sm text-on-surface-variant">{famille.vide}</p> : (
                   <ul className="space-y-2.5">
                     {lignes.map((item) => (
-                      <li key={item.id} className="p-2.5 bg-surface-container-low rounded flex items-center justify-between gap-3">
+                      <li key={item.id} title={`Modifier ${item.titre}`} onClick={ouvreAuClic(() => setEdition({ distinction: item, famille: item.famille }))} className="cursor-pointer p-2.5 bg-surface-container-low rounded flex items-center justify-between gap-3 hover:bg-surface-container">
                         <div className="flex items-center gap-3 min-w-0">
                           <span className="w-9 h-9 rounded bg-secondary-container/20 text-secondary font-bold font-label-sm flex items-center justify-center shrink-0">{item.rang}</span>
                           <span className="min-w-0">

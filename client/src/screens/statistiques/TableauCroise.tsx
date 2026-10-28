@@ -2,6 +2,7 @@ import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { ApiError, api } from "../../api/client";
 import { ChoixForme, Toile } from "../../ui/Graphique";
+import { Chargement as ChargementPanneau } from "../../ui/Chargement";
 import { paletteGraphique, useCouleurs } from "../../ui/Couleurs";
 import { Icone } from "../../ui/Icone";
 import { BOUTON_PRIMAIRE, BOUTON_SECONDAIRE, Modale } from "../../ui/Modale";
@@ -907,7 +908,7 @@ function DialogueFiltre({ code, config, cube, source, onClose, onValider }: {
       onSubmit={() => onValider(modalites.filter((valeur) => exclus.has(valeur)))}
       libelleValider="Appliquer"
     >
-      {!cube ? <p className="text-on-surface-variant">Chargement des éléments…</p> : (
+      {!cube ? <ChargementPanneau libelle="Chargement des éléments…" /> : (
         <div className="space-y-3">
           <input className={`${CHAMP} w-full`} type="search" value={recherche} onChange={(event) => setRecherche(event.target.value)} placeholder="Rechercher un élément" aria-label="Rechercher un élément" />
           <label className="flex items-center gap-2 border-b border-hairline pb-2 font-label-md text-label-md text-on-surface">

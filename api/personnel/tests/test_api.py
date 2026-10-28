@@ -217,6 +217,18 @@ def test_login_puis_tableau_de_bord(api):
     }
 
 
+def _ouvrir_tableau_de_bord(matricule: str) -> None:
+    from personnel.models import ModuleHabilitation, Profil
+    from personnel.utilisateurs import _defaut_role
+
+    profil = Profil.objects.get(user__username=matricule)
+    modules = ModuleHabilitation.objects.all()
+    fonction = modules.get(libelle="Statistiques & RBAC").fonctions.get(libelle="Tableau de bord")
+    profil.habilitations = _defaut_role(profil.role, len(modules))
+    profil.precisions = {str(fonction.pk): "lecture"}
+    profil.save()
+
+
 def test_rapport_pilotage_selon_le_perimetre(api):
     from personnel.models import Agent
 
@@ -232,6 +244,9 @@ def test_rapport_pilotage_selon_le_perimetre(api):
     assert b"Ensemble des agents" in ministere.content
     assert f"retient {Agent.objects.count()} agents".encode() in ministere.content
 
+    # Un agent simple n'a pas le tableau de bord : le serveur le refuse comme le menu. Une habilitation particulière l'ouvre sur son seul périmètre.
+    assert api.get("/api/v1/dashboard/rapport/", **_connexion(api, "318490K")).status_code == 403
+    _ouvrir_tableau_de_bord("318490K")
     restreint = api.get("/api/v1/dashboard/rapport/", **_connexion(api, "318490K"))
     assert restreint.status_code == 200
     assert restreint.content.startswith(b"%PDF")
@@ -1071,6 +1086,11 @@ def test_photo_de_la_ministre_dans_les_parametres(api, tmp_path, settings):
     assert identite.status_code == 200
     assert identite.json()["civilite"] == "Madame"
     assert identite.json()["nom"] == "Koné Mariétou"
+    assert identite.json()["matricule"] == "MINISTRE"
+    from django.contrib.auth.models import User
+    ministre = User.objects.get(username="MINISTRE")
+    assert ministre.last_name == "Koné" and ministre.first_name == "Mariétou"
+    assert ministre.profil.role == "Ministre" and ministre.profil.structure.niveau == "ministere" and ministre.profil.superieur_id is None
     refuse_delai = api.post("/api/v1/parametres/inactivite/", {"minutes": 30}, format="json", **agent_auth)
     assert refuse_delai.status_code == 403
     delai_invalide = api.post("/api/v1/parametres/inactivite/", {"minutes": 0}, format="json", **auth)
@@ -1233,7 +1253,7 @@ def test_configurer_un_circuit_et_l_attribuer(api):
             "nom": "Circuit maternité",
             "etapes": [
                 {"instance": "Chef de service", "fonction": "Avis hiérarchique"},
-                {"instance": "SD Carrières", "fonction": "Contrôle de légalité"},
+                {"instance": "Sous directeur", "fonction": "Contrôle de légalité"},
             ],
             "attributions": [
                 {"famille": "conge", "code": "conge-maternite"},
@@ -1245,7 +1265,7 @@ def test_configurer_un_circuit_et_l_attribuer(api):
     )
     assert cree.status_code == 201
     corps = cree.json()
-    assert [etape["instance"] for etape in corps["etapes"]] == ["Chef de service", "SD Carrières"]
+    assert [etape["instance"] for etape in corps["etapes"]] == ["Chef de service", "Sous directeur"]
     assert {item["libelle"] for item in corps["attributions"]} == {
         "Congé de maternité",
         "Autorisation d'absence (événement familial)",
@@ -1255,7 +1275,7 @@ def test_configurer_un_circuit_et_l_attribuer(api):
         "/api/v1/circuits/configuration/",
         {
             "nom": "Circuit parental",
-            "etapes": [{"instance": "DRH", "fonction": "Visa unique"}],
+            "etapes": [{"instance": "Directeur", "fonction": "Visa unique"}],
             "attributions": [{"famille": "conge", "code": "conge-maternite"}],
         },
         format="json",
@@ -1281,8 +1301,8 @@ def test_configurer_un_circuit_et_l_attribuer(api):
     )
     assert depot.status_code == 201
     demande = next(item for item in depot.json()["demandes"] if item["nature"].startswith("Congé de maternité"))
-    assert demande["etape"] == "Étape 2 : DRH"
-    assert [visa["instance"] for visa in demande["visas"]] == ["Requête déposée", "DRH"]
+    assert demande["etape"] == "Étape 2 : Directeur"
+    assert [visa["instance"] for visa in demande["visas"]] == ["Requête déposée", "Directeur"]
     assert demande["visas"][1]["fonction"] == "Visa unique"
 
     annuel = api.post(
@@ -1503,6 +1523,14 @@ def test_gestion_des_utilisateurs(api):
 
     Profil.objects.filter(user__username="349812K").update(structure=None)
     koffi = next(item for item in api.get("/api/v1/utilisateurs/", **auth).json()["utilisateurs"] if item["matricule"] == "349812K")
+    # Le dossier de l'agent porte déjà son rattachement : la liste ne déclare pas « sans structure » un agent rattaché.
+    assert koffi["structure"] and koffi["structure_nom"]
+    assert koffi["alerte"] != "Ce compte n'est rattaché à aucune structure."
+    from personnel.models import Agent
+
+    Agent.objects.filter(matricule="349812K").update(service="", sous_direction="", direction="", structure="Hors organigramme")
+    koffi = next(item for item in api.get("/api/v1/utilisateurs/", **auth).json()["utilisateurs"] if item["matricule"] == "349812K")
+    assert koffi["structure"] == ""
     assert koffi["alerte"] == "Ce compte n'est rattaché à aucune structure."
 
     hors_hierarchie = api.post(
@@ -2052,6 +2080,7 @@ def test_matrice_habilitations_modifiable(api):
         "Formations",
         "Statistiques & RBAC",
         "GPEC",
+        "Projets et études RH",
     ]
     agent = next(item for item in matrice["roles"] if item["role"] == "Agent")
     assert agent["droits"][0] == "lecture"
@@ -2137,7 +2166,11 @@ def test_menu_suit_l_habilitation(api):
     assert session_chef["acces"]["fonctions"]["Statistiques & RBAC|Habilitations"] == "refus"
     assert session_chef["acces"]["fonctions"]["Statistiques & RBAC|Comptes utilisateurs"] == "refus"
     assert session_chef["acces"]["fonctions"]["Statistiques & RBAC|Structures du ministère"] == "lecture"
-    assert session_chef["acces"]["fonctions"]["Statistiques & RBAC|Tableau de bord"] == "validation"
+    assert session_chef["acces"]["fonctions"]["Statistiques & RBAC|Tableau de bord"] == "lecture"
+    assert session_chef["acces"]["fonctions"]["Statistiques & RBAC|Statistiques"] == "refus"
+    assert session_chef["acces"]["fonctions"]["Statistiques & RBAC|Communication"] == "refus"
+    assert session_chef["acces"]["fonctions"]["Carrières & Actes|Congés"] == "validation"
+    assert session_chef["acces"]["fonctions"]["Projets et études RH|Projets et études"] == "refus"
     matrice = api.get("/api/v1/circuits/", **auth).json()["matrice"]
     fonctions = {item["libelle"]: item["id"] for colonne in matrice["fonctions"] for item in colonne}
     index = matrice["colonnes"].index("Statistiques & RBAC")
@@ -2154,6 +2187,9 @@ def test_menu_suit_l_habilitation(api):
     assert rubrique("Directeur", "Circuits et habilitations") == "validation"
     assert rubrique("Directeur général", "Paramètres") == "validation"
     assert rubrique("Ministre", "Paramètres") == "validation"
+    assert rubrique("Agent", "Tableau de bord") == "refus"
+    assert rubrique("Sous directeur", "Communication") == "saisie"
+    assert rubrique("Directeur", "Statistiques") == "validation"
     agent = api.post(
         "/api/v1/utilisateurs/",
         {
@@ -2173,11 +2209,15 @@ def test_menu_suit_l_habilitation(api):
     assert agent.status_code == 201
     jeton = api.post("/api/v1/auth/login/", {"matricule": "USR-MENU-02", "password": "Sigrh-Dev-2026"}, format="json")
     session = api.get("/api/v1/me/", HTTP_AUTHORIZATION=f"Token {jeton.json()['token']}").json()
-    assert session["acces"]["modules"]["Formations"] == "saisie"
+    assert session["acces"]["modules"]["Dossier Agent"] == "lecture"
+    assert session["acces"]["modules"]["Formations"] == "refus"
     assert session["acces"]["modules"]["Statistiques & RBAC"] == "refus"
     assert session["acces"]["modules"]["GPEC"] == "refus"
-    assert session["acces"]["fonctions"]["Carrières & Actes|Congés"] == "lecture"
+    assert session["acces"]["fonctions"]["Dossier Agent|Consultation du dossier"] == "lecture"
+    assert session["acces"]["fonctions"]["Carrières & Actes|Congés"] == "refus"
+    assert session["acces"]["fonctions"]["Statistiques & RBAC|Tableau de bord"] == "refus"
     assert session["acces"]["fonctions"]["Statistiques & RBAC|Comptes utilisateurs"] == "refus"
+    assert session["acces"]["fonctions"]["Projets et études RH|Projets et études"] == "refus"
 
 
 def test_precision_de_fonction(api):
@@ -4128,3 +4168,161 @@ def test_indicateurs_disciplinaires_decisions_par_degre_et_non_lieu(api):
     indicateurs = api.get("/api/v1/carrieres/discipline/", **auth).json()["indicateurs"]
     assert indicateurs["instruction"] == 1
     assert (indicateurs["decisions"], indicateurs["decisions_premier_degre"], indicateurs["decisions_second_degre"], indicateurs["non_lieu"]) == (3, 1, 1, 1)
+
+
+def test_recherche_agents_sans_ordre_ni_casse(api):
+    auth = _auth(api)
+    tous = api.get("/api/v1/agents/", **auth).json()
+    assert tous
+    cible = tous[0]
+    mots = f"{cible['prenoms']} {cible['nom']}".upper().split()
+    trouves = api.get("/api/v1/agents/", {"q": " ".join(reversed(mots)).lower()}, **auth).json()
+    assert cible["matricule"] in {item["matricule"] for item in trouves}
+
+
+def test_le_circuit_configure_gouverne_chaque_visa_et_solde_le_registre(api):
+    from datetime import date, timedelta
+
+    from django.contrib.auth.models import User
+    from personnel.models import Absence, Demande, Profil
+
+    drh = _jeton(api, "DRH-2018-044")
+    chef, agent = _jeton(api, "349812K"), _jeton(api, "394812H")
+    Profil.objects.filter(user__username="394812H").update(superieur=User.objects.get(username="349812K"))
+    lundi = date.today() + timedelta(days=(7 - date.today().weekday()) % 7 or 7)
+    periode = {"debut": lundi.isoformat(), "fin": (lundi + timedelta(days=3)).isoformat()}
+
+    # Une étape doit porter un rôle réel : sinon personne ne pourrait la viser.
+    libre = {"nom": "Libre", "etapes": [{"instance": "Comité fantaisiste", "fonction": "x"}], "attributions": []}
+    assert api.post("/api/v1/circuits/configuration/", libre, format="json", **drh).status_code == 400
+
+    absence = api.post("/api/v1/circuits/elements/absence/", {"libelle": "Absence à deux visas"}, format="json", **drh).json()
+    circuit = {
+        "nom": "Deux visas",
+        "etapes": [{"instance": "Chef de service", "fonction": "Supérieur"}, {"instance": "Directeur", "fonction": "DRH"}],
+        "attributions": [{"famille": "absence", "code": absence["code"]}],
+    }
+    assert api.post("/api/v1/circuits/configuration/", circuit, format="json", **drh).status_code == 201
+    depot = api.post("/api/v1/agents/394812H/conges/demande/", {"type": absence["code"], **periode}, format="json", **agent)
+    demande = next(item for item in depot.json()["demandes"] if item["nature"].startswith("Absence à deux visas"))
+    reference = demande["reference"]
+    decision = f"/api/v1/demandes-actes/{reference}/decision/"
+    assert [visa["instance"] for visa in demande["visas"]][1:3] == ["Chef de service", "Directeur"]
+
+    # Chaque visa revient au rôle de son étape, dans l'ordre configuré.
+    assert api.post(decision, {"sens": "valider"}, format="json", **drh).status_code == 403
+    registre = Absence.objects.get(demande__reference=reference)
+    assert api.post(f"/api/v1/absences/{registre.pk}/decision/", {"sens": "valider", "motif": "Raccourci"}, format="json", **drh).status_code == 409
+    assert api.post(decision, {"sens": "valider"}, format="json", **chef).status_code == 200
+    assert api.post(decision, {"sens": "valider"}, format="json", **chef).status_code == 403
+    assert Absence.objects.get(pk=registre.pk).decision == "en_attente"
+    assert api.post(decision, {"sens": "valider"}, format="json", **drh).status_code == 200
+
+    # Le dernier visa clôt la demande et décide aussi l'absence au registre : pas de seconde validation.
+    assert Demande.objects.get(reference=reference).etape.startswith("Clôturée")
+    assert Absence.objects.get(pk=registre.pk).decision == "validee"
+
+
+def test_onglets_ma_team_et_evenements_du_profil_agent(api):
+    from django.contrib.auth.models import User
+    from personnel.models import LecturePublication, Notification, Profil, Publication
+
+    drh = _jeton(api, "DRH-2018-044")
+    agent = _jeton(api, "394812H")
+    chef = _jeton(api, "349812K")
+    Profil.objects.filter(user__username="394812H").update(superieur=User.objects.get(username="349812K"))
+
+    # L'équipe de communication rédige un événement, le DRH le vise : les agents le reçoivent sans habilitation de communication.
+    cree = api.post(
+        "/api/v1/communication/",
+        {"nature": "evenement", "urgence": "important", "perimetre": "tous", "intitule": "Journée de la fonction publique", "corps": "Rendez-vous au siège le 23 juin.", "diffuser": "true"},
+        format="json",
+        **drh,
+    )
+    assert cree.status_code == 201
+    identifiant = cree.json()["id"]
+    assert identifiant not in {item["id"] for item in api.get("/api/v1/evenements/", **agent).json()["evenements"]}  # pas encore visé
+    assert api.post(f"/api/v1/communication/{identifiant}/viser/", **drh).status_code == 200
+
+    evenements = api.get("/api/v1/evenements/", **agent)
+    assert evenements.status_code == 200
+    ligne = next(item for item in evenements.json()["evenements"] if item["id"] == identifiant)
+    assert ligne["nature_libelle"] == "Événement" and ligne["lue"] is False
+
+    # La notification de la barre du haut conduit à l'onglet Événements du profil.
+    notification = Notification.objects.get(destinataire__username="394812H", titre="Nouvel événement")
+    assert notification.lien == f"/app/agents?onglet=evenements&evenement={identifiant}"
+    assert not Notification.objects.filter(destinataire__username="DRH-2018-044", titre="Nouvel événement").exists()  # l'auteur du visa n'est pas notifié
+
+    # L'ouverture du détail vaut accusé de lecture ; un brouillon ou une publication hors périmètre ne se lit pas.
+    assert api.post(f"/api/v1/evenements/{identifiant}/lu/", **agent).status_code == 200
+    assert LecturePublication.objects.filter(publication_id=identifiant, lecteur__username="394812H").exists()
+    assert next(item for item in api.get("/api/v1/evenements/", **agent).json()["evenements"] if item["id"] == identifiant)["lue"] is True
+    notification.refresh_from_db()
+    assert notification.lue is True  # lire la publication éteint la notification qui l'annonçait
+    brouillon = Publication.objects.create(reference="REF/TEST/B", nature="evenement", urgence="normal", intitule="Brouillon", corps="x", statut="brouillon")
+    assert api.post(f"/api/v1/evenements/{brouillon.id}/lu/", **agent).status_code == 403
+    assert brouillon.id not in {item["id"] for item in api.get("/api/v1/evenements/", **agent).json()["evenements"]}
+
+    # Ma team : le supérieur voit l'agent rattaché, l'agent voit son supérieur ; chacun ne consulte que la sienne.
+    equipe_chef = api.get("/api/v1/agents/349812K/equipe/", **chef)
+    assert equipe_chef.status_code == 200
+    membres = {item["matricule"]: item for item in equipe_chef.json()["membres"]}
+    assert membres["394812H"]["relation"] in {"rattache", "service"} and membres["394812H"]["presence"]["badge"]
+    assert "349812K" not in membres
+    equipe_agent = {item["matricule"]: item for item in api.get("/api/v1/agents/394812H/equipe/", **agent).json()["membres"]}
+    assert equipe_agent["349812K"]["relation"] == "superieur"
+    assert api.get("/api/v1/agents/349812K/equipe/", **agent).status_code == 403
+
+
+def test_module_dont_toutes_les_rubriques_sont_refusees_est_refuse_aussi_cote_serveur(api):
+    from personnel.models import ModuleHabilitation, Profil
+
+    drh = _jeton(api, "DRH-2018-044")
+    modules = list(ModuleHabilitation.objects.all())
+    rbac = next(item for item in modules if item.libelle == "Statistiques & RBAC")
+    profil = Profil.objects.get(user__username="DRH-2018-044")
+    profil.administrateur = False
+    profil.habilitations = ["validation"] * len(modules)
+    profil.precisions = {str(item.pk): "refus" for item in rbac.fonctions.all()}
+    profil.save()
+
+    # Le module garde son niveau dans la matrice, mais aucune rubrique n'est ouverte : il est refusé au compte.
+    acces = api.get("/api/v1/me/", **drh).json()["acces"]
+    assert acces["modules"]["Statistiques & RBAC"] == "refus"
+    assert acces["modules"]["GPEC"] == "validation"
+
+    # Le serveur refuse aussi ce que le menu cache.
+    for route in ("/api/v1/dashboard/etats/", "/api/v1/statistiques/compositions/", "/api/v1/utilisateurs/", "/api/v1/communication/", "/api/v1/structures/", "/api/v1/grades/"):
+        assert api.get(route, **drh).status_code == 403, route
+    # Les routes que tout agent connecté utilise pour lui-même restent ouvertes.
+    assert api.get("/api/v1/notifications/", **drh).status_code == 200
+    assert api.get("/api/v1/formation/", **drh).status_code == 200
+
+    # Rouvrir une seule rubrique rouvre ses routes, et elles seules.
+    statistiques = rbac.fonctions.get(libelle="Statistiques")
+    profil.precisions = {**profil.precisions, str(statistiques.pk): "lecture"}
+    profil.save()
+    assert api.get("/api/v1/me/", **drh).json()["acces"]["modules"]["Statistiques & RBAC"] == "validation"
+    assert api.get("/api/v1/statistiques/compositions/", **drh).status_code == 200
+    assert api.get("/api/v1/utilisateurs/", **drh).status_code == 403
+
+
+def test_garde_des_rubriques_carrieres_besoins_et_dotation(api):
+    from personnel.models import ModuleHabilitation, Profil
+
+    drh = _jeton(api, "DRH-2018-044")
+    modules = list(ModuleHabilitation.objects.all())
+    profil = Profil.objects.get(user__username="DRH-2018-044")
+    profil.administrateur = False
+    profil.habilitations = ["validation"] * len(modules)
+    # Seules ces rubriques sont refusées ; le reste du compte garde son niveau.
+    refusees = {("Carrières & Actes", "Situation administrative"), ("GPEC", "Expression des besoins"), ("GPEC", "Recrutement")}
+    profil.precisions = {str(f.pk): "refus" for m in modules for f in m.fonctions.all() if (m.libelle, f.libelle) in refusees}
+    profil.save()
+
+    for route in ("/api/v1/carrieres/", "/api/v1/carrieres/registres/", "/api/v1/avancements/export/", "/api/v1/besoins/", "/api/v1/dotation/", "/api/v1/dotation-agents/"):
+        assert api.get(route, **drh).status_code == 403, route
+    # Ce qui sert à chaque agent pour lui-même, ou à une autre rubrique, reste ouvert.
+    for route in ("/api/v1/mobilite/", "/api/v1/besoins/mes-fiches/", "/api/v1/carrieres/absences/", "/api/v1/nomenclature/"):
+        assert api.get(route, **drh).status_code == 200, route

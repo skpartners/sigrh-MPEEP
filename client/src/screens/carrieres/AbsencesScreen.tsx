@@ -10,6 +10,7 @@ import { Pagination, usePagination } from "../../ui/Pagination";
 import { AppChrome } from "../AppChrome";
 import { Icone } from "../../ui/Icone";
 import { Select } from "../../ui/Select";
+import { correspond } from "../../ui/recherche";
 
 type Sens = "valider" | "invalider";
 type TypeAutorisation = "autorisation" | "autorisation-speciale" | "permission-speciale";
@@ -25,6 +26,7 @@ type Autorisation = {
   fin: string;
   jours: number;
   decision: "en_attente" | "validee" | "invalidee";
+  suit_circuit?: boolean;
   motif_decision: string;
 };
 type Statut = "traitement" | "validee" | "accordee" | "refusee";
@@ -131,7 +133,7 @@ export function AbsencesScreen() {
     return suivi.filter(
       (item) =>
         (!entite || item.structure === entite) && (!type || item.type === type) && (!statut || item.statut === statut)
-        && (!q || `${item.agent.nom_complet} ${item.agent.matricule} ${item.structure} ${item.reference} ${item.motif}`.toLowerCase().includes(q)),
+        && (!q || correspond(`${item.agent.nom_complet} ${item.agent.matricule} ${item.structure} ${item.reference} ${item.motif}`, q)),
     );
   }, [suivi, recherche, entite, type, statut]);
   const pageSuivi = usePagination(filtrees, `${recherche}|${entite}|${type}|${statut}`, 4);
@@ -337,12 +339,15 @@ function ActionsDecision({ autorisation, onChoisir, onDetail }: { autorisation: 
       <button className={BOUTON_DETAIL} type="button" aria-label={`Détail : ${nom}`} onClick={onDetail}>
         <Icone nom="visibility" className="text-sm" />Détail
       </button>
-      <button className="px-2.5 py-1 rounded bg-primary text-on-primary text-xs font-semibold hover:bg-primary-container" type="button" aria-label={`Valider : ${nom}`} onClick={() => onChoisir("valider")}>
+      {autorisation.suit_circuit ? (
+        <span className="text-xs text-on-surface-variant" title="Cette demande se décide à chaque étape de son circuit de validation.">Suit son circuit</span>
+      ) : null}
+      {autorisation.suit_circuit ? null : <><button className="px-2.5 py-1 rounded bg-primary text-on-primary text-xs font-semibold hover:bg-primary-container" type="button" aria-label={`Valider : ${nom}`} onClick={() => onChoisir("valider")}>
         Valider
       </button>
       <button className="px-2.5 py-1 rounded bg-error text-on-error text-xs font-semibold hover:bg-error/90" type="button" aria-label={`Invalider : ${nom}`} onClick={() => onChoisir("invalider")}>
         Invalider
-      </button>
+      </button></>}
     </div>
   );
 }

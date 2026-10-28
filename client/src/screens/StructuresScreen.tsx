@@ -1,3 +1,4 @@
+import { Chargement } from "../ui/Chargement";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState, type CSSProperties } from "react";
 import { ApiError, api } from "../api/client";
@@ -11,6 +12,7 @@ import { Pagination, usePagination } from "../ui/Pagination";
 import { ActionsImport } from "./ImportAgents";
 import { AppChrome } from "./AppChrome";
 import { Icone } from "../ui/Icone";
+import { ouvreAuClic } from "../ui/clicLigne";
 import { Select } from "../ui/Select";
 
 const PAGE = "w-full px-4 sm:px-6 lg:px-8 py-6 mx-auto flex-1 space-y-6";
@@ -157,7 +159,7 @@ export function StructuresScreen() {
   }
 
   if (annuaire.isLoading) {
-    return <AppChrome><p className={`${PAGE} text-on-surface-variant`}>Chargement des structures…</p></AppChrome>;
+    return <AppChrome><div className={PAGE}><Chargement libelle="Chargement des structures…" /></div></AppChrome>;
   }
   if (!data) {
     return <AppChrome><p className={`${PAGE} text-error`}>Les structures n'ont pas pu être chargées.</p></AppChrome>;
@@ -236,7 +238,6 @@ export function StructuresScreen() {
               <thead className="bg-surface-container-low font-label-sm text-label-sm uppercase tracking-wide text-on-surface-variant">
                 <tr>
                   <th className="px-4 py-3">Programme</th>
-                  <th className="px-4 py-3">Quorum</th>
                   <th className="px-4 py-3 text-right">Actions</th>
                 </tr>
               </thead>
@@ -246,7 +247,7 @@ export function StructuresScreen() {
                     <td colSpan={2} className="px-4 py-8 text-center font-body-sm text-body-sm text-on-surface-variant">Aucun programme. Ajoutez-en un avant de créer une structure.</td>
                   </tr>
                 ) : pagePoles.visibles.map((item) => (
-                  <tr key={item.code} className="border-t border-hairline">
+                  <tr key={item.code} className="cursor-pointer border-t border-hairline hover:bg-surface-container-low/70" title={`Modifier ${item.libelle || item.nom}`} onClick={ouvreAuClic(() => ouvrirPole(item))}>
                     <td className="px-4 py-3 font-body-md text-body-md text-on-surface">{item.libelle || item.nom}</td>
                     <td className="px-4 py-3 text-right">
                       <button type="button" className="font-label-md text-label-md text-primary hover:underline" onClick={() => ouvrirPole(item)}>Modifier</button>
@@ -275,6 +276,7 @@ export function StructuresScreen() {
                   <th className="px-4 py-3">Niveau</th>
                   <th className="px-4 py-3">Rattachement</th>
                   <th className="px-4 py-3">Programme</th>
+                  <th className="px-4 py-3">Quorum</th>
                   <th className="px-4 py-3 text-right">Actions</th>
                 </tr>
               </thead>
@@ -286,7 +288,7 @@ export function StructuresScreen() {
                 ) : pageStructures.visibles.map(({ item, profondeur }) => {
                   const teinte = teinteNiveau(item.niveau);
                   return (
-                  <tr key={item.code} className="border-t border-hairline">
+                  <tr key={item.code} className="cursor-pointer border-t border-hairline hover:bg-surface-container-low/70" title={`Modifier ${item.nom}`} onClick={ouvreAuClic(() => ouvrirEdition(item))}>
                     <td className="px-4 py-3 font-body-md text-body-md text-on-surface" style={{ paddingLeft: `${16 + profondeur * 20}px` }}>
                       <span className="inline-flex items-center gap-2">
                         <span className={`h-2 w-2 shrink-0 rounded-full ${teinte.puce}`} aria-hidden="true" />
@@ -468,7 +470,7 @@ function VoletGrades() {
   const data = page.data;
   const visibles = (data?.grades ?? []).filter((item) => !categorie || item.categorie === categorie);
   const liste = usePagination(visibles, `${categorie}|${data?.grades.length ?? 0}`);
-  if (page.isLoading) return <p className="text-on-surface-variant">Chargement des grades…</p>;
+  if (page.isLoading) return <Chargement libelle="Chargement des grades…" />;
   if (!data) return <p className="text-error">Les grades n'ont pas pu être chargés.</p>;
   return (
     <section className={`${CARTE} overflow-hidden`}>
@@ -509,7 +511,7 @@ function VoletGrades() {
           </thead>
           <tbody>
             {liste.visibles.map((item) => (
-              <tr key={item.code} className="border-t border-hairline">
+              <tr key={item.code} className="cursor-pointer border-t border-hairline hover:bg-surface-container-low/70" title={`Modifier le grade ${item.code}`} onClick={ouvreAuClic(() => { setEdition(item.code); setFormulaire({ code: item.code, categorie: item.categorie, libelle: item.libelle, en_vigueur: item.en_vigueur }); enregistrer.reset(); })}>
                 <td className="px-4 py-3 font-body-md text-body-md text-on-surface whitespace-nowrap">
                   {item.code}
                   {!item.en_vigueur && <span className="ml-2 font-label-sm text-label-sm text-on-surface-variant">Ancien</span>}
@@ -631,7 +633,7 @@ function VoletEmplois() {
   const pages = Math.max(1, Math.ceil(correspond.length / TAILLE));
   const courante = Math.min(pageCourante, pages - 1);
   const visibles = correspond.slice(courante * TAILLE, courante * TAILLE + TAILLE);
-  if (page.isLoading) return <p className="text-on-surface-variant">Chargement des emplois…</p>;
+  if (page.isLoading) return <Chargement libelle="Chargement des emplois…" />;
   if (!data) return <p className="text-error">Les emplois n'ont pas pu être chargés.</p>;
   return (
     <ListeEmplois
@@ -743,7 +745,7 @@ function ListeEmplois({
                 <td colSpan={4} className="px-4 py-8 text-center font-body-sm text-body-sm text-on-surface-variant">Aucun emploi ne correspond.</td>
               </tr>
             ) : visibles.map((item) => (
-              <tr key={item.code} className="border-t border-hairline">
+              <tr key={item.code} className="cursor-pointer border-t border-hairline hover:bg-surface-container-low/70" title={`Modifier ${item.libelle}`} onClick={ouvreAuClic(() => onEditer(item))}>
                 <td className="px-4 py-3 font-body-md text-body-md text-on-surface">{item.libelle}</td>
                 <td className="px-4 py-3 font-body-sm text-body-sm text-on-surface-variant">{item.famille_libelle}</td>
                 <td className="px-4 py-3 font-body-sm text-body-sm text-on-surface">{item.grade}</td>

@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useId, useState } from "react";
 import { api } from "../../api/client";
 import type { CircuitConfigure, ConfigurationCircuits, ElementCircuit } from "../../api/types";
+import { ouvreAuClic } from "../../ui/clicLigne";
 import { useFeedback } from "../../ui/Feedback";
 import { BOUTON_PRIMAIRE, BOUTON_SECONDAIRE, Modale } from "../../ui/Modale";
 import { Icone } from "../../ui/Icone";
@@ -62,6 +63,7 @@ export function ConfigurerCircuits() {
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
           <h2 id={titreId} className="font-headline-md text-headline-md text-on-surface">Configurer un circuit</h2>
+          <p className="mt-1 font-body-sm text-body-sm text-on-surface-variant">Ce qui n'est attribué à aucun circuit suit le parcours par défaut ci-dessus.</p>
         </div>
         <button
           type="button"
@@ -93,7 +95,7 @@ export function ConfigurerCircuits() {
               </div>
             ) : (
               data.circuits.map((circuit) => (
-                <article key={circuit.id} className={`${CARD} p-5 space-y-4`}>
+                <article key={circuit.id} title={`Modifier ${circuit.nom}`} onClick={ouvreAuClic(() => ouvrir(circuit))} className={`cursor-pointer ${CARD} p-5 space-y-4 hover:bg-surface-container-low/40`}>
                   <div className="flex items-start justify-between gap-3">
                     <h3 className="font-headline-sm text-headline-sm text-on-surface">{circuit.nom}</h3>
                     <div className="flex items-center gap-2 shrink-0">

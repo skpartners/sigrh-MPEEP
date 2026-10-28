@@ -1,8 +1,10 @@
+import { Chargement } from "../../ui/Chargement";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { ApiError, api, telecharger } from "../../api/client";
 import type { DemandeDotation, Dotation, Passerelle } from "../../api/types";
 import { dateCourte, nombre } from "../../ui/format";
+import { ouvreAuClic } from "../../ui/clicLigne";
 import { useFeedback } from "../../ui/Feedback";
 import { Modale } from "../../ui/Modale";
 import { useAction } from "../../ui/useAction";
@@ -176,7 +178,7 @@ export function DotationScreen({ ongletInitial = "affectation" }: { ongletInitia
   }
 
   if (dotation.isLoading) {
-    return <AppChrome><p className={`${PAGE} text-on-surface-variant`}>Chargement de la dotation…</p></AppChrome>;
+    return <AppChrome><div className={PAGE}><Chargement libelle="Chargement de la dotation…" /></div></AppChrome>;
   }
   if (!data) {
     return <AppChrome><p className={`${PAGE} text-error`}>La dotation n'a pas pu être chargée.</p></AppChrome>;
@@ -278,7 +280,7 @@ export function DotationScreen({ ongletInitial = "affectation" }: { ongletInitia
                 {lignes.length === 0 ? (
                   <tr><td colSpan={6} className="px-4 py-8 text-on-surface-variant">Aucune demande dans cet onglet.</td></tr>
                 ) : lignes.map((item) => (
-                  <tr key={item.reference} className="border-t border-hairline">
+                  <tr key={item.reference} title={`Modifier ${item.reference}`} onClick={ouvreAuClic(() => ouvrirSaisie(item))} className="cursor-pointer border-t border-hairline hover:bg-surface-container-low/70">
                     <td className="px-4 py-3">
                       <p className="font-label-md text-label-md text-on-surface">{item.reference}</p>
                       <p className="font-body-sm text-body-sm text-on-surface-variant">{dateCourte(item.recu_le)}</p>

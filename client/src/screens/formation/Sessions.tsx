@@ -1,3 +1,4 @@
+import { Chargement } from "../../ui/Chargement";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
@@ -8,6 +9,7 @@ import { Pagination, usePagination } from "../../ui/Pagination";
 import { useAction } from "../../ui/useAction";
 import { RefusCandidature } from "./Candidatures";
 import type { Besoin, Candidature, EtatSession, Session, TableauFormation } from "./types";
+import { ouvreAuClic } from "../../ui/clicLigne";
 import { Icone } from "../../ui/Icone";
 import {
   BOUTON_ICONE,
@@ -30,6 +32,7 @@ import {
   useEnregistrement,
 } from "./ui";
 import { Select } from "../../ui/Select";
+import { correspond } from "../../ui/recherche";
 
 const ETATS: { valeur: EtatSession | ""; libelle: string }[] = [
   { valeur: "", libelle: "Tous les états" },
@@ -60,7 +63,7 @@ export function Sessions({ data }: { data: TableauFormation }) {
     (s) =>
       (!etat || s.etat === etat) &&
       (!organisation || s.cadre === organisation) &&
-      (!q || `${s.libelle} ${s.code} ${s.lieu} ${s.formateur} ${s.prestataire?.nom ?? ""}`.toLowerCase().includes(q)),
+      (!q || correspond(`${s.libelle} ${s.code} ${s.lieu} ${s.formateur} ${s.prestataire?.nom ?? ""}`, q)),
   );
   // Ce qui demande une action en premier : en cours, inscriptions ouvertes, puis le reste par date.
   const ordre: Record<EtatSession, number> = { en_cours: 0, inscriptions_ouvertes: 1, planifiee: 2, a_planifier: 3, terminee: 4, annulee: 5 };
@@ -191,7 +194,7 @@ function CarteSession({
   const actif = ACTIF.has(s.etat);
   const dateDepassee = s.date_debut ? new Date(`${s.date_debut}T00:00:00`) <= new Date() : false;
   return (
-    <li className={`${CARTE} motion-content flex flex-col overflow-hidden ${s.etat === "annulee" ? "opacity-75" : ""}`}>
+    <li title={actif ? `Modifier ${s.libelle}` : undefined} onClick={actif ? ouvreAuClic(onModifier) : undefined} className={`${CARTE} motion-content flex flex-col overflow-hidden ${actif ? "cursor-pointer" : ""} ${s.etat === "annulee" ? "opacity-75" : ""}`}>
       <div className="p-5 flex-1 flex flex-col gap-3">
         <div className="flex items-center justify-between gap-2">
           <BadgeSession etat={s.etat} libelle={s.etat_libelle} />
@@ -534,7 +537,7 @@ function AjoutAgents({ session, dejaInscrits, onClose }: { session: Session; dej
   const enregistrer = useEnregistrement<{ resultats: typeof resultats; inscrits: number }>((r) => setResultats(r.resultats), "Inscriptions transmises");
   const q = recherche.trim().toLowerCase();
   const proposes = useMemo(
-    () => (agents.data ?? []).filter((a) => !dejaInscrits.has(a.matricule) && (!q || `${a.nom_complet} ${a.matricule} ${a.organisme_sigle}`.toLowerCase().includes(q))).slice(0, 40),
+    () => (agents.data ?? []).filter((a) => !dejaInscrits.has(a.matricule) && (!q || correspond(`${a.nom_complet} ${a.matricule} ${a.organisme_sigle}`, q))).slice(0, 40),
     [agents.data, dejaInscrits, q],
   );
 
@@ -581,7 +584,7 @@ function AjoutAgents({ session, dejaInscrits, onClose }: { session: Session; dej
         </ul>
       ) : null}
       <ul className="mt-3 max-h-72 overflow-y-auto rounded border border-hairline divide-y divide-surface-container-high">
-        {agents.isPending ? <li className="p-3 font-body-sm text-body-sm text-on-surface-variant">Chargement…</li> : null}
+        {agents.isPending ? <li><Chargement enLigne libelle="Chargement…" /></li> : null}
         {agents.data && proposes.length === 0 ? <li className="p-3 font-body-sm text-body-sm text-on-surface-variant">Aucun agent disponible pour cette recherche.</li> : null}
         {proposes.map((a) => (
           <li key={a.matricule}>

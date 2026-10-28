@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { ApiError, api } from "../../api/client";
 import { dateCourte } from "../../ui/format";
+import { ouvreAuClic } from "../../ui/clicLigne";
 import { useFeedback } from "../../ui/Feedback";
 import { Icone } from "../../ui/Icone";
 import { BOUTON_PRIMAIRE, Modale } from "../../ui/Modale";
@@ -107,7 +108,7 @@ export function GestionCampagnes() {
       {campagnes.length === 0 ? <p className="font-body-sm text-body-sm text-on-surface-variant">Aucune campagne n'a encore été ouverte.</p> : null}
       <ul className="grid grid-cols-1 xl:grid-cols-2 gap-4">
         {campagnes.map((campagne) => (
-          <li key={campagne.id} className={`rounded-xl border p-5 space-y-3 ${campagne.cloturee ? "border-hairline bg-surface-container-low/50" : "border-primary/40 bg-primary-fixed/20"}`}>
+          <li key={campagne.id} title={campagne.cloturee ? undefined : `Modifier la campagne ${campagne.exercice}`} onClick={campagne.cloturee ? undefined : ouvreAuClic(() => setEdition(campagne))} className={`rounded-xl border p-5 space-y-3 ${campagne.cloturee ? "border-hairline bg-surface-container-low/50" : "cursor-pointer border-primary/40 bg-primary-fixed/20 hover:bg-primary-fixed/40"}`}>
             <div className="flex flex-wrap items-start justify-between gap-2">
               <div>
                 <p className="font-headline-sm text-headline-sm font-bold text-on-surface">Campagne {campagne.exercice}</p>

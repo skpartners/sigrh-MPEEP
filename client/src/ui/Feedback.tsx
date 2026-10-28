@@ -1,5 +1,6 @@
-import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { createPortal } from "react-dom";
+import { Orbite, PointsAttente } from "./Chargement";
 import { BOUTON_PRIMAIRE, BOUTON_SECONDAIRE, Modale } from "./Modale";
 import { Icone } from "./Icone";
 
@@ -160,12 +161,13 @@ export function FeedbackProvider({ children }: { children: ReactNode }) {
   );
 }
 
-const TOAST_TONE: Record<ToastTon, { icon: string; badge: string; bordure: string; barre: string }> = {
-  success: { icon: "check_circle", badge: "bg-succes-container text-succes", bordure: "border-l-succes", barre: "bg-succes" },
-  error: { icon: "error", badge: "bg-error-container text-on-error-container", bordure: "border-l-error", barre: "bg-error" },
-  warning: { icon: "warning", badge: "bg-attention/15 text-attention", bordure: "border-l-attention", barre: "bg-attention" },
-  info: { icon: "info", badge: "bg-info-container text-info", bordure: "border-l-info", barre: "bg-info" },
-  message: { icon: "chat", badge: "bg-primary-fixed text-primary", bordure: "border-l-primary", barre: "bg-primary" },
+/** Teinte de chaque type de message : elle alimente le lavis, le médaillon et la barre de temps (--ton). */
+const TOAST_TONE: Record<ToastTon, { icon: string; ton: string; label: string }> = {
+  success: { icon: "check_circle", ton: "var(--color-succes)", label: "Réussi" },
+  error: { icon: "error", ton: "var(--color-error)", label: "Erreur" },
+  warning: { icon: "warning", ton: "var(--color-attention)", label: "Attention" },
+  info: { icon: "info", ton: "var(--color-info)", label: "Information" },
+  message: { icon: "chat", ton: "var(--color-primary)", label: "Message" },
 };
 
 /** Une notification : s'arrête au survol et quand l'onglet est caché, se ferme à la croix, sort en douceur. */
@@ -203,18 +205,26 @@ function ToastItem({ item, onClose }: { item: Toast; onClose: (id: number) => vo
   return (
     <div
       role={item.tone === "error" ? "alert" : "status"}
-      className={`${sortie ? "toast-sortie" : "motion-toast"} pointer-events-auto relative flex w-[23rem] max-w-full items-start gap-3 overflow-hidden rounded-xl border border-hairline border-l-4 bg-surface-container-lowest p-4 pr-11 shadow-xl ${ton.bordure}`}
+      className={`toast ${sortie ? "toast-sortie" : "motion-toast"} pointer-events-auto relative flex w-[24rem] max-w-full items-start gap-3.5 overflow-hidden rounded-2xl border border-hairline p-4 pb-5 pr-11`}
+      style={{ "--ton": ton.ton } as CSSProperties}
       onPointerEnter={() => setSurvol(true)}
       onPointerLeave={() => setSurvol(false)}
       onFocus={() => setSurvol(true)}
       onBlur={() => setSurvol(false)}
     >
-      <div className={`flex size-9 shrink-0 items-center justify-center rounded-full ${ton.badge}`}>
-        <Icone nom={ton.icon} className="text-xl" />
+      <div className="toast-medaillon flex size-10 shrink-0 items-center justify-center rounded-xl" aria-hidden="true">
+        {item.tone === "success" ? (
+          <svg viewBox="0 0 24 24" className="size-6" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
+            <path className="toast-trace" d="M5 12.5l4.5 4.5L19 7.5" />
+          </svg>
+        ) : (
+          <Icone nom={ton.icon} className="text-2xl" />
+        )}
       </div>
-      <div className="min-w-0 flex-1">
-        <p className="font-label-lg text-label-lg font-bold text-on-surface">{item.title}</p>
-        {item.message ? <p className="mt-0.5 font-body-sm text-body-sm text-on-surface-variant">{item.message}</p> : null}
+      <div className="min-w-0 flex-1 pt-0.5">
+        <p className="sr-only">{ton.label} : </p>
+        <p className="font-headline-sm text-[0.95rem] leading-snug text-on-surface">{item.title}</p>
+        {item.message ? <p className="mt-1 font-body-sm text-body-sm text-on-surface-variant">{item.message}</p> : null}
       </div>
       <button
         type="button"
@@ -225,7 +235,7 @@ function ToastItem({ item, onClose }: { item: Toast; onClose: (id: number) => vo
         <Icone nom="close" className="text-base" />
       </button>
       <span
-        className={`toast-progression ${ton.barre}`}
+        className="toast-progression bg-[var(--ton)]"
         style={{ animationDuration: `${item.duree}ms`, animationPlayState: pause ? "paused" : "running" }}
         aria-hidden="true"
       />
@@ -264,26 +274,51 @@ function ConfirmDialog({ title, message, confirmLabel = "Confirmer", onClose }: 
 function BusyOverlay({ label, detail }: { label: string; detail?: string }) {
   // Au-delà de quelques secondes, on rassure : l'attente est normale, la page n'est pas figée.
   const [longue, setLongue] = useState(false);
+  const carte = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const minuteur = setTimeout(() => setLongue(true), 8000);
     return () => clearTimeout(minuteur);
   }, []);
-  return (
-    <Modale role="alertdialog" titre={label} sousTitre={detail} taille="sm" sansFermeture centre onClose={() => undefined}>
-      <div className="flex flex-col items-center pt-2 text-center" aria-busy="true" role="status">
-        <div className="relative h-20 w-20">
-          <svg className="motion-spin absolute inset-0" viewBox="0 0 80 80" aria-hidden="true">
-            <circle cx="40" cy="40" r="34" fill="none" stroke="var(--color-surface-container-high)" strokeWidth="5" />
-            <circle cx="40" cy="40" r="34" fill="none" stroke="var(--color-primary)" strokeWidth="5" strokeLinecap="round" strokeDasharray="60 154" />
-            <circle cx="40" cy="40" r="34" fill="none" stroke="var(--color-secondary-container)" strokeWidth="5" strokeLinecap="round" strokeDasharray="22 192" strokeDashoffset="-90" />
-          </svg>
-          <img src={`${import.meta.env.BASE_URL}logo.png`} alt="" className="motion-breathe absolute inset-0 m-auto h-11 w-11 object-contain" />
-        </div>
-        <div className="motion-indeterminate mt-5 h-1 w-full overflow-hidden rounded-full bg-surface-container" />
+  // Attente non interruptible : le focus reste sur la carte, Tab et Échap n'atteignent rien derrière.
+  useEffect(() => {
+    const precedent = document.activeElement as HTMLElement | null;
+    carte.current?.focus();
+    function bloquer(event: KeyboardEvent) {
+      if (event.key !== "Tab" && event.key !== "Escape") return;
+      event.preventDefault();
+      event.stopPropagation();
+      carte.current?.focus();
+    }
+    document.addEventListener("keydown", bloquer, true);
+    return () => {
+      document.removeEventListener("keydown", bloquer, true);
+      if (precedent?.isConnected) precedent.focus?.();
+    };
+  }, []);
+  const titre = label.replace(/[….]+$/, "");
+  return createPortal(
+    <div className="motion-overlay fixed inset-0 z-[75] flex items-center justify-center bg-inverse-surface/45 p-6 backdrop-blur-[3px]">
+      <div
+        ref={carte}
+        role="alertdialog"
+        aria-modal="true"
+        aria-busy="true"
+        aria-label={label}
+        tabIndex={-1}
+        className="motion-overlay-card flex w-full max-w-xs flex-col items-center rounded-3xl border border-hairline bg-surface-container-lowest px-8 pb-8 pt-9 text-center shadow-[0_2px_6px_-2px_rgb(11_28_48/0.1),0_32px_64px_-20px_rgb(11_28_48/0.45)] outline-none"
+      >
+        <Orbite taille="6rem" />
+        <p className="mt-7 font-headline-md text-headline-md text-on-surface" role="status">
+          {titre}
+          <PointsAttente />
+        </p>
+        {detail ? <p className="mt-1.5 font-body-sm text-body-sm text-on-surface-variant">{detail}</p> : null}
+        <div className="attente-piste mt-6 w-full max-w-[13rem]" aria-hidden="true" />
         {longue ? (
-          <p className="mt-4 font-body-sm text-body-sm text-on-surface-variant">Cela prend un peu plus de temps que prévu. Merci de patienter, ne fermez pas cette page.</p>
+          <p className="mt-5 font-body-sm text-body-sm text-on-surface-variant">Cela prend un peu plus de temps que prévu. Merci de patienter, ne fermez pas cette page.</p>
         ) : null}
       </div>
-    </Modale>
+    </div>,
+    document.body,
   );
 }

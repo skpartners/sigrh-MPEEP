@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { ApiError, api } from "../../api/client";
 import type { AgentBrief } from "../../api/types";
+import { ouvreAuClic } from "../../ui/clicLigne";
 import { useFeedback } from "../../ui/Feedback";
 import { Modale } from "../../ui/Modale";
 import { Skeleton } from "../../ui/Motion";
@@ -9,6 +10,7 @@ import { Pagination, usePagination } from "../../ui/Pagination";
 import { AppChrome } from "../AppChrome";
 import { Icone } from "../../ui/Icone";
 import { Select } from "../../ui/Select";
+import { correspond } from "../../ui/recherche";
 
 type Statut = "notifie" | "reception" | "transmis";
 type Dossier = {
@@ -89,7 +91,7 @@ export function FinCarriereScreen() {
     return dossiers.filter((item) =>
       (!entite || item.agent.organisme_sigle === entite) &&
       (!statut || item.statut === statut) &&
-      (!terme || [item.agent.nom_complet, item.agent.matricule, item.agent.fonction, item.agent.grade, item.motif?.libelle ?? ""].some((valeur) => (valeur ?? "").toLowerCase().includes(terme))),
+      (!terme || [item.agent.nom_complet, item.agent.matricule, item.agent.fonction, item.agent.grade, item.motif?.libelle ?? ""].some((valeur) => correspond((valeur ?? ""), terme))),
     );
   }, [dossiers, entite, statut, recherche]);
   const pageDossiers = usePagination(filtres, `${entite}|${statut}|${recherche}`);
@@ -234,7 +236,7 @@ export function FinCarriereScreen() {
                     </tr>
                   ) : (
                     pageDossiers.visibles.map((dossier) => (
-                      <tr key={dossier.id} className="hover:bg-surface-container-low/50 transition-colors">
+                      <tr key={dossier.id} title={`Modifier le dossier de ${dossier.agent.nom_complet}`} onClick={ouvreAuClic(() => setPanneau({ genre: "dossier", dossier }))} className="cursor-pointer hover:bg-surface-container-low/50 transition-colors">
                         <td className="py-4 px-6">
                           <div className="flex items-center gap-3">
                             <span className="w-10 h-10 rounded-full shrink-0 bg-primary-fixed text-on-primary-fixed inline-flex items-center justify-center font-bold text-label-md" aria-hidden="true">{dossier.agent.initiales}</span>
@@ -299,7 +301,7 @@ export function FinCarriereScreen() {
                 </div>
                 <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {(donnees.accompagnement.actions ?? []).map((action) => (
-                    <div key={action.id} className="p-3 bg-surface-container-low rounded">
+                    <div key={action.id} title={`Modifier ${action.titre}`} onClick={ouvreAuClic(() => setPanneau({ genre: "action", action }))} className="cursor-pointer p-3 bg-surface-container-low rounded hover:bg-surface-container">
                       <div className="flex items-start justify-between gap-2">
                         <span className="font-label-sm text-label-sm text-on-surface-variant font-bold block">{action.titre}</span>
                         <span className="flex shrink-0">
@@ -335,7 +337,7 @@ export function FinCarriereScreen() {
                 </div>
                 <div className="mt-5 space-y-2.5">
                   {donnees.distinctions.map((distinction, index) => (
-                    <div key={distinction.id} className="p-2.5 bg-surface-container-low rounded flex items-center justify-between gap-3">
+                    <div key={distinction.id} title={`Modifier ${distinction.titre}`} onClick={ouvreAuClic(() => setPanneau({ genre: "distinction", distinction }))} className="cursor-pointer p-2.5 bg-surface-container-low rounded flex items-center justify-between gap-3 hover:bg-surface-container">
                       <div className="flex items-center gap-3">
                         <span className={`w-8 h-8 rounded flex items-center justify-center font-bold text-label-sm font-label-sm shrink-0 ${index === 0 ? "bg-secondary-container/20 text-secondary" : "bg-surface-container text-tertiary"}`}>{distinction.rang}</span>
                         <div>

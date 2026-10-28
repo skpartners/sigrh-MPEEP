@@ -6,6 +6,7 @@ import { useFeedback } from "../../ui/Feedback";
 import { Icone } from "../../ui/Icone";
 import { BOUTON_PRIMAIRE, BOUTON_SECONDAIRE, Modale } from "../../ui/Modale";
 import { Select } from "../../ui/Select";
+import { Precision, TableauElements } from "./TableauElements";
 
 const CARD = "rounded-xl bg-surface-container-lowest border border-hairline";
 const CHAMP = "w-full h-10 px-3 rounded border border-outline-variant bg-surface-container-lowest font-body-md text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-primary";
@@ -28,9 +29,6 @@ export function ActesDemandables() {
   });
   const actes = (configuration.data?.elements.actes ?? []) as Acte[];
   const circuits = configuration.data?.circuits ?? [];
-  const ordonnes = actes
-    .filter((acte) => !acte.parent)
-    .flatMap((racine) => [racine, ...actes.filter((acte) => acte.parent === racine.code)]);
 
   async function rafraichir() {
     await client.invalidateQueries({ queryKey: ["circuits-config"] });
@@ -69,40 +67,22 @@ export function ActesDemandables() {
       {configuration.isError ? (
         <div className={`${CARD} p-6`} role="alert"><p className="font-label-lg text-label-lg text-error">Les actes n’ont pas pu être chargés.</p></div>
       ) : (
-        <ul className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-          {ordonnes.map((acte) => {
-            const parent = actes.find((item) => item.code === acte.parent);
-            const circuit = circuits.find((item) => item.id === (acte.circuit_id ?? parent?.circuit_id));
-            const herite = acte.circuit_id == null && circuit != null;
-            return (
-              <li key={acte.id} className={`${CARD} p-4 flex items-start justify-between gap-3 ${parent ? "lg:ml-6 border-l-4 border-l-primary-fixed-dim" : ""}`}>
-                <div className="min-w-0 space-y-1.5">
-                  <p className="font-label-lg text-label-lg text-on-surface font-bold">{acte.libelle}</p>
-                  {parent ? <p className="font-label-sm text-label-sm text-on-surface-variant">Sous-rubrique de « {parent.libelle} »</p> : null}
-                  <div className="flex flex-wrap gap-1.5">
-                    <span className={`px-2 py-0.5 rounded font-label-sm text-label-sm font-semibold ${circuit ? "bg-primary-fixed text-on-primary-fixed" : "bg-surface-container text-on-surface-variant"}`}>
-                      {circuit ? `Circuit : ${circuit.nom}${herite ? " (hérité)" : ""}` : "Circuit par défaut"}
-                    </span>
-                    {acte.periode ? <span className="px-2 py-0.5 rounded bg-surface-container text-on-surface-variant font-label-sm text-label-sm">Période</span> : null}
-                    {acte.destinataire ? <span className="px-2 py-0.5 rounded bg-surface-container text-on-surface-variant font-label-sm text-label-sm">Destinataire</span> : null}
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <button type="button" onClick={() => setEdition({ id: acte.id, libelle: acte.libelle, parent: acte.parent, periode: acte.periode, destinataire: acte.destinataire, justificatif: acte.justificatif, justificatif_obligatoire: acte.justificatif_obligatoire })}
-                    className="px-3 py-1.5 rounded bg-surface-container text-on-surface font-label-md text-label-md hover:bg-surface-container-high">Modifier</button>
-                  <button type="button" onClick={() => void retirer(acte)}
-                    className="px-3 py-1.5 rounded bg-surface-container text-error font-label-md text-label-md hover:bg-error-container">Retirer</button>
-                </div>
-              </li>
-            );
-          })}
-          {actes.length === 0 && configuration.data ? (
-            <li className={`${CARD} p-6 lg:col-span-2`}>
-              <p className="font-label-lg text-label-lg text-on-surface">Aucun acte configuré</p>
-              <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">Les agents ne peuvent rien demander tant qu’aucun acte n’est ajouté.</p>
-            </li>
-          ) : null}
-        </ul>
+        <TableauElements
+          lignes={actes}
+          circuits={circuits}
+          colonneDetail="Précisions demandées"
+          detail={(acte) => (
+            <>
+              {acte.periode ? <Precision>Période</Precision> : null}
+              {acte.destinataire ? <Precision>Destinataire</Precision> : null}
+              {acte.justificatif_obligatoire ? <Precision>Justificatif obligatoire</Precision> : null}
+              {!acte.periode && !acte.destinataire && !acte.justificatif_obligatoire ? <span className="text-on-surface-variant">—</span> : null}
+            </>
+          )}
+          vide={{ titre: configuration.data ? "Aucun acte configuré" : "Chargement…", texte: configuration.data ? "Les agents ne peuvent rien demander tant qu’aucun acte n’est ajouté." : "" }}
+          onModifier={(acte) => setEdition({ id: acte.id, libelle: acte.libelle, parent: acte.parent, periode: acte.periode, destinataire: acte.destinataire, justificatif: acte.justificatif, justificatif_obligatoire: acte.justificatif_obligatoire })}
+          onRetirer={(acte) => void retirer(acte)}
+        />
       )}
 
       {edition ? <EditeurActe edition={edition} rubriques={actes.filter((acte) => !acte.parent && acte.id !== edition.id)} possedeEnfants={edition.id != null && actes.some((acte) => acte.parent === actes.find((item) => item.id === edition.id)?.code)} onChange={setEdition} onFermer={() => setEdition(null)} onEnregistre={rafraichir} /> : null}

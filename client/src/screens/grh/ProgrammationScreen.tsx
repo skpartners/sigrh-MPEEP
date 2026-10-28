@@ -3,6 +3,7 @@ import { Fragment, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { ApiError, api } from "../../api/client";
 import { dateCourte, nombre } from "../../ui/format";
+import { ouvreAuClic } from "../../ui/clicLigne";
 import { useFeedback } from "../../ui/Feedback";
 import { Icone } from "../../ui/Icone";
 import { Modale } from "../../ui/Modale";
@@ -10,6 +11,7 @@ import { Pagination, usePagination } from "../../ui/Pagination";
 import { CHAMP, Kpi, LIBELLE, PageGrh, Section } from "./ui";
 import { LIBELLE_ETAT, type CampagneBesoins } from "../gpec/besoinsCommun";
 import { Select } from "../../ui/Select";
+import { correspond } from "../../ui/recherche";
 
 type Etape = "conference" | "catalogue";
 type Decision = "maintenu" | "modifie";
@@ -81,7 +83,7 @@ export function ProgrammationScreen({ etape }: { etape: Etape }) {
   const lignes = useMemo(() => (d?.lignes ?? []).filter((l) => {
     const v = l[etape];
     const etat = v ? v.decision : "attente";
-    return (!filtre || etat === filtre) && (!terme || [l.emploi.libelle, l.grade, ...l.structures.map((s) => s.nom)].some((t) => t.toLowerCase().includes(terme)));
+    return (!filtre || etat === filtre) && (!terme || [l.emploi.libelle, l.grade, ...l.structures.map((s) => s.nom)].some((t) => correspond(t, terme)));
   }), [d?.lignes, etape, filtre, terme]);
   const page = usePagination(lignes, `${filtre}|${terme}|${etape}`);
 
@@ -188,12 +190,14 @@ export function ProgrammationScreen({ etape }: { etape: Etape }) {
                     const ouvert = ouverts.has(ligne.reference);
                     return (
                       <Fragment key={ligne.reference}>
-                        <tr className="border-b border-hairline text-on-surface align-top">
+                        <tr title={peutDecider && !verrouille ? `Modifier ${ligne.emploi.libelle}` : undefined} onClick={peutDecider && !verrouille ? ouvreAuClic(() => ouvrir(ligne)) : undefined} className={`border-b border-hairline text-on-surface align-top ${peutDecider && !verrouille ? "cursor-pointer hover:bg-surface-container-low/70" : ""}`}>
                           <td className="py-3 pr-4">
-                            <button type="button" aria-expanded={ouvert} aria-label={`Détail des structures pour ${ligne.emploi.libelle}`} className="inline-flex items-start gap-1.5 text-left" onClick={() => setOuverts((actuel) => { const suivant = new Set(actuel); if (!suivant.delete(ligne.reference)) suivant.add(ligne.reference); return suivant; })}>
-                              <Icone nom={ouvert ? "expand_more" : "chevron_right"} className="text-lg mt-px" />
+                            <span className="inline-flex items-start gap-1.5 text-left">
+                              <button type="button" aria-expanded={ouvert} aria-label={`Détail des structures pour ${ligne.emploi.libelle}`} className="mt-px rounded text-on-surface-variant hover:text-primary" onClick={() => setOuverts((actuel) => { const suivant = new Set(actuel); if (!suivant.delete(ligne.reference)) suivant.add(ligne.reference); return suivant; })}>
+                                <Icone nom={ouvert ? "expand_more" : "chevron_right"} className="text-lg" />
+                              </button>
                               <span><span className="font-semibold block">{ligne.emploi.libelle}</span><span className="text-on-surface-variant">{ligne.grade} · {ligne.nombre_structures} structure{ligne.nombre_structures > 1 ? "s" : ""}</span></span>
-                            </button>
+                            </span>
                           </td>
                           <td className="py-3 pr-4 text-right whitespace-nowrap">{nombre(ligne.fonctionnaires)} fonct.<span className="block">{nombre(ligne.contractuels)} contr.</span></td>
                           {etape === "catalogue" ? (

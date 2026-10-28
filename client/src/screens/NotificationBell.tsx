@@ -2,14 +2,17 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../api/client";
+import { ErreurHorsLigneInterdite } from "../hors-ligne/droits";
+import { apiHorsLigne } from "../hors-ligne/envoi";
+import { useFeedback } from "../ui/Feedback";
 import type { NotificationItem, Notifications } from "../api/types";
 import { Skeleton } from "../ui/Motion";
 import { useIntervalle } from "../ui/TempsReel";
 import { Icone } from "../ui/Icone";
 
-const CLE = ["notifications"];
+export const CLE = ["notifications"];
 
-const CATEGORIE: Record<NotificationItem["categorie"], { icone: string; teinte: string }> = {
+export const CATEGORIE: Record<NotificationItem["categorie"], { icone: string; teinte: string }> = {
   visa: { icone: "draw", teinte: "bg-primary-fixed text-primary" },
   demande: { icone: "swap_horiz", teinte: "bg-secondary-fixed text-secondary" },
   releve: { icone: "shield_person", teinte: "bg-secondary-fixed text-secondary" },
@@ -20,7 +23,7 @@ const CATEGORIE: Record<NotificationItem["categorie"], { icone: string; teinte: 
 const RELATIF = new Intl.RelativeTimeFormat("fr", { numeric: "auto" });
 
 /** « il y a 12 minutes », « hier », « il y a 3 jours ». */
-function ilYA(iso: string): string {
+export function ilYA(iso: string): string {
   const secondes = (new Date(iso).getTime() - Date.now()) / 1000;
   const minutes = secondes / 60;
   if (Math.abs(minutes) < 1) return "à l'instant";
@@ -46,6 +49,7 @@ export function NotificationBell() {
   const titre = useRef<HTMLHeadingElement>(null);
   const navigate = useNavigate();
   const client = useQueryClient();
+  const feedback = useFeedback();
 
   const requete = useQuery({
     queryKey: CLE,
@@ -73,14 +77,15 @@ export function NotificationBell() {
         client.setQueryData<Notifications | undefined>(CLE, (donnees) => marquerDansCache(donnees, id));
         return { avant };
       },
-      onError: (_erreur: unknown, _id: number | "toutes", contexte?: { avant?: Notifications }) => {
+      onError: (erreur: unknown, _id: number | "toutes", contexte?: { avant?: Notifications }) => {
         if (contexte?.avant) client.setQueryData(CLE, contexte.avant);
+        if (erreur instanceof ErreurHorsLigneInterdite) feedback.toast("Action impossible hors ligne", erreur.message, "error");
       },
-      onSettled: () => client.invalidateQueries({ queryKey: CLE }),
+      onSettled: () => void client.invalidateQueries({ queryKey: CLE }),
     };
   }
-  const marquerLue = useMutation(mutation((id) => api(`/api/v1/notifications/${id}/lue/`, { method: "POST" })));
-  const toutMarquer = useMutation(mutation(() => api("/api/v1/notifications/tout-lu/", { method: "POST" })));
+  const marquerLue = useMutation(mutation((id) => apiHorsLigne(`/api/v1/notifications/${id}/lue/`, { capacite: "notification", libelle: "Notification marquée comme lue" })));
+  const toutMarquer = useMutation(mutation(() => apiHorsLigne("/api/v1/notifications/tout-lu/", { capacite: "notification", libelle: "Toutes les notifications marquées comme lues" })));
 
   function fermer(rendreFocus = true) {
     setOuvert(false);

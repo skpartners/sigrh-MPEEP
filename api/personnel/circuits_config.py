@@ -29,7 +29,7 @@ def lister() -> dict:
         },
         "roles": [
             {"role": item.role, "description": item.description}
-            for item in RoleMatrice.objects.exclude(role__in=("Agent", "Secrétaire", "Gestionnaire RH"))  # ni l'agent, ni le secrétariat, ni le point focal RH ne visent
+            for item in RoleMatrice.objects.exclude(role__in=ROLES_NON_VISANTS)
         ],
     }
 
@@ -309,6 +309,13 @@ def _elements_actes() -> list[dict]:
     return [_acte(acte, liens.get(acte.code)) for acte in ActeDemandable.objects.select_related("parent")]
 
 
+ROLES_NON_VISANTS = ("Agent", "Secrétaire", "Gestionnaire RH")  # ni l'agent, ni le secrétariat, ni le point focal RH ne visent
+
+
+def roles_visables() -> set[str]:
+    return set(RoleMatrice.objects.exclude(role__in=ROLES_NON_VISANTS).values_list("role", flat=True))
+
+
 def _etapes(brut) -> list[tuple[str, str]] | str:
     if not isinstance(brut, list):
         return "Ajoutez au moins une étape de validation."
@@ -322,6 +329,9 @@ def _etapes(brut) -> list[tuple[str, str]] | str:
             continue
         if len(instance) > 120 or len(fonction) > 160:
             return "Le libellé d'une étape est trop long."
+        if instance not in roles_visables():
+            # L'étape se vise par le rôle qu'elle porte : sans rôle connu, personne ne pourrait jamais la viser.
+            return f"L'étape « {instance} » ne correspond à aucun rôle : choisissez un rôle de la liste."
         etapes.append((instance, fonction))
     if not etapes:
         return "Ajoutez au moins une étape de validation."

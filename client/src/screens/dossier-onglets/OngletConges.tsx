@@ -2,6 +2,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { api } from "../../api/client";
 import type { Dossier, SessionUser } from "../../api/types";
+import { apiHorsLigne } from "../../hors-ligne/envoi";
 import { useFeedback } from "../../ui/Feedback";
 import { BOUTON_PRIMAIRE, BOUTON_SECONDAIRE, Modale } from "../../ui/Modale";
 import { Pagination, usePagination } from "../../ui/Pagination";
@@ -640,20 +641,24 @@ export function FormulaireConge({ agent, onClose }: { agent: Dossier; onClose: (
     }
     setEnCours(true);
     try {
-      await feedback.run(
+      const nature = [...agent.types_conges.flatMap((item) => (item.enfants.length ? item.enfants : [item])), ...agent.types_absences].find((item) => item.code === saisie.type)?.libelle;
+      // Hors ligne, la demande est gardée chiffrée sur l'appareil et part seule au retour de la connexion, à la date de saisie.
+      const resultat = await feedback.run(
         "Transmission au circuit de visa…",
         () =>
-          api<Dossier>(`/api/v1/agents/${encodeURIComponent(agent.matricule)}/conges/demande/`, {
-            method: "POST",
-            body: JSON.stringify({ type: saisie.type, debut: saisie.debut, fin: saisie.fin, interim: saisie.interim.trim(), observations: saisie.observations, ...(annuel && exerciceChoisi ? { exercice: exerciceChoisi } : {}) }),
+          apiHorsLigne<Dossier>(`/api/v1/agents/${encodeURIComponent(agent.matricule)}/conges/demande/`, {
+            capacite: "conge",
+            libelle: `Demande de ${(nature ?? "congé ou d'absence").toLowerCase()} du ${jour(saisie.debut)} au ${jour(saisie.fin)}`,
+            corps: { type: saisie.type, debut: saisie.debut, fin: saisie.fin, interim: saisie.interim.trim(), observations: saisie.observations, ...(annuel && exerciceChoisi ? { exercice: exerciceChoisi } : {}) },
           }),
-        {
-          success: { title: "Demande transmise", message: "Elle est entrée dans le circuit, au visa du chef de service." },
-          error: "La demande n'a pas été transmise.",
-        },
+        { error: "La demande n'a pas été transmise." },
       );
+      if (resultat.enAttente) feedback.toast("Demande enregistrée hors ligne", "Elle sera transmise au circuit de visa dès le retour de la connexion.", "info");
+      else feedback.toast("Demande transmise", "Elle est entrée dans le circuit, au visa du chef de service.");
       ecrireBrouillon(agent.matricule, null);
-      await client.invalidateQueries({ queryKey: ["agent", agent.matricule] });
+      // Hors ligne, le rechargement attendrait le retour du réseau : on ne bloque pas la fermeture de la fenêtre.
+      if (resultat.enAttente) void client.invalidateQueries({ queryKey: ["agent", agent.matricule] });
+      else await client.invalidateQueries({ queryKey: ["agent", agent.matricule] });
       onClose();
     } catch {
       /* le toast d'erreur est déjà affiché */
@@ -664,7 +669,7 @@ export function FormulaireConge({ agent, onClose }: { agent: Dossier; onClose: (
 
   return (
     <Modale
-      titre="Demande de congés"
+      titre="Demande de congé ou d'absence"
       icone="event_available"
       taille="xl"
       onClose={onClose}
@@ -689,7 +694,7 @@ export function FormulaireConge({ agent, onClose }: { agent: Dossier; onClose: (
         <label className="block space-y-1.5">
           <span className={`${LIBELLE} flex items-center justify-between`}>
             <span>
-              Nature du congé <span className="text-error">*</span>
+              Nature de la demande <span className="text-error">*</span>
             </span>
           </span>
           <Select className={`${CHAMP} cursor-pointer`} value={saisie.type} onChange={champ("type")} required>
@@ -704,6 +709,13 @@ export function FormulaireConge({ agent, onClose }: { agent: Dossier; onClose: (
                 <option key={type.code} value={type.code}>{type.libelle}</option>
               ),
             )}
+            {agent.types_absences.length ? (
+              <optgroup label="Absences et autorisations">
+                {agent.types_absences.map((type) => (
+                  <option key={type.code} value={type.code}>{type.libelle}</option>
+                ))}
+              </optgroup>
+            ) : null}
           </Select>
         </label>
         {verrouille ? (
@@ -822,7 +834,7 @@ export function FormulaireConge({ agent, onClose }: { agent: Dossier; onClose: (
           entree={{
             agent,
             type: saisie.type,
-            libelle: agent.types_conges.flatMap((item) => (item.enfants.length ? item.enfants : [item])).find((item) => item.code === saisie.type)?.libelle,
+            libelle: [...agent.types_conges.flatMap((item) => (item.enfants.length ? item.enfants : [item])), ...agent.types_absences].find((item) => item.code === saisie.type)?.libelle,
             debut: saisie.debut,
             fin: saisie.fin,
             jours,

@@ -37,7 +37,7 @@ const FOND_ETIQUETTE = {
 
 function styleTexte() {
   const racine = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
-  return { fontFamily: "Plus Jakarta Sans, sans-serif", fontSize: Math.round((12 * racine) / 16) };
+  return { fontFamily: "Hanken Grotesk Variable, sans-serif", fontSize: Math.round((12 * racine) / 16) };
 }
 
 export const FORMES = [

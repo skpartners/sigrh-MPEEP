@@ -30,7 +30,7 @@ TAILLE_MAX = 10 * 1024 * 1024
 
 
 def peut_secretariat(user) -> bool:
-    """L'administrateur et les secrétaires, rattachées à une structure : eux seuls entrent dans l'espace secrétariat."""
+    """L'administrateur et les secrétaires rattachées à une structure entrent dans l'espace."""
     profil = getattr(user, "profil", None)
     if profil is None:
         return False

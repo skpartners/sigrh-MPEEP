@@ -50,6 +50,12 @@ if ($existant) {
 & $nssm set SIGRH DisplayName "SIGRH"
 & $nssm set SIGRH Description "SIGRH sous /sigrh, origine du tunnel sk-partners.consulting"
 & $nssm set SIGRH Start SERVICE_AUTO_START
+# Chaque fichier reçu est analysé par ClamAV (service partagé, voir verifier-clamav.ps1) : SIGRH attend son démon.
+if (Get-Service -Name ClamAV-Daemon -ErrorAction SilentlyContinue) {
+    & $nssm set SIGRH DependOnService ClamAV-Daemon
+} else {
+    Write-Warning "ClamAV-Daemon est absent : en production, les envois de fichiers seront refusés (voir install-clamav-nssm.ps1)."
+}
 & $nssm set SIGRH AppStdout $journal
 & $nssm set SIGRH AppStderr $journal
 & $nssm set SIGRH AppRotateFiles 1

@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { ApiError, api } from "../../api/client";
 import { dateCourte, fcfa, nombre } from "../../ui/format";
+import { ouvreAuClic } from "../../ui/clicLigne";
 import { useFeedback } from "../../ui/Feedback";
 import { Icone } from "../../ui/Icone";
 import { Modale } from "../../ui/Modale";
@@ -333,7 +334,7 @@ return (
             {horsPlan.length === 0 ? (
               <tr><td colSpan={7} className="py-6 text-on-surface-variant">Aucun agent n'est suivi dans cette catégorie.</td></tr>
             ) : page.visibles.map((e) => (
-              <tr key={e.id} className="border-b border-hairline text-on-surface align-top">
+              <tr key={e.id} title={`Modifier la formation de ${e.agent.nom_complet}`} onClick={ouvreAuClic(() => setExterne(e))} className="cursor-pointer border-b border-hairline text-on-surface align-top hover:bg-surface-container-low/70">
                 <td className="py-3 pr-4"><span className="font-semibold block">{e.agent.nom_complet}</span><span className="text-on-surface-variant">{e.agent.matricule}</span></td>
                 <td className="py-3 pr-4">
                   <span className="block">{e.intitule}</span>
@@ -407,7 +408,7 @@ function CarteMinistere({ cadre, suivi }: { cadre: Cadre; suivi: Suivi }) {
             {lignes.length === 0 ? (
               <tr><td colSpan={7} className="py-6 text-on-surface-variant">Aucun agent n'est inscrit aux modules du plan de formation.</td></tr>
             ) : page.visibles.map((l) => (
-              <tr key={l.id} className="border-b border-hairline text-on-surface align-top">
+              <tr key={l.id} title={l.modifiable ? `Modifier le suivi de ${l.agent.nom_complet}` : undefined} onClick={l.modifiable ? ouvreAuClic(() => setEdition(l)) : undefined} className={`border-b border-hairline text-on-surface align-top ${l.modifiable ? "cursor-pointer hover:bg-surface-container-low/70" : ""}`}>
                 <td className="py-3 pr-4"><span className="font-semibold block">{l.agent.nom_complet}</span><span className="text-on-surface-variant">{l.agent.matricule}</span></td>
                 <td className="py-3 pr-4">{l.session.libelle}</td>
                 <td className="py-3 pr-4">{l.session.lieu || "—"}</td>

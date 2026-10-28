@@ -1,3 +1,4 @@
+import { Chargement } from "../ui/Chargement";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { ApiError, api } from "../api/client";
@@ -259,7 +260,7 @@ export function StatistiquesScreen() {
         {liste.isError && (
           <p className="text-error">{liste.error instanceof ApiError ? liste.error.message : "Les tableaux enregistrés n'ont pas pu être chargés."}</p>
         )}
-        {liste.isLoading && !courante && <p className="text-on-surface-variant">Chargement des tableaux…</p>}
+        {liste.isLoading && !courante && <Chargement libelle="Chargement des tableaux…" />}
         {liste.isSuccess && !courante && (
           <section className="rounded-xl border border-dashed border-outline-variant bg-surface-container-lowest p-8 text-center">
             <Icone nom="table" className="text-3xl text-primary" />

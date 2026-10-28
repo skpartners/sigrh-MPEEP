@@ -1,4 +1,4 @@
-import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
+import { QueryClientProvider, useQuery } from "@tanstack/react-query";
 import { useEffect, useRef, type ReactNode } from "react";
 import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { RequireAuth } from "./auth/RequireAuth";
@@ -34,6 +34,8 @@ import { EtiquettesTableaux } from "./ui/EtiquettesTableaux";
 import { PageMotion, TopProgress } from "./ui/Motion";
 import { NouvelleVersion } from "./ui/NouvelleVersion";
 import { TempsReelProvider } from "./ui/TempsReel";
+import { HorsLigne } from "./hors-ligne/HorsLigne";
+import { queryClient } from "./hors-ligne/queryClient";
 import { AgentScreen } from "./screens/AgentScreen";
 import { BilanCarriereScreen } from "./screens/grh/BilanCarriereScreen";
 import { BilanSatisfactionScreen } from "./screens/grh/BilanSatisfactionScreen";
@@ -41,10 +43,7 @@ import { DistinctionsScreen } from "./screens/grh/DistinctionsScreen";
 import { FormationBilanScreen, FormationSuiviScreen } from "./screens/grh/FormationSuiviScreen";
 import { GrhAccueilScreen } from "./screens/grh/GrhAccueilScreen";
 import { ProgrammationScreen } from "./screens/grh/ProgrammationScreen";
-
-const queryClient = new QueryClient({
-  defaultOptions: { queries: { retry: false, refetchOnWindowFocus: false } },
-});
+import { ProjetsEtudesScreen } from "./screens/ProjetsEtudesScreen";
 
 export function App() {
   return (
@@ -100,6 +99,7 @@ export function App() {
               <Route path="/app/secretariat" element={<RequireAuth><SecretariatScreen /></RequireAuth>} />
               <Route path="/app/secretariat/imprimer/:reference" element={<RequireAuth><ImpressionScreen /></RequireAuth>} />
               <Route path="/app/communication" element={<RequireAuth><CommunicationScreen /></RequireAuth>} />
+              <Route path="/app/projets-etudes-rh" element={<RequireAuth><ProjetsEtudesScreen /></RequireAuth>} />
               <Route path="/app/sondage" element={<RequireAuth><SondageScreen /></RequireAuth>} />
               <Route path="/app/aide" element={<RequireAuth><AideScreen /></RequireAuth>} />
             </Routes>
@@ -176,6 +176,7 @@ function SessionApplicative({ children }: { children: ReactNode }) {
   return (
     <TempsReelProvider actif={actif}>
       <MessagerieProvider actif={actif && pathname !== "/app/adhesion"}>{children}</MessagerieProvider>
+      <HorsLigne actif={actif} />
     </TempsReelProvider>
   );
 }

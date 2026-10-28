@@ -14,6 +14,7 @@ import { useIntervalle } from "../ui/TempsReel";
 import { CommunicationBouton } from "./CommunicationBouton";
 import { MessagerieBouton } from "./Messagerie";
 import { NotificationBell } from "./NotificationBell";
+import { IndicateurConnexion } from "../hors-ligne/IndicateurConnexion";
 import { Icone } from "../ui/Icone";
 import { IndicateurTaches } from "../ui/IndicateurTaches";
 import { destinationModule, lienActif, libellePage, menuAutorise, menuCourant, moduleAutorise, NAV, pageHorsHabilitation, repliHabilitation, sousMenus, type LienNav } from "./navigation";
@@ -162,6 +163,7 @@ export function AppChrome({ children, sansSidebar = false, actions }: { children
           </div>
           <div className="outils flex items-center gap-0.5 sm:gap-2 shrink-0" role="toolbar" aria-label="Outils de l'application">
             {menuAutorise(me.data?.acces, { module: "Statistiques & RBAC", fonction: "Communication" }) ? <CommunicationBouton /> : null}
+            <IndicateurConnexion />
             <IndicateurTaches />
             <MessagerieBouton />
             <NotificationBell />
@@ -213,7 +215,7 @@ export function AppChrome({ children, sansSidebar = false, actions }: { children
               const intertitre = enfant.groupe && enfant.groupe !== enfants[rang - 1]?.groupe ? enfant.groupe : null;
               const autorise = menuAutorise(me.data?.acces, enfant.acces);
               const actif = autorise && lienActif(enfant.to, enfant.end, pathname, hash);
-              const classe = `relative flex items-center rounded transition-colors ${reduit ? "justify-center px-2 py-2" : "gap-3 px-3 py-2"} ${!autorise ? "text-on-primary/35 cursor-not-allowed" : actif ? "bg-primary-fixed text-on-primary-fixed font-semibold shadow-sm" : "text-on-primary/80 hover:bg-primary-container hover:text-on-primary"}`;
+              const classe = `relative flex items-center rounded transition-colors ${reduit ? "justify-center px-2 py-2" : "gap-3 px-3 py-2"} ${!autorise ? "text-error cursor-not-allowed" : actif ? "bg-primary-fixed text-on-primary-fixed font-semibold shadow-sm" : "text-on-primary/80 hover:bg-primary-container hover:text-on-primary"}`;
               const contenu = (
                 <>
                   {actif && !reduit && (
@@ -402,8 +404,8 @@ function ProfileMenu({ user }: { user: SessionUser | undefined }) {
   const ref = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const feedback = useFeedback();
-  // Espace réservé à l'administrateur et aux secrétaires : le serveur en décide.
-  const secretariat = Boolean(user?.secretariat);
+  // Uniquement dans ce menu, et uniquement pour une secrétaire rattachée à une structure.
+  const secretariat = Boolean(user?.secretariat) && !user?.administrateur;
 
   useEffect(() => {
     if (!open) return;
@@ -503,6 +505,17 @@ function ProfileMenu({ user }: { user: SessionUser | undefined }) {
               <span className="font-body-sm text-body-sm text-on-surface-variant">Aucune signature enregistrée</span>
             )}
           </button>
+          {secretariat ? (
+            <Link
+              role="menuitem"
+              to="/app/secretariat"
+              className="w-full flex items-center gap-2 px-3 py-2 rounded text-left font-label-lg text-label-lg text-on-surface hover:bg-surface-container-high border-b border-hairline mb-1"
+              onClick={() => setOpen(false)}
+            >
+              <Icone nom="assignment_ind" className="text-lg leading-none text-primary shrink-0" />
+              Secrétariat
+            </Link>
+          ) : null}
           <button
             role="menuitem"
             type="button"
@@ -516,18 +529,6 @@ function ProfileMenu({ user }: { user: SessionUser | undefined }) {
             Ma connexion
             <span className="ml-auto font-body-sm text-body-sm text-on-surface-variant">Mot de passe</span>
           </button>
-          {secretariat ? (
-            <Link
-              role="menuitem"
-              to="/app/secretariat"
-              className="w-full flex items-center gap-2 px-3 py-2 rounded text-left font-label-lg text-label-lg text-on-surface hover:bg-surface-container-high border-b border-hairline mb-1"
-              onClick={() => setOpen(false)}
-            >
-              <Icone nom="assignment_ind" className="text-lg leading-none text-primary shrink-0" />
-              Secrétariat
-              <span className="ml-auto font-body-sm text-body-sm text-on-surface-variant">Demandes et signatures</span>
-            </Link>
-          ) : null}
           {user?.administrateur ? (
             <Link
               role="menuitem"

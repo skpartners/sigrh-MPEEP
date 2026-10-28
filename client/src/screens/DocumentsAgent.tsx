@@ -1,6 +1,9 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { ApiError, api } from "../api/client";
+import { ApiError } from "../api/client";
+import { annoncerAttente } from "../hors-ligne/dossier";
+import { apiHorsLigne } from "../hors-ligne/envoi";
+import { useFeedback } from "../ui/Feedback";
 import type { Dossier } from "../api/types";
 import { dateCourte } from "../ui/format";
 import { Icone } from "../ui/Icone";
@@ -159,6 +162,7 @@ function ApercuDocument({ piece, onClose }: { piece: Piece; onClose: () => void 
 
 function DepotDocument({ agent, initial, onClose }: { agent: Dossier; initial: { rubrique: string; type: string }; onClose: () => void }) {
   const client = useQueryClient();
+  const feedback = useFeedback();
   const [rubrique, setRubrique] = useState(initial.rubrique);
   const [type, setType] = useState(initial.type);
   const [precision, setPrecision] = useState("");
@@ -175,10 +179,14 @@ function DepotDocument({ agent, initial, onClose }: { agent: Dossier; initial: {
       corps.set("precision", precision);
       corps.set("date_expiration", expiration);
       if (fichier) corps.set("fichier", fichier);
-      return api<Dossier>(`/api/v1/agents/${encodeURIComponent(agent.matricule)}/documents/`, { method: "POST", body: corps });
+      // Hors ligne, le document reste chiffré sur l'appareil et part, pour analyse antivirus, au retour de la connexion.
+      return apiHorsLigne<Dossier>(`/api/v1/agents/${encodeURIComponent(agent.matricule)}/documents/`, { corps, libelle: `Document versé : ${groupe?.types.find((item) => item.code === type)?.libelle ?? "pièce du dossier"}`, capacite: "fichier" });
     },
-    onSuccess: (dossier) => {
-      client.setQueryData(["agent", agent.matricule], dossier);
+    onSuccess: (resultat) => {
+      if (resultat.enAttente) {
+        annoncerAttente(feedback, resultat.action);
+        void client.invalidateQueries({ queryKey: ["agent", agent.matricule] });
+      } else client.setQueryData(["agent", agent.matricule], resultat.reponse);
       onClose();
     },
   });

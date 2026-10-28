@@ -416,6 +416,7 @@ def _tableau() -> dict:
             "communiques": sum(1 for item in diffusees if item["nature"] == "communique"),
             "decisions": sum(1 for item in diffusees if item["nature"] == "decision"),
             "flashs": sum(1 for item in diffusees if item["nature"] == "flash"),
+            "evenements": sum(1 for item in diffusees if item["nature"] == "evenement"),
             "ce_mois": ce_mois,
             "taux_lecture": taux,
             "objectif": 90,
@@ -512,6 +513,9 @@ def viser(request, pk: int):
     publication.etape_visa = ""
     publication.save(update_fields=["statut", "publiee_le", "visa", "etape_visa"])
     LecturePublication.objects.get_or_create(publication=publication, lecteur=request.user)
+    from .evenements import prevenir_destinataires
+
+    prevenir_destinataires(publication, request.user)
     return Response(_tableau())
 
 

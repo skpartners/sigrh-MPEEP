@@ -51,5 +51,15 @@ def test_responsables_et_detail_par_emploi_et_perimetre(api):
     assert any("Direction des Ressources Humaines" == l["structure"] for l in autres["responsables"]["structures"])
     assert sum(l["effectif"] for l in autres["detail"]) == Agent.objects.count()
     # Un agent simple ne voit que son périmètre.
+    assert _client("318490K").get("/api/v1/dashboard/etats/").status_code == 403  # un agent simple n'a pas le tableau de bord
+    from personnel.models import ModuleHabilitation, Profil
+    from personnel.utilisateurs import _defaut_role
+
+    profil = Profil.objects.get(user__username="318490K")
+    modules = ModuleHabilitation.objects.all()
+    fonction = modules.get(libelle="Statistiques & RBAC").fonctions.get(libelle="Tableau de bord")
+    profil.habilitations = _defaut_role(profil.role, len(modules))
+    profil.precisions = {str(fonction.pk): "lecture"}
+    profil.save()
     restreint = _client("318490K").get("/api/v1/dashboard/etats/").json()
     assert restreint["perimetre"] is True and restreint["socio_demographie"]["total"] < Agent.objects.count()

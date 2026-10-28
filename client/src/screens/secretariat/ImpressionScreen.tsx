@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { api } from "../../api/client";
+import { Chargement } from "../../ui/Chargement";
 import { Icone } from "../../ui/Icone";
 import { BOUTON_PRIMAIRE, BOUTON_SECONDAIRE } from "../../ui/Modale";
 import { ChoixExercice, FeuilleCertificat } from "../dossier-onglets/CertificatCessation";
@@ -37,7 +38,7 @@ export function ImpressionScreen() {
       </div>
 
       <div className={`overflow-x-auto p-4 print:p-0 ${ligne?.imprimable ? "" : "print:hidden"}`}>
-        {page.isPending ? <p className="p-6 font-body-md text-body-md text-on-surface-variant print:hidden">Chargement du document…</p> : null}
+        {page.isPending ? <Chargement libelle="Chargement du document…" className="print:hidden" /> : null}
         {page.isSuccess && !document ? (
           <p className="p-6 font-body-md text-body-md text-on-surface-variant print:hidden">Aucun document à afficher pour cette demande (refusée ou introuvable).</p>
         ) : null}

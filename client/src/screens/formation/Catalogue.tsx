@@ -3,6 +3,7 @@ import { pluriel } from "../../ui/format";
 import { useAction } from "../../ui/useAction";
 import type { TableauFormation, TypeFormation } from "./types";
 import { BOUTON_ICONE, BOUTON_PRIMAIRE, BOUTON_SECONDAIRE, CARTE, Case, EnTeteSection, Modale, Texte, Vide, messageErreur, useEnregistrement } from "./ui";
+import { ouvreAuClic } from "../../ui/clicLigne";
 import { Icone } from "../../ui/Icone";
 
 /** Catalogue : cycles de formation, publics concernés, pièce exigée à la candidature. */
@@ -39,7 +40,7 @@ export function Catalogue({ data }: { data: TableauFormation }) {
       ) : (
         <ul className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {data.types.map((t) => (
-            <li key={t.code} className={`${CARTE} motion-content p-5 flex flex-col gap-3`}>
+            <li key={t.code} title={`Modifier ${t.libelle}`} onClick={ouvreAuClic(() => setEdition(t))} className={`cursor-pointer ${CARTE} motion-content p-5 flex flex-col gap-3 hover:bg-surface-container-low/70`}>
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <span className="font-code-num text-code-num text-primary font-bold">{t.code}</span>

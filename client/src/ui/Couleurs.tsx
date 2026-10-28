@@ -53,13 +53,123 @@ export function melanger(a: string, b: string, part: number): string {
   return `#${canal(ra, rb)}${canal(ga, gb)}${canal(ba, bb)}`.toUpperCase();
 }
 
+/* ---- Lisibilité garantie ----
+   Les deux teintes choisies dans Paramètres peuvent être n'importe lesquelles. Les jetons qui portent du
+   texte (ou qui servent de fond à du texte) sont donc recalculés ici avec un contraste vérifié, au lieu
+   de rester de simples mélanges CSS : un jaune ou un blanc choisi comme couleur principale ne rend plus
+   les titres, les liens ni les boutons illisibles. Les teintes déjà assez foncées ne bougent pas. */
+const SURFACE_TEXTE = "#E8ECED";
+const SURFACE_PIRE = "#D1D8D9";
+const BLANC = "#FFFFFF";
+const NOIR = "#000000";
+
+/** Part minimale de `vers` à mélanger dans `couleur` pour atteindre le contraste demandé contre `fond`. */
+function rapprocher(couleur: string, vers: string, fond: string, ratio: number): string {
+  if (contraste(couleur, fond) >= ratio) return couleur;
+  if (contraste(vers, fond) < ratio) return vers;
+  let bas = 0;
+  let haut = 1;
+  for (let tour = 0; tour < 14; tour += 1) {
+    const milieu = (bas + haut) / 2;
+    if (contraste(melanger(couleur, vers, milieu), fond) >= ratio) haut = milieu;
+    else bas = milieu;
+  }
+  return melanger(couleur, vers, haut);
+}
+
+/** Assombrit la couleur jusqu'à ce qu'elle se lise sur `fond` (texte, lien, bouton plein). */
+function assombrir(couleur: string, fond: string, ratio: number): string {
+  return rapprocher(couleur, NOIR, fond, ratio);
+}
+
+/** Encre qui se lit sur `fond` : la teinte préférée si elle suffit, sinon poussée vers le blanc ou le noir. */
+function encre(fond: string, preferee: string, ratio: number): string {
+  if (contraste(preferee, fond) >= ratio) return preferee;
+  return rapprocher(preferee, contraste(fond, BLANC) >= contraste(fond, ENCRE_SOMBRE) ? BLANC : NOIR, fond, ratio);
+}
+
+/** Couleur principale réellement employée par l'interface : celle choisie, assombrie si elle ne se lit pas. */
+export function principaleEffective(principale: string): string {
+  return couleurValide(principale) ? assombrir(principale.toUpperCase(), SURFACE_TEXTE, 5) : principale;
+}
+
+/** Vrai quand la couleur principale choisie doit être assombrie pour rester lisible. */
+export function principaleAjustee(principale: string): boolean {
+  return couleurValide(principale) && principaleEffective(principale) !== principale.toUpperCase();
+}
+
+/** Jetons de couleur à contraste vérifié, dérivés des deux teintes de la marque. */
+export function paletteLisible({ principale, accent }: Couleurs): Record<string, string> {
+  const p = principaleEffective(principale);
+  const surP = encreSur(p);
+  const sombre = melanger(p, NOIR, 0.2);
+
+  // Survol des boutons pleins : reste assez foncé pour porter l'encre claire.
+  const pc = assombrir(melanger(p, accent, 0.18), BLANC, 4.7);
+  const s = assombrir(melanger(p, accent, 0.25), SURFACE_TEXTE, 4.5);
+  const t = assombrir(melanger(p, accent, 0.35), SURFACE_TEXTE, 4.5);
+  const tc = melanger(accent, BLANC, 0.3);
+  const pf = melanger(accent, BLANC, 0.55);
+  const pfd = melanger(accent, BLANC, 0.3);
+  const sf = melanger(accent, BLANC, 0.7);
+  const sfd = melanger(accent, BLANC, 0.4);
+  const tf = melanger(accent, BLANC, 0.75);
+  const tfd = melanger(accent, BLANC, 0.55);
+  const sv = melanger(accent, "#F3F5F6", 0.7);
+  const inverse = sombre;
+
+  // Texte courant : la teinte de marque, assez sombre pour tenir sur toutes les surfaces claires.
+  const surface = assombrir(melanger(principale, "#101414", 0.55), SURFACE_PIRE, 9);
+  const surfaceVariante = assombrir(assombrir(melanger(principale, "#4A5254", 0.65), SURFACE_PIRE, 5), sv, 5);
+  const surFixe = encre(pf, sombre, 7);
+  const surFixeVariante = encre(pf, p, 4.5);
+
+  return {
+    "--color-primary": p,
+    "--color-on-primary": surP,
+    "--color-primary-container": pc,
+    "--color-on-primary-container": encre(pc, melanger(accent, surP, 0.6), 4.5),
+    "--color-inverse-primary": encre(inverse, accent, 4.5),
+    "--color-primary-fixed": pf,
+    "--color-primary-fixed-dim": pfd,
+    "--color-on-primary-fixed": surFixe,
+    "--color-on-primary-fixed-variant": surFixeVariante,
+    "--color-secondary": s,
+    "--color-on-secondary": encreSur(s),
+    "--color-secondary-container": accent,
+    "--color-on-secondary-container": encreSur(accent),
+    "--color-secondary-fixed": sf,
+    "--color-secondary-fixed-dim": sfd,
+    "--color-on-secondary-fixed": encre(sf, sombre, 7),
+    "--color-on-secondary-fixed-variant": encre(sf, p, 4.5),
+    "--color-tertiary": t,
+    "--color-on-tertiary": encreSur(t),
+    "--color-tertiary-container": tc,
+    "--color-on-tertiary-container": encre(tc, sombre, 7),
+    "--color-tertiary-fixed": tf,
+    "--color-tertiary-fixed-dim": tfd,
+    "--color-on-tertiary-fixed": encre(tf, sombre, 7),
+    "--color-on-tertiary-fixed-variant": encre(tf, p, 4.5),
+    "--color-surface-tint": s,
+    "--color-surface-variant": sv,
+    "--color-on-surface": surface,
+    "--color-on-surface-variant": surfaceVariante,
+    "--color-on-background": surface,
+    "--color-outline": assombrir(melanger(principale, "#7A8486", 0.65), "#F0F3F4", 3),
+    "--color-inverse-surface": inverse,
+    "--color-inverse-on-surface": encre(inverse, melanger(accent, BLANC, 0.6), 7),
+  };
+}
+
 export function appliquerCouleurs(couleurs: Couleurs) {
   const valides = couleurValide(couleurs.principale) && couleurValide(couleurs.accent) ? couleurs : COULEURS_DEFAUT;
   const racine = document.documentElement.style;
-  racine.setProperty("--brand-1", valides.principale);
+  const effective = principaleEffective(valides.principale);
+  racine.setProperty("--brand-1", effective);
   racine.setProperty("--brand-2", valides.accent);
-  racine.setProperty("--on-brand-1", encreSur(valides.principale));
+  racine.setProperty("--on-brand-1", encreSur(effective));
   racine.setProperty("--on-brand-2", encreSur(valides.accent));
+  for (const [nom, valeur] of Object.entries(paletteLisible(valides))) racine.setProperty(nom, valeur);
   if (valides.principale !== courantes.principale || valides.accent !== courantes.accent) {
     courantes = valides;
     abonnes.forEach((abonne) => abonne());

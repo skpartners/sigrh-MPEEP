@@ -35,13 +35,6 @@ export const NAV: SectionNav[] = [
         libelle: "Profil agent",
         resume: "Le profil agent permet de consulter et de mettre à jour ses informations personnelles, familiales et professionnelles, ainsi que de gérer ses demandes d’actes et ses documents administratifs.",
         acces: { module: "Dossier Agent", fonction: "Consultation du dossier" },
-        enfants: [
-          { to: "/app/profil-agent", end: true, icone: "person", libelle: "Accueil", acces: { module: "Profil agent", fonction: "Accueil" } },
-          { to: "/app/profil-agent/etat-civil", icone: "badge", libelle: "État civil", acces: { module: "Profil agent", fonction: "État civil" } },
-          { to: "/app/profil-agent/situation-administrative", icone: "work", libelle: "Situation administrative", acces: { module: "Profil agent", fonction: "Situation administrative" } },
-          { to: "/app/profil-agent/liste-des-enfants", icone: "family_restroom", libelle: "Liste des enfants", acces: { module: "Profil agent", fonction: "Liste des enfants" } },
-          { to: "/app/profil-agent/mes-documents-administratifs", icone: "folder_open", libelle: "Mes documents administratifs", acces: { module: "Profil agent", fonction: "Mes documents administratifs" } },
-        ],
       }
     ],
   },
@@ -75,6 +68,14 @@ export const NAV: SectionNav[] = [
         ],
       },
       {
+        to: "/app/secretariat",
+        icone: "assignment_ind",
+        libelle: "Secrétariat",
+        resume: "Les secrétaires impriment les documents validés, les font signer et versent l'original.",
+        acces: { module: "Carrières & Actes", fonction: "Secrétariat" },
+        horsAccueil: true,
+      },
+      {
         to: "/app/communication",
         icone: "campaign",
         libelle: "Documents publics & communication",
@@ -86,8 +87,7 @@ export const NAV: SectionNav[] = [
         icone: "assignment",
         libelle: "Projets et études RH",
         resume: "Les projets et les études menés en ressources humaines.",
-        acces: { module: "Projets et études RH" },
-        bientot: true,
+        acces: { module: "Projets et études RH", fonction: "Projets et études" },
       },
     ],
   },

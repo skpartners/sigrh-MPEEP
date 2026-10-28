@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Fragment, useEffect, useMemo, useState, type CSSProperties } from "react";
 import { ApiError, api, telecharger } from "../../api/client";
 import type { AgentBrief } from "../../api/types";
+import { ouvreAuClic } from "../../ui/clicLigne";
 import { useFeedback } from "../../ui/Feedback";
 import { BOUTON_PRIMAIRE, BOUTON_SECONDAIRE, Modale } from "../../ui/Modale";
 import { Skeleton } from "../../ui/Motion";
@@ -330,7 +331,7 @@ function LigneProcedure({ procedure, onOuvrir, onModifier }: { procedure: Proced
   const { agent } = procedure;
   const close = procedure.avis === "sanction" || procedure.avis === "classee";
   return (
-    <tr className="hover:bg-surface-container-low/50 transition-colors">
+    <tr title={`Modifier la procédure ${procedure.reference}`} onClick={ouvreAuClic(onModifier)} className="cursor-pointer hover:bg-surface-container-low/50 transition-colors">
       <td className="py-3 px-6 align-top">
         <span className="block font-code-num text-code-num text-primary font-bold">{procedure.reference}</span>
         <span className="font-label-sm text-label-sm text-on-surface-variant">{dateCourte(procedure.saisine)}</span>

@@ -1,6 +1,8 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
-import { ApiError, api, mediaUrl } from "../api/client";
+import { ApiError, mediaUrl } from "../api/client";
+import { annoncerAttente } from "../hors-ligne/dossier";
+import { apiHorsLigne } from "../hors-ligne/envoi";
 import type { Dossier, SessionUser } from "../api/types";
 import { useFeedback } from "./Feedback";
 import { BOUTON_PRIMAIRE, BOUTON_SECONDAIRE, Modale } from "./Modale";
@@ -108,11 +110,17 @@ export function EditeurPhoto({ agent, onClose }: { agent: Identite; onClose: () 
     const corps = new FormData();
     corps.set("fichier", fichier);
     try {
-      const dossier = await feedback.run(
-        "Enregistrement de la photo…",
-        () => api<Dossier>(`/api/v1/agents/${encodeURIComponent(agent.matricule)}/photo/`, { method: "POST", body: corps }),
-        { success: { title: "Photo enregistrée", message: `Elle figure sur le dossier de ${agent.nom_complet}.` } },
+      // Hors ligne, la photo reste chiffrée sur l'appareil et part, pour analyse antivirus, au retour de la connexion.
+      const resultat = await feedback.run("Enregistrement de la photo…", () =>
+        apiHorsLigne<Dossier>(`/api/v1/agents/${encodeURIComponent(agent.matricule)}/photo/`, { corps, libelle: "Photo de profil", capacite: "fichier" }),
       );
+      if (resultat.enAttente) {
+        annoncerAttente(feedback, resultat.action);
+        onClose();
+        return;
+      }
+      const dossier = resultat.reponse;
+      feedback.toast("Photo enregistrée", `Elle figure sur le dossier de ${agent.nom_complet}.`, "success");
       client.setQueryData(["agent", agent.matricule], dossier);
       void client.invalidateQueries({ queryKey: ["agents"] });
       const moi = client.getQueryData<SessionUser>(["me"]);

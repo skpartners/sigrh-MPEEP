@@ -6,6 +6,7 @@ import { useFeedback } from "../../ui/Feedback";
 import { Icone } from "../../ui/Icone";
 import { BOUTON_PRIMAIRE, BOUTON_SECONDAIRE, Modale } from "../../ui/Modale";
 import { Select } from "../../ui/Select";
+import { TableauElements } from "./TableauElements";
 
 const CARD = "rounded-xl bg-surface-container-lowest border border-hairline";
 const CHAMP = "w-full h-10 px-3 rounded border border-outline-variant bg-surface-container-lowest font-body-md text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-primary";
@@ -43,9 +44,6 @@ export function ElementsConfigurables({ famille }: { famille: Famille }) {
   });
   const elements: ElementCircuit[] = famille === "conge" ? (configuration.data?.elements.conges ?? []) : (configuration.data?.elements.absences ?? []);
   const circuits = configuration.data?.circuits ?? [];
-  const ordonnes = elements
-    .filter((element) => !element.parent)
-    .flatMap((racine) => [racine, ...elements.filter((element) => element.parent === racine.code)]);
 
   async function rafraichir() {
     await client.invalidateQueries({ queryKey: ["circuits-config"] });
@@ -84,30 +82,13 @@ export function ElementsConfigurables({ famille }: { famille: Famille }) {
       {configuration.isError ? (
         <div className={`${CARD} p-6`} role="alert"><p className="font-label-lg text-label-lg text-error">La liste n’a pas pu être chargée.</p></div>
       ) : (
-        <ul className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-          {ordonnes.map((element) => {
-            const parent = elements.find((item) => item.code === element.parent);
-            const circuit = circuits.find((item) => item.id === (element.circuit_id ?? parent?.circuit_id));
-            const herite = element.circuit_id == null && circuit != null;
-            return (
-              <li key={element.id} className={`${CARD} p-4 flex items-start justify-between gap-3 ${parent ? "lg:ml-6 border-l-4 border-l-primary-fixed-dim" : ""}`}>
-                <div className="min-w-0 space-y-1.5">
-                  <p className="font-label-lg text-label-lg text-on-surface font-bold">{element.libelle}</p>
-                  {parent ? <p className="font-label-sm text-label-sm text-on-surface-variant">Sous-rubrique de « {parent.libelle} »</p> : null}
-                  <span className={`inline-block px-2 py-0.5 rounded font-label-sm text-label-sm font-semibold ${circuit ? "bg-primary-fixed text-on-primary-fixed" : "bg-surface-container text-on-surface-variant"}`}>
-                    {circuit ? `Circuit : ${circuit.nom}${herite ? " (hérité)" : ""}` : "Circuit par défaut"}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <button type="button" onClick={() => setEdition({ id: element.id, libelle: element.libelle, parent: element.parent })}
-                    className="px-3 py-1.5 rounded bg-surface-container text-on-surface font-label-md text-label-md hover:bg-surface-container-high">Modifier</button>
-                  <button type="button" onClick={() => void retirer(element)}
-                    className="px-3 py-1.5 rounded bg-surface-container text-error font-label-md text-label-md hover:bg-error-container">Retirer</button>
-                </div>
-              </li>
-            );
-          })}
-        </ul>
+        <TableauElements
+          lignes={elements}
+          circuits={circuits}
+          vide={{ titre: configuration.data ? `Aucun ${texte.singulier} proposé` : "Chargement…", texte: configuration.data ? `Les agents ne peuvent rien demander tant qu'aucun ${texte.singulier} n'est ajouté.` : "" }}
+          onModifier={(element) => setEdition({ id: element.id, libelle: element.libelle, parent: element.parent })}
+          onRetirer={(element) => void retirer(element)}
+        />
       )}
 
       {edition ? (

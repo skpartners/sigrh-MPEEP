@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { mediaUrl } from "../api/client";
+import { Chargement } from "./Chargement";
 import { Icone } from "./Icone";
 import { BOUTON_PRIMAIRE, BOUTON_SECONDAIRE, Modale } from "./Modale";
 
@@ -80,7 +81,7 @@ export function ApercuFichier({ chemin, titre, sousTitre, onClose }: { chemin: s
         </>
       }>
       {etat.statut === "chargement" ? (
-        <p className="py-16 text-center font-body-md text-on-surface-variant" role="status" aria-busy="true">Chargement du document…</p>
+        <Chargement libelle="Chargement du document…" />
       ) : etat.statut === "erreur" ? (
         <p className="py-16 text-center font-body-md text-error" role="alert">
           Le document n’a pas pu être affiché. Essayez de l’ouvrir dans un onglet ou de le télécharger.

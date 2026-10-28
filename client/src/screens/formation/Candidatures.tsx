@@ -6,6 +6,7 @@ import type { Candidature, EtatCandidature, TableauFormation } from "./types";
 import { BadgeCandidature, CARTE, CHAMP, EnTeteSection, Modale, Vide, Zone, messageErreur, useEnregistrement } from "./ui";
 import { Icone } from "../../ui/Icone";
 import { Select } from "../../ui/Select";
+import { correspond } from "../../ui/recherche";
 
 const PAR_PAGE = 10;
 const FILTRES: { valeur: EtatCandidature | ""; libelle: string }[] = [
@@ -37,7 +38,7 @@ export function Candidatures({ data }: { data: TableauFormation }) {
     (i) =>
       (!filtre || i.etat === filtre) &&
       (!session || i.session.code === session) &&
-      (!q || `${i.agent.nom_complet} ${i.agent.matricule} ${i.reference} ${i.agent.organisme}`.toLowerCase().includes(q)),
+      (!q || correspond(`${i.agent.nom_complet} ${i.agent.matricule} ${i.reference} ${i.agent.organisme}`, q)),
   );
   const pages = Math.max(1, Math.ceil(lignes.length / PAR_PAGE));
   const courante = Math.min(page, pages - 1);

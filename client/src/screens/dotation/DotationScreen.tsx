@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { api } from "../../api/client";
 import { dateCourte, nombre } from "../../ui/format";
+import { ouvreAuClic } from "../../ui/clicLigne";
 import { useFeedback } from "../../ui/Feedback";
 import { Icone } from "../../ui/Icone";
 import { Modale } from "../../ui/Modale";
@@ -10,6 +11,7 @@ import { usePagination } from "../../ui/Pagination";
 import { CHAMP as CHAMP_GRH, Kpi, LIBELLE as LIBELLE_GRH, PageGrh } from "../grh/ui";
 import { BOUTON, BOUTON_LEGER, CHAMP, ICONE, LIBELLE, LienDocument, Pastille, Recherche, TableauListe, erreurDe, type AgentRef, type Disposition, type Mouvement, type Redeploiement, type Structure } from "./commun";
 import { Select } from "../../ui/Select";
+import { correspond } from "../../ui/recherche";
 
 type Donnees = {
   affectations: Mouvement[];
@@ -81,7 +83,7 @@ function Mouvements({ type, lignes, donnees }: { type: "affectation" | "reaffect
   const [edition, setEdition] = useState<Mouvement | "nouveau" | null>(null);
   const reaffectation = type === "reaffectation";
   const terme = recherche.trim().toLowerCase();
-  const filtrees = useMemo(() => lignes.filter((l) => !terme || [l.agent.nom_complet, l.agent.matricule, l.structure.nom, l.precedente, l.emploi?.libelle ?? "", l.concours].some((v) => v.toLowerCase().includes(terme))), [lignes, terme]);
+  const filtrees = useMemo(() => lignes.filter((l) => !terme || [l.agent.nom_complet, l.agent.matricule, l.structure.nom, l.precedente, l.emploi?.libelle ?? "", l.concours].some((v) => correspond(v, terme))), [lignes, terme]);
   const page = usePagination(filtrees, terme + type);
 
   async function retirer(l: Mouvement) {
@@ -106,7 +108,7 @@ function Mouvements({ type, lignes, donnees }: { type: "affectation" | "reaffect
       </div>
       <TableauListe colonnes={colonnes} vide={filtrees.length ? null : lignes.length ? "Aucun mouvement ne correspond à cette recherche." : reaffectation ? "Aucune réaffectation enregistrée." : "Aucune affectation enregistrée."} page={{ ...page, libelle: "mouvement" }}>
         {page.visibles.map((l) => (
-          <tr key={l.id} className="border-b border-hairline text-on-surface align-top">
+          <tr key={l.id} title={`Modifier le mouvement de ${l.agent.nom_complet}`} onClick={ouvreAuClic(() => setEdition(l))} className="cursor-pointer border-b border-hairline text-on-surface align-top hover:bg-surface-container-low/70">
             <td className="py-3 pr-4"><span className="font-semibold block">{l.agent.nom_complet}</span><span className="text-on-surface-variant">{l.agent.matricule}{l.agent.grade ? ` · ${l.agent.grade}` : ""}</span></td>
             {reaffectation ? (
               <>
@@ -225,7 +227,7 @@ function Redeploiements({ lignes }: { lignes: Redeploiement[] }) {
   const [recherche, setRecherche] = useState("");
   const [cible, setCible] = useState<Redeploiement | null>(null);
   const terme = recherche.trim().toLowerCase();
-  const filtrees = useMemo(() => lignes.filter((l) => !terme || [l.agent.nom_complet, l.agent.matricule, l.origine, l.destination.nom, l.motif, l.initiateur].some((v) => v.toLowerCase().includes(terme))), [lignes, terme]);
+  const filtrees = useMemo(() => lignes.filter((l) => !terme || [l.agent.nom_complet, l.agent.matricule, l.origine, l.destination.nom, l.motif, l.initiateur].some((v) => correspond(v, terme))), [lignes, terme]);
   const page = usePagination(filtrees, terme);
 
   async function retirer(l: Redeploiement) {
@@ -298,7 +300,7 @@ function Dispositions({ lignes }: { lignes: Disposition[] }) {
   const [filtre, setFiltre] = useState("");
   const [cible, setCible] = useState<{ ligne: Disposition; constat: boolean } | null>(null);
   const terme = recherche.trim().toLowerCase();
-  const filtrees = useMemo(() => lignes.filter((l) => (!filtre || l.statut === filtre) && (!terme || [l.agent.nom_complet, l.agent.matricule, l.structure_accueil, l.ministere_accueil].some((v) => v.toLowerCase().includes(terme)))), [lignes, terme, filtre]);
+  const filtrees = useMemo(() => lignes.filter((l) => (!filtre || l.statut === filtre) && (!terme || [l.agent.nom_complet, l.agent.matricule, l.structure_accueil, l.ministere_accueil].some((v) => correspond(v, terme)))), [lignes, terme, filtre]);
   const page = usePagination(filtrees, `${terme}|${filtre}`);
 
   async function retirer(l: Disposition) {
@@ -325,7 +327,7 @@ function Dispositions({ lignes }: { lignes: Disposition[] }) {
       </div>
       <TableauListe colonnes={["Agent", "Structure d'accueil", "Période", "Avis d'accueil", "Décision de la hiérarchie", "Suivi DRH", "Actions"]} vide={filtrees.length ? null : lignes.length ? "Aucune mise à disposition ne correspond à ces critères." : "Aucune demande de mise à disposition."} page={{ ...page, libelle: "mise à disposition" }}>
         {page.visibles.map((l) => (
-          <tr key={l.id} className="border-b border-hairline text-on-surface align-top">
+          <tr key={l.id} title={l.statut === "constatee" ? `Modifier le suivi de ${l.agent.nom_complet}` : undefined} onClick={l.statut === "constatee" ? ouvreAuClic(() => setCible({ ligne: l, constat: false })) : undefined} className={`border-b border-hairline text-on-surface align-top ${l.statut === "constatee" ? "cursor-pointer hover:bg-surface-container-low/70" : ""}`}>
             <td className="py-3 pr-4"><span className="font-semibold block">{l.agent.nom_complet}</span><span className="text-on-surface-variant">{l.agent.matricule}</span></td>
             <td className="py-3 pr-4"><span className="font-semibold block">{l.structure_accueil}</span><span className="text-on-surface-variant">{l.ministere_accueil || "Même ministère"}</span></td>
             <td className="py-3 pr-4 whitespace-nowrap">{dateCourte(l.date_debut)} → {l.date_fin ? dateCourte(l.date_fin) : "sans terme"}</td>

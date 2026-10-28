@@ -44,6 +44,17 @@ def _bloc(ecran: str, cle: str, defaut):
     return bloc.contenu if bloc else defaut
 
 
+def suit_un_circuit(item: Absence) -> bool:
+    """Absence demandée par l'agent dont le type a un circuit configuré : ce circuit seul la décide."""
+    if not item.demande_id:
+        return False
+    from .circuits_config import etapes_pour_absence
+    from .models import TypeAbsence
+
+    type_absence = TypeAbsence.objects.filter(libelle=item.nature).first()
+    return type_absence is not None and etapes_pour_absence(type_absence) is not None
+
+
 def autorisation_row(item: Absence, par_nom: dict | None = None) -> dict:
     entite = structure_de(item.agent, structures_par_nom() if par_nom is None else par_nom)
     return {
@@ -59,6 +70,7 @@ def autorisation_row(item: Absence, par_nom: dict | None = None) -> dict:
         "jours": item.jours,
         "decision": item.decision,
         "motif_decision": item.motif_decision,
+        "suit_circuit": suit_un_circuit(item),
     }
 
 
@@ -204,6 +216,9 @@ def decider(request, pk: int):
             return refus_hors_perimetre()
         if item.decision != Absence.Decision.EN_ATTENTE:
             return Response({"detail": "Cette autorisation est déjà décidée."}, status=409)
+        if suit_un_circuit(item):
+            # Une absence dont le type a un circuit configuré se décide aux étapes de ce circuit, pas ici.
+            return Response({"detail": "Cette demande suit son circuit de validation : elle se décide à chacune de ses étapes."}, status=409)
         valide = sens == "valider"
         item.decision = Absence.Decision.VALIDEE if valide else Absence.Decision.INVALIDEE
         item.statut = "Justifiée" if valide else "Injustifiée"

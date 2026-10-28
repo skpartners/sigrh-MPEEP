@@ -33,14 +33,6 @@ export function CircuitsScreen() {
             </div>
           ) : null}
 
-          <ConfigurerCircuits />
-
-          <ElementsConfigurables famille="conge" />
-
-          <ElementsConfigurables famille="absence" />
-
-          <ActesDemandables />
-
           <section className="space-y-4 motion-rise" style={{ "--delay": "80ms" } as CSSProperties} aria-labelledby="titre-parcours">
             <div>
               <h2 id="titre-parcours" className="font-headline-md text-headline-md text-on-surface">Parcours d'une requête par défaut</h2>
@@ -74,6 +66,15 @@ export function CircuitsScreen() {
                 : [0, 1, 2, 3, 4].map((index) => <li key={index}><Skeleton className="h-56 rounded-lg" /></li>)}
             </ol>
           </section>
+
+          <ConfigurerCircuits />
+
+          <ElementsConfigurables famille="conge" />
+
+          <ElementsConfigurables famille="absence" />
+
+          <ActesDemandables />
+
         </div>
       </div>
     </AppChrome>

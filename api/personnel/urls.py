@@ -1,6 +1,7 @@
 from django.urls import path
 
-from . import absences, adhesion, secretariat, taches, besoins, besoins_fichier, etats_statistiques, dotation_agents, etats_rh, action_sociale, actions, communication, communications, discipline, effectifs, fin_carriere, formation, grh, parcours, positions, import_communications, import_structures, messagerie, parametres, planification, utilisateurs, views
+from .garde_habilitations import proteger
+from . import absences, adhesion, secretariat, taches, besoins, besoins_fichier, etats_statistiques, dotation_agents, etats_rh, action_sociale, actions, communication, communications, discipline, effectifs, equipe, evenements, fin_carriere, formation, grh, hors_ligne_droits, parcours, positions, import_communications, import_structures, messagerie, parametres, planification, utilisateurs, views
 
 urlpatterns = [
     path("health/", views.health, name="health"),
@@ -18,6 +19,8 @@ urlpatterns = [
     path("adhesion/", adhesion.adhesion, name="adhesion"),
     path("me/mot-de-passe/", views.changer_mot_de_passe, name="me-mot-de-passe"),
     path("parametres/", parametres.parametres, name="parametres"),
+    path("parametres/hors-ligne/", hors_ligne_droits.parametres_hors_ligne, name="parametres-hors-ligne"),
+    path("hors-ligne/droits/", hors_ligne_droits.mes_droits, name="hors-ligne-droits"),
     path("parametres/identite/", parametres.enregistrer_identite_ministre, name="parametres-identite"),
     path("parametres/connexion/", parametres.enregistrer_connexion, name="parametres-connexion"),
     path("parametres/signataire/", parametres.enregistrer_signataire, name="parametres-signataire"),
@@ -47,6 +50,10 @@ urlpatterns = [
     path("agents/import/modele/", views.modele_import_agents, name="agents-import-modele"),
     path("agents/import/", views.importer_agents, name="agents-import"),
     path("agents/<str:matricule>/", views.agent_detail_view, name="agent-detail"),
+    path("agents/<str:matricule>/equipe/", equipe.equipe, name="agent-equipe"),
+    path("evenements/", evenements.evenements, name="evenements"),
+    path("evenements/<int:pk>/lu/", evenements.marquer_lu, name="evenement-lu"),
+    path("evenements/<int:pk>/piece/", evenements.piece, name="evenement-piece"),
     path("agents/<str:matricule>/photo/", views.deposer_photo, name="agent-photo"),
     path("demandes-actes/", views.demandes_actes, name="demandes-actes"),
     path("agents/<str:matricule>/actes-demandes/", views.deposer_demande_acte, name="agent-acte-demande"),
@@ -261,3 +268,7 @@ urlpatterns = [
     path("utilisateurs/", utilisateurs.utilisateurs, name="utilisateurs"),
     path("utilisateurs/<str:matricule>/", utilisateurs.utilisateur, name="utilisateur"),
 ]
+
+
+urlpatterns = proteger(urlpatterns)
+

@@ -77,6 +77,70 @@ def identite_ministre() -> dict:
     return {"civilite": objet.civilite, "nom": objet.nom}
 
 
+MATRICULE_MINISTRE_DEFAUT = "MINISTRE"
+
+
+def _decouper_nom(nom: str) -> tuple[str, str]:
+    parties = nom.split(None, 1)
+    if len(parties) == 1:
+        return parties[0], ""
+    return parties[0], parties[1]
+
+
+def assurer_compte_ministre(objet) -> str | None:
+    """Ouvre ou met à jour le compte Ministre à partir de l'identité enregistrée dans les paramètres."""
+    from .models import EntiteTutelle, Organisme, Profil
+
+    nom = (objet.nom or "").strip()
+    if not nom:
+        return None
+    matricule = (objet.ministre_matricule or "").strip() or MATRICULE_MINISTRE_DEFAUT
+    if " " in matricule or len(matricule) > 150:
+        return "Indiquez un matricule, sans espace."
+    structure = EntiteTutelle.objects.select_related("pole").filter(niveau="ministere").order_by("ordre", "nom").first()
+    if structure is None:
+        return "Aucune structure de niveau ministère n'est enregistrée."
+    ministre = User.objects.filter(profil__role="Ministre").select_related("profil").first()
+    occupant = User.objects.filter(username=matricule).first()
+    if occupant is not None and (ministre is None or occupant.pk != ministre.pk):
+        return "Ce matricule est déjà utilisé par un autre compte."
+    famille, prenoms = _decouper_nom(nom)
+    organisme, _cree = Organisme.objects.get_or_create(
+        code=structure.pole.code,
+        defaults={"sigle": structure.pole.code.upper()[:40], "nom": structure.pole.nom},
+    )
+    if ministre is None:
+        ministre = User(username=matricule)
+        ministre.set_unusable_password()
+    elif ministre.username != matricule:
+        ministre.username = matricule
+    ministre.last_name = famille[:150]
+    ministre.first_name = prenoms[:150]
+    ministre.save()
+    profil = Profil.objects.filter(user=ministre).first()
+    if profil is None:
+        Profil.objects.create(
+            user=ministre,
+            fonction="Ministre",
+            role="Ministre",
+            organisme=organisme,
+            structure=structure,
+            habilitations=None,
+            precisions=None,
+        )
+    else:
+        profil.fonction = "Ministre"
+        profil.role = "Ministre"
+        profil.organisme = organisme
+        profil.structure = structure
+        profil.superieur = None
+        profil.save(update_fields=["fonction", "role", "organisme", "structure", "superieur"])
+    if objet.ministre_matricule != matricule:
+        objet.ministre_matricule = matricule
+        objet.save(update_fields=["ministre_matricule"])
+    return None
+
+
 def _signataire_de(matricule: str) -> dict:
     from .models import Agent
     from .normalisation import nom_complet_structure
@@ -234,6 +298,7 @@ def _ligne(user) -> dict:
         "couleurs": couleurs(),
         "connexion": _connexion(),
         "signataire": signataire_documents(),
+        "matricule": (_parametres().ministre_matricule if _parametres() else ""),
         **identite_ministre(),
     }
 
@@ -285,14 +350,24 @@ def enregistrer_identite_ministre(request):
         return Response({"detail": "Cette action est hors de votre habilitation."}, status=403)
     civilite = str(request.data.get("civilite") or "").strip()
     nom = str(request.data.get("nom") or "").strip()
+    matricule = str(request.data.get("matricule") or "").strip()
     if civilite not in CIVILITES:
         return Response({"detail": "La civilité doit être Madame ou Monsieur."}, status=400)
     if len(nom) > NOM_MAX:
         return Response({"detail": "Le nom dépasse 160 caractères."}, status=400)
+    if nom and matricule and (" " in matricule or len(matricule) > 150):
+        return Response({"detail": "Indiquez un matricule, sans espace."}, status=400)
     objet, _cree = ParametresMinistere.objects.get_or_create(pk=1)
     objet.civilite = civilite
     objet.nom = nom
-    objet.save(update_fields=["civilite", "nom"])
+    if nom and matricule:
+        objet.ministre_matricule = matricule
+    elif nom and not objet.ministre_matricule:
+        objet.ministre_matricule = MATRICULE_MINISTRE_DEFAUT
+    objet.save(update_fields=["civilite", "nom", "ministre_matricule"])
+    erreur = assurer_compte_ministre(objet)
+    if erreur:
+        return Response({"detail": erreur}, status=400)
     return Response(_ligne(request.user))
 
 

@@ -1,3 +1,4 @@
+import { Chargement } from "../../ui/Chargement";
 import { FilVisas } from "../../ui/FilVisas";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -77,7 +78,7 @@ export function MobiliteAgent() {
   const requete = useQuery({ queryKey: CLE, queryFn: () => api<Mobilite>("/api/v1/mobilite/") });
   const [mutation, setMutation] = useState<string | null>(null);
   const d = requete.data;
-  if (requete.isLoading) return <p className="text-on-surface-variant">Chargement…</p>;
+  if (requete.isLoading) return <Chargement libelle="Chargement…" />;
   if (!d) return <p role="alert" className="text-error">Votre espace de demande de mutation n'a pas pu être chargé.</p>;
   const mutationEnCours = d.mes_mutations.some((m) => m.statut === "en_cours");
 

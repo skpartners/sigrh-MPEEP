@@ -5,6 +5,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { SessionUser } from "../api/types";
 import { ApiError, api, mediaUrl, telecharger } from "../api/client";
 import { useFeedback } from "../ui/Feedback";
+import { BandeauAttente } from "../hors-ligne/BandeauAttente";
+import { modifierDossier, type DemandeDossier } from "../hors-ligne/dossier";
 import type { Dossier } from "../api/types";
 import { useSearchParams } from "react-router-dom";
 import { DemandesActes } from "./DemandesActes";
@@ -12,6 +14,8 @@ import { DemandesConges } from "./DemandesConges";
 import { DocumentsAgent } from "./DocumentsAgent";
 import { CollecteAgent, compteFormation } from "./formation/CollecteAgent";
 import { demandeClose } from "./dossier-onglets/commun";
+import { EquipeAgent } from "./dossier-onglets/EquipeAgent";
+import { CLE_EVENEMENTS, EvenementsAgent, type Evenement } from "./dossier-onglets/EvenementsAgent";
 import { FilVisas } from "../ui/FilVisas";
 import { positionAffichee } from "../ui/situation";
 import { Icone } from "../ui/Icone";
@@ -19,10 +23,10 @@ import { CHAMPS_PROFIL, controleNom, premiereErreur } from "../ui/validation";
 import { EditeurPhoto, Portrait } from "../ui/PhotoProfil";
 import { Select } from "../ui/Select";
 
-type OngletProfil = "profil" | "documents" | "conges" | "demandes" | "formation" | "besoins" | "disposition";
+type OngletProfil = "profil" | "documents" | "conges" | "demandes" | "formation" | "besoins" | "disposition" | "equipe" | "evenements";
 /** Onglets dont la pastille reste affichée tant que l'exigence n'est pas respectée. */
-const EXIGENCES = new Set<OngletProfil>(["profil", "documents", "besoins", "formation"]);
-const ONGLETS: OngletProfil[] = ["profil", "documents", "conges", "demandes", "formation", "besoins", "disposition"];
+const EXIGENCES = new Set<OngletProfil>(["profil", "documents", "besoins", "formation", "evenements"]);
+const ONGLETS: OngletProfil[] = ["profil", "documents", "conges", "demandes", "formation", "besoins", "disposition", "equipe", "evenements"];
 
 const ETAPES_DISCIPLINE: [string, string][] = [
   ["instruction", "Instruction"],
@@ -31,6 +35,45 @@ const ETAPES_DISCIPLINE: [string, string][] = [
 ];
 
 const PAGE = "w-full px-4 sm:px-6 lg:px-8 py-6 mx-auto flex-1";
+const MOTS_VIDES_SIGLE = new Set(["de", "des", "du", "d", "et", "la", "le", "les", "l", "au", "aux", "en", "par", "pour", "sur", "a", "un", "une", "dans"]);
+
+function sigle(texte: string): string {
+  const mots = texte
+    .split(/[\s'’\-]+/)
+    .map((mot) => mot.trim())
+    .filter((mot) => mot && !MOTS_VIDES_SIGLE.has(mot.toLowerCase().normalize("NFD").replace(/\p{M}/gu, "")));
+  if (mots.length <= 1) return texte.trim();
+  return mots.map((mot) => mot.normalize("NFD").replace(/\p{M}/gu, "").charAt(0).toUpperCase()).join("");
+}
+
+/** Un libellé trop long devient ses initiales (« Administrateur des services financiers option Finances générales » → ASF · FG). Le survol garde le texte entier. */
+function libelleCourt(texte: string, limite = 32): string {
+  const propre = texte.trim();
+  if (propre.length <= limite) return propre;
+  const parties = propre.split(/\s+option\s+/i);
+  if (parties.length > 1) {
+    const compose = [sigle(parties[0]), ...parties.slice(1).map(sigle)].filter(Boolean).join(" · ");
+    if (compose.length <= limite) return compose;
+  }
+  const court = sigle(propre);
+  if (court !== propre && court.length <= limite) return court;
+  return `${propre.slice(0, limite - 1).trimEnd()}…`;
+}
+
+function textePosition(agent: Parameters<typeof positionAffichee>[0]): string {
+  const poste = positionAffichee(agent);
+  return poste.detail ? `${poste.position} · ${poste.detail}` : poste.position;
+}
+
+function Mention({ libelle, valeur, classe = "bg-surface-container-low text-on-surface-variant" }: { libelle: string; valeur: string; classe?: string }) {
+  const visible = libelleCourt(valeur);
+  return (
+    <span className={`max-w-full px-2.5 py-1 rounded font-label-sm ${classe}`} title={visible === valeur ? undefined : `${libelle} : ${valeur}`}>
+      {libelle} : {visible}
+    </span>
+  );
+}
+
 const CARD = "bg-surface-container-lowest rounded-xl border border-hairline p-6";
 
 type Brouillon = Record<string, string>;
@@ -153,12 +196,17 @@ function PieceIdentite({ agent }: { agent: Dossier }) {
     corps.set("numero", numero);
     if (fichier) corps.set("fichier", fichier);
     try {
-      const dossier = await feedback.run(
-        "Enregistrement de la pièce d’identité…",
-        () => api<Dossier>(`/api/v1/agents/${encodeURIComponent(agent.matricule)}/piece-identite/`, { method: "POST", body: corps }),
-        { success: { title: "Pièce d’identité enregistrée", message: `Elle figure sur le dossier de ${agent.nom_complet}.` } },
-      );
-      client.setQueryData(["agent", agent.matricule], dossier);
+      await modifierDossier({
+        feedback,
+        client,
+        matricule: agent.matricule,
+        enCours: "Enregistrement de la pièce d’identité…",
+        route: `/api/v1/agents/${encodeURIComponent(agent.matricule)}/piece-identite/`,
+        corps,
+        libelle: "Pièce d’identité",
+        capacite: fichier ? ["dossier", "fichier"] : "dossier",
+        succes: { title: "Pièce d’identité enregistrée", message: `Elle figure sur le dossier de ${agent.nom_complet}.` },
+      });
       setFichier(null);
     } catch (cause) {
       setErreur(cause instanceof ApiError ? cause.message : "La pièce d’identité n’a pas pu être enregistrée.");
@@ -234,14 +282,18 @@ function EnfantsACharge({ agent }: { agent: Dossier }) {
     setFormulaire((courant) => ({ ...courant, [cle]: valeur }));
   }
 
-  async function appliquer(action: () => Promise<Dossier>, titre: string) {
+  async function appliquer(demande: DemandeDossier, titre: string) {
     setErreur("");
     setEnCours(true);
     try {
-      const dossier = await feedback.run("Mise à jour des enfants…", action, {
-        success: { title: titre, message: `Le dossier de ${agent.nom_complet} est à jour.` },
+      await modifierDossier({
+        feedback,
+        client,
+        matricule: agent.matricule,
+        enCours: "Mise à jour des enfants…",
+        succes: { title: titre, message: `Le dossier de ${agent.nom_complet} est à jour.` },
+        ...demande,
       });
-      client.setQueryData(["agent", agent.matricule], dossier);
       return true;
     } catch (cause) {
       setErreur(cause instanceof ApiError ? cause.message : "La modification n’a pas pu être enregistrée.");
@@ -265,7 +317,7 @@ function EnfantsACharge({ agent }: { agent: Dossier }) {
     const corps = new FormData();
     for (const [cle, valeur] of Object.entries(formulaire)) corps.set(cle, valeur);
     corps.set("fichier", acte);
-    if (await appliquer(() => api<Dossier>(base, { method: "POST", body: corps }), "Enfant ajouté")) {
+    if (await appliquer({ route: base, corps, libelle: `Enfant déclaré : ${formulaire.prenoms} ${formulaire.nom}`.trim(), capacite: ["dossier", "fichier"] }, "Enfant ajouté")) {
       setFormulaire(vide);
       setActe(null);
       setCleActe((n) => n + 1);
@@ -298,7 +350,7 @@ function EnfantsACharge({ agent }: { agent: Dossier }) {
                 type="button"
                 disabled={enCours}
                 aria-label={`Retirer ${enfant.prenoms} ${enfant.nom}`}
-                onClick={() => void appliquer(() => api<Dossier>(`${base}${enfant.id}/`, { method: "DELETE" }), "Enfant retiré")}
+                onClick={() => void appliquer({ route: `${base}${enfant.id}/`, methode: "DELETE", libelle: "Enfant retiré du dossier", capacite: "dossier" }, "Enfant retiré")}
                 className="-mr-2 -mt-1 rounded-full p-1.5 text-on-surface-variant transition-colors hover:bg-error-container/60 hover:text-error disabled:opacity-60"
               >
                 <Icone nom="delete" className="text-lg" />
@@ -374,21 +426,28 @@ function ParcoursAcademique({ agent }: { agent: Dossier }) {
     const corps = new FormData();
     if (fichierChoisi) corps.set("fichier", fichierChoisi);
     if (piece) corps.set("piece_id", piece);
-    return appliquer(() => api<Dossier>(`${base}${id}/justificatif/`, { method: "POST", body: corps }), "Justificatif rattaché");
+    return appliquer(
+      { route: `${base}${id}/justificatif/`, corps, libelle: "Justificatif de diplôme", capacite: fichierChoisi ? "fichier" : "dossier" },
+      "Justificatif rattaché",
+    );
   }
 
   function maj(cle: keyof typeof vide, valeur: string) {
     setFormulaire((courant) => ({ ...courant, [cle]: valeur }));
   }
 
-  async function appliquer(action: () => Promise<Dossier>, titre: string) {
+  async function appliquer(demande: DemandeDossier, titre: string) {
     setErreur("");
     setEnCours(true);
     try {
-      const dossier = await feedback.run("Mise à jour du parcours académique…", action, {
-        success: { title: titre, message: `Le dossier de ${agent.nom_complet} est à jour.` },
+      await modifierDossier({
+        feedback,
+        client,
+        matricule: agent.matricule,
+        enCours: "Mise à jour du parcours académique…",
+        succes: { title: titre, message: `Le dossier de ${agent.nom_complet} est à jour.` },
+        ...demande,
       });
-      client.setQueryData(["agent", agent.matricule], dossier);
       return true;
     } catch (cause) {
       setErreur(cause instanceof ApiError ? cause.message : "La modification n’a pas pu être enregistrée.");
@@ -408,7 +467,7 @@ function ParcoursAcademique({ agent }: { agent: Dossier }) {
     for (const [cle, valeur] of Object.entries(formulaire)) corps.set(cle, valeur);
     if (fichier) corps.set("fichier", fichier);
     else if (pieceId) corps.set("piece_id", pieceId);
-    if (await appliquer(() => api<Dossier>(base, { method: "POST", body: corps }), "Diplôme ajouté")) {
+    if (await appliquer({ route: base, corps, libelle: `Diplôme ajouté : ${formulaire.libelle || formulaire.niveau_etude || ""}`.trim(), capacite: fichier ? ["dossier", "fichier"] : "dossier" }, "Diplôme ajouté")) {
       setFormulaire(vide);
       setFichier(null);
       setPieceId("");
@@ -430,7 +489,7 @@ function ParcoursAcademique({ agent }: { agent: Dossier }) {
                   type="button"
                   disabled={enCours}
                   aria-label={`Retirer le diplôme ${diplome.libelle || diplome.niveau_etude}`}
-                  onClick={() => void appliquer(() => api<Dossier>(`${base}${diplome.id}/`, { method: "DELETE" }), "Diplôme retiré")}
+                  onClick={() => void appliquer({ route: `${base}${diplome.id}/`, methode: "DELETE", libelle: `Diplôme retiré : ${diplome.libelle || diplome.niveau_etude}`, capacite: "dossier" }, "Diplôme retiré")}
                   className="-mr-2 -mt-1 rounded-full p-1.5 text-on-surface-variant transition-colors hover:bg-error-container/60 hover:text-error disabled:opacity-60"
                 >
                   <Icone nom="delete" className="text-lg" />
@@ -535,12 +594,17 @@ function JustificatifMariage({ agent }: { agent: Dossier }) {
     setErreur("");
     setEnCours(true);
     try {
-      const dossier = await feedback.run(
-        "Versement de l’acte de mariage…",
-        () => api<Dossier>(`/api/v1/agents/${encodeURIComponent(agent.matricule)}/documents/`, { method: "POST", body: corps }),
-        { success: { title: "Acte de mariage versé", message: "Il est classé dans Mes documents, rubrique Actes d’état civil." } },
-      );
-      client.setQueryData(["agent", agent.matricule], dossier);
+      await modifierDossier({
+        feedback,
+        client,
+        matricule: agent.matricule,
+        enCours: "Versement de l’acte de mariage…",
+        route: `/api/v1/agents/${encodeURIComponent(agent.matricule)}/documents/`,
+        corps,
+        libelle: "Acte de mariage",
+        capacite: "fichier",
+        succes: { title: "Acte de mariage versé", message: "Il est classé dans Mes documents, rubrique Actes d’état civil." },
+      });
     } catch (cause) {
       setErreur(cause instanceof ApiError ? cause.message : "L’acte de mariage n’a pas pu être versé.");
     } finally {
@@ -652,6 +716,10 @@ export function ProfilAgentTroisOnglets({ agent }: { agent: Dossier }) {
   const [params] = useSearchParams();
   const demande = params.get("onglet") as OngletProfil | null;
   const [onglet, setOnglet] = useState<OngletProfil>(demande && ONGLETS.includes(demande) ? demande : "profil");
+  // Un lien (notification de la barre du haut) peut changer d'onglet alors que le profil est déjà ouvert.
+  useEffect(() => {
+    if (demande && ONGLETS.includes(demande)) setOnglet(demande);
+  }, [demande]);
   const [photoOuverte, setPhotoOuverte] = useState(false);
   const modifiable = agent.modifiable !== false;
   const mobilite = useQuery({ queryKey: ["mobilite"], queryFn: () => api<{ mes_mutations: { statut: string }[] }>("/api/v1/mobilite/"), enabled: modifiable });
@@ -663,6 +731,10 @@ export function ProfilAgentTroisOnglets({ agent }: { agent: Dossier }) {
     enabled: moi.data?.matricule === agent.matricule,
   });
   const campagneAttendue = Boolean(campagneConges.data?.campagne?.formulaire);
+  // « Ma team » et « Événements » sont ceux de la personne connectée : ils n'ont pas de sens sur le dossier d'un autre agent.
+  const estMoi = moi.data?.matricule === agent.matricule;
+  const evenements = useQuery({ queryKey: CLE_EVENEMENTS, queryFn: () => api<{ evenements: Evenement[] }>("/api/v1/evenements/"), enabled: estMoi });
+  const evenementsNonLus = (evenements.data?.evenements ?? []).filter((item) => !item.lue).length;
   // Ce qui attend l'agent dans chaque onglet : un nombre en rouge, qui s'efface une fois l'onglet ouvert.
   const informationsAFournir = informationsExigees(agent);
   const compteurs: Partial<Record<OngletProfil, number>> = {
@@ -674,6 +746,7 @@ export function ProfilAgentTroisOnglets({ agent }: { agent: Dossier }) {
     demandes: agent.demandes.filter((item) => item.categorie === "acte" && (item.etape.startsWith("Validée") || item.etape.startsWith("Clôturée : acte délivré"))).length,
     formation: compteFormation(agent),
     besoins: besoinsAttendus,
+    evenements: evenementsNonLus,
     // Mutations : comme les congés et les actes, le nombre de demandes que le circuit a accordées.
     disposition: mobilite.data?.mes_mutations.filter((mutation) => mutation.statut === "accordee").length ?? 0,
   };
@@ -735,12 +808,18 @@ export function ProfilAgentTroisOnglets({ agent }: { agent: Dossier }) {
     setErreur("");
     setEnCours(true);
     try {
-      const dossier = await feedback.run(
-        "Enregistrement de vos informations…",
-        () => api<Dossier>(`/api/v1/agents/${encodeURIComponent(agent.matricule)}/profil/`, { method: "PATCH", body: JSON.stringify(brouillon) }),
-        { success: { title: "Informations mises à jour", message: `Le dossier de ${agent.nom_complet} est à jour.` } },
-      );
-      client.setQueryData(["agent", agent.matricule], dossier);
+      await modifierDossier({
+        feedback,
+        client,
+        matricule: agent.matricule,
+        enCours: "Enregistrement de vos informations…",
+        route: `/api/v1/agents/${encodeURIComponent(agent.matricule)}/profil/`,
+        methode: "PATCH",
+        corps: brouillon,
+        libelle: "Mise à jour des informations personnelles",
+        capacite: "dossier",
+        succes: { title: "Informations mises à jour", message: `Le dossier de ${agent.nom_complet} est à jour.` },
+      });
       setEdition(false);
     } catch (cause) {
       setErreur(cause instanceof ApiError ? cause.message : "Les informations n’ont pas pu être enregistrées.");
@@ -765,6 +844,7 @@ export function ProfilAgentTroisOnglets({ agent }: { agent: Dossier }) {
     <EditionContexte.Provider value={{ edition, brouillon, maj: (cle, valeur) => setBrouillon((b) => ({ ...b, [cle]: valeur })), exigees: informationsAFournir.exigees }}>
     <div className={PAGE}>
       <div className="motion-content flex flex-col w-full">
+        <BandeauAttente matricule={agent.matricule} />
         <div className={`${CARD} mb-6`}>
           <div className="flex flex-col sm:flex-row sm:items-center gap-5">
             {modifiable && edition ? (
@@ -788,10 +868,10 @@ export function ProfilAgentTroisOnglets({ agent }: { agent: Dossier }) {
               <p className="font-label-sm text-on-surface-variant">Dossier individuel de l’agent</p>
               <h1 className="font-headline-lg text-headline-lg text-on-surface font-bold">{agent.nom_complet}</h1>
               <div className="flex flex-wrap gap-2 mt-2">
-                <span className="px-2.5 py-1 rounded bg-primary-fixed text-on-primary-fixed font-label-sm">Matricule : {agent.matricule}</span>
-                <span className="px-2.5 py-1 rounded bg-surface-container-low text-on-surface-variant font-label-sm">Emploi : {agent.situation_saisie?.emploi || "Non renseigné"}</span>
-                <span className="px-2.5 py-1 rounded bg-surface-container-low text-on-surface-variant font-label-sm">Fonction : {agent.situation_saisie?.fonction || "Non renseignée"}</span>
-                <span className={`px-2.5 py-1 rounded font-label-sm font-semibold ${positionAffichee(agent).position === "En activité" ? "bg-surface-container-low text-on-surface-variant" : "bg-secondary-container text-on-secondary-container"}`}>Position : {positionAffichee(agent).position}{positionAffichee(agent).detail ? ` · ${positionAffichee(agent).detail}` : ""}</span>
+                <Mention libelle="Matricule" valeur={agent.matricule} classe="bg-primary-fixed text-on-primary-fixed" />
+                <Mention libelle="Emploi" valeur={agent.situation_saisie?.emploi || "Non renseigné"} />
+                <Mention libelle="Fonction" valeur={agent.situation_saisie?.fonction || "Non renseignée"} />
+                <Mention libelle="Position" valeur={textePosition(agent)} classe={positionAffichee(agent).position === "En activité" ? "bg-surface-container-low text-on-surface-variant" : "bg-secondary-container text-on-secondary-container font-semibold"} />
               </div>
             </div>
           </div>
@@ -835,6 +915,7 @@ export function ProfilAgentTroisOnglets({ agent }: { agent: Dossier }) {
             ["formation", "school", "Formation"],
             ...(responsable ? [["besoins", "post_add", "Besoins RH"]] : []),
             ...(modifiable ? [["disposition", "swap_horiz", "Demande de mutation"]] : []),
+            ...(estMoi ? [["equipe", "groups", "Ma team"], ["evenements", "campaign", "Événements"]] : []),
           ] as [OngletProfil, string, string][]).map(([id, icone, libelle]) => (
             <button key={id} id={`profil-tab-${id}`} role="tab" aria-selected={onglet === id} aria-controls="profil-tab-panel"
               type="button" onClick={() => setOnglet(id)}
@@ -847,7 +928,7 @@ export function ProfilAgentTroisOnglets({ agent }: { agent: Dossier }) {
                   <span className="relative h-3 w-3 rounded-full bg-error" />
                 </span>
               ) : (EXIGENCES.has(id) || (id === "conges" && campagneAttendue) ? (compteurs[id] ?? 0) > 0 : id !== onglet && (compteurs[id] ?? 0) > (vus[id] ?? 0)) ? (
-                <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-error px-1.5 text-[11px] font-bold leading-none text-on-error shadow-sm" aria-label={id === "conges" && campagneAttendue ? "Campagne de congés en cours : dates à déposer" : id === "conges" || id === "demandes" || id === "disposition" ? `${compteurs[id]} validée${(compteurs[id] ?? 0) > 1 ? "s" : ""} par le circuit` : id === "documents" ? `${compteurs[id]} document${(compteurs[id] ?? 0) > 1 ? "s" : ""} obligatoire${(compteurs[id] ?? 0) > 1 ? "s" : ""} absent${(compteurs[id] ?? 0) > 1 ? "s" : ""}` : `${compteurs[id]} à traiter`}>
+                <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-error px-1.5 text-[11px] font-bold leading-none text-on-error shadow-sm" aria-label={id === "conges" && campagneAttendue ? "Campagne de congés en cours : dates à déposer" : id === "conges" || id === "demandes" || id === "disposition" ? `${compteurs[id]} validée${(compteurs[id] ?? 0) > 1 ? "s" : ""} par le circuit` : id === "documents" ? `${compteurs[id]} document${(compteurs[id] ?? 0) > 1 ? "s" : ""} obligatoire${(compteurs[id] ?? 0) > 1 ? "s" : ""} absent${(compteurs[id] ?? 0) > 1 ? "s" : ""}` : id === "evenements" ? `${compteurs[id]} publication${(compteurs[id] ?? 0) > 1 ? "s" : ""} non lue${(compteurs[id] ?? 0) > 1 ? "s" : ""}` : `${compteurs[id]} à traiter`}>
                   {(compteurs[id] ?? 0) > 99 ? "99+" : compteurs[id]}
                 </span>
               ) : null}
@@ -1018,6 +1099,10 @@ export function ProfilAgentTroisOnglets({ agent }: { agent: Dossier }) {
           {onglet === "besoins" && responsable && <BesoinsResponsable />}
 
           {onglet === "disposition" && modifiable && <MobiliteAgent />}
+
+          {onglet === "equipe" && estMoi && <EquipeAgent matricule={agent.matricule} />}
+
+          {onglet === "evenements" && estMoi && <EvenementsAgent selection={params.get("evenement")} />}
         </div>
       </div>
       {photoOuverte ? <EditeurPhoto agent={agent} onClose={() => setPhotoOuverte(false)} /> : null}

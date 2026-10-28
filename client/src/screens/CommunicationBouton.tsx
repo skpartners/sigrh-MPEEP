@@ -1,3 +1,4 @@
+import { Chargement } from "../ui/Chargement";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -93,7 +94,7 @@ export function CommunicationBouton() {
             <span className="font-label-sm text-label-sm text-on-surface-variant">{decompte ? `${decompte} à traiter` : "Rien à traiter"}</span>
           </div>
           <div className="max-h-80 overflow-y-auto overscroll-contain">
-            {requete.isPending ? <p className="px-4 py-6 text-center font-body-sm text-body-sm text-on-surface-variant">Chargement…</p> : null}
+            {requete.isPending ? <Chargement enLigne libelle="Chargement…" /> : null}
             {requete.isError ? <p className="px-4 py-6 text-center font-body-sm text-body-sm text-error" role="alert">Le registre est indisponible.</p> : null}
             {visas.length > 0 ? (
               <section>

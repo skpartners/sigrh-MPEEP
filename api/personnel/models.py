@@ -4,6 +4,7 @@ from django.contrib.auth.models import User
 from django.db import models
 from django.utils import timezone
 
+from .hors_ligne_catalogue import capacites_defaut as capacites_hors_ligne_defaut
 from .normalisation import nom_structure, normaliser_identite
 
 
@@ -306,6 +307,20 @@ class RoleMatrice(models.Model):
 
     class Meta:
         ordering = ["ordre"]
+
+
+class DroitHorsLigne(models.Model):
+    """Ce qu'un rôle peut faire hors ligne (codes de `hors_ligne_catalogue.CAPACITES`).
+
+    Table à part : la matrice des rôles est lue par d'anciennes migrations avec le modèle courant, elle ne doit pas gagner de colonne.
+    Un rôle sans ligne reçoit toutes les capacités.
+    """
+
+    role = models.OneToOneField(RoleMatrice, on_delete=models.CASCADE, related_name="droit_hors_ligne")
+    capacites = models.JSONField(default=capacites_hors_ligne_defaut)
+
+    class Meta:
+        verbose_name = "droit hors ligne"
 
 
 class ModuleHabilitation(models.Model):
@@ -1655,6 +1670,7 @@ class Publication(models.Model):
         COMMUNIQUE = "communique", "Communiqué général"
         DECISION = "decision", "Décision"
         FLASH = "flash", "Alerte flash"
+        EVENEMENT = "evenement", "Événement"
 
     class Urgence(models.TextChoices):
         NORMAL = "normal", "Standard"
@@ -1895,6 +1911,10 @@ class ParametresMinistere(models.Model):
 
     civilite = models.CharField(max_length=20, blank=True, choices=Civilite.choices)
     nom = models.CharField(max_length=160, blank=True)
+    ministre_matricule = models.CharField(
+        max_length=150, blank=True,
+        help_text="Matricule du compte ministre, renseigné depuis les paramètres. Provisoire tant que le matricule définitif n'est pas connu.",
+    )
     photo = models.FileField(upload_to="ministere", blank=True)
     logo = models.FileField(upload_to="ministere/logo", blank=True, help_text="Logo de la structure ; vide : les armoiries par défaut")
     donnees_reelles = models.BooleanField(default=False, help_text="Vrai une fois l'effectif réel chargé : plus de données de démonstration")
@@ -2095,3 +2115,24 @@ class TacheFond(models.Model):
         ordering = ["-cree_le"]
         indexes = [models.Index(fields=["utilisateur", "-cree_le"])]
         verbose_name = "tâche de fond"
+
+
+class CleIdempotence(models.Model):
+    """Réponse mémorisée d'une action rejouable (voir `hors_ligne.idempotente`).
+
+    Une action saisie hors ligne est envoyée au retour de la connexion ; si la coupure survient après l'envoi, le client
+    la renvoie. La clé (choisie par le client, unique par utilisateur) fait renvoyer la réponse déjà donnée au lieu de
+    refaire l'action. `statut` reste vide tant que la première exécution n'est pas terminée.
+    """
+
+    utilisateur = models.CharField(max_length=40)
+    cle = models.CharField(max_length=80)
+    empreinte = models.CharField(max_length=64)
+    statut = models.PositiveSmallIntegerField(null=True, blank=True)
+    reponse = models.JSONField(null=True, blank=True)
+    creee_le = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["utilisateur", "cle"], name="idempotence_unique_par_utilisateur")]
+        indexes = [models.Index(fields=["creee_le"])]
+        verbose_name = "clé d'idempotence"

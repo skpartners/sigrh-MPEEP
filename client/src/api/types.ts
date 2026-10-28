@@ -93,7 +93,7 @@ export type SessionUser = {
   reference_courrier?: { structures: string[]; initiales: string };
   /** Le DRH (ou l'administrateur) : seul à pouvoir annuler un reliquat de congé. */
   drh?: boolean;
-  /** Accès à l'espace secrétariat : l'administrateur et les secrétaires, rattachées à une structure. */
+  /** Accès à l'espace secrétariat : secrétaire rattachée à une structure, ou administrateur. */
   secretariat?: boolean;
   photo_url: string;
   administrateur?: boolean;

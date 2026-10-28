@@ -73,6 +73,30 @@ ALLOWED_HOSTS = _publics([
 if not DEBUG and not ALLOWED_HOSTS:
     raise ImproperlyConfigured("DJANGO_ALLOWED_HOSTS ne contient aucun hôte public.")
 
+# Transport : en production tout passe par HTTPS (tunnel Cloudflare). Les données qui voyagent, y compris les actions
+# rejouées après une coupure, ne sont donc lisibles par aucun intermédiaire. HSTS interdit ensuite au navigateur de
+# retomber en HTTP. Désactivable avec SIGRH_HTTPS=false (réseau interne sans TLS uniquement).
+HTTPS_ACTIF = _env("SIGRH_HTTPS", "false" if DEBUG else "true").lower() in {"1", "true", "yes"}
+if HTTPS_ACTIF:
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    SECURE_HSTS_SECONDS = 31_536_000
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+
+# Antivirus : chaque fichier reçu par l'API est analysé par ClamAV (service Windows ClamAV-Daemon, 127.0.0.1:3310)
+# avant d'être conservé. Actif en production, inactif en développement ; SIGRH_CLAMAV=true|false force le choix.
+# Démon injoignable : l'envoi est refusé (503) plutôt qu'accepté sans analyse (voir personnel/antivirus.py).
+CLAMAV_ACTIF = _env("SIGRH_CLAMAV", "false" if DEBUG else "true").lower() in {"1", "true", "yes"}
+CLAMAV_HOTE = _env("SIGRH_CLAMAV_HOTE", "127.0.0.1")
+CLAMAV_PORT = int(_env("SIGRH_CLAMAV_PORT", "3310"))
+CLAMAV_DELAI = float(_env("SIGRH_CLAMAV_DELAI", "60"))
+FILE_UPLOAD_HANDLERS = [
+    "personnel.antivirus.AnalyseAntivirus",
+    "django.core.files.uploadhandler.MemoryFileUploadHandler",
+    "django.core.files.uploadhandler.TemporaryFileUploadHandler",
+]
+
 # Préfixe public : le tunnel Cloudflare publie l'application sous /sigrh.
 ROOT_PATH = "/sigrh"
 
@@ -101,6 +125,7 @@ MIDDLEWARE = [
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "personnel.authentification.AuteurPdfMiddleware",
+    "personnel.hors_ligne.SaisieHorsLigneMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
@@ -190,7 +215,12 @@ CORS_ALLOW_HEADERS = [
     "authorization",
     "content-type",
     "origin",
+    # Actions saisies hors ligne : voir personnel/hors_ligne.py.
+    "idempotency-key",
+    "x-saisi-le",
+    "x-hors-ligne",
 ]
+CORS_EXPOSE_HEADERS = ["idempotent-replayed"]
 
 # Temps réel (WebSocket). En mémoire : un seul processus, suffisant en développement.
 # En production multi-processus : channels_redis avec CHANNEL_LAYERS_REDIS_URL.
@@ -246,4 +276,5 @@ REST_FRAMEWORK = {
         "rest_framework.permissions.IsAuthenticated",
     ],
     "UNAUTHENTICATED_USER": None,
+    "EXCEPTION_HANDLER": "personnel.antivirus.gestionnaire_erreurs",
 }
